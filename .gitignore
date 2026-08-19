@@ -1,0 +1,79 @@
+# Environment files & secrets
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+.env.dev
+.env.development
+.env.testing
+.env.test
+.env.staging
+.env.ci
+
+# PHP / Composer
+/vendor
+composer.phar
+auth.json
+
+# Node / NPM
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Laravel generated files
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/bootstrap/cache/*.php
+/bootstrap/cache/*.ser
+
+# Laravel logs
+*.log
+
+# Testing / Cache
+.phpunit.result.cache
+/.phpunit.cache
+/.phpunit.cache/
+/coverage/
+coverage.xml
+clover.xml
+.phpstan-cache/
+.pest/
+
+# IDE / Editor files
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.phpactor.json
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+.c9/
+.theia/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Homestead (Laravel local dev VM)
+Homestead.json
+Homestead.yaml
+
+# Vite cache
+.vite/
+
+# Project-specific temporary / work files
+/temp/
+project.txt
