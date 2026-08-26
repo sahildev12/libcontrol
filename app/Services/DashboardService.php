@@ -43,7 +43,7 @@ class DashboardService
      *
      * @return array<string, mixed>
      */
-    public function adminOverview(?Carbon $from = null, ?Carbon $to = null): array
+    public function adminOverview(?Carbon $from = null, ?Carbon $to = null, int $revenueMonthsCount = 6): array
     {
         $tz = config('libspace.timezone', 'Asia/Kolkata');
         $from ??= Carbon::now($tz)->startOfMonth();
@@ -161,8 +161,10 @@ class DashboardService
             ];
         }
 
-        $revenueMonths = $this->revenueByMonth(6);
+        $revenueMonthsCount = in_array($revenueMonthsCount, [3, 6, 12], true) ? $revenueMonthsCount : 6;
+        $revenueMonths = $this->revenueByMonth($revenueMonthsCount);
         $revenueMonthsTotal = collect($revenueMonths)->sum('amount');
+        $revenueChartMax = $this->revenueChartAxisMax(collect($revenueMonths)->max('amount') ?? 0);
 
         return [
             'from' => $from->toDateString(),
@@ -188,8 +190,11 @@ class DashboardService
             'branches' => $branchRows,
             'attention' => $attention,
             'revenue_months' => $revenueMonths,
+            'revenue_months_count' => $revenueMonthsCount,
             'revenue_months_total' => $revenueMonthsTotal,
-            'recent_activity' => $this->recentActivity(8),
+            'revenue_months_label' => $revenueMonthsCount.' Months',
+            'revenue_chart_max' => $revenueChartMax,
+            'revenue_chart_axis' => $this->revenueChartAxisLabels($revenueChartMax),
         ];
     }
 
@@ -260,16 +265,17 @@ class DashboardService
 
         $recentEnquiries = Enquiry::query()
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->with(['student:id,name,student_code'])
             ->latest('id')
             ->limit(5)
             ->get()
             ->map(fn (Enquiry $enquiry) => [
                 'name' => $enquiry->name,
                 'initial' => strtoupper(substr((string) $enquiry->name, 0, 1)),
-                'message' => $enquiry->message ?: ($enquiry->phone ?: 'Enquiry'),
+                'detail' => $enquiry->message ?: ($enquiry->phone ?: 'General enquiry'),
                 'status' => $enquiry->status,
                 'status_label' => ucfirst(str_replace('_', ' ', (string) $enquiry->status)),
-                'ago' => $enquiry->created_at?->diffForHumans(null, true) ? $enquiry->created_at->diffForHumans() : '',
+                'ago' => $enquiry->created_at?->diffForHumans() ?? '',
             ]);
 
         return [
@@ -410,47 +416,53 @@ class DashboardService
         return $result;
     }
 
-    /**
-     * @return list<array{id: int, title: string, subject: string, branch: string, ago: string, tone: string}>
-     */
-    private function recentActivity(int $limit = 8): array
+    private function revenueChartAxisMax(float|int $peakAmount): float
     {
-        return ActivityLog::query()
-            ->with(['user:id,name', 'branch:id,name'])
-            ->where(function ($query) {
-                $query->where('action', 'not like', 'page.%')
-                    ->where('action', 'not like', 'auth.%');
-            })
-            ->latest('id')
-            ->limit($limit)
-            ->get()
-            ->map(function (ActivityLog $log) {
-                $action = strtolower((string) $log->action);
-                $tone = match (true) {
-                    str_contains($action, 'student') && (str_contains($action, 'creat') || str_contains($action, 'store') || str_contains($action, 'add')) => 'emerald',
-                    str_contains($action, 'payment') || str_contains($action, 'fee') => 'amber',
-                    str_contains($action, 'cancel') || str_contains($action, 'delete') => 'rose',
-                    str_contains($action, 'booking') || str_contains($action, 'seat') || str_contains($action, 'assign') => 'sky',
-                    str_contains($action, 'plan') || str_contains($action, 'booking') => 'violet',
-                    default => 'indigo',
-                };
+        $peak = max(0, (float) $peakAmount);
 
-                $subject = $log->user?->name
-                    ?: (string) (data_get($log->properties, 'name')
-                        ?: data_get($log->properties, 'student_name')
-                        ?: data_get($log->properties, 'subject_label')
-                        ?: '');
+        if ($peak <= 0) {
+            return 600000;
+        }
 
-                return [
-                    'id' => $log->id,
-                    'title' => $log->description ?: $log->actionLabel(),
-                    'subject' => $subject !== '' ? $subject : '—',
-                    'branch' => $log->branch?->name ?: ($log->actor_type === 'admin' ? 'Admin office' : '—'),
-                    'ago' => $log->created_at?->diffForHumans() ?? '',
-                    'tone' => $tone,
-                ];
-            })
-            ->values()
-            ->all();
+        $magnitude = pow(10, floor(log10($peak)));
+        $normalized = $peak / $magnitude;
+
+        $nice = match (true) {
+            $normalized <= 1 => 1,
+            $normalized <= 2 => 2,
+            $normalized <= 5 => 5,
+            default => 10,
+        };
+
+        return (float) ($nice * $magnitude);
+    }
+
+    /**
+     * @return list<array{value: float, label: string, pct: float}>
+     */
+    private function revenueChartAxisLabels(float $axisMax): array
+    {
+        if ($axisMax <= 0) {
+            return [
+                ['value' => 600000, 'label' => '₹6,00,000', 'pct' => 100],
+                ['value' => 400000, 'label' => '₹4,00,000', 'pct' => 66.67],
+                ['value' => 200000, 'label' => '₹2,00,000', 'pct' => 33.33],
+                ['value' => 0, 'label' => '₹0', 'pct' => 0],
+            ];
+        }
+
+        $steps = 4;
+        $labels = [];
+
+        for ($i = $steps; $i >= 0; $i--) {
+            $value = ($axisMax / $steps) * $i;
+            $labels[] = [
+                'value' => $value,
+                'label' => '₹'.number_format($value),
+                'pct' => $axisMax > 0 ? round(($value / $axisMax) * 100, 2) : 0,
+            ];
+        }
+
+        return $labels;
     }
 }

@@ -27,6 +27,10 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         $request->session()->put('login_portal', $request->portal());
 
+        if ($request->user()?->isPlatformAdmin()) {
+            $request->session()->put('active_branch_id', 'all');
+        }
+
         app(ActivityLogger::class)->record(
             $request->user(),
             'auth.login',

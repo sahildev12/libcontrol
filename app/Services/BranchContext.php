@@ -27,23 +27,18 @@ class BranchContext
             abort(403, 'Your account is not assigned to a branch.');
         }
 
-        if ($this->viewingAll($user, $request)) {
+        $sessionBranchId = $request?->session()->get('active_branch_id');
+
+        if ((string) $sessionBranchId === self::ALL || $this->viewingAll($user, $request)) {
             return null;
         }
 
-        $sessionBranchId = $request?->session()->get('active_branch_id');
-
-        if ($sessionBranchId && $sessionBranchId !== self::ALL && Branch::query()->whereKey($sessionBranchId)->exists()) {
+        if ($sessionBranchId && Branch::query()->whereKey($sessionBranchId)->exists()) {
             return (int) $sessionBranchId;
         }
 
-        $fallback = Branch::query()->orderBy('name')->value('id');
-
-        if ($fallback) {
-            $request?->session()->put('active_branch_id', $fallback);
-
-            return (int) $fallback;
-        }
+        // Platform admins default to All branches (system overview).
+        $request?->session()->put('active_branch_id', self::ALL);
 
         return null;
     }

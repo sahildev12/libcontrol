@@ -25,7 +25,7 @@
             @endif
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
                 <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">Dashboard</p>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">ADMIN PANEL</p>
             </div>
         </a>
 

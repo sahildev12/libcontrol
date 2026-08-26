@@ -2,9 +2,10 @@
     $kpis = $admin['kpis'];
     $attention = $admin['attention'];
     $revenueMonths = $admin['revenue_months'];
-    $revenueMax = max(1, (float) collect($revenueMonths)->max('amount'));
-    $user = auth()->user();
-    $adminInitial = strtoupper(substr((string) ($user?->name ?? 'A'), 0, 1));
+    $revenueChartMax = max(1, (float) ($admin['revenue_chart_max'] ?? 1));
+    $revenueAxis = $admin['revenue_chart_axis'] ?? [];
+    $chartHeight = 208;
+    $revenueMonthsCount = (int) ($admin['revenue_months_count'] ?? 6);
 @endphp
 
 <div
@@ -15,6 +16,7 @@
         switchUrl: @js($admin['switchUrl']),
         openingId: null,
         rangeOpen: false,
+        revenueOpen: false,
         totalPages() { return Math.max(1, Math.ceil(this.rows.length / this.perPage)); },
         pageRows() {
             const start = (this.page - 1) * this.perPage;
@@ -22,6 +24,11 @@
         },
         pages() {
             return Array.from({ length: this.totalPages() }, (_, i) => i + 1);
+        },
+        occupancyBarWidth(value) {
+            const pct = Number(value) || 0;
+            if (pct <= 0) return '0%';
+            return `${Math.min(100, Math.max(pct, 6))}%`;
         },
         async openBranch(id) {
             this.openingId = id;
@@ -36,7 +43,6 @@
     }"
     class="space-y-6"
 >
-    {{-- Page header: title + date range + refresh + profile (matches mockup) --}}
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
@@ -61,6 +67,7 @@
                     x-transition
                     class="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
                 >
+                    <input type="hidden" name="revenue_months" value="{{ $revenueMonthsCount }}">
                     <div class="space-y-3">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-gray-500">From</label>
@@ -78,113 +85,92 @@
             </div>
 
             <a
-                href="{{ route('dashboard', request()->only(['from', 'to'])) }}"
+                href="{{ route('dashboard', array_merge(request()->only(['from', 'to', 'revenue_months']))) }}"
                 class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
             >
                 <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014-7M19 5a9 9 0 00-14 7"/></svg>
                 Refresh
             </a>
-
-            <button
-                type="button"
-                class="relative inline-flex size-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-                onclick="document.querySelector('[aria-label=Notifications]')?.click()"
-                aria-label="Open notifications"
-            >
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                @if (($alertCount ?? 0) > 0)
-                    <span class="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{{ $alertCount > 9 ? '9+' : $alertCount }}</span>
-                @endif
-            </button>
-
-            <div class="hidden items-center gap-2.5 sm:flex">
-                <span class="inline-flex size-10 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">{{ $adminInitial }}</span>
-                <div class="min-w-0 leading-tight">
-                    <p class="truncate text-sm font-semibold text-gray-900">{{ $user?->name ?? 'Admin' }}</p>
-                    <p class="truncate text-xs text-gray-500">{{ $adminTypeLabel ?? 'Super Admin' }}</p>
-                </div>
-            </div>
         </div>
     </header>
 
-    {{-- 6 KPI cards --}}
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-10h2m4 0h2"/></svg>
+    {{-- KPI cards: single row on desktop --}}
+    <div class="flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
+        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-10h2m4 0h2"/></svg>
             </div>
             <p class="text-xs font-medium text-gray-500">Total Branches</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($kpis['branches']) }}</p>
-            <p class="mt-0.5 text-xs text-gray-400">Active branches</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['branches']) }}</p>
+            <p class="mt-0.5 text-[11px] text-gray-400">Active branches</p>
             @if ($kpis['branches_delta'] > 0)
-                <p class="mt-2 text-xs font-semibold text-emerald-600">↑ {{ $kpis['branches_delta'] }} this month</p>
+                <p class="mt-2 text-[11px] font-semibold text-emerald-600">↑ {{ $kpis['branches_delta'] }} this month</p>
             @endif
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
             <p class="text-xs font-medium text-gray-500">Total Students</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($kpis['students']) }}</p>
-            <p class="mt-0.5 text-xs text-gray-400">Across all branches</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['students']) }}</p>
+            <p class="mt-0.5 text-[11px] text-gray-400">Across all branches</p>
             @if ($kpis['students_delta_pct'] !== null)
-                <p class="mt-2 text-xs font-semibold {{ $kpis['students_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                <p class="mt-2 text-[11px] font-semibold {{ $kpis['students_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     {{ $kpis['students_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($kpis['students_delta_pct']) }}% this month
                 </p>
             @endif
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
             </div>
             <p class="text-xs font-medium text-gray-500">Total Seats</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($kpis['seats']) }}</p>
-            <p class="mt-0.5 text-xs text-gray-400">Across all branches</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['seats']) }}</p>
+            <p class="mt-0.5 text-[11px] text-gray-400">Across all branches</p>
             @if ($kpis['seats_delta_pct'] !== null)
-                <p class="mt-2 text-xs font-semibold {{ $kpis['seats_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                <p class="mt-2 text-[11px] font-semibold {{ $kpis['seats_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     {{ $kpis['seats_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($kpis['seats_delta_pct']) }}% this month
                 </p>
             @endif
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 20v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 20h6M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
             <p class="text-xs font-medium text-gray-500">Occupied Seats</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($kpis['occupied']) }}</p>
-            <p class="mt-0.5 text-xs text-gray-400">Assigned seats</p>
-            <p class="mt-2 text-xs font-semibold text-amber-600">{{ number_format($kpis['occupancy_pct'], 2) }}% occupancy</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['occupied']) }}</p>
+            <p class="mt-0.5 text-[11px] text-gray-400">Assigned seats</p>
+            <p class="mt-2 text-[11px] font-semibold text-amber-600">{{ number_format($kpis['occupancy_pct'], 2) }}% occupancy</p>
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
             </div>
             <p class="text-xs font-medium text-gray-500">Available Seats</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($kpis['available']) }}</p>
-            <p class="mt-0.5 text-xs text-gray-400">Seats available</p>
-            <p class="mt-2 text-xs font-semibold text-teal-600">{{ number_format($kpis['availability_pct'], 2) }}% availability</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['available']) }}</p>
+            <p class="mt-0.5 text-[11px] text-gray-400">Seats available</p>
+            <p class="mt-2 text-[11px] font-semibold text-teal-600">{{ number_format($kpis['availability_pct'], 2) }}% availability</p>
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-fuchsia-50 text-fuchsia-600">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             </div>
             <p class="text-xs font-medium text-gray-500">Monthly Revenue</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">₹{{ number_format($kpis['monthly_revenue']) }}</p>
-            <p class="mt-0.5 text-xs text-gray-400">This month</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">₹{{ number_format($kpis['monthly_revenue']) }}</p>
+            <p class="mt-0.5 text-[11px] text-gray-400">This month</p>
             @if ($kpis['revenue_delta_pct'] !== null)
-                <p class="mt-2 text-xs font-semibold {{ $kpis['revenue_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                <p class="mt-2 text-[11px] font-semibold {{ $kpis['revenue_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     {{ $kpis['revenue_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($kpis['revenue_delta_pct']) }}% vs last month
                 </p>
             @endif
         </div>
     </div>
 
-    {{-- Branch Performance --}}
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
             <h2 class="text-base font-semibold text-gray-900">Branch Performance</h2>
@@ -192,48 +178,48 @@
         </div>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[960px] text-left text-sm">
-                <thead class="bg-gray-50/80 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <thead class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
-                        <th class="px-5 py-3 font-semibold">Branch</th>
-                        <th class="px-3 py-3 font-semibold">Students</th>
-                        <th class="px-3 py-3 font-semibold">Seats</th>
-                        <th class="px-3 py-3 font-semibold">Occupied</th>
-                        <th class="px-3 py-3 font-semibold">Available</th>
-                        <th class="min-w-[12rem] px-3 py-3 font-semibold">Occupancy</th>
-                        <th class="px-3 py-3 font-semibold">Revenue (This Month)</th>
-                        <th class="px-3 py-3 font-semibold">Status</th>
-                        <th class="px-5 py-3 text-right font-semibold">Action</th>
+                        <th class="px-5 py-3">Branch</th>
+                        <th class="px-3 py-3">Students</th>
+                        <th class="px-3 py-3">Seats</th>
+                        <th class="px-3 py-3">Occupied</th>
+                        <th class="px-3 py-3">Available</th>
+                        <th class="min-w-[11rem] px-3 py-3">Occupancy</th>
+                        <th class="px-3 py-3">Revenue (This Month)</th>
+                        <th class="px-3 py-3">Status</th>
+                        <th class="px-5 py-3 text-right">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 text-gray-700">
                     <template x-for="row in pageRows()" :key="row.id">
-                        <tr class="hover:bg-gray-50/60">
-                            <td class="px-5 py-3.5 font-medium text-gray-900" x-text="row.name"></td>
-                            <td class="px-3 py-3.5 text-gray-700" x-text="Number(row.students).toLocaleString('en-IN')"></td>
-                            <td class="px-3 py-3.5 text-gray-700" x-text="Number(row.seats).toLocaleString('en-IN')"></td>
-                            <td class="px-3 py-3.5 text-gray-700" x-text="Number(row.occupied).toLocaleString('en-IN')"></td>
-                            <td class="px-3 py-3.5 text-gray-700" x-text="Number(row.available).toLocaleString('en-IN')"></td>
-                            <td class="px-3 py-3.5">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="h-2 w-24 overflow-hidden rounded-full bg-gray-100 sm:w-28">
+                        <tr class="hover:bg-indigo-50/40">
+                            <td class="px-5 py-3 font-medium text-gray-900" x-text="row.name"></td>
+                            <td class="px-3 py-3" x-text="Number(row.students).toLocaleString('en-IN')"></td>
+                            <td class="px-3 py-3" x-text="Number(row.seats).toLocaleString('en-IN')"></td>
+                            <td class="px-3 py-3" x-text="Number(row.occupied).toLocaleString('en-IN')"></td>
+                            <td class="px-3 py-3" x-text="Number(row.available).toLocaleString('en-IN')"></td>
+                            <td class="px-3 py-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
                                         <div
                                             class="h-full rounded-full"
                                             :class="row.occupancy >= 70 ? 'bg-emerald-500' : (row.occupancy >= 40 ? 'bg-amber-500' : 'bg-rose-400')"
-                                            :style="`width: ${Math.min(100, row.occupancy)}%`"
+                                            :style="`width: ${occupancyBarWidth(row.occupancy)}`"
                                         ></div>
                                     </div>
                                     <span class="text-xs font-semibold text-gray-600" x-text="`${row.occupancy}%`"></span>
                                 </div>
                             </td>
-                            <td class="px-3 py-3.5 font-medium text-gray-900" x-text="`₹${Number(row.revenue || 0).toLocaleString('en-IN')}`"></td>
-                            <td class="px-3 py-3.5">
+                            <td class="px-3 py-3 font-medium text-gray-900" x-text="`₹${Number(row.revenue || 0).toLocaleString('en-IN')}`"></td>
+                            <td class="px-3 py-3">
                                 <span
                                     class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
                                     :class="row.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
                                     x-text="row.status"
                                 ></span>
                             </td>
-                            <td class="px-5 py-3.5 text-right">
+                            <td class="px-5 py-3 text-right">
                                 <button
                                     type="button"
                                     @click="openBranch(row.id)"
@@ -247,7 +233,7 @@
                         </tr>
                     </template>
                     <tr x-show="rows.length === 0">
-                        <td colspan="9" class="px-5 py-12 text-center text-gray-500">No branches found.</td>
+                        <td colspan="9" class="px-5 py-10 text-center text-gray-500">No branches found.</td>
                     </tr>
                 </tbody>
             </table>
@@ -274,85 +260,105 @@
         </div>
     </section>
 
-    {{-- Bottom widgets: Revenue | Activity | Attention --}}
-    <div class="grid gap-4 lg:grid-cols-3">
-        <section class="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div class="flex flex-col gap-4 md:flex-row md:items-stretch">
+        <section class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:w-[60%]">
             <div class="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
-                <h2 class="text-base font-semibold text-gray-900">Revenue Overview <span class="font-normal text-gray-400">(Last 6 Months)</span></h2>
-                <span class="rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600">6 Months</span>
+                <h2 class="text-base font-semibold text-gray-900">
+                    Revenue Overview
+                    <span class="font-normal text-gray-400">(Last {{ $revenueMonthsCount }} Months)</span>
+                </h2>
+                <div class="relative" @click.outside="revenueOpen = false">
+                    <button
+                        type="button"
+                        @click="revenueOpen = !revenueOpen"
+                        class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                        {{ $admin['revenue_months_label'] }}
+                        <svg class="size-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div
+                        x-show="revenueOpen"
+                        x-cloak
+                        x-transition
+                        class="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                    >
+                        @foreach ([3 => '3 Months', 6 => '6 Months', 12 => '12 Months'] as $months => $label)
+                            <a
+                                href="{{ route('dashboard', array_merge(request()->only(['from', 'to']), ['revenue_months' => $months])) }}"
+                                @class([
+                                    'block px-3 py-2 text-xs font-medium hover:bg-gray-50',
+                                    'bg-indigo-50 text-indigo-700' => $revenueMonthsCount === $months,
+                                    'text-gray-700' => $revenueMonthsCount !== $months,
+                                ])
+                            >{{ $label }}</a>
+                        @endforeach
+                    </div>
+                </div>
             </div>
-            <div class="flex flex-1 flex-col px-5 pb-4 pt-5">
-                <div class="flex h-44 items-end gap-2 sm:gap-3">
-                    @foreach ($revenueMonths as $month)
-                        @php
-                            $height = $month['amount'] > 0 ? max(8, round(($month['amount'] / $revenueMax) * 100)) : 4;
-                        @endphp
-                        <div class="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                            <div
-                                class="w-full max-w-[2.25rem] rounded-t-md bg-indigo-500 transition-all"
-                                style="height: {{ $height }}%"
-                                title="₹{{ number_format($month['amount']) }}"
-                            ></div>
-                            <span class="text-[10px] font-medium text-gray-400">{{ $month['label'] }}</span>
+            <div class="flex flex-1 flex-col px-5 pb-5 pt-4">
+                <div class="flex gap-3" style="height: {{ $chartHeight }}px">
+                    <div class="flex w-16 shrink-0 flex-col justify-between py-1 text-[10px] font-medium text-gray-400">
+                        @foreach ($revenueAxis as $tick)
+                            <span class="tabular-nums">{{ $tick['label'] }}</span>
+                        @endforeach
+                    </div>
+                    <div class="relative flex-1">
+                        @foreach ($revenueAxis as $tick)
+                            @if ($tick['pct'] > 0)
+                                <div class="absolute left-0 right-0 border-t border-gray-100" style="bottom: {{ $tick['pct'] }}%"></div>
+                            @endif
+                        @endforeach
+                        <div class="absolute inset-0 flex items-end gap-2 sm:gap-3">
+                            @foreach ($revenueMonths as $month)
+                                @php
+                                    $barPx = $month['amount'] > 0
+                                        ? max(8, (int) round(($month['amount'] / $revenueChartMax) * ($chartHeight - 24)))
+                                        : 0;
+                                @endphp
+                                <div class="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                                    <div
+                                        class="w-full max-w-[2.75rem] rounded-t-md bg-indigo-500"
+                                        style="height: {{ $barPx }}px"
+                                        title="{{ $month['label'] }}: ₹{{ number_format($month['amount']) }}"
+                                    ></div>
+                                    <span class="truncate text-[10px] font-medium text-gray-400">{{ $month['label'] }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                    @endforeach
+                    </div>
                 </div>
                 <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
-                    <span class="text-gray-500">Total Revenue (6 Months)</span>
-                    <span class="font-bold text-gray-900">₹{{ number_format($admin['revenue_months_total']) }}</span>
+                    <span class="text-gray-500">Total Revenue ({{ $revenueMonthsCount }} Months)</span>
+                    <span class="text-lg font-bold text-gray-900">₹{{ number_format($admin['revenue_months_total']) }}</span>
                 </div>
             </div>
         </section>
 
-        <section class="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-                <h2 class="text-base font-semibold text-gray-900">Recent Activity</h2>
-                <a href="{{ route('activity-logs.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View all</a>
-            </div>
-            <div class="flex-1 divide-y divide-gray-100">
-                @forelse ($admin['recent_activity'] as $item)
-                    <div class="flex items-start gap-3 px-5 py-3.5">
-                        <span @class([
-                            'mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full',
-                            'bg-emerald-50 text-emerald-600' => $item['tone'] === 'emerald',
-                            'bg-sky-50 text-sky-600' => $item['tone'] === 'sky',
-                            'bg-amber-50 text-amber-600' => $item['tone'] === 'amber',
-                            'bg-violet-50 text-violet-600' => $item['tone'] === 'violet',
-                            'bg-rose-50 text-rose-600' => $item['tone'] === 'rose',
-                            'bg-indigo-50 text-indigo-600' => $item['tone'] === 'indigo',
-                        ])>
-                            <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 3a9 9 0 100 18 9 9 0 000-18z"/></svg>
-                        </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-semibold text-gray-900">{{ $item['title'] }}</p>
-                            <p class="truncate text-xs text-gray-500">{{ $item['subject'] }} · {{ $item['branch'] }}</p>
-                        </div>
-                        <span class="shrink-0 text-[11px] text-gray-400">{{ $item['ago'] }}</span>
-                    </div>
-                @empty
-                    <p class="px-5 py-10 text-center text-sm text-gray-500">No recent activity yet.</p>
-                @endforelse
-            </div>
-            <div class="border-t border-gray-100 px-5 py-3">
-                <a href="{{ route('activity-logs.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View all activity →</a>
-            </div>
-        </section>
-
-        <section class="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <section class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:w-[40%]">
             <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                 <h2 class="text-base font-semibold text-gray-900">Attention Required</h2>
                 <a href="{{ route('fees.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View all</a>
             </div>
-            <div class="flex-1 divide-y divide-gray-100">
+            <div class="flex-1">
                 @forelse ($attention as $item)
-                    <a href="{{ $item['url'] }}" class="flex items-start gap-3 px-5 py-4 hover:bg-gray-50">
+                    <a
+                        href="{{ $item['url'] }}"
+                        @class([
+                            'flex items-start gap-3 border-b border-gray-100/80 px-5 py-4 transition-colors last:border-b-0 hover:opacity-95',
+                            'bg-red-50' => $item['tone'] === 'red',
+                            'bg-amber-50' => $item['tone'] === 'amber',
+                            'bg-yellow-50' => $item['tone'] === 'yellow',
+                            'bg-indigo-50' => $item['tone'] === 'indigo',
+                            'bg-blue-50' => $item['tone'] === 'blue',
+                        ])
+                    >
                         <span @class([
                             'mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full',
-                            'bg-red-50 text-red-600' => $item['tone'] === 'red',
-                            'bg-amber-50 text-amber-600' => $item['tone'] === 'amber',
-                            'bg-yellow-50 text-yellow-700' => $item['tone'] === 'yellow',
-                            'bg-indigo-50 text-indigo-600' => $item['tone'] === 'indigo',
-                            'bg-blue-50 text-blue-600' => $item['tone'] === 'blue',
+                            'bg-red-100 text-red-600' => $item['tone'] === 'red',
+                            'bg-amber-100 text-amber-600' => $item['tone'] === 'amber',
+                            'bg-yellow-100 text-yellow-700' => $item['tone'] === 'yellow',
+                            'bg-indigo-100 text-indigo-600' => $item['tone'] === 'indigo',
+                            'bg-blue-100 text-blue-600' => $item['tone'] === 'blue',
                         ])>
                             @if ($item['tone'] === 'blue')
                                 <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -364,7 +370,7 @@
                             <p class="text-sm font-semibold text-gray-900">{{ $item['title'] }}</p>
                             <p class="text-xs text-gray-500">{{ $item['detail'] }}</p>
                         </div>
-                        <svg class="mt-1 size-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <svg class="mt-1 size-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </a>
                 @empty
                     <p class="px-5 py-10 text-center text-sm text-gray-500">Nothing needs attention right now.</p>

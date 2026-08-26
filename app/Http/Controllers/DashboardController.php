@@ -30,7 +30,12 @@ class DashboardController extends Controller
                 [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
             }
 
-            $admin = $dashboardService->adminOverview($from, $to);
+            $revenueMonths = (int) $request->input('revenue_months', 6);
+            if (! in_array($revenueMonths, [3, 6, 12], true)) {
+                $revenueMonths = 6;
+            }
+
+            $admin = $dashboardService->adminOverview($from, $to, $revenueMonths);
 
             return view('dashboard', [
                 'mode' => 'admin',

@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Branch;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,11 +25,7 @@ class EnsureUserHasBranch
 
         if ($user->isPlatformAdmin()) {
             if (! $request->session()->has('active_branch_id')) {
-                $firstBranchId = Branch::query()->orderBy('name')->value('id');
-
-                if ($firstBranchId) {
-                    $request->session()->put('active_branch_id', $firstBranchId);
-                }
+                $request->session()->put('active_branch_id', 'all');
             }
 
             return $next($request);

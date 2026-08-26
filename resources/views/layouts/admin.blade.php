@@ -49,7 +49,7 @@
                 @include('layouts.partials.admin-topbar')
 
                 <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-                    <div class="mx-auto max-w-[1400px] space-y-6">
+                    <div class="mx-auto max-w-none space-y-6">
                         {{ $slot }}
                     </div>
                 </main>
