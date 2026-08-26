@@ -2,7 +2,7 @@
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p class="mt-1 text-sm text-gray-600">{{ Auth::user()->branch?->name }} · Overview</p>
+            <p class="mt-1 text-sm text-gray-600">{{ $scopeLabel }} · Overview</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('seats.index') }}" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">Open Seat Map</a>

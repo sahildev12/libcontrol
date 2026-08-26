@@ -18,11 +18,10 @@ class HallController extends Controller
 {
     public function index(Request $request): View
     {
-        $branchId = $this->activeBranchId($request);
-        $branch = $this->activeBranch($request);
+        $branchId = $this->optionalActiveBranchId($request);
+        $branch = $this->optionalActiveBranch($request);
 
-        $halls = Hall::query()
-            ->where('branch_id', $branchId)
+        $halls = $this->constrainByActiveBranch(Hall::query(), $request)
             ->with('branch:id,name')
             ->withCount([
                 'seats',
@@ -48,14 +47,15 @@ class HallController extends Controller
                 'created_at' => $hall->created_at?->format('M d, Y'),
             ]);
 
-        $branches = Branch::query()
-            ->where('id', $branchId)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $branches = $request->user()?->isPlatformAdmin()
+            ? Branch::query()->orderBy('name')->get(['id', 'name'])
+            : Branch::query()->where('id', $branchId)->orderBy('name')->get(['id', 'name']);
 
-        $branchName = $branch->name;
+        $viewingAll = $this->viewingAllBranches($request);
+        $branchName = $viewingAll ? 'All branches' : ($branch?->name ?? 'Branch');
+        $defaultBranchId = $branchId ?: $branches->first()?->id;
 
-        return view('halls.index', compact('halls', 'branches', 'branchName'));
+        return view('halls.index', compact('halls', 'branches', 'branchName', 'defaultBranchId', 'viewingAll'));
     }
 
     public function show(Request $request, Hall $hall): JsonResponse
@@ -84,7 +84,8 @@ class HallController extends Controller
         $hallSeatGenerator->generate($hall);
         $hall->load(['branch:id,name'])->loadCount($this->hallCountRelations());
 
-        $seatMapService->broadcastForBranch($this->activeBranchId($request));
+        $seatMapService->broadcastForBranch($hall->branch_id);
+        $this->logActivity($request, 'hall.created', "Created hall \"{$hall->name}\".", $hall, $hall->branch_id);
 
         $payload = [
             'message' => "Hall \"{$hall->name}\" created.",
@@ -98,14 +99,14 @@ class HallController extends Controller
 
     public function update(UpdateHallRequest $request, Hall $hall, HallSeatGenerator $hallSeatGenerator, SeatMapService $seatMapService): JsonResponse|RedirectResponse
     {
-        $this->authorizeHall($request, $hall);
+        $this->assertCanAccessBranch($request, $hall->branch_id);
 
         $validated = $request->validated();
         $hall->update($validated);
         $hallSeatGenerator->appendToCapacity($hall->fresh());
         $hall->loadCount($this->hallCountRelations());
 
-        $seatMapService->broadcastForBranch($this->activeBranchId($request));
+        $seatMapService->broadcastForBranch($hall->branch_id);
 
         $payload = [
             'message' => "Hall \"{$hall->name}\" updated.",
@@ -119,7 +120,7 @@ class HallController extends Controller
 
     public function destroy(Request $request, Hall $hall, SeatMapService $seatMapService): JsonResponse|RedirectResponse
     {
-        $this->authorizeHall($request, $hall);
+        $this->assertCanAccessBranch($request, $hall->branch_id);
 
         if ($hall->hasAssignedStudents()) {
             $payload = ['message' => 'Cannot delete a hall that has assigned students.'];
@@ -130,9 +131,11 @@ class HallController extends Controller
         }
 
         $name = $hall->name;
+        $branchId = $hall->branch_id;
         $hall->delete();
 
-        $seatMapService->broadcastForBranch($this->activeBranchId($request));
+        $seatMapService->broadcastForBranch($branchId);
+        $this->logActivity($request, 'hall.deleted', "Deleted hall \"{$name}\".", null, $branchId);
 
         $payload = ['message' => "Hall \"{$name}\" deleted."];
 
@@ -148,8 +151,7 @@ class HallController extends Controller
             'ids.*' => ['integer'],
         ]);
 
-        $halls = Hall::query()
-            ->where('branch_id', $this->activeBranchId($request))
+        $halls = $this->constrainByActiveBranch(Hall::query(), $request)
             ->whereIn('id', $validated['ids'])
             ->get();
 
@@ -161,12 +163,14 @@ class HallController extends Controller
             ], 422);
         }
 
-        $deleted = Hall::query()
-            ->where('branch_id', $this->activeBranchId($request))
+        $deleted = $this->constrainByActiveBranch(Hall::query(), $request)
             ->whereIn('id', $validated['ids'])
             ->delete();
 
-        $seatMapService->broadcastForBranch($this->activeBranchId($request));
+        foreach ($halls->pluck('branch_id')->unique() as $broadcastBranchId) {
+            $seatMapService->broadcastForBranch((int) $broadcastBranchId);
+        }
+        $this->logActivity($request, 'hall.bulk_deleted', "Deleted {$deleted} hall(s).");
 
         return response()->json([
             'message' => "{$deleted} hall(s) deleted.",
@@ -176,8 +180,7 @@ class HallController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
-        $halls = Hall::query()
-            ->where('branch_id', $this->activeBranchId($request))
+        $halls = $this->constrainByActiveBranch(Hall::query(), $request)
             ->withCount($this->hallCountRelations())
             ->orderBy('name')
             ->get();
@@ -206,13 +209,7 @@ class HallController extends Controller
 
     private function authorizeHall(Request $request, Hall $hall): void
     {
-        if ($request->user()?->isPlatformAdmin()) {
-            abort_unless(Branch::query()->whereKey($hall->branch_id)->exists(), 403);
-
-            return;
-        }
-
-        abort_unless($hall->branch_id === $this->activeBranchId($request), 403);
+        $this->assertCanAccessBranch($request, $hall->branch_id);
     }
 
     /**

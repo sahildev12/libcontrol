@@ -75,6 +75,12 @@ function createDataTableMixin() {
         exportFileName: 'export',
         exportColumns: [],
 
+        bulkDeleteUrl: null,
+
+        extraFilter() {
+            return true;
+        },
+
         initDataTable() {
             this.$watch('search', () => { this.page = 1; });
             this.$watch('perPage', () => { this.page = 1; });
@@ -82,7 +88,12 @@ function createDataTableMixin() {
 
         filteredRows() {
             const term = this.search.trim().toLowerCase();
-            const rows = this.rows || [];
+            let rows = this.rows || [];
+
+            if (typeof this.extraFilter === 'function') {
+                rows = rows.filter((row) => this.extraFilter(row));
+            }
+
             if (! term) {
                 return rows;
             }
@@ -163,6 +174,26 @@ function createDataTableMixin() {
             link.click();
             URL.revokeObjectURL(url);
         },
+
+        async bulkDelete() {
+            if (! this.bulkDeleteUrl || this.selectedIds.length < 2) {
+                return;
+            }
+
+            if (! confirm(`Delete ${this.selectedIds.length} selected items?`)) {
+                return;
+            }
+
+            try {
+                const response = await window.axios.post(this.bulkDeleteUrl, { ids: this.selectedIds });
+                const removed = new Set(this.selectedIds.map((id) => String(id)));
+                this.rows = this.rows.filter((row) => ! removed.has(String(row.id)));
+                this.selectedIds = [];
+                showToast(response.data.message);
+            } catch (e) {
+                showToast(e.response?.data?.message || 'Could not delete the selected items.', 'error');
+            }
+        },
     };
 }
 
@@ -175,6 +206,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
         studentSaving: false,
         copyingRegistrationLink: false,
         registrationInvite: null,
+        registrationQrPreviewOpen: false,
         studentFormErrors: {},
         studentForm: {
             name: '',
@@ -188,6 +220,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
             id_proof: null,
             photo: null,
             student_type: defaultStudentType,
+            branch_id: null,
         },
 
         sanitizeDigits(value, maxLength = 10) {
@@ -208,6 +241,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
                 id_proof: null,
                 photo: null,
                 student_type: defaultStudentType,
+                branch_id: this.defaultBranchId || this.branches?.[0]?.id || '',
             };
         },
 
@@ -231,6 +265,10 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
                 errors.student_type = 'Select Regular or Trial student.';
             }
 
+            if ((this.branches || []).length > 1 && ! this.studentForm.branch_id) {
+                errors.branch_id = 'Select a branch.';
+            }
+
             if (! this.studentForm.date_of_birth) {
                 errors.date_of_birth = 'Date of birth is required.';
             } else if (this.studentForm.date_of_birth >= new Date().toISOString().slice(0, 10)) {
@@ -243,7 +281,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
                 errors.phone = phoneError;
             }
 
-            const emailError = validateEmail(this.studentForm.email, { required: false });
+            const emailError = validateEmail(this.studentForm.email, { required: true });
             if (emailError) {
                 errors.email = emailError;
             }
@@ -263,8 +301,12 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
 
         async openStudentCreate() {
             this.resetStudentForm();
+            if (this.selectedSeat?.branch_id) {
+                this.studentForm.branch_id = this.selectedSeat.branch_id;
+            }
             this.studentCreateOpen = true;
             this.registrationInvite = null;
+            this.registrationQrPreviewOpen = false;
 
             await this.$nextTick();
             await this.createRegistrationInvite();
@@ -274,6 +316,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
             this.studentCreateOpen = false;
             this.studentSaving = false;
             this.registrationInvite = null;
+            this.registrationQrPreviewOpen = false;
             this.studentFormErrors = {};
         },
 
@@ -283,7 +326,8 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
             }
 
             try {
-                const response = await window.axios.post(this.inviteStoreUrl);
+                const payload = this.studentForm.branch_id ? { branch_id: this.studentForm.branch_id } : {};
+                const response = await window.axios.post(this.inviteStoreUrl, payload);
                 this.registrationInvite = response.data.invite;
                 await this.renderRegistrationQr(this.registrationInvite.url);
             } catch (e) {
@@ -291,20 +335,35 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
             }
         },
 
-        async renderRegistrationQr(url) {
-            if (! url || ! this.$refs.registrationQr) {
+        async renderRegistrationQr(url, canvasRef = 'registrationQr', size = null) {
+            const canvas = this.$refs[canvasRef];
+            if (! url || ! canvas) {
                 return;
             }
 
             try {
                 const { default: QRCode } = await import('qrcode');
-                await QRCode.toCanvas(this.$refs.registrationQr, url, {
-                    width: this.qrCanvasSize,
+                await QRCode.toCanvas(canvas, url, {
+                    width: size || this.qrCanvasSize,
                     margin: 1,
                 });
             } catch (e) {
                 // QR rendering is optional; link copy still works.
             }
+        },
+
+        async openRegistrationQrPreview() {
+            if (! this.registrationInvite?.url) {
+                return;
+            }
+
+            this.registrationQrPreviewOpen = true;
+            await this.$nextTick();
+            await this.renderRegistrationQr(this.registrationInvite.url, 'registrationQrLarge', 280);
+        },
+
+        closeRegistrationQrPreview() {
+            this.registrationQrPreviewOpen = false;
         },
 
         async copyRegistrationLink() {
@@ -328,7 +387,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
 
         buildStudentFormData() {
             const data = new FormData();
-            ['name', 'gender', 'date_of_birth', 'phone', 'email', 'father_name', 'address', 'id_proof_type', 'student_type'].forEach((key) => {
+            ['name', 'gender', 'date_of_birth', 'phone', 'email', 'father_name', 'address', 'id_proof_type', 'student_type', 'branch_id'].forEach((key) => {
                 if (this.studentForm[key]) {
                     data.append(key, this.studentForm[key]);
                 }
@@ -378,7 +437,7 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
     };
 }
 
-function createStudentPickerMixin({ formKey = 'assignForm', idKey = 'student_id', showAddNew = true, studentType = null } = {}) {
+function createStudentPickerMixin({ formKey = 'assignForm', idKey = 'student_id', showAddNew = true } = {}) {
     return {
         studentPickerOpen: false,
         studentPickerQuery: '',
@@ -409,10 +468,6 @@ function createStudentPickerMixin({ formKey = 'assignForm', idKey = 'student_id'
         filteredStudentsForPicker() {
             const query = this.studentPickerQuery.trim().toLowerCase();
             let list = this.students || [];
-
-            if (studentType) {
-                list = list.filter((student) => (student.student_type || 'regular') === studentType);
-            }
 
             if (! query) {
                 return list;
@@ -579,6 +634,198 @@ function minutesFromHm(value) {
     return (hours * 60) + minutes;
 }
 
+function occupiedWindows(seat) {
+    return (seat?.today_windows || []).filter((window) => window.type !== 'free');
+}
+
+function seatHasOccupiedHours(seat) {
+    return occupiedWindows(seat).length > 0;
+}
+
+function minutesToHm(minutes) {
+    if (minutes >= 24 * 60) {
+        return '23:59';
+    }
+
+    const safe = Math.max(0, minutes);
+    const hours = Math.floor(safe / 60) % 24;
+    const mins = safe % 60;
+
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+function firstFreeWindow(seat) {
+    return (seat?.today_windows || []).find((window) => window.type === 'free') || null;
+}
+
+function libraryHoursForSeat(seat) {
+    if (seat?.is_open_24_hours) {
+        return { open: 0, close: (24 * 60) - 1, is24: true, openHm: '00:00', closeHm: '23:59' };
+    }
+
+    const openHm = String(seat?.library_open_time || '09:00').slice(0, 5);
+    const closeHm = String(seat?.library_close_time || '18:00').slice(0, 5);
+    const open = minutesFromHm(openHm);
+    const close = minutesFromHm(closeHm);
+
+    return {
+        open: open === null ? 9 * 60 : open,
+        close: close === null ? 18 * 60 : close,
+        is24: false,
+        openHm,
+        closeHm,
+    };
+}
+
+function snapCustomTimesToLibraryHours(form, seat = null) {
+    if (! form || form.time_slot !== 'custom_hours') {
+        return;
+    }
+
+    const hours = libraryHoursForSeat(seat);
+    let start = minutesFromHm(form.custom_start_time);
+    let end = minutesFromHm(form.custom_end_time);
+
+    if (start === null) {
+        start = hours.open;
+    }
+    if (end === null) {
+        end = hours.close;
+    }
+
+    if (! hours.is24) {
+        if (start < hours.open) {
+            start = hours.open;
+        }
+        if (start >= hours.close) {
+            start = hours.open;
+        }
+        if (end > hours.close) {
+            end = hours.close;
+        }
+        if (end <= hours.open) {
+            end = hours.close;
+        }
+    } else if (end >= 24 * 60) {
+        end = (24 * 60) - 1;
+    }
+
+    if (end <= start) {
+        end = Math.min(hours.close, start + 60);
+        if (end <= start) {
+            start = hours.open;
+            end = hours.close > hours.open ? hours.close : Math.min((24 * 60) - 1, start + 60);
+        }
+    }
+
+    form.custom_start_time = minutesToHm(start);
+    form.custom_end_time = minutesToHm(end);
+}
+
+function defaultCustomTimes(seat) {
+    const hours = libraryHoursForSeat(seat);
+    const free = firstFreeWindow(seat);
+
+    if (free) {
+        let start = Number(free.start_minutes);
+        let end = Number(free.end_minutes);
+
+        if (end >= 24 * 60) {
+            end = (24 * 60) - 1;
+        }
+
+        if (! hours.is24) {
+            start = Math.max(start, hours.open);
+            end = Math.min(end, hours.close);
+        }
+
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+            return {
+                start: minutesToHm(start),
+                end: minutesToHm(end),
+            };
+        }
+    }
+
+    return { start: hours.openHm, end: hours.closeHm };
+}
+
+function ensureValidCustomTimes(form, seat = null) {
+    if (! form || form.time_slot !== 'custom_hours') {
+        return;
+    }
+
+    let start = minutesFromHm(form.custom_start_time);
+    let end = minutesFromHm(form.custom_end_time);
+
+    if (start === null || end === null || end <= start) {
+        const defaults = defaultCustomTimes(seat);
+        form.custom_start_time = defaults.start;
+        form.custom_end_time = defaults.end;
+    }
+
+    snapCustomTimesToLibraryHours(form, seat);
+}
+
+function assignableTimeSlotOptions(options, seat) {
+    const disableFullDay = seatHasOccupiedHours(seat);
+
+    return (options || []).map((option) => ({
+        ...option,
+        disabled: disableFullDay && option.value === 'full_day',
+    }));
+}
+
+function snapCustomTimesOffOccupied(seat, form) {
+    if (! seat || form.time_slot !== 'custom_hours') {
+        return;
+    }
+
+    const occupied = occupiedWindows(seat);
+    if (! occupied.length) {
+        return;
+    }
+
+    let start = minutesFromHm(form.custom_start_time);
+    let end = minutesFromHm(form.custom_end_time);
+
+    occupied.forEach((window) => {
+        const windowStart = Number(window.start_minutes);
+        const windowEnd = Number(window.end_minutes);
+
+        if (start !== null && start >= windowStart && start < windowEnd) {
+            start = windowEnd;
+            form.custom_start_time = minutesToHm(start);
+        }
+
+        if (end !== null && end > windowStart && end <= windowEnd) {
+            end = windowStart;
+            form.custom_end_time = minutesToHm(end);
+        }
+    });
+
+    start = minutesFromHm(form.custom_start_time);
+    end = minutesFromHm(form.custom_end_time);
+
+    if (start === null || end === null) {
+        return;
+    }
+
+    const overlap = occupied.find((window) => (
+        start < Number(window.end_minutes) && end > Number(window.start_minutes)
+    ));
+
+    if (! overlap) {
+        return;
+    }
+
+    if (start <= Number(overlap.start_minutes)) {
+        form.custom_end_time = minutesToHm(Number(overlap.start_minutes));
+    } else {
+        form.custom_start_time = minutesToHm(Number(overlap.end_minutes));
+    }
+}
+
 function assignmentWindowConflict(seat, form) {
     if (! seat) {
         return null;
@@ -587,6 +834,10 @@ function assignmentWindowConflict(seat, form) {
     const assignmentDate = form.joining_date || form.trial_start;
     if (assignmentDate && assignmentDate !== todayYmd()) {
         return null;
+    }
+
+    if (form.time_slot === 'full_day' && seatHasOccupiedHours(seat)) {
+        return 'Full day is not available because this seat already has booked hours. Choose a vacant custom window.';
     }
 
     let start;
@@ -613,9 +864,8 @@ function assignmentWindowConflict(seat, form) {
         end = Number(windows[windows.length - 1].end_minutes);
     }
 
-    const overlap = (seat.today_windows || []).find((window) => (
-        window.type !== 'free'
-        && start < Number(window.end_minutes)
+    const overlap = occupiedWindows(seat).find((window) => (
+        start < Number(window.end_minutes)
         && end > Number(window.start_minutes)
     ));
 
@@ -639,6 +889,38 @@ function currentWindowForSeat(seat) {
     return windows.find((window) => minutes >= Number(window.start_minutes) && minutes < Number(window.end_minutes)) || null;
 }
 
+function isCustomHoursSlot(seat, window = null) {
+    const slot = window?.time_slot || seat?.time_slot;
+
+    return slot === 'custom_hours';
+}
+
+function occupiedDisplayStatus(seat, window = null) {
+    return isCustomHoursSlot(seat, window) ? 'occupied_custom' : 'occupied';
+}
+
+function seatHasTrialBooking(seat) {
+    if (! seat) {
+        return false;
+    }
+
+    if (occupiedWindows(seat).some((window) => window.type === 'trial')) {
+        return true;
+    }
+
+    return String(seat.student_type || '') === 'trial';
+}
+
+function seatShowsTrialDot(seat) {
+    const status = displaySeatStatus(seat);
+
+    if (status === 'available' || status === 'expired' || status === 'on_trial') {
+        return false;
+    }
+
+    return seatHasTrialBooking(seat);
+}
+
 function displaySeatStatus(seat) {
     if (! seat) {
         return '';
@@ -648,59 +930,122 @@ function displaySeatStatus(seat) {
         return 'expired';
     }
 
-    const window = currentWindowForSeat(seat);
+    const occupied = occupiedWindows(seat);
 
-    if (! window) {
-        return seat.status;
-    }
+    // Prefer today's booked windows so custom-hours seats update immediately
+    // even when the current clock time falls in a free gap.
+    if (occupied.length > 0) {
+        const regular = occupied.filter((window) => window.type === 'booked');
+        const trials = occupied.filter((window) => window.type === 'trial');
 
-    if (window.type === 'trial') {
+        if (regular.length === 0 && trials.length > 0) {
+            return 'on_trial';
+        }
+
+        if (seat.status === 'expiring_soon') {
+            return 'expiring_soon';
+        }
+
+        const anyCustom = regular.some((window) => (window.time_slot || '') === 'custom_hours');
+        const anyFullDay = regular.some((window) => (window.time_slot || '') === 'full_day');
+
+        if (anyCustom && ! anyFullDay) {
+            return 'occupied_custom';
+        }
+
+        if (anyFullDay) {
+            return 'occupied';
+        }
+
+        if (regular.length > 0) {
+            return occupiedDisplayStatus(seat, regular[0]);
+        }
+
         return 'on_trial';
     }
 
-    if (window.type === 'booked') {
-        return seat.status === 'expiring_soon' ? 'expiring_soon' : 'occupied';
+    if (seat.status === 'on_trial') {
+        return 'on_trial';
     }
 
     if (seat.status === 'expiring_soon') {
         return 'expiring_soon';
     }
 
+    if (seat.status === 'occupied') {
+        return occupiedDisplayStatus(seat);
+    }
+
     return 'available';
 }
 
 function isSeatVacantNow(seat) {
-    if (! seat || seat.status === 'expired') {
+    if (! seat) {
         return false;
     }
 
+    if (seat.status === 'expired') {
+        return true;
+    }
+
+    // Current clock window can be free even when the seat has custom bookings later today.
     const window = currentWindowForSeat(seat);
 
     if (! window) {
-        return seat.status === 'available';
+        return displaySeatStatus(seat) === 'available';
     }
 
     return window.type === 'free';
 }
 
+function matchesStatusFilter(seat, statusFilter) {
+    if (! statusFilter) {
+        return true;
+    }
+
+    return displaySeatStatus(seat) === statusFilter;
+}
+
+function visibleOnRegularMap(seat) {
+    if (displaySeatStatus(seat) === 'expired' && seat.expired_from_trial) {
+        return false;
+    }
+
+    return true;
+}
+
+function visibleOnTrialMap(seat) {
+    if (seat.has_regular_assignment) {
+        return false;
+    }
+
+    if (displaySeatStatus(seat) === 'expired') {
+        return Boolean(seat.expired_from_trial);
+    }
+
+    return true;
+}
+
 function seatTileClasses(seat) {
-    const base = 'relative flex aspect-square min-h-[76px] cursor-pointer flex-col items-center justify-between rounded-xl border-2 p-2 text-center transition-all duration-150 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400';
+    const base = 'relative flex aspect-square min-h-[76px] w-full cursor-pointer flex-col items-center justify-between rounded-xl p-2 text-center shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400';
     const status = displaySeatStatus(seat);
 
     return {
-        available: `${base} border-gray-400 bg-gray-300 text-gray-700 hover:border-gray-500 hover:bg-gray-400`,
-        occupied: `${base} border-emerald-600 bg-emerald-500 text-white hover:border-emerald-700 hover:bg-emerald-600`,
-        expiring_soon: `${base} border-amber-500 bg-amber-400 text-amber-950 hover:border-amber-600 hover:bg-amber-500`,
-        expired: `${base} border-red-500 bg-red-200 text-red-900 ring-2 ring-red-300 ring-dashed hover:bg-red-300`,
-        on_trial: `${base} border-cyan-500 bg-cyan-400 text-cyan-950 hover:border-cyan-600 hover:bg-cyan-500`,
-        cancelled: `${base} border-gray-400 bg-gray-300 text-gray-600 opacity-70`,
-    }[status] || `${base} border-gray-300 bg-white text-gray-700`;
+        available: `${base} bg-[#E5E7EB] text-gray-700 hover:bg-gray-300`,
+        occupied: `${base} bg-[#16A34A] text-white hover:bg-green-700`,
+        occupied_custom: `${base} bg-[#6366F1] text-white hover:bg-indigo-600`,
+        expiring_soon: `${base} bg-[#F59E0B] text-amber-950 hover:bg-amber-500`,
+        expired: `${base} bg-[#EF4444] text-white hover:bg-red-600`,
+        on_trial: `${base} bg-[#06B6D4] text-cyan-950 hover:bg-cyan-500`,
+        cancelled: `${base} bg-[#E5E7EB] text-gray-600 opacity-70`,
+    }[status] || `${base} bg-white text-gray-700`;
 }
 
 function seatStatusLabel(status) {
     return {
         available: 'Vacant',
-        occupied: 'Occupied',
+        occupied: 'Occupied (Full Day)',
+        occupied_custom: 'Occupied (Custom Hours)',
         expiring_soon: 'Expiring Soon',
         expired: 'Expired',
         on_trial: 'Trial',
@@ -708,19 +1053,161 @@ function seatStatusLabel(status) {
     }[status] || status;
 }
 
+function createSeatScheduleMixin() {
+    return {
+        scheduleOpen: false,
+        scheduleLoading: false,
+        scheduleSaving: false,
+        scheduleSeat: null,
+        scheduleDate: new Date().toISOString().slice(0, 10),
+        scheduleDateLabel: '',
+        scheduleBookings: [],
+
+        async openFullSchedule(seat = null) {
+            const target = seat || this.hoverSeat || this.selectedSeat;
+            if (! target?.id) {
+                return;
+            }
+
+            this.cancelSeatHover?.(true);
+            this.scheduleSeat = target;
+            this.scheduleDate = new Date().toISOString().slice(0, 10);
+            this.scheduleOpen = true;
+            await this.loadSeatSchedule();
+        },
+
+        closeFullSchedule() {
+            this.scheduleOpen = false;
+            this.scheduleSeat = null;
+            this.scheduleBookings = [];
+            this.scheduleSaving = false;
+        },
+
+        async shiftScheduleDate(days) {
+            const current = new Date(`${this.scheduleDate}T00:00:00`);
+            current.setDate(current.getDate() + days);
+            this.scheduleDate = current.toISOString().slice(0, 10);
+            await this.loadSeatSchedule();
+        },
+
+        async loadSeatSchedule() {
+            if (! this.scheduleSeat?.id) {
+                return;
+            }
+
+            this.scheduleLoading = true;
+
+            try {
+                const response = await window.axios.get(`/seats/${this.scheduleSeat.id}/schedule`, {
+                    params: { date: this.scheduleDate },
+                });
+                this.scheduleBookings = response.data.bookings || [];
+                this.scheduleDateLabel = response.data.date_label || this.scheduleDate;
+                if (response.data.seat) {
+                    this.scheduleSeat = {
+                        ...this.scheduleSeat,
+                        ...response.data.seat,
+                    };
+                }
+            } catch (e) {
+                showToast(e.response?.data?.message || 'Could not load seat schedule.', 'error');
+            } finally {
+                this.scheduleLoading = false;
+            }
+        },
+
+        async cancelScheduleBooking(booking) {
+            if (! booking?.id) {
+                return;
+            }
+
+            if (! confirm(`Cancel booking for ${booking.student_name || 'this student'}?`)) {
+                return;
+            }
+
+            this.scheduleSaving = true;
+
+            try {
+                const response = await window.axios.post(`/seat-assignments/${booking.id}/cancel`);
+                showToast(response.data.message || 'Booking cancelled.');
+                await this.refreshSeats?.();
+                await this.loadSeatSchedule();
+
+                if (this.scheduleBookings.length === 0 && this.selectedSeat?.id === this.scheduleSeat?.id) {
+                    this.closeDetail?.();
+                }
+            } catch (e) {
+                showToast(e.response?.data?.message || 'Could not cancel booking.', 'error');
+            } finally {
+                this.scheduleSaving = false;
+            }
+        },
+
+        async convertScheduleBookingToRegular(booking) {
+            if (! booking?.id) {
+                return;
+            }
+
+            if (! confirm(`Convert ${booking.student_name || 'this trial student'} to a regular student?`)) {
+                return;
+            }
+
+            this.scheduleSaving = true;
+
+            try {
+                const response = await window.axios.post(`/seat-assignments/${booking.id}/convert-to-regular`);
+                showToast(response.data.message || 'Converted to regular.');
+                await this.refreshSeats?.();
+                await this.loadSeatSchedule();
+            } catch (e) {
+                showToast(e.response?.data?.message || 'Could not convert to regular.', 'error');
+            } finally {
+                this.scheduleSaving = false;
+            }
+        },
+    };
+}
+
 Alpine.data('seatMap', (config) => ({
     halls: config.halls || [],
     seats: config.seats || [],
     students: config.students || [],
+    assignedStudents: config.assignedStudents || [],
+    branches: config.branches || [],
+    defaultBranchId: config.defaultBranchId || null,
+    viewingAll: config.viewingAll || false,
     timeSlotOptions: config.timeSlotOptions || [],
     selectedHallId: config.selectedHallId || 'all',
+    statusFilter: '',
     storeUrl: config.storeUrl,
+    transferUrl: config.transferUrl || '/seat-assignments/transfer',
+    availableSeatsUrl: config.availableSeatsUrl || '/seat-assignments/available-seats',
     dataUrl: config.dataUrl || '/seats/data',
     zoom: 100,
     detailOpen: false,
     selectedSeat: null,
     assignMode: false,
     saving: false,
+    hoverSeat: null,
+    hoverOpen: false,
+    hoverTimer: null,
+    hoverLeaveTimer: null,
+    hoverStyle: { top: 0, left: 0 },
+    transferOpen: false,
+    transferStep: 'form',
+    transferSaving: false,
+    transferStudentOpen: false,
+    transferStudentQuery: '',
+    transferSuccessMessage: '',
+    transferForm: {
+        student_id: '',
+        booking_id: '',
+        hall_id: '',
+        seat_id: '',
+        time_slot: 'full_day',
+        custom_start_time: '09:00',
+        custom_end_time: '18:00',
+    },
     assignForm: {
         student_id: '',
         hall_id: '',
@@ -729,10 +1216,17 @@ Alpine.data('seatMap', (config) => ({
         custom_start_time: '09:00',
         custom_end_time: '18:00',
         fee_type: 'monthly',
+        payment_plan: 'full',
         fee_amount: 0,
         joining_date: new Date().toISOString().slice(0, 10),
-        plan_expiry_date: '',
+        plan_expiry_date: planEndFromStart('monthly', new Date().toISOString().slice(0, 10)),
         membership_mode: 'assigned_seat',
+        receive_payment: false,
+        amount_received: 0,
+        payment_method: 'cash',
+        payment_date: new Date().toISOString().slice(0, 10),
+        payment_reference: '',
+        payment_notes: '',
     },
     ...createStudentFormMixin({
         storeStudentUrl: config.storeStudentUrl,
@@ -744,12 +1238,13 @@ Alpine.data('seatMap', (config) => ({
             ctx.assignForm.student_id = student.id;
         },
     }),
-    ...createStudentPickerMixin({ formKey: 'assignForm', showAddNew: true, studentType: 'regular' }),
+    ...createStudentPickerMixin({ formKey: 'assignForm', showAddNew: true }),
+    ...createSeatScheduleMixin(),
 
     init() {
         window.addEventListener('libspace:seats-updated', (event) => {
             if (event.detail?.seats) {
-                this.seats = event.detail.seats;
+                this.seats = event.detail.seats.filter((seat) => visibleOnRegularMap(seat));
             }
             if (event.detail?.time_slot_options) {
                 this.timeSlotOptions = event.detail.time_slot_options;
@@ -759,20 +1254,98 @@ Alpine.data('seatMap', (config) => ({
         this._statusTick = window.setInterval(() => {
             this.tick += 1;
         }, 60000);
+
+        this.$watch('assignForm.time_slot', () => {
+            ensureValidCustomTimes(this.assignForm, this.selectedSeat);
+            this.snapAssignTimes();
+        });
+        this.$watch('assignForm.custom_start_time', () => this.snapAssignTimes());
+        this.$watch('assignForm.custom_end_time', () => this.snapAssignTimes());
+        this.$watch('assignForm.fee_type', (feeType) => {
+            if (feeType === 'one_time') {
+                this.assignForm.payment_plan = 'full';
+            }
+            this.syncAssignPlanExpiry();
+        });
+        this.$watch('assignForm.joining_date', () => this.syncAssignPlanExpiry());
+    },
+
+    syncAssignPlanExpiry() {
+        const feeType = this.assignForm.fee_type || 'monthly';
+        if (feeType === 'custom') {
+            return;
+        }
+
+        this.assignForm.plan_expiry_date = planEndFromStart(feeType, this.assignForm.joining_date);
     },
 
     tick: 0,
 
     filteredSeats() {
-        if (this.selectedHallId === 'all') {
-            return this.seats;
+        let seats = this.seats.filter((seat) => visibleOnRegularMap(seat));
+
+        if (this.selectedHallId !== 'all') {
+            seats = seats.filter((seat) => String(seat.hall_id) === String(this.selectedHallId));
         }
 
-        return this.seats.filter((seat) => String(seat.hall_id) === String(this.selectedHallId));
+        seats = seats.filter((seat) => matchesStatusFilter(seat, this.statusFilter));
+
+        return this.sortSeatsByNumber(seats);
+    },
+
+    filteredSeatGroups() {
+        const seats = this.filteredSeats();
+        const groups = [];
+        const byHall = new Map();
+
+        seats.forEach((seat) => {
+            const hallId = String(seat.hall_id);
+            if (! byHall.has(hallId)) {
+                byHall.set(hallId, {
+                    hall_id: seat.hall_id,
+                    hall_name: seat.hall_name || 'Hall',
+                    seats: [],
+                });
+                groups.push(byHall.get(hallId));
+            }
+            byHall.get(hallId).seats.push(seat);
+        });
+
+        groups.sort((a, b) => String(a.hall_name || '').localeCompare(String(b.hall_name || ''), undefined, { sensitivity: 'base' }));
+
+        return groups;
+    },
+
+    filteredStudentsForPicker() {
+        const assignedIds = new Set((this.assignedStudents || []).map((student) => String(student.id)));
+        const query = this.studentPickerQuery.trim().toLowerCase();
+        const seatBranchId = this.selectedSeat?.branch_id;
+
+        return (this.students || []).filter((student) => {
+            if (assignedIds.has(String(student.id))) {
+                return false;
+            }
+
+            if (seatBranchId != null && seatBranchId !== '' && String(student.branch_id) !== String(seatBranchId)) {
+                return false;
+            }
+
+            if (! query) {
+                return true;
+            }
+
+            return String(student.name || '').toLowerCase().includes(query)
+                || String(student.student_code || '').toLowerCase().includes(query)
+                || String(student.phone || '').includes(query);
+        });
     },
 
     setHall(hallId) {
         this.selectedHallId = hallId;
+    },
+
+    toggleStatusFilter(status) {
+        this.statusFilter = status || '';
     },
 
     zoomIn() {
@@ -786,18 +1359,27 @@ Alpine.data('seatMap', (config) => ({
     openSeat(seat) {
         this.selectedSeat = seat;
         this.assignMode = isSeatVacantNow(seat);
+        const times = defaultCustomTimes(seat);
+        const hasOccupied = seatHasOccupiedHours(seat);
         this.assignForm = {
             student_id: '',
             hall_id: seat.hall_id,
             seat_id: seat.id,
-            time_slot: 'full_day',
-            custom_start_time: '09:00',
-            custom_end_time: '18:00',
+            time_slot: hasOccupied ? 'custom_hours' : 'full_day',
+            custom_start_time: times.start,
+            custom_end_time: times.end,
             fee_type: 'monthly',
+            payment_plan: 'full',
             fee_amount: 0,
             joining_date: new Date().toISOString().slice(0, 10),
-            plan_expiry_date: '',
+            plan_expiry_date: planEndFromStart('monthly', new Date().toISOString().slice(0, 10)),
             membership_mode: 'assigned_seat',
+            receive_payment: false,
+            amount_received: 0,
+            payment_method: 'cash',
+            payment_date: new Date().toISOString().slice(0, 10),
+            payment_reference: '',
+            payment_notes: '',
         };
         this.detailOpen = true;
     },
@@ -815,7 +1397,7 @@ Alpine.data('seatMap', (config) => ({
     async refreshSeats() {
         try {
             const response = await window.axios.get(this.dataUrl);
-            this.seats = response.data.seats || [];
+            this.seats = (response.data.seats || []).filter((seat) => visibleOnRegularMap(seat));
             if (response.data.halls) {
                 this.halls = response.data.halls;
             }
@@ -831,12 +1413,115 @@ Alpine.data('seatMap', (config) => ({
         return assignmentWindowConflict(this.selectedSeat, this.assignForm);
     },
 
+    assignableSlotOptions() {
+        return assignableTimeSlotOptions(this.timeSlotOptions, this.selectedSeat);
+    },
+
+    snapAssignTimes() {
+        ensureValidCustomTimes(this.assignForm, this.selectedSeat);
+        snapCustomTimesToLibraryHours(this.assignForm, this.selectedSeat);
+        snapCustomTimesOffOccupied(this.selectedSeat, this.assignForm);
+        snapCustomTimesToLibraryHours(this.assignForm, this.selectedSeat);
+    },
+
+    occupiedSchedule(seat) {
+        return occupiedWindows(seat);
+    },
+
     canCancel() {
         return Boolean(this.selectedSeat?.booking_id);
     },
 
+    canAddAnotherStudent() {
+        return Boolean(
+            this.selectedSeat
+            && ! this.assignMode
+            && firstFreeWindow(this.selectedSeat),
+        );
+    },
+
+    startAddStudent() {
+        if (! this.canAddAnotherStudent()) {
+            return;
+        }
+
+        const times = defaultCustomTimes(this.selectedSeat);
+        this.assignMode = true;
+        this.assignForm.student_id = '';
+        this.assignForm.hall_id = this.selectedSeat.hall_id;
+        this.assignForm.seat_id = this.selectedSeat.id;
+        this.assignForm.time_slot = 'custom_hours';
+        this.assignForm.custom_start_time = times.start;
+        this.assignForm.custom_end_time = times.end;
+        this.assignForm.payment_plan = 'full';
+        this.assignForm.receive_payment = false;
+        this.assignForm.amount_received = 0;
+        this.assignForm.payment_method = 'cash';
+        this.assignForm.payment_date = new Date().toISOString().slice(0, 10);
+        this.assignForm.payment_reference = '';
+        this.assignForm.payment_notes = '';
+        this.syncAssignPlanExpiry();
+    },
+
+    toggleAssignReceivePayment() {
+        this.assignForm.receive_payment = ! this.assignForm.receive_payment;
+        if (! this.assignForm.receive_payment) {
+            this.assignForm.amount_received = 0;
+            return;
+        }
+
+        if (! this.assignForm.amount_received) {
+            this.assignForm.amount_received = this.assignForm.payment_plan === 'full'
+                ? Number(this.assignForm.fee_amount || 0)
+                : 0;
+        }
+        if (! this.assignForm.payment_date) {
+            this.assignForm.payment_date = new Date().toISOString().slice(0, 10);
+        }
+    },
+
+    assignPaymentAmount() {
+        if (! this.assignForm.receive_payment) {
+            return 0;
+        }
+
+        return Math.max(0, Number(this.assignForm.amount_received || 0));
+    },
+
+    assignRemainingAmount() {
+        const total = Math.max(0, Number(this.assignForm.fee_amount || 0));
+        return Math.max(0, Math.round((total - this.assignPaymentAmount()) * 100) / 100);
+    },
+
+    assignPaymentError() {
+        if (! this.assignForm.receive_payment) {
+            return '';
+        }
+
+        const amount = Number(this.assignForm.amount_received || 0);
+        const total = Number(this.assignForm.fee_amount || 0);
+
+        if (! amount || amount <= 0) {
+            return 'Payment amount must be greater than 0.';
+        }
+
+        if (amount > total + 0.009) {
+            return 'Payment amount cannot exceed the remaining fee.';
+        }
+
+        if (! this.assignForm.payment_method) {
+            return 'Select a payment method.';
+        }
+
+        if (! this.assignForm.payment_date) {
+            return 'Select a payment date.';
+        }
+
+        return '';
+    },
+
     async submitAssign() {
-        if (! this.selectedSeat || ! isSeatVacantNow(this.selectedSeat)) {
+        if (! this.selectedSeat) {
             return;
         }
 
@@ -851,16 +1536,42 @@ Alpine.data('seatMap', (config) => ({
             return;
         }
 
+        if (! this.assignForm.plan_expiry_date) {
+            showToast('Plan expiry date is required.', 'error');
+            return;
+        }
+
+        if (this.assignForm.plan_expiry_date < this.assignForm.joining_date) {
+            showToast('Plan expiry date must be on or after the joining date.', 'error');
+            return;
+        }
+
+        const paymentError = this.assignPaymentError();
+        if (paymentError) {
+            showToast(paymentError, 'error');
+            return;
+        }
+
         this.saving = true;
 
         try {
             const payload = { ...this.assignForm };
-            if (! payload.plan_expiry_date) {
-                delete payload.plan_expiry_date;
+            if (! this.assignForm.receive_payment || Number(payload.amount_received || 0) <= 0) {
+                payload.amount_received = 0;
+                delete payload.payment_method;
+                delete payload.payment_date;
+                delete payload.payment_reference;
+                delete payload.payment_notes;
             }
+
+            delete payload.receive_payment;
+            delete payload.installment_frequency;
+            delete payload.installment_count;
+            delete payload.first_due_date;
 
             const response = await window.axios.post(this.storeUrl, payload);
             await this.refreshSeats();
+            await this.refreshAssignedStudents();
             showToast(response.data.message);
             this.closeDetail();
         } catch (e) {
@@ -898,6 +1609,300 @@ Alpine.data('seatMap', (config) => ({
         }
     },
 
+    openTransferModal() {
+        this.transferOpen = true;
+        this.transferStep = 'form';
+        this.transferSuccessMessage = '';
+        this.transferStudentOpen = false;
+        this.transferStudentQuery = '';
+        this.transferForm = {
+            student_id: '',
+            booking_id: '',
+            hall_id: '',
+            seat_id: '',
+            time_slot: 'full_day',
+            custom_start_time: '09:00',
+            custom_end_time: '18:00',
+        };
+    },
+
+    closeTransferModal() {
+        this.transferOpen = false;
+        this.transferStep = 'form';
+        this.transferSaving = false;
+        this.transferStudentOpen = false;
+        this.transferStudentQuery = '';
+    },
+
+    transferCurrentStudent() {
+        return (this.assignedStudents || []).find((student) => String(student.booking_id) === String(this.transferForm.booking_id))
+            || null;
+    },
+
+    transferSelectedStudentLabel() {
+        const student = this.transferCurrentStudent();
+
+        return student ? `${student.student_code} — ${student.name}` : '';
+    },
+
+    filteredAssignedStudents() {
+        const query = this.transferStudentQuery.trim().toLowerCase();
+        const list = this.assignedStudents || [];
+
+        if (! query) {
+            return list;
+        }
+
+        return list.filter((student) =>
+            String(student.name || '').toLowerCase().includes(query)
+            || String(student.student_code || '').toLowerCase().includes(query)
+            || String(student.phone || '').includes(query),
+        );
+    },
+
+    selectTransferStudent(student) {
+        this.transferForm.student_id = student.id;
+        this.transferForm.booking_id = student.booking_id;
+        this.transferForm.hall_id = '';
+        this.transferForm.seat_id = '';
+        this.transferForm.time_slot = 'full_day';
+        this.transferForm.custom_start_time = '09:00';
+        this.transferForm.custom_end_time = '18:00';
+        this.transferStudentQuery = '';
+        this.transferStudentOpen = false;
+    },
+
+    onTransferStudentChange(bookingId) {
+        const student = (this.assignedStudents || []).find((item) => String(item.booking_id) === String(bookingId));
+
+        if (! student) {
+            this.transferForm.student_id = '';
+            this.transferForm.booking_id = '';
+            this.transferForm.hall_id = '';
+            this.transferForm.seat_id = '';
+            this.transferForm.time_slot = 'full_day';
+            return;
+        }
+
+        this.selectTransferStudent(student);
+    },
+
+    transferCurrentSummary() {
+        const student = this.transferCurrentStudent();
+        if (! student) {
+            return '';
+        }
+
+        return `Seat ${student.seat_number} · ${student.hall_name} · ${student.time_slot_label}`;
+    },
+
+    transferNewSummary() {
+        const hall = (this.halls || []).find((item) => String(item.id) === String(this.transferForm.hall_id));
+        const seat = this.selectedTransferSeat();
+        const slotOption = (this.timeSlotOptions || []).find((item) => item.value === this.transferForm.time_slot);
+        let slotLabel = slotOption?.label || this.transferForm.time_slot;
+
+        if (this.transferForm.time_slot === 'custom_hours') {
+            slotLabel = `Custom ${this.transferForm.custom_start_time} – ${this.transferForm.custom_end_time}`;
+        }
+
+        return `Seat ${seat?.seat_number || '—'} · ${hall?.name || '—'} · ${slotLabel}`;
+    },
+
+    sortSeatsByNumber(seats) {
+        return [...(seats || [])].sort((a, b) => {
+            const left = Number(a.seat_number);
+            const right = Number(b.seat_number);
+
+            if (Number.isFinite(left) && Number.isFinite(right) && left !== right) {
+                return left - right;
+            }
+
+            return String(a.seat_number || '').localeCompare(String(b.seat_number || ''), undefined, { numeric: true });
+        });
+    },
+
+    transferSeatsForHall() {
+        const current = this.transferCurrentStudent();
+        if (! this.transferForm.hall_id) {
+            return [];
+        }
+
+        return this.sortSeatsByNumber(
+            (this.seats || []).filter((seat) => {
+                if (String(seat.hall_id) !== String(this.transferForm.hall_id)) {
+                    return false;
+                }
+
+                if (current && String(seat.id) === String(current.seat_id)) {
+                    return false;
+                }
+
+                return true;
+            }),
+        );
+    },
+
+    selectedTransferSeat() {
+        return this.transferSeatsForHall().find((seat) => String(seat.id) === String(this.transferForm.seat_id))
+            || (this.seats || []).find((seat) => String(seat.id) === String(this.transferForm.seat_id))
+            || null;
+    },
+
+    transferSeatFullyBooked(seat) {
+        const free = (seat?.today_windows || []).filter((window) => window.type === 'free');
+
+        return free.length === 0 && occupiedWindows(seat).length > 0;
+    },
+
+    transferSeatOptionLabel(seat) {
+        if (this.transferSeatFullyBooked(seat)) {
+            return `${seat.seat_number} — Full Day Booked`;
+        }
+
+        if (seatHasOccupiedHours(seat)) {
+            return `${seat.seat_number} — Custom hours booked`;
+        }
+
+        return `${seat.seat_number} — Vacant`;
+    },
+
+    onTransferHallChange() {
+        this.transferForm.seat_id = '';
+        this.transferForm.time_slot = 'full_day';
+        this.transferForm.custom_start_time = '09:00';
+        this.transferForm.custom_end_time = '18:00';
+    },
+
+    onTransferSeatChange() {
+        const seat = this.selectedTransferSeat();
+        const times = defaultCustomTimes(seat);
+
+        if (seatHasOccupiedHours(seat)) {
+            this.transferForm.time_slot = 'custom_hours';
+            this.transferForm.custom_start_time = times.start;
+            this.transferForm.custom_end_time = times.end;
+        } else {
+            this.transferForm.time_slot = 'full_day';
+            this.transferForm.custom_start_time = times.start;
+            this.transferForm.custom_end_time = times.end;
+        }
+    },
+
+    onTransferTimeChange() {
+        if (this.transferForm.time_slot === 'custom_hours') {
+            this.snapTransferTimes();
+        }
+    },
+
+    transferSlotOptions() {
+        return assignableTimeSlotOptions(this.timeSlotOptions, this.selectedTransferSeat());
+    },
+
+    snapTransferTimes() {
+        ensureValidCustomTimes(this.transferForm, this.selectedTransferSeat());
+        snapCustomTimesToLibraryHours(this.transferForm, this.selectedTransferSeat());
+        snapCustomTimesOffOccupied(this.selectedTransferSeat(), this.transferForm);
+        snapCustomTimesToLibraryHours(this.transferForm, this.selectedTransferSeat());
+    },
+
+    transferTimeError() {
+        if (this.transferForm.time_slot !== 'custom_hours') {
+            return '';
+        }
+
+        if (! this.transferForm.custom_start_time || ! this.transferForm.custom_end_time) {
+            return 'Start and end time are required.';
+        }
+
+        if (this.transferForm.custom_start_time >= this.transferForm.custom_end_time) {
+            return 'End time must be after start time.';
+        }
+
+        return '';
+    },
+
+    transferConflictError() {
+        if (this.transferTimeError()) {
+            return this.transferTimeError();
+        }
+
+        return assignmentWindowConflict(this.selectedTransferSeat(), this.transferForm) || '';
+    },
+
+    canPreviewTransfer() {
+        const seat = this.selectedTransferSeat();
+
+        return Boolean(
+            this.transferForm.booking_id
+            && this.transferForm.hall_id
+            && this.transferForm.seat_id
+            && seat
+            && ! this.transferSeatFullyBooked(seat)
+            && ! this.transferTimeError()
+            && ! this.transferConflictError(),
+        );
+    },
+
+    goTransferConfirm() {
+        if (! this.canPreviewTransfer()) {
+            showToast('Select student, hall, seat, and an available time slot.', 'error');
+            return;
+        }
+
+        this.transferStep = 'confirm';
+    },
+
+    async submitTransfer() {
+        if (! this.canPreviewTransfer()) {
+            return;
+        }
+
+        this.transferSaving = true;
+
+        try {
+            const payload = {
+                booking_id: this.transferForm.booking_id,
+                hall_id: Number(this.transferForm.hall_id),
+                seat_id: Number(this.transferForm.seat_id),
+                time_slot: this.transferForm.time_slot,
+            };
+
+            if (this.transferForm.time_slot === 'custom_hours') {
+                payload.custom_start_time = this.transferForm.custom_start_time;
+                payload.custom_end_time = this.transferForm.custom_end_time;
+            }
+
+            const response = await window.axios.post(this.transferUrl, payload);
+            this.transferSuccessMessage = response.data.message || 'Transfer successful!';
+            this.transferStep = 'success';
+            await this.refreshSeats();
+            await this.refreshAssignedStudents();
+            showToast(this.transferSuccessMessage);
+        } catch (e) {
+            showToast(
+                e.response?.data?.message
+                || Object.values(e.response?.data?.errors || {})[0]?.[0]
+                || 'Could not transfer seat.',
+                'error',
+            );
+            this.transferStep = 'form';
+        } finally {
+            this.transferSaving = false;
+        }
+    },
+
+    async refreshAssignedStudents() {
+        try {
+            const response = await window.axios.get(this.dataUrl);
+            if (Array.isArray(response.data.assigned_students)) {
+                this.assignedStudents = response.data.assigned_students;
+            }
+        } catch (e) {
+            // Keep existing assigned student list if refresh fails.
+        }
+    },
+
     seatClasses(seat) {
         void this.tick;
 
@@ -910,9 +1915,106 @@ Alpine.data('seatMap', (config) => ({
         return displaySeatStatus(seat);
     },
 
+    showsTrialDot(seat) {
+        void this.tick;
+
+        return seatShowsTrialDot(seat);
+    },
+
+    seatHasTrial(seat) {
+        return seatHasTrialBooking(seat);
+    },
+
+    startSeatHover(seat, event) {
+        this.cancelSeatHover(true);
+    
+        if (!seat || displaySeatStatus(seat) === 'available' || this.detailOpen || this.transferOpen) {
+            return;
+        }
+    
+        const rect = event.currentTarget.getBoundingClientRect();
+    
+        this.hoverSeat = seat;
+        this.hoverOpen = true;
+        this.positionSeatHover(rect);
+    },
+
+    keepSeatHover() {
+        if (this.hoverLeaveTimer) {
+            window.clearTimeout(this.hoverLeaveTimer);
+            this.hoverLeaveTimer = null;
+        }
+    },
+
+    cancelSeatHover(immediate = false) {
+        if (this.hoverTimer) {
+            window.clearTimeout(this.hoverTimer);
+            this.hoverTimer = null;
+        }
+
+        if (this.hoverLeaveTimer) {
+            window.clearTimeout(this.hoverLeaveTimer);
+            this.hoverLeaveTimer = null;
+        }
+
+        if (immediate) {
+            this.hoverOpen = false;
+            this.hoverSeat = null;
+            return;
+        }
+
+        this.hoverLeaveTimer = window.setTimeout(() => {
+            this.hoverOpen = false;
+            this.hoverSeat = null;
+            this.hoverLeaveTimer = null;
+        }, 200);
+    },
+
+    positionSeatHover(rect) {
+        const width = 320;
+        const approxHeight = 380;
+        let left = rect.right + 12;
+        let top = rect.top;
+
+        if (left + width > window.innerWidth - 12) {
+            left = Math.max(12, rect.left - width - 12);
+        }
+
+        if (top + approxHeight > window.innerHeight - 12) {
+            top = Math.max(12, window.innerHeight - approxHeight - 12);
+        }
+
+        this.hoverStyle = { top, left };
+    },
+
+    hoverScheduleDateLabel() {
+        const now = new Date();
+
+        return now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    },
+
+    hoverSeatTypeLabel(seat = null) {
+        const target = seat || this.hoverSeat;
+        if (! target) {
+            return '—';
+        }
+
+        const occupied = occupiedWindows(target);
+        if (occupied.some((window) => (window.time_slot || '') === 'full_day') || target.time_slot === 'full_day') {
+            return 'Full Day';
+        }
+
+        if (occupied.some((window) => (window.time_slot || '') === 'custom_hours') || target.time_slot === 'custom_hours') {
+            return 'Custom Hours';
+        }
+
+        return target.time_slot_label || '—';
+    },
+
     badgeClasses(seat) {
-        if (displaySeatStatus(seat) === 'occupied') {
-            return 'rounded bg-emerald-800/80 px-1 py-0.5 text-[9px] normal-case text-white';
+        const status = displaySeatStatus(seat);
+        if (status === 'occupied' || status === 'occupied_custom') {
+            return 'rounded bg-black/25 px-1 py-0.5 text-[9px] normal-case text-white';
         }
 
         return 'rounded bg-white/80 px-1 py-0.5 text-[9px] normal-case text-gray-700';
@@ -927,8 +2029,12 @@ Alpine.data('trialSeatMap', (config) => ({
     halls: config.halls || [],
     seats: config.seats || [],
     students: config.students || [],
+    branches: config.branches || [],
+    defaultBranchId: config.defaultBranchId || null,
+    viewingAll: config.viewingAll || false,
     timeSlotOptions: config.timeSlotOptions || [],
     selectedHallId: config.selectedHallId || 'all',
+    statusFilter: '',
     storeUrl: config.storeUrl,
     dataUrl: config.dataUrl || '/trial-seats/data',
     availableSeatsUrl: config.availableSeatsUrl,
@@ -938,6 +2044,11 @@ Alpine.data('trialSeatMap', (config) => ({
     assignMode: false,
     saving: false,
     tick: 0,
+    hoverSeat: null,
+    hoverOpen: false,
+    hoverTimer: null,
+    hoverLeaveTimer: null,
+    hoverStyle: { top: 0, left: 0 },
     assignForm: {
         student_id: '',
         hall_id: '',
@@ -959,35 +2070,88 @@ Alpine.data('trialSeatMap', (config) => ({
             ctx.assignForm.student_id = student.id;
         },
     }),
-    ...createStudentPickerMixin({ formKey: 'assignForm', showAddNew: true, studentType: 'trial' }),
+    ...createStudentPickerMixin({ formKey: 'assignForm', showAddNew: true }),
+    ...createSeatScheduleMixin(),
 
     init() {
         window.addEventListener('libspace:seats-updated', (event) => {
             if (event.detail?.seats) {
-                this.seats = event.detail.seats.filter((seat) => ! seat.has_regular_assignment);
+                this.seats = event.detail.seats.filter((seat) => visibleOnTrialMap(seat));
             }
             if (event.detail?.time_slot_options) {
                 this.timeSlotOptions = event.detail.time_slot_options;
+            }
+            if (event.detail?.students) {
+                this.students = event.detail.students;
             }
         });
 
         this._statusTick = window.setInterval(() => {
             this.tick += 1;
         }, 60000);
+
+        this.$watch('assignForm.time_slot', () => {
+            ensureValidCustomTimes(this.assignForm, this.selectedSeat);
+            this.snapAssignTimes();
+        });
+        this.$watch('assignForm.custom_start_time', () => this.snapAssignTimes());
+        this.$watch('assignForm.custom_end_time', () => this.snapAssignTimes());
     },
 
     filteredSeats() {
-        const seats = this.seats.filter((seat) => ! seat.has_regular_assignment);
+        let seats = this.seats.filter((seat) => visibleOnTrialMap(seat));
 
-        if (this.selectedHallId === 'all') {
-            return seats;
+        if (this.selectedHallId !== 'all') {
+            seats = seats.filter((seat) => String(seat.hall_id) === String(this.selectedHallId));
         }
 
-        return seats.filter((seat) => String(seat.hall_id) === String(this.selectedHallId));
+        seats = seats.filter((seat) => matchesStatusFilter(seat, this.statusFilter));
+
+        return this.sortSeatsByNumber(seats);
+    },
+
+    filteredSeatGroups() {
+        const seats = this.filteredSeats();
+        const groups = [];
+        const byHall = new Map();
+
+        seats.forEach((seat) => {
+            const hallId = String(seat.hall_id);
+            if (! byHall.has(hallId)) {
+                byHall.set(hallId, {
+                    hall_id: seat.hall_id,
+                    hall_name: seat.hall_name || 'Hall',
+                    seats: [],
+                });
+                groups.push(byHall.get(hallId));
+            }
+            byHall.get(hallId).seats.push(seat);
+        });
+
+        groups.sort((a, b) => String(a.hall_name || '').localeCompare(String(b.hall_name || ''), undefined, { sensitivity: 'base' }));
+
+        return groups;
+    },
+
+    sortSeatsByNumber(seats) {
+        return [...(seats || [])].sort((a, b) => {
+            const left = Number(a.seat_number);
+            const right = Number(b.seat_number);
+
+            if (Number.isFinite(left) && Number.isFinite(right) && left !== right) {
+                return left - right;
+            }
+
+            return String(a.seat_number || '').localeCompare(String(b.seat_number || ''), undefined, { numeric: true });
+        });
     },
 
     setHall(hallId) {
         this.selectedHallId = hallId;
+    },
+
+    toggleStatusFilter(status) {
+        this.statusFilter = status || '';
     },
 
     zoomIn() {
@@ -1001,13 +2165,15 @@ Alpine.data('trialSeatMap', (config) => ({
     openSeat(seat) {
         this.selectedSeat = seat;
         this.assignMode = isSeatVacantNow(seat);
+        const times = defaultCustomTimes(seat);
+        const hasOccupied = seatHasOccupiedHours(seat);
         this.assignForm = {
             student_id: '',
             hall_id: seat.hall_id,
             seat_id: seat.id,
-            time_slot: 'full_day',
-            custom_start_time: '09:00',
-            custom_end_time: '18:00',
+            time_slot: hasOccupied ? 'custom_hours' : 'full_day',
+            custom_start_time: times.start,
+            custom_end_time: times.end,
             trial_start: new Date().toISOString().slice(0, 10),
             trial_days: 1,
             fee_amount: 0,
@@ -1025,23 +2191,75 @@ Alpine.data('trialSeatMap', (config) => ({
         this.saving = false;
     },
 
+    canAddAnotherStudent() {
+        return Boolean(
+            this.selectedSeat
+            && ! this.assignMode
+            && firstFreeWindow(this.selectedSeat),
+        );
+    },
+
+    startAddStudent() {
+        if (! this.canAddAnotherStudent()) {
+            return;
+        }
+
+        const times = defaultCustomTimes(this.selectedSeat);
+        this.assignMode = true;
+        this.assignForm.student_id = '';
+        this.assignForm.hall_id = this.selectedSeat.hall_id;
+        this.assignForm.seat_id = this.selectedSeat.id;
+        this.assignForm.time_slot = 'custom_hours';
+        this.assignForm.custom_start_time = times.start;
+        this.assignForm.custom_end_time = times.end;
+        this.assignForm.trial_start = new Date().toISOString().slice(0, 10);
+        this.assignForm.trial_days = 1;
+        this.assignForm.fee_amount = 0;
+    },
+
     async refreshSeats() {
         try {
             const response = await window.axios.get(this.dataUrl);
-            this.seats = (response.data.seats || []).filter((seat) => ! seat.has_regular_assignment);
+            this.seats = (response.data.seats || []).filter((seat) => visibleOnTrialMap(seat));
             if (response.data.halls) {
                 this.halls = response.data.halls;
             }
             if (response.data.time_slot_options) {
                 this.timeSlotOptions = response.data.time_slot_options;
             }
+            if (response.data.students) {
+                this.students = response.data.students;
+            }
         } catch (e) {
             // Trial map will refresh on next poll or page reload.
         }
     },
 
+    filteredStudentsForPicker() {
+        const query = this.studentPickerQuery.trim().toLowerCase();
+        const seatBranchId = this.selectedSeat?.branch_id;
+
+        return (this.students || []).filter((student) => {
+            if (String(student.student_type || '') !== 'trial') {
+                return false;
+            }
+
+            if (seatBranchId != null && seatBranchId !== '' && String(student.branch_id) !== String(seatBranchId)) {
+                return false;
+            }
+
+            if (! query) {
+                return true;
+            }
+
+            return String(student.name || '').toLowerCase().includes(query)
+                || String(student.student_code || '').toLowerCase().includes(query)
+                || String(student.phone || '').includes(query);
+        });
+    },
+
     async submitAssign() {
-        if (! this.selectedSeat || ! isSeatVacantNow(this.selectedSeat)) {
+        if (! this.selectedSeat || ! this.assignMode) {
             return;
         }
 
@@ -1080,6 +2298,21 @@ Alpine.data('trialSeatMap', (config) => ({
         return assignmentWindowConflict(this.selectedSeat, this.assignForm);
     },
 
+    assignableSlotOptions() {
+        return assignableTimeSlotOptions(this.timeSlotOptions, this.selectedSeat);
+    },
+
+    snapAssignTimes() {
+        ensureValidCustomTimes(this.assignForm, this.selectedSeat);
+        snapCustomTimesToLibraryHours(this.assignForm, this.selectedSeat);
+        snapCustomTimesOffOccupied(this.selectedSeat, this.assignForm);
+        snapCustomTimesToLibraryHours(this.assignForm, this.selectedSeat);
+    },
+
+    occupiedSchedule(seat) {
+        return occupiedWindows(seat);
+    },
+
     freeHoursLabel(seat) {
         const free = (seat?.today_windows || []).filter((window) => window.type === 'free');
 
@@ -1102,9 +2335,107 @@ Alpine.data('trialSeatMap', (config) => ({
         return displaySeatStatus(seat);
     },
 
+    showsTrialDot(seat) {
+        void this.tick;
+
+        return seatShowsTrialDot(seat);
+    },
+
+    seatHasTrial(seat) {
+        return seatHasTrialBooking(seat);
+    },
+
+    startSeatHover(seat, event) {
+        this.cancelSeatHover(true);
+
+        if (! seat || displaySeatStatus(seat) === 'available' || this.detailOpen) {
+            return;
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        this.hoverTimer = window.setTimeout(() => {
+            this.hoverSeat = seat;
+            this.hoverOpen = true;
+            this.positionSeatHover(rect);
+        }, 2000);
+    },
+
+    keepSeatHover() {
+        if (this.hoverLeaveTimer) {
+            window.clearTimeout(this.hoverLeaveTimer);
+            this.hoverLeaveTimer = null;
+        }
+    },
+
+    cancelSeatHover(immediate = false) {
+        if (this.hoverTimer) {
+            window.clearTimeout(this.hoverTimer);
+            this.hoverTimer = null;
+        }
+
+        if (this.hoverLeaveTimer) {
+            window.clearTimeout(this.hoverLeaveTimer);
+            this.hoverLeaveTimer = null;
+        }
+
+        if (immediate) {
+            this.hoverOpen = false;
+            this.hoverSeat = null;
+            return;
+        }
+
+        this.hoverLeaveTimer = window.setTimeout(() => {
+            this.hoverOpen = false;
+            this.hoverSeat = null;
+            this.hoverLeaveTimer = null;
+        }, 200);
+    },
+
+    positionSeatHover(rect) {
+        const width = 320;
+        const approxHeight = 380;
+        let left = rect.right + 12;
+        let top = rect.top;
+
+        if (left + width > window.innerWidth - 12) {
+            left = Math.max(12, rect.left - width - 12);
+        }
+
+        if (top + approxHeight > window.innerHeight - 12) {
+            top = Math.max(12, window.innerHeight - approxHeight - 12);
+        }
+
+        this.hoverStyle = { top, left };
+    },
+
+    hoverScheduleDateLabel() {
+        const now = new Date();
+
+        return now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    },
+
+    hoverSeatTypeLabel(seat = null) {
+        const target = seat || this.hoverSeat;
+        if (! target) {
+            return '—';
+        }
+
+        const occupied = occupiedWindows(target);
+        if (occupied.some((window) => (window.time_slot || '') === 'full_day') || target.time_slot === 'full_day') {
+            return 'Full Day';
+        }
+
+        if (occupied.some((window) => (window.time_slot || '') === 'custom_hours') || target.time_slot === 'custom_hours') {
+            return 'Custom Hours';
+        }
+
+        return target.time_slot_label || '—';
+    },
+
     badgeClasses(seat) {
-        if (displaySeatStatus(seat) === 'occupied') {
-            return 'rounded bg-emerald-800/80 px-1 py-0.5 text-[9px] normal-case text-white';
+        const status = displaySeatStatus(seat);
+        if (status === 'occupied' || status === 'occupied_custom') {
+            return 'rounded bg-black/25 px-1 py-0.5 text-[9px] normal-case text-white';
         }
 
         return 'rounded bg-white/80 px-1 py-0.5 text-[9px] normal-case text-gray-700';
@@ -1124,9 +2455,11 @@ Alpine.data('hallTable', (config) => ({
     formOpen: false,
     formMode: 'create',
     saving: false,
+    formErrors: {},
     form: { id: null, branch_id: null, name: '', seat_capacity: 10, min_seat_capacity: 1, description: '' },
     branches: config.branches || [],
     defaultBranchId: config.defaultBranchId || null,
+    viewingAll: config.viewingAll || false,
     exportUrl: config.exportUrl,
     storeUrl: config.storeUrl,
     bulkDeleteUrl: config.bulkDeleteUrl,
@@ -1142,6 +2475,7 @@ Alpine.data('hallTable', (config) => ({
         { label: 'Created At', key: 'created_at' },
     ],
     ...createDataTableMixin(),
+    bulkDeleteUrl: config.bulkDeleteUrl,
 
     init() {
         this.initDataTable();
@@ -1158,6 +2492,7 @@ Alpine.data('hallTable', (config) => ({
         };
         this.formOpen = true;
         this.error = '';
+        this.formErrors = {};
     },
 
     openEdit(hall) {
@@ -1167,11 +2502,12 @@ Alpine.data('hallTable', (config) => ({
             branch_id: hall.branch_id,
             name: hall.name,
             seat_capacity: hall.seat_capacity,
-            min_seat_capacity: hall.min_seat_capacity || hall.seat_capacity,
+            min_seat_capacity: hall.min_seat_capacity ?? 1,
             description: hall.description || '',
         };
         this.formOpen = true;
         this.error = '';
+        this.formErrors = {};
     },
 
     async openView(hall) {
@@ -1184,9 +2520,39 @@ Alpine.data('hallTable', (config) => ({
         }
     },
 
+    validateHallForm() {
+        const errors = {};
+        const name = String(this.form.name || '').trim();
+
+        if (! this.form.branch_id) {
+            errors.branch_id = 'Select a branch.';
+        }
+
+        if (! name) {
+            errors.name = 'Hall name is required.';
+        } else if (name.length < 2) {
+            errors.name = 'Hall name must be at least 2 characters.';
+        } else if (/^\d+$/.test(name)) {
+            errors.name = 'Hall name cannot contain only numbers.';
+        }
+
+        const capacity = Number(this.form.seat_capacity);
+        if (! Number.isInteger(capacity) || capacity < 1) {
+            errors.seat_capacity = 'Seat capacity must be at least 1.';
+        } else if (capacity > 500) {
+            errors.seat_capacity = 'Seat capacity cannot exceed 500.';
+        } else if (this.formMode === 'edit' && this.form.min_seat_capacity && capacity < this.form.min_seat_capacity) {
+            errors.seat_capacity = `Capacity cannot be reduced below ${this.form.min_seat_capacity} while students are assigned.`;
+        }
+
+        this.formErrors = errors;
+
+        return Object.keys(errors).length === 0;
+    },
+
     async submitForm() {
-        if (this.formMode === 'edit' && this.form.min_seat_capacity && this.form.seat_capacity < this.form.min_seat_capacity) {
-            showToast(`Capacity cannot be reduced below ${this.form.min_seat_capacity} while students are assigned.`, 'error');
+        if (! this.validateHallForm()) {
+            showToast(Object.values(this.formErrors)[0], 'error');
             return;
         }
 
@@ -1208,7 +2574,9 @@ Alpine.data('hallTable', (config) => ({
             const hall = response.data.hall;
 
             if (this.formMode === 'create') {
-                this.rows.unshift(hall);
+                if (String(hall.branch_id) === String(this.defaultBranchId) || this.rows.some((row) => String(row.branch_id) === String(hall.branch_id))) {
+                    this.rows.unshift(hall);
+                }
             } else {
                 const index = this.rows.findIndex((row) => row.id === hall.id);
                 if (index >= 0) this.rows[index] = hall;
@@ -1257,6 +2625,9 @@ Alpine.data('platformBranchesPage', (config) => ({
     createOpen: false,
     editOpen: false,
     viewOpen: false,
+    passwordResetOpen: false,
+    passwordResetBranch: null,
+    passwordResetForm: { password: '' },
     hallViewOpen: false,
     hallEditOpen: false,
     saving: false,
@@ -1264,12 +2635,13 @@ Alpine.data('platformBranchesPage', (config) => ({
     error: '',
     viewBranch: null,
     hallView: null,
+    createFormErrors: {},
+    editFormErrors: {},
     createForm: {
         name: '',
         contact_person: '',
         phone: '',
         email: '',
-        login_email: '',
         password: '',
         address: '',
     },
@@ -1279,7 +2651,6 @@ Alpine.data('platformBranchesPage', (config) => ({
         contact_person: '',
         phone: '',
         email: '',
-        login_email: '',
         password: '',
         address: '',
     },
@@ -1314,41 +2685,41 @@ Alpine.data('platformBranchesPage', (config) => ({
             contact_person: '',
             phone: '',
             email: '',
-            login_email: '',
             password: '',
             address: '',
         };
     },
 
     validateBranchForm(form, { requireName = true, requirePassword = false } = {}) {
-        const errors = [];
+        const errors = {};
+        const name = String(form.name || '').trim();
 
-        if (requireName && ! String(form.name || '').trim()) {
-            errors.push('Branch name is required.');
+        if (requireName && ! name) {
+            errors.name = 'Branch name is required.';
+        } else if (name && name.length < 2) {
+            errors.name = 'Branch name must be at least 2 characters.';
         }
 
         const phoneError = validateIndianPhone(form.phone);
-        if (phoneError) errors.push(phoneError);
+        if (phoneError) errors.phone = phoneError;
 
-        const emailError = validateEmail(form.email);
-        if (emailError) errors.push(emailError);
-
-        const loginEmailError = validateEmail(form.login_email, { required: true });
-        if (loginEmailError) errors.push(loginEmailError.replace('Email', 'Login email'));
+        const emailError = validateEmail(form.email, { required: true });
+        if (emailError) errors.email = emailError;
 
         if (requirePassword && String(form.password || '').length < 8) {
-            errors.push('Password must be at least 8 characters.');
+            errors.password = 'Password must be at least 8 characters.';
         }
 
         if (! requirePassword && form.password && String(form.password).length < 8) {
-            errors.push('Password must be at least 8 characters.');
+            errors.password = 'Password must be at least 8 characters.';
         }
 
-        return firstValidationError(errors);
+        return errors;
     },
 
     openCreate() {
         this.resetCreateForm();
+        this.createFormErrors = {};
         this.createOpen = true;
         this.error = '';
     },
@@ -1359,12 +2730,12 @@ Alpine.data('platformBranchesPage', (config) => ({
             name: branch.name || '',
             contact_person: branch.contact_person || '',
             phone: branch.phone || '',
-            email: branch.email || '',
-            login_email: branch.login_email || '',
+            email: branch.email || branch.login_email || '',
             password: '',
             address: branch.address || '',
         };
         this.editOpen = true;
+        this.editFormErrors = {};
         this.error = '';
     },
 
@@ -1379,9 +2750,10 @@ Alpine.data('platformBranchesPage', (config) => ({
     },
 
     async submitCreate() {
-        const validationError = this.validateBranchForm(this.createForm, { requirePassword: true });
-        if (validationError) {
-            showToast(validationError, 'error');
+        const errors = this.validateBranchForm(this.createForm, { requirePassword: true });
+        this.createFormErrors = errors;
+        if (Object.keys(errors).length) {
+            showToast(Object.values(errors)[0], 'error');
             return;
         }
 
@@ -1390,7 +2762,7 @@ Alpine.data('platformBranchesPage', (config) => ({
             const response = await window.axios.post(this.storeUrl, {
                 ...this.createForm,
                 phone: String(this.createForm.phone || '').trim() || null,
-                email: String(this.createForm.email || '').trim() || null,
+                email: String(this.createForm.email || '').trim(),
             });
             this.branches.unshift(response.data.branch);
             showToast(response.data.message);
@@ -1404,9 +2776,10 @@ Alpine.data('platformBranchesPage', (config) => ({
     },
 
     async submitEdit() {
-        const validationError = this.validateBranchForm(this.editForm);
-        if (validationError) {
-            showToast(validationError, 'error');
+        const errors = this.validateBranchForm(this.editForm);
+        this.editFormErrors = errors;
+        if (Object.keys(errors).length) {
+            showToast(Object.values(errors)[0], 'error');
             return;
         }
 
@@ -1415,7 +2788,7 @@ Alpine.data('platformBranchesPage', (config) => ({
             const payload = {
                 ...this.editForm,
                 phone: String(this.editForm.phone || '').trim() || null,
-                email: String(this.editForm.email || '').trim() || null,
+                email: String(this.editForm.email || '').trim(),
             };
             if (! payload.password) {
                 delete payload.password;
@@ -1435,24 +2808,52 @@ Alpine.data('platformBranchesPage', (config) => ({
         }
     },
 
-    async resetBranchPassword(branch) {
-        if (! branch?.id || ! confirm(`Reset login password for "${branch.name}"?`)) {
+    generatePassword() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+        let value = '';
+        for (let i = 0; i < 12; i++) {
+            value += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        return value;
+    },
+
+    openPasswordReset(branch) {
+        if (! branch?.id) {
+            return;
+        }
+
+        this.passwordResetBranch = branch;
+        this.passwordResetForm = { password: this.generatePassword() };
+        this.passwordResetOpen = true;
+    },
+
+    async submitPasswordReset() {
+        const password = String(this.passwordResetForm.password || '');
+        if (password.length < 8) {
+            showToast('Password must be at least 8 characters.', 'error');
             return;
         }
 
         this.saving = true;
         try {
-            const response = await window.axios.post(`/branch/${branch.id}/reset-password`);
+            const response = await window.axios.post(`/branch/${this.passwordResetBranch.id}/reset-password`, { password });
             if (this.viewBranch) {
                 this.viewBranch.temporary_password = response.data.password;
+                this.viewBranch.email = response.data.login_email;
                 this.viewBranch.login_email = response.data.login_email;
             }
+            this.passwordResetOpen = false;
             showToast(response.data.message);
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
             this.saving = false;
         }
+    },
+
+    async resetBranchPassword(branch) {
+        this.openPasswordReset(branch);
     },
 
     async copyTemporaryPassword() {
@@ -1502,7 +2903,7 @@ Alpine.data('platformBranchesPage', (config) => ({
             branch_id: hall.branch_id,
             name: hall.name,
             seat_capacity: hall.seat_capacity,
-            min_seat_capacity: hall.min_seat_capacity || hall.seat_capacity,
+            min_seat_capacity: hall.min_seat_capacity ?? 1,
             description: hall.description || '',
         };
         this.hallEditOpen = true;
@@ -1595,7 +2996,10 @@ Alpine.data('studentTable', (config) => ({
         has_photo: false,
     },
     storeUrl: config.storeUrl,
-    searchKeys: ['student_code', 'name', 'phone', 'email', 'status', 'student_type', 'student_type_label'],
+    branches: config.branches || [],
+    defaultBranchId: config.defaultBranchId || null,
+    viewingAll: config.viewingAll || false,
+    searchKeys: ['student_code', 'name', 'phone', 'email', 'status', 'student_type', 'student_type_label', 'branch_name'],
     exportFileName: 'students',
     exportColumns: [
         { label: 'Code', key: 'student_code' },
@@ -1606,6 +3010,7 @@ Alpine.data('studentTable', (config) => ({
         { label: 'Created At', key: 'created_at' },
     ],
     ...createDataTableMixin(),
+    bulkDeleteUrl: config.bulkDeleteUrl,
     ...createStudentFormMixin({
         storeStudentUrl: config.storeUrl,
         inviteStoreUrl: config.inviteStoreUrl,
@@ -1710,7 +3115,7 @@ Alpine.data('studentTable', (config) => ({
             errors.phone = phoneError;
         }
 
-        const emailError = validateEmail(this.editForm.email, { required: false });
+        const emailError = validateEmail(this.editForm.email, { required: true });
         if (emailError) {
             errors.email = emailError;
         }
@@ -1819,7 +3224,10 @@ Alpine.data('enquiryTable', (config) => ({
     saving: false,
     form: { id: null, name: '', phone: '', email: '', message: '', status: 'new' },
     storeUrl: config.storeUrl,
-    searchKeys: ['name', 'phone', 'email', 'status', 'student_code', 'message'],
+    branches: config.branches || [],
+    defaultBranchId: config.defaultBranchId || null,
+    viewingAll: config.viewingAll || false,
+    searchKeys: ['name', 'phone', 'email', 'status', 'student_code', 'message', 'branch_name'],
     exportFileName: 'enquiries',
     exportColumns: [
         { label: 'Name', key: 'name' },
@@ -1830,6 +3238,7 @@ Alpine.data('enquiryTable', (config) => ({
         { label: 'Created At', key: 'created_at' },
     ],
     ...createDataTableMixin(),
+    bulkDeleteUrl: config.bulkDeleteUrl,
 
     init() {
         this.initDataTable();
@@ -1837,7 +3246,7 @@ Alpine.data('enquiryTable', (config) => ({
 
     openCreate() {
         this.formMode = 'create';
-        this.form = { id: null, name: '', phone: '', email: '', message: '', status: 'new' };
+        this.form = { id: null, name: '', phone: '', email: '', message: '', status: 'new', branch_id: this.defaultBranchId || this.branches[0]?.id || '' };
         this.formOpen = true;
         this.error = '';
     },
@@ -1933,6 +3342,7 @@ Alpine.data('assignmentPage', (config) => ({
         custom_start_time: '09:00',
         custom_end_time: '18:00',
         fee_type: 'monthly',
+        payment_plan: 'full',
         fee_amount: 0,
         joining_date: new Date().toISOString().slice(0, 10),
         plan_expiry_date: '',
@@ -1941,6 +3351,18 @@ Alpine.data('assignmentPage', (config) => ({
 
     init() {
         this.initDataTable();
+        this.$watch('form.time_slot', () => snapCustomTimesOffOccupied(this.selectedAvailableSeat(), this.form));
+        this.$watch('form.custom_start_time', () => snapCustomTimesOffOccupied(this.selectedAvailableSeat(), this.form));
+        this.$watch('form.custom_end_time', () => snapCustomTimesOffOccupied(this.selectedAvailableSeat(), this.form));
+        this.$watch('form.seat_id', () => {
+            const seat = this.selectedAvailableSeat();
+            if (seatHasOccupiedHours(seat) && this.form.time_slot === 'full_day') {
+                this.form.time_slot = 'custom_hours';
+                const times = defaultCustomTimes(seat);
+                this.form.custom_start_time = times.start;
+                this.form.custom_end_time = times.end;
+            }
+        });
     },
 
     async loadSeats() {
@@ -1975,6 +3397,18 @@ Alpine.data('assignmentPage', (config) => ({
         const seat = this.availableSeats.find((item) => String(item.id) === String(this.form.seat_id));
 
         return assignmentWindowConflict(seat, this.form);
+    },
+
+    selectedAvailableSeat() {
+        return this.availableSeats.find((item) => String(item.id) === String(this.form.seat_id)) || null;
+    },
+
+    assignableSlotOptions() {
+        return assignableTimeSlotOptions(this.timeSlotOptions, this.selectedAvailableSeat());
+    },
+
+    occupiedSchedule(seat) {
+        return occupiedWindows(seat);
     },
 
     async submitForm() {
@@ -2076,9 +3510,136 @@ Alpine.data('assignmentPage', (config) => ({
     },
 }));
 
+function formatFeeDateLabel(iso) {
+    if (! iso) {
+        return '';
+    }
+
+    const date = new Date(`${iso}T00:00:00`);
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function toIsoLocal(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    return `${y}-${m}-${d}`;
+}
+
+function addMonthsKeepDay(iso, months) {
+    const [year, month, day] = iso.split('-').map(Number);
+    const date = new Date(year, month - 1 + months, day);
+
+    return toIsoLocal(date);
+}
+
+function planEndFromStart(feeType, startIso) {
+    if (! startIso) {
+        return '';
+    }
+
+    if (feeType === 'one_time') {
+        return startIso;
+    }
+
+    if (feeType === 'yearly' || feeType === 'membership') {
+        const next = addMonthsKeepDay(startIso, 12);
+        const date = new Date(`${next}T00:00:00`);
+        date.setDate(date.getDate() - 1);
+
+        return toIsoLocal(date);
+    }
+
+    if (feeType === 'monthly') {
+        const next = addMonthsKeepDay(startIso, 1);
+        const date = new Date(`${next}T00:00:00`);
+        date.setDate(date.getDate() - 1);
+
+        return toIsoLocal(date);
+    }
+
+    return '';
+}
+
+function frequencyIntervalMonths(frequency) {
+    if (frequency === 'quarterly') return 3;
+    if (frequency === 'half_yearly') return 6;
+    if (frequency === 'yearly') return 12;
+    if (frequency === 'weekly') return 0;
+
+    return 1;
+}
+
+function splitInstallmentAmounts(total, count) {
+    const cents = Math.round(Number(total || 0) * 100);
+    const parts = Math.max(1, Math.min(12, Number(count) || 1));
+    const base = Math.floor(cents / parts);
+    const amounts = [];
+
+    for (let i = 0; i < parts; i += 1) {
+        amounts.push(i === parts - 1 ? (cents - base * (parts - 1)) / 100 : base / 100);
+    }
+
+    return amounts.map((amount) => amount.toFixed(2));
+}
+
+function addInstallmentDue(iso, frequency, index) {
+    const date = new Date(`${iso}T00:00:00`);
+    if (frequency === 'weekly') {
+        date.setDate(date.getDate() + (7 * index));
+    } else {
+        date.setMonth(date.getMonth() + (frequencyIntervalMonths(frequency) * index));
+    }
+
+    return toIsoLocal(date);
+}
+
+function suggestedInstallmentCount(firstDueIso, planEndIso, frequency) {
+    if (! firstDueIso || ! planEndIso) {
+        return 4;
+    }
+
+    const start = new Date(`${firstDueIso}T00:00:00`);
+    const end = new Date(`${planEndIso}T00:00:00`);
+
+    if (frequency === 'weekly') {
+        const weeks = Math.max(1, Math.ceil((end - start) / (7 * 24 * 60 * 60 * 1000)) + 1);
+
+        return Math.max(2, Math.min(12, weeks));
+    }
+
+    const months = Math.max(1, ((end.getFullYear() - start.getFullYear()) * 12) + (end.getMonth() - start.getMonth()) + 1);
+    const interval = Math.max(1, frequencyIntervalMonths(frequency));
+
+    return Math.max(2, Math.min(12, Math.ceil(months / interval)));
+}
+
 Alpine.data('feeTable', (config) => ({
     rows: config.rows || [],
-    searchKeys: ['student_code', 'student_name', 'student_phone', 'hall_name', 'seat_number', 'time_slot', 'fee_type', 'fee_amount', 'payment_status', 'plan_expiry_date'],
+    students: config.students || [],
+    halls: config.halls || [],
+    timeSlotOptions: config.timeSlotOptions || [],
+    availableSeats: [],
+    storeUrl: config.storeUrl,
+    availableSeatsUrl: config.availableSeatsUrl,
+    formOpen: false,
+    formMode: 'create',
+    editingId: null,
+    viewOpen: false,
+    viewRow: null,
+    receiveOpen: false,
+    receiveRow: null,
+    receiveSaving: false,
+    receiveForm: {
+        fee_amount: '',
+        amount: '',
+        note: '',
+        payment_method: 'cash',
+        payment_date: '',
+    },
+    saving: false,
+    searchKeys: ['student_code', 'student_name', 'student_phone', 'hall_name', 'seat_number', 'time_slot', 'fee_type', 'fee_type_label', 'fee_amount', 'payment_status', 'plan_status', 'payment_plan', 'plan_expiry_date'],
     exportFileName: 'fees',
     exportColumns: [
         { label: 'Student Code', key: 'student_code' },
@@ -2091,29 +3652,706 @@ Alpine.data('feeTable', (config) => ({
         { label: 'Fee Amount', key: 'fee_amount' },
         { label: 'Joining Date', key: 'joining_date' },
         { label: 'Plan Expiry', key: 'plan_expiry_date' },
-        { label: 'Payment Status', key: 'payment_status' },
+        { label: 'Payment Status', key: 'payment_status_label' },
+        { label: 'Plan Status', key: 'plan_status_label' },
+        { label: 'Payment Plan', key: 'payment_plan_label' },
     ],
     ...createDataTableMixin(),
+    bulkDeleteUrl: config.bulkDeleteUrl,
+    planStatusFilter: '',
+    paymentStatusFilter: '',
+    dateFrom: '',
+    dateTo: '',
+    ...createStudentPickerMixin({ formKey: 'form', showAddNew: false }),
+    assignmentLocked: false,
+    assignmentSummary: '',
+    form: {
+        student_id: '',
+        hall_id: '',
+        seat_id: '',
+        time_slot: 'full_day',
+        custom_start_time: '09:00',
+        custom_end_time: '18:00',
+        fee_type: 'monthly',
+        fee_amount: '',
+        joining_date: new Date().toISOString().slice(0, 10),
+        plan_expiry_date: '',
+        membership_mode: 'assigned_seat',
+        payment_plan: 'full',
+        installment_count: 4,
+        installment_frequency: 'quarterly',
+        first_due_date: new Date().toISOString().slice(0, 10),
+        existing_booking_id: null,
+        time_slot_label: '',
+        hall_name: '',
+        seat_number: '',
+    },
+
+    extraFilter(row) {
+        if (this.planStatusFilter === 'expiring_or_expired') {
+            if (row.plan_status !== 'expiring_soon' && row.plan_status !== 'expired') {
+                return false;
+            }
+        } else if (this.planStatusFilter && row.plan_status !== this.planStatusFilter) {
+            return false;
+        }
+
+        if (this.paymentStatusFilter && row.payment_status !== this.paymentStatusFilter) {
+            return false;
+        }
+
+        const dateValue = row.joining_date_iso || '';
+
+        if (this.dateFrom && dateValue && dateValue < this.dateFrom) {
+            return false;
+        }
+
+        if (this.dateTo && dateValue && dateValue > this.dateTo) {
+            return false;
+        }
+
+        return true;
+    },
 
     init() {
         this.initDataTable();
+        this.syncPlanEnd();
+        this.$watch('planStatusFilter', () => { this.page = 1; });
+        this.$watch('paymentStatusFilter', () => { this.page = 1; });
+        this.$watch('dateFrom', () => { this.page = 1; });
+        this.$watch('dateTo', () => { this.page = 1; });
+    },
+
+    emptyForm() {
+        const today = new Date().toISOString().slice(0, 10);
+
+        return {
+            student_id: '',
+            hall_id: '',
+            seat_id: '',
+            time_slot: 'full_day',
+            custom_start_time: '09:00',
+            custom_end_time: '18:00',
+            fee_type: 'monthly',
+            fee_amount: '',
+            joining_date: today,
+            plan_expiry_date: planEndFromStart('monthly', today),
+            membership_mode: 'assigned_seat',
+            payment_plan: 'full',
+            installment_count: 4,
+            installment_frequency: 'quarterly',
+            first_due_date: today,
+            existing_booking_id: null,
+            time_slot_label: '',
+            hall_name: '',
+            seat_number: '',
+        };
+    },
+
+    lockedFieldClass() {
+        return 'mt-1 block w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm';
+    },
+
+    showsEndDate() {
+        return this.form.fee_type !== 'one_time'
+            && ! (this.form.payment_plan === 'installments' && this.form.installment_frequency === 'custom');
+    },
+
+    endDateEditable() {
+        return this.form.fee_type === 'custom';
+    },
+
+    endDateRequired() {
+        return this.form.fee_type === 'custom'
+            || (this.form.payment_plan === 'installments' && this.form.installment_frequency === 'custom');
+    },
+
+    isFrequencyDisabled(frequency) {
+        return this.form.fee_type === 'monthly' && frequency === 'monthly';
+    },
+
+    defaultFrequencyForFeeType(feeType) {
+        if (feeType === 'monthly') {
+            return 'quarterly';
+        }
+
+        return 'monthly';
+    },
+
+    onFeeOptionsChanged() {
+        if (this.form.fee_type === 'one_time') {
+            this.form.payment_plan = 'full';
+            this.form.installment_frequency = this.defaultFrequencyForFeeType(this.form.fee_type);
+            this.form.installment_count = 4;
+        }
+
+        if (this.form.payment_plan !== 'installments') {
+            this.form.installment_frequency = this.defaultFrequencyForFeeType(this.form.fee_type);
+        } else if (this.isFrequencyDisabled(this.form.installment_frequency)) {
+            this.form.installment_frequency = this.defaultFrequencyForFeeType(this.form.fee_type);
+        }
+
+        this.syncPlanEnd();
+
+        if (this.form.payment_plan === 'installments' && this.form.installment_frequency !== 'custom') {
+            const end = this.computedExpiry() || this.form.plan_expiry_date;
+            this.form.installment_count = Math.max(2, suggestedInstallmentCount(
+                this.form.first_due_date || this.form.joining_date,
+                end,
+                this.form.installment_frequency,
+            ));
+        }
+    },
+
+    selectStudentFromPicker(student) {
+        this.setStudentSelectId(student.id);
+        this.closeStudentPicker();
+        this.applyStudentAssignment(student);
+    },
+
+    applyStudentAssignment(student) {
+        const assignment = student?.current_assignment;
+
+        if (! assignment) {
+            const studentId = this.form.student_id;
+            this.form = { ...this.emptyForm(), student_id: studentId };
+            this.assignmentLocked = false;
+            this.assignmentSummary = '';
+            this.availableSeats = [];
+            return;
+        }
+
+        this.assignmentLocked = true;
+        this.assignmentSummary = [
+            assignment.hall_name,
+            `Seat ${assignment.seat_number}`,
+            assignment.time_slot_label || '',
+        ].filter(Boolean).join(' • ');
+        const feeType = ['monthly', 'yearly', 'membership', 'one_time', 'custom'].includes(assignment.fee_type)
+            ? assignment.fee_type
+            : 'monthly';
+        const paymentPlan = feeType === 'one_time'
+            ? 'full'
+            : (assignment.payment_plan || 'full');
+        let frequency = assignment.installment_frequency || this.defaultFrequencyForFeeType(feeType);
+        if (feeType === 'monthly' && frequency === 'monthly') {
+            frequency = 'quarterly';
+        }
+
+        this.form = {
+            ...this.emptyForm(),
+            student_id: student.id,
+            hall_id: assignment.hall_id,
+            seat_id: assignment.seat_id,
+            time_slot: assignment.time_slot || 'full_day',
+            custom_start_time: assignment.custom_start_time || '09:00',
+            custom_end_time: assignment.custom_end_time || '18:00',
+            fee_type: feeType,
+            fee_amount: Number(assignment.fee_amount || 0) || '',
+            joining_date: assignment.joining_date || this.form.joining_date,
+            plan_expiry_date: assignment.plan_expiry_date || planEndFromStart(feeType, assignment.joining_date),
+            membership_mode: assignment.membership_mode || 'assigned_seat',
+            payment_plan: paymentPlan,
+            installment_count: assignment.installment_count || 4,
+            installment_frequency: frequency,
+            first_due_date: assignment.first_due_date || assignment.joining_date || '',
+            existing_booking_id: assignment.id,
+            time_slot_label: assignment.time_slot_label || '',
+            hall_name: assignment.hall_name || '',
+            seat_number: assignment.seat_number || '',
+        };
+        this.onFeeOptionsChanged();
+        this.availableSeats = assignment.seat_id
+            ? [{ id: assignment.seat_id, seat_number: assignment.seat_number }]
+            : [];
+    },
+
+    openCreate() {
+        this.formMode = 'create';
+        this.editingId = null;
+        this.form = this.emptyForm();
+        this.assignmentLocked = false;
+        this.assignmentSummary = '';
+        this.availableSeats = [];
+        this.formOpen = true;
+        this.onFeeOptionsChanged();
+    },
+
+    openEdit(row) {
+        if (! row) {
+            return;
+        }
+
+        this.formMode = 'edit';
+        this.editingId = row.id;
+        let frequency = row.installment_frequency || this.defaultFrequencyForFeeType(row.fee_type || 'monthly');
+        if ((row.fee_type || 'monthly') === 'monthly' && frequency === 'monthly') {
+            frequency = 'quarterly';
+        }
+
+        this.form = {
+            ...this.emptyForm(),
+            fee_type: row.fee_type || 'monthly',
+            fee_amount: Number(row.fee_amount || 0),
+            joining_date: row.joining_date_iso || '',
+            plan_expiry_date: row.plan_expiry_date_iso || '',
+            membership_mode: row.membership_mode || 'assigned_seat',
+            payment_plan: row.fee_type === 'one_time' ? 'full' : (row.payment_plan || (row.is_installment ? 'installments' : 'full')),
+            installment_count: row.installment_count || 4,
+            installment_frequency: frequency,
+            first_due_date: row.first_due_date || row.joining_date_iso || '',
+        };
+        this.assignmentLocked = true;
+        this.assignmentSummary = [
+            row.hall_name,
+            `Seat ${row.seat_number}`,
+            row.time_slot_label || '',
+        ].filter(Boolean).join(' • ');
+        this.viewRow = row;
+        this.formOpen = true;
+        this.onFeeOptionsChanged();
+    },
+
+    editSummary() {
+        const row = this.viewRow;
+        if (! row) {
+            return '';
+        }
+
+        return [
+            row.student_name,
+            row.hall_name,
+            `Seat ${row.seat_number}`,
+            row.time_slot_label || '',
+        ].filter(Boolean).join(' • ');
+    },
+
+    openView(row) {
+        this.viewRow = row;
+        this.viewOpen = true;
+    },
+
+    closeView() {
+        this.viewOpen = false;
+    },
+
+    async loadSeats() {
+        if (this.assignmentLocked || this.formMode !== 'create' || ! this.form.hall_id || ! this.form.joining_date) {
+            return;
+        }
+
+        const expiry = this.computedExpiry() || this.form.joining_date;
+
+        try {
+            const response = await window.axios.get(this.availableSeatsUrl, {
+                params: {
+                    hall_id: this.form.hall_id,
+                    time_slot: this.form.time_slot,
+                    joining_date: this.form.joining_date,
+                    plan_expiry_date: expiry,
+                    custom_start_time: this.form.time_slot === 'custom_hours' ? this.form.custom_start_time : null,
+                    custom_end_time: this.form.time_slot === 'custom_hours' ? this.form.custom_end_time : null,
+                },
+            });
+            this.availableSeats = response.data.seats || [];
+            if (! this.availableSeats.find((seat) => seat.id === this.form.seat_id)) {
+                this.form.seat_id = '';
+            }
+        } catch (e) {
+            this.availableSeats = [];
+        }
+    },
+
+    selectedAvailableSeat() {
+        return this.availableSeats.find((item) => String(item.id) === String(this.form.seat_id)) || null;
+    },
+
+    assignableSlotOptions() {
+        return assignableTimeSlotOptions(this.timeSlotOptions, this.selectedAvailableSeat());
+    },
+
+    computedExpiry() {
+        if (this.form.fee_type === 'custom' || (this.form.payment_plan === 'installments' && this.form.installment_frequency === 'custom')) {
+            return this.form.plan_expiry_date;
+        }
+
+        return planEndFromStart(this.form.fee_type, this.form.joining_date);
+    },
+
+    syncPlanEnd() {
+        if (this.form.fee_type === 'custom' || (this.form.payment_plan === 'installments' && this.form.installment_frequency === 'custom')) {
+            if (! this.form.first_due_date) {
+                this.form.first_due_date = this.form.joining_date;
+            }
+
+            return;
+        }
+
+        this.form.plan_expiry_date = this.computedExpiry();
+
+        if (! this.form.first_due_date) {
+            this.form.first_due_date = this.form.joining_date;
+        }
+    },
+
+    installmentPreview() {
+        if (this.form.payment_plan !== 'installments' || this.form.installment_frequency === 'custom') {
+            return [];
+        }
+
+        const count = Math.max(2, Math.min(12, Number(this.form.installment_count) || 2));
+        const firstDue = this.form.first_due_date || this.form.joining_date;
+        const amounts = splitInstallmentAmounts(this.form.fee_amount, count);
+
+        return amounts.map((amount, index) => {
+            const due = addInstallmentDue(firstDue, this.form.installment_frequency || 'monthly', index);
+
+            return {
+                number: index + 1,
+                amount,
+                label: formatFeeDateLabel(due),
+            };
+        });
+    },
+
+    feePayload() {
+        const payload = {
+            fee_type: this.form.fee_type,
+            fee_amount: this.form.fee_amount,
+            joining_date: this.form.joining_date,
+            plan_expiry_date: this.computedExpiry(),
+            membership_mode: this.form.membership_mode,
+            payment_plan: this.form.fee_type === 'one_time' ? 'full' : this.form.payment_plan,
+        };
+
+        if (payload.payment_plan === 'installments') {
+            payload.installment_frequency = this.form.installment_frequency || this.defaultFrequencyForFeeType(this.form.fee_type);
+            payload.first_due_date = this.form.first_due_date || this.form.joining_date;
+
+            if (payload.installment_frequency !== 'custom') {
+                payload.installment_count = Math.max(2, this.form.installment_count || suggestedInstallmentCount(
+                    payload.first_due_date,
+                    payload.plan_expiry_date,
+                    payload.installment_frequency,
+                ));
+            }
+        }
+
+        return payload;
+    },
+
+    async submitForm() {
+        this.saving = true;
+        try {
+            if (this.formMode === 'edit') {
+                const response = await window.axios.patch(`/fees/${this.editingId}`, this.feePayload());
+                this.rows = this.rows.map((row) => row.id === this.editingId ? response.data.row : row);
+                showToast(response.data.message);
+            } else if (this.form.existing_booking_id) {
+                const response = await window.axios.patch(`/fees/${this.form.existing_booking_id}`, this.feePayload());
+                const updated = response.data.row;
+                const exists = this.rows.some((row) => row.id === updated.id);
+                this.rows = exists
+                    ? this.rows.map((row) => row.id === updated.id ? updated : row)
+                    : [updated, ...this.rows];
+                showToast(response.data.message);
+            } else {
+                const payload = { ...this.form, ...this.feePayload() };
+                delete payload.existing_booking_id;
+                delete payload.time_slot_label;
+                delete payload.hall_name;
+                delete payload.seat_number;
+                if (! payload.plan_expiry_date) delete payload.plan_expiry_date;
+                const response = await window.axios.post(this.storeUrl, payload);
+                this.rows.unshift(response.data.row);
+                showToast(response.data.message);
+            }
+            this.formOpen = false;
+        } catch (e) {
+            showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not save the fee.', 'error');
+        } finally {
+            this.saving = false;
+        }
+    },
+
+    async payInstallment(item) {
+        if (! this.viewRow || ! item?.id) {
+            return;
+        }
+
+        try {
+            const response = await window.axios.post(`/fees/${this.viewRow.id}/installments/${item.id}/pay`);
+            this.rows = this.rows.map((row) => row.id === this.viewRow.id ? response.data.row : row);
+            this.viewRow = response.data.row;
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not mark that installment as paid.', 'error');
+        }
+    },
+
+    openReceivePayment(row) {
+        if (! row) {
+            return;
+        }
+
+        this.receiveRow = row;
+        const fee = Number(row.fee_amount || 0);
+        const due = this.feeAmountDue(row);
+        const next = (row.installments || []).find((item) => ! item.paid);
+        this.receiveForm = {
+            fee_amount: fee > 0 ? fee : '',
+            amount: fee > 0 ? (next ? Number(next.amount) : due || '') : '',
+            note: '',
+            payment_method: 'cash',
+            payment_date: new Date().toISOString().slice(0, 10),
+        };
+        this.receiveOpen = true;
+    },
+
+    feeAmountDue(row) {
+        if (! row) {
+            return 0;
+        }
+
+        if (row.amount_due != null && row.amount_due !== '') {
+            return Math.max(0, Number(row.amount_due));
+        }
+
+        return Math.max(0, Number(row.fee_amount || 0) - Number(row.amount_paid || 0));
+    },
+
+    receiveMaxAmount() {
+        const fee = Number(this.receiveForm?.fee_amount || this.receiveRow?.fee_amount || 0);
+        const paid = Number(this.receiveRow?.amount_paid || 0);
+        return Math.max(0, Math.round((fee - paid) * 100) / 100);
+    },
+
+    receiveRemainingPreview() {
+        const max = this.receiveMaxAmount();
+        if (Number(this.receiveRow?.fee_amount || 0) <= 0 && ! this.receiveForm?.fee_amount) {
+            return '—';
+        }
+
+        return max;
+    },
+
+    closeReceivePayment() {
+        this.receiveOpen = false;
+        this.receiveRow = null;
+        this.receiveForm = { fee_amount: '', amount: '', note: '', payment_method: 'cash', payment_date: '' };
+    },
+
+    nextUnpaidInstallmentLabel() {
+        const row = this.receiveRow;
+        if (! row || row.is_flexible_installment || ! row.is_installment) {
+            return '';
+        }
+
+        const next = (row.installments || []).find((item) => ! item.paid);
+        if (! next) {
+            return '';
+        }
+
+        return `Next installment: #${next.number} due ${next.due_date} — ₹${next.amount}`;
+    },
+
+    async submitReceivePayment() {
+        if (! this.receiveRow?.id) {
+            return;
+        }
+
+        this.receiveSaving = true;
+        try {
+            const payload = {
+                amount: this.receiveForm.amount,
+                note: this.receiveForm.note || null,
+                payment_method: this.receiveForm.payment_method || 'cash',
+                payment_date: this.receiveForm.payment_date || null,
+            };
+
+            if (Number(this.receiveRow.fee_amount || 0) <= 0) {
+                payload.fee_amount = this.receiveForm.fee_amount;
+            }
+
+            const response = await window.axios.post(`/fees/${this.receiveRow.id}/payments`, payload);
+            this.rows = this.rows.map((row) => row.id === this.receiveRow.id ? response.data.row : row);
+            if (this.viewRow?.id === this.receiveRow.id) {
+                this.viewRow = response.data.row;
+            }
+            showToast(response.data.message);
+            this.closeReceivePayment();
+        } catch (e) {
+            showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not record the payment.', 'error');
+        } finally {
+            this.receiveSaving = false;
+        }
+    },
+
+    async markFeePaid() {
+        if (! this.viewRow?.id) {
+            return;
+        }
+
+        try {
+            const response = await window.axios.post(`/fees/${this.viewRow.id}/pay`);
+            this.rows = this.rows.map((row) => row.id === this.viewRow.id ? response.data.row : row);
+            this.viewRow = response.data.row;
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not mark this fee as paid.', 'error');
+        }
     },
 }));
 
 Alpine.data('notificationTable', (config) => ({
     rows: config.rows || [],
-    searchKeys: ['title', 'message', 'type', 'date'],
+    markReadUrl: config.markReadUrl,
+    markAllUrl: config.markAllUrl,
+    viewOpen: false,
+    viewRow: null,
+    searchKeys: ['title', 'message', 'type', 'type_label', 'date'],
     exportFileName: 'notifications',
     exportColumns: [
         { label: 'Title', key: 'title' },
         { label: 'Message', key: 'message' },
-        { label: 'Type', key: 'type' },
+        { label: 'Type', key: 'type_label' },
         { label: 'Date', key: 'date' },
     ],
     ...createDataTableMixin(),
+    bulkDeleteUrl: config.bulkDeleteUrl,
 
     init() {
         this.initDataTable();
+    },
+
+    unreadCount() {
+        return (this.rows || []).filter((row) => row.unread).length;
+    },
+
+    async markKeys(keys) {
+        if (! keys.length) {
+            return;
+        }
+
+        try {
+            await window.axios.post(this.markReadUrl, { keys });
+            this.rows = this.rows.map((row) => keys.includes(row.id) ? { ...row, unread: false } : row);
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not update notifications.', 'error');
+        }
+    },
+
+    async markAllRead() {
+        try {
+            await window.axios.post(this.markAllUrl);
+            this.rows = this.rows.map((row) => ({ ...row, unread: false }));
+            showToast('All notifications marked as read.');
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not mark notifications as read.', 'error');
+        }
+    },
+
+    async openView(row) {
+        this.viewRow = row;
+        this.viewOpen = true;
+        if (row.unread) {
+            await this.markKeys([row.id]);
+            this.viewRow = { ...row, unread: false };
+        }
+    },
+
+    closeView() {
+        this.viewOpen = false;
+        this.viewRow = null;
+    },
+}));
+
+Alpine.data('notificationBell', (config) => ({
+    open: false,
+    alerts: config.alerts || [],
+    unreadCount: config.unreadCount || 0,
+    markReadUrl: config.markReadUrl,
+    markAllUrl: config.markAllUrl,
+    allUrl: config.allUrl,
+
+    async markAllRead() {
+        try {
+            await window.axios.post(this.markAllUrl);
+            this.alerts = this.alerts.map((alert) => ({ ...alert, unread: false }));
+            this.unreadCount = 0;
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not mark notifications as read.', 'error');
+        }
+    },
+
+    async openAlert(alert) {
+        if (alert.unread) {
+            try {
+                await window.axios.post(this.markReadUrl, { keys: [alert.id] });
+            } catch (e) {
+                // still navigate
+            }
+        }
+
+        window.location.href = alert.url || this.allUrl;
+    },
+}));
+
+Alpine.data('activityLogTable', (config) => ({
+    rows: config.rows || [],
+    isPlatformAdmin: config.isPlatformAdmin || false,
+    actorFilter: '',
+    viewOpen: false,
+    viewLoading: false,
+    viewLog: null,
+    searchKeys: ['description', 'user_name', 'branch_name', 'created_at', 'actor_label', 'actor_type', 'change_summary'],
+    exportFileName: 'activity-logs',
+    exportColumns: [
+        { label: 'When', key: 'created_at' },
+        { label: 'Who', key: 'user_name' },
+        { label: 'What happened', key: 'description' },
+        { label: 'Library', key: 'branch_name' },
+    ],
+    ...createDataTableMixin(),
+    bulkDeleteUrl: config.bulkDeleteUrl,
+
+    extraFilter(row) {
+        if (! this.actorFilter) {
+            return true;
+        }
+
+        return row.actor_type === this.actorFilter;
+    },
+
+    init() {
+        this.initDataTable();
+        this.$watch('actorFilter', () => { this.page = 1; });
+    },
+
+    setActorFilter(value) {
+        this.actorFilter = value || '';
+    },
+
+    async openView(row) {
+        this.viewOpen = true;
+        this.viewLoading = true;
+        this.viewLog = { ...row };
+
+        try {
+            const response = await window.axios.get(`/activity-logs/${row.id}`);
+            this.viewLog = response.data;
+        } catch (e) {
+            showToast('Could not load activity details.', 'error');
+            this.closeView();
+        } finally {
+            this.viewLoading = false;
+        }
+    },
+
+    closeView() {
+        this.viewOpen = false;
+        this.viewLoading = false;
+        this.viewLog = null;
     },
 }));
 
@@ -2148,7 +4386,10 @@ Alpine.data('branchSwitcher', (config) => ({
         }
 
         try {
-            await window.axios.post(this.switchUrl, { branch_id: Number(this.branchId) });
+            const payload = this.branchId === 'all'
+                ? { branch_id: 'all' }
+                : { branch_id: Number(this.branchId) };
+            await window.axios.post(this.switchUrl, payload);
             window.location.reload();
         } catch (e) {
             window.alert(e.response?.data?.message || 'Could not switch branch.');
@@ -2160,6 +4401,7 @@ Alpine.data('settingsPage', (config) => ({
     settings: config.settings,
     platformSettings: config.platformSettings || {},
     isPlatformAdmin: config.isPlatformAdmin || false,
+    viewingAll: config.viewingAll || false,
     form: {
         display_name: config.settings?.display_name || '',
         expiry_reminder_days: config.settings?.expiry_reminder_days || 10,
@@ -2182,6 +4424,22 @@ Alpine.data('settingsPage', (config) => ({
     timezone: config.timezone,
 
     init() {},
+
+    formatClock(value) {
+        const raw = String(value || '').slice(0, 5);
+        const [hourPart, minutePart] = raw.split(':');
+        let hour = Number(hourPart);
+        const minute = Number(minutePart || 0);
+        if (! Number.isFinite(hour)) {
+            return raw || '—';
+        }
+        const period = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12;
+        if (hour === 0) {
+            hour = 12;
+        }
+        return `${hour}:${String(minute).padStart(2, '0')} ${period}`;
+    },
 
     previewCode() {
         const prefix = (this.platformForm.student_code_prefix || 'LIB').toUpperCase();
@@ -2209,16 +4467,16 @@ Alpine.data('settingsPage', (config) => ({
         }
 
         if (! String(this.platformForm.student_code_prefix || '').trim()) {
-            return 'Student code prefix is required.';
+            return 'Student ID letters are required.';
         }
 
         if (!/^[A-Za-z0-9_-]+$/.test(String(this.platformForm.student_code_prefix || '').trim())) {
-            return 'Use only letters, numbers, hyphens, or underscores in the prefix.';
+            return 'Use only letters and numbers at the start of the student ID.';
         }
 
         const padding = Number(this.platformForm.student_code_padding);
         if (! padding || padding < 1 || padding > 6) {
-            return 'Number padding must be between 1 and 6.';
+            return 'Choose between 1 and 6 digits.';
         }
 
         return null;
@@ -2235,15 +4493,19 @@ Alpine.data('settingsPage', (config) => ({
         this.error = '';
         try {
             if (this.isPlatformAdmin) {
-                const platformResponse = await window.axios.patch(this.platformUpdateUrl, {
-                    student_code_prefix: String(this.platformForm.student_code_prefix || '').trim().toUpperCase(),
-                    student_code_padding: this.platformForm.student_code_padding,
+                const platformData = new FormData();
+                platformData.append('student_code_prefix', String(this.platformForm.student_code_prefix || '').trim().toUpperCase());
+                platformData.append('student_code_padding', String(this.platformForm.student_code_padding || 3));
+
+                const platformResponse = await window.axios.post(`${this.platformUpdateUrl}?_method=PATCH`, platformData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 this.platformSettings = platformResponse.data.platform_settings;
                 this.platformForm.student_code_prefix = this.platformSettings.student_code_prefix;
                 this.platformForm.student_code_padding = this.platformSettings.student_code_padding;
             }
 
+            if (! this.viewingAll) {
             const response = await window.axios.post(`${this.updateUrl}?_method=PATCH`, this.buildFormData(), {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
@@ -2256,7 +4518,9 @@ Alpine.data('settingsPage', (config) => ({
             this.form.logo_with_text = null;
             this.form.simple_logo = null;
             this.form.favicon = null;
-            showToast(this.isPlatformAdmin ? 'Global and branch settings saved.' : response.data.message);
+            }
+
+            showToast(this.isPlatformAdmin ? 'Settings saved.' : (this.viewingAll ? 'Global settings saved.' : 'Settings saved.'));
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {

@@ -65,7 +65,7 @@
                         :class="String(getStudentSelectId()) === String(student.id) ? 'bg-indigo-50 text-indigo-900' : 'text-gray-900'"
                     >
                         <span class="font-medium" x-text="`${student.student_code} — ${student.name}`"></span>
-                        <span x-show="student.phone" class="text-xs text-gray-500" x-text="student.phone"></span>
+                        <span class="text-xs text-gray-500" x-text="[student.phone, student.student_type === 'trial' ? 'Trial' : 'Regular'].filter(Boolean).join(' · ')"></span>
                     </button>
                 </li>
             </template>

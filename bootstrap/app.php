@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'branch' => \App\Http\Middleware\EnsureUserHasBranch::class,
             'platform_admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
+            'page.activity' => \App\Http\Middleware\RecordPageActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

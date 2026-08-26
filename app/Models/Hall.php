@@ -37,7 +37,17 @@ class Hall extends Model
 
     public function minimumSeatCapacity(): int
     {
-        return $this->hasAssignedStudents() ? (int) $this->seat_capacity : 1;
+        $filled = (int) ($this->filled_seats_count
+            ?? $this->seats()
+                ->whereHas(
+                    'bookings',
+                    fn ($query) => $query
+                        ->whereNull('cancelled_at')
+                        ->where('status', '!=', 'cancelled'),
+                )
+                ->count());
+
+        return max(1, $filled);
     }
 
     public function seats(): HasMany

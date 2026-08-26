@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Models\Hall;
-use App\Support\ValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -17,6 +16,11 @@ class UpdateHallRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->merge([
+            'name' => $this->filled('name') ? trim((string) $this->input('name')) : null,
+            'description' => $this->filled('description') ? trim((string) $this->input('description')) : null,
+        ]);
+
         if ($this->user()?->isPlatformAdmin()) {
             return;
         }
@@ -38,7 +42,15 @@ class UpdateHallRequest extends FormRequest
                 'integer',
                 Rule::exists('branches', 'id'),
             ],
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'min:2',
+                'max:255',
+                Rule::unique('halls', 'name')
+                    ->where(fn ($query) => $query->where('branch_id', $this->route('hall')?->branch_id ?? $this->input('branch_id')))
+                    ->ignore($this->route('hall')?->id),
+            ],
             'description' => ['nullable', 'string', 'max:1000'],
             'seat_capacity' => ['required', 'integer', 'min:1', 'max:500'],
         ];
@@ -55,11 +67,14 @@ class UpdateHallRequest extends FormRequest
             }
 
             $newCapacity = (int) $this->input('seat_capacity');
+            $minimum = $hall->minimumSeatCapacity();
 
-            if ($hall->hasAssignedStudents() && $newCapacity < $hall->seat_capacity) {
+            if ($newCapacity < $minimum) {
                 $validator->errors()->add(
                     'seat_capacity',
-                    'Capacity cannot be reduced while students are assigned to this hall.',
+                    $minimum > 1
+                        ? "Capacity cannot be reduced below {$minimum} while students are assigned."
+                        : 'Seat capacity must be at least 1.',
                 );
             }
         });

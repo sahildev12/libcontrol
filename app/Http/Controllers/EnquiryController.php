@@ -15,25 +15,32 @@ class EnquiryController extends Controller
 {
     public function index(Request $request): View
     {
-        $enquiries = Enquiry::query()
-            ->where('branch_id', $this->activeBranchId($request))
-            ->with('student:id,student_code,name')
+        $enquiries = $this->constrainByActiveBranch(Enquiry::query(), $request)
+            ->with(['student:id,student_code,name', 'branch:id,name'])
             ->orderByDesc('id')
             ->get()
             ->map(fn (Enquiry $enquiry) => $this->serializeEnquiry($enquiry));
 
-        return view('enquiries.index', compact('enquiries'));
+        $viewingAll = $this->viewingAllBranches($request);
+        $branches = $request->user()?->isPlatformAdmin()
+            ? \App\Models\Branch::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
+        $defaultBranchId = $this->optionalActiveBranchId($request);
+
+        return view('enquiries.index', compact('enquiries', 'viewingAll', 'branches', 'defaultBranchId'));
     }
 
     public function store(StoreEnquiryRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $branch = $this->resolveWritableBranch($request, isset($validated['branch_id']) ? (int) $validated['branch_id'] : null);
 
         $enquiry = Enquiry::create([
-            ...$validated,
-            'branch_id' => $this->activeBranchId($request),
+            ...collect($validated)->except('branch_id')->all(),
+            'branch_id' => $branch->id,
             'status' => $validated['status'] ?? 'new',
         ]);
+        $this->logActivity($request, 'enquiry.created', "Added enquiry for {$enquiry->name}.", $enquiry, $enquiry->branch_id);
 
         return response()->json([
             'message' => 'Enquiry added.',
@@ -59,9 +66,33 @@ class EnquiryController extends Controller
     {
         $this->authorizeEnquiry($request, $enquiry);
 
+        $name = $enquiry->name;
+        $branchId = $enquiry->branch_id;
         $enquiry->delete();
+        $this->logActivity($request, 'enquiry.deleted', "Deleted enquiry for {$name}.", null, $branchId);
 
         return response()->json(['message' => 'Enquiry deleted.']);
+    }
+
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $enquiries = $this->constrainByActiveBranch(Enquiry::query(), $request)
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        $count = $enquiries->count();
+        Enquiry::query()->whereIn('id', $enquiries->modelKeys())->delete();
+        $this->logActivity($request, 'enquiry.bulk_deleted', "Deleted {$count} enquiry(ies).");
+
+        return response()->json([
+            'message' => "{$count} enquiry(ies) deleted.",
+            'deleted' => $count,
+        ]);
     }
 
     public function convert(Request $request, Enquiry $enquiry, StudentCodeService $studentCodeService): JsonResponse
@@ -70,8 +101,8 @@ class EnquiryController extends Controller
 
         abort_if($enquiry->student_id, 422, 'Enquiry is already converted.');
 
-        $branch = $this->activeBranch($request);
-        abort_unless($branch, 403);
+        $branch = \App\Models\Branch::query()->findOrFail($enquiry->branch_id);
+        $this->assertCanAccessBranch($request, $branch->id);
 
         $student = Student::create([
             'branch_id' => $branch->id,
@@ -95,7 +126,7 @@ class EnquiryController extends Controller
 
     private function authorizeEnquiry(Request $request, Enquiry $enquiry): void
     {
-        abort_unless($enquiry->branch_id === $this->activeBranchId($request), 403);
+        $this->assertCanAccessBranch($request, $enquiry->branch_id);
     }
 
     /**
@@ -113,6 +144,8 @@ class EnquiryController extends Controller
             'student_id' => $enquiry->student_id,
             'student_code' => $enquiry->student?->student_code,
             'student_name' => $enquiry->student?->name,
+            'branch_id' => $enquiry->branch_id,
+            'branch_name' => $enquiry->branch?->name,
             'created_at' => $enquiry->created_at?->format('M d, Y'),
         ];
     }

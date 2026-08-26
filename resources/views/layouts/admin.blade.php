@@ -10,7 +10,9 @@
 
                 if (! $metaBranchId && auth()->user()->isPlatformAdmin()) {
                     try {
-                        $metaBranchId = app(\App\Services\BranchContext::class)->branch(auth()->user(), request())->id;
+                        if (! app(\App\Services\BranchContext::class)->viewingAll(auth()->user(), request())) {
+                            $metaBranchId = app(\App\Services\BranchContext::class)->optionalBranchId(auth()->user(), request());
+                        }
                     } catch (\Throwable) {
                         $metaBranchId = null;
                     }

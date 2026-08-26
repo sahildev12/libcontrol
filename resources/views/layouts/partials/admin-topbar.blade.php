@@ -15,7 +15,7 @@
             <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <div class="min-w-0">
-            <p class="truncate text-sm font-semibold text-gray-900">{{ $activeBranch?->display_name ?? $activeBranch?->name ?? config('app.name') }}</p>
+            <p class="truncate text-sm font-semibold text-gray-900">{{ $viewingAllBranches ?? false ? 'All branches' : ($activeBranch?->display_name ?? $activeBranch?->name ?? config('app.name')) }}</p>
             @if ($isPlatformAdmin)
                 <p class="truncate text-xs text-indigo-600">{{ $adminTypeLabel }}</p>
             @endif
@@ -24,17 +24,18 @@
 
     <div class="hidden min-w-0 lg:block" x-data="branchSwitcher({ switchUrl: @js(route('active-branch.switch')) })" @if ($isPlatformAdmin) x-init="init()" @endif>
         @if ($isPlatformAdmin)
-            <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">{{ $adminTypeLabel }}</p>
+            <!-- <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">{{ $adminTypeLabel }}</p> -->
             <div class="mt-0.5 flex items-center gap-2">
-                <label class="shrink-0 text-xs text-gray-500">Active branch</label>
+                <label class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-400">Branch</label>
                 <x-admin.select
-                    wrapper-class="relative inline-block"
-                    class="py-1.5 pl-3 pr-9 text-gray-800"
+                    wrapper-class="relative inline-block min-w-[220px]"
+                    class="rounded-lg border-indigo-200 bg-indigo-50/60 py-1.5 pl-3 pr-9 text-sm font-medium text-gray-800"
                     x-model="branchId"
                     @change="switchBranch()"
                 >
+                    <option value="all" @selected($viewingAllBranches ?? false)>All branches</option>
                     @foreach ($allBranches as $branch)
-                        <option value="{{ $branch->id }}" @selected($activeBranch?->id === $branch->id)>{{ $branch->name }}</option>
+                        <option value="{{ $branch->id }}" @selected(!($viewingAllBranches ?? false) && $activeBranch?->id === $branch->id)>{{ $branch->name }}</option>
                     @endforeach
                 </x-admin.select>
             </div>
@@ -45,7 +46,17 @@
     </div>
 
     <div class="flex items-center gap-2 sm:gap-3">
-        <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+        <div
+            class="relative"
+            x-data="notificationBell({
+                alerts: @js($recentAlerts),
+                unreadCount: @js($alertCount),
+                markReadUrl: @js(route('notifications.mark-read')),
+                markAllUrl: @js(route('notifications.mark-all-read')),
+                allUrl: @js(route('notifications.index')),
+            })"
+            @click.outside="open = false"
+        >
             <button
                 type="button"
                 @click="open = !open"
@@ -53,9 +64,11 @@
                 aria-label="Notifications"
             >
                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                @if ($alertCount > 0)
-                    <span class="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{{ $alertCount > 9 ? '9+' : $alertCount }}</span>
-                @endif
+                <span
+                    x-show="unreadCount > 0"
+                    class="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
+                    x-text="unreadCount > 9 ? '9+' : unreadCount"
+                ></span>
             </button>
 
             <div
@@ -64,30 +77,32 @@
                 x-transition
                 class="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:w-96"
             >
-                <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <div class="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3">
                     <h3 class="text-sm font-semibold text-gray-900">Recent Notifications</h3>
-                    <a href="{{ route('notifications.index') }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">View all</a>
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            x-show="unreadCount > 0"
+                            @click="markAllRead()"
+                            class="text-xs font-semibold text-gray-600 hover:text-gray-900"
+                        >Mark all as read</button>
+                        <a :href="allUrl" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">View all</a>
+                    </div>
                 </div>
                 <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
-                    @forelse ($recentAlerts as $alert)
-                        <div class="px-4 py-3">
+                    <template x-for="alert in alerts" :key="alert.id">
+                        <button type="button" class="block w-full px-4 py-3 text-left hover:bg-gray-50" @click="openAlert(alert)">
                             <div class="flex items-start gap-2">
-                                <span @class([
-                                    'mt-1 size-2 shrink-0 rounded-full',
-                                    'bg-amber-500' => $alert['type'] === 'fee_expiring',
-                                    'bg-red-500' => $alert['type'] === 'fee_expired',
-                                    'bg-indigo-500' => $alert['type'] === 'new_enquiry',
-                                ])></span>
+                                <span class="mt-1 size-2 shrink-0 rounded-full" :class="alert.unread ? 'bg-amber-500' : 'bg-gray-200'"></span>
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">{{ $alert['title'] }}</p>
-                                    <p class="mt-0.5 text-xs text-gray-600">{{ $alert['message'] }}</p>
-                                    <p class="mt-1 text-[11px] text-gray-400">{{ $alert['date'] }}</p>
+                                    <p class="text-sm font-semibold text-gray-900" x-text="alert.title"></p>
+                                    <p class="mt-0.5 text-xs text-gray-600" x-text="alert.message"></p>
+                                    <p class="mt-1 text-[11px] text-gray-400" x-text="alert.date"></p>
                                 </div>
                             </div>
-                        </div>
-                    @empty
-                        <p class="px-4 py-8 text-center text-sm text-gray-500">No recent notifications.</p>
-                    @endforelse
+                        </button>
+                    </template>
+                    <p x-show="alerts.length === 0" class="px-4 py-8 text-center text-sm text-gray-500">No recent notifications.</p>
                 </div>
             </div>
         </div>

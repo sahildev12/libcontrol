@@ -15,7 +15,13 @@ class BranchBrandService
 
     public function assetUrl(Branch $branch, ?string $path, ?string $defaultPublicPath = null): ?string
     {
+        $path = ltrim(str_replace('\\', '/', (string) $path), '/');
+
         if ($path && Storage::disk('public')->exists($path)) {
+            return $this->publicStorageUrl($path);
+        }
+
+        if ($path && file_exists(storage_path('app/public/'.$path))) {
             return $this->publicStorageUrl($path);
         }
 

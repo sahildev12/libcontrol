@@ -23,6 +23,7 @@ class StoreEnquiryRequest extends FormRequest
             'email' => ValidationRules::emailOptional(),
             'message' => ['nullable', 'string', 'max:2000'],
             'status' => ['nullable', 'in:new,contacted,converted,closed'],
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
         ];
     }
 }

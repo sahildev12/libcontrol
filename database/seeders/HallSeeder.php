@@ -27,16 +27,17 @@ class HallSeeder extends Seeder
         ];
 
         $students = collect([
-            ['code' => strtoupper(substr($branch->name, 0, 3)).'-001', 'name' => 'Aarav Sharma'],
-            ['code' => strtoupper(substr($branch->name, 0, 3)).'-002', 'name' => 'Meera Patel'],
-            ['code' => strtoupper(substr($branch->name, 0, 3)).'-003', 'name' => 'Sahil Khan'],
-            ['code' => strtoupper(substr($branch->name, 0, 3)).'-004', 'name' => 'Priya Singh'],
-            ['code' => strtoupper(substr($branch->name, 0, 3)).'-005', 'name' => 'Rohan Das'],
+            ['code' => strtoupper(substr($branch->name, 0, 3)).'-001', 'name' => 'Aarav Sharma', 'phone' => '9000000001', 'email' => 'aarav.'.$branch->id.'@example.com'],
+            ['code' => strtoupper(substr($branch->name, 0, 3)).'-002', 'name' => 'Meera Patel', 'phone' => '9000000002', 'email' => 'meera.'.$branch->id.'@example.com'],
+            ['code' => strtoupper(substr($branch->name, 0, 3)).'-003', 'name' => 'Sahil Khan', 'phone' => '9000000003', 'email' => 'sahil.'.$branch->id.'@example.com'],
+            ['code' => strtoupper(substr($branch->name, 0, 3)).'-004', 'name' => 'Priya Singh', 'phone' => '9000000004', 'email' => 'priya.'.$branch->id.'@example.com'],
+            ['code' => strtoupper(substr($branch->name, 0, 3)).'-005', 'name' => 'Rohan Das', 'phone' => '9000000005', 'email' => 'rohan.'.$branch->id.'@example.com'],
         ])->map(fn (array $student) => Student::create([
             'branch_id' => $branch->id,
             'student_code' => $student['code'],
             'name' => $student['name'],
-            'phone' => '9000000000',
+            'phone' => $student['phone'],
+            'email' => $student['email'],
             'status' => 'active',
         ]));
 

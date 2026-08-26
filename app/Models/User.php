@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
@@ -76,5 +77,12 @@ class User extends Authenticatable
             Admin::TYPE_CLIENT => 'Client Admin',
             default => null,
         };
+    }
+
+    public function sendPasswordResetNotification(mixed $token): void
+    {
+        $portal = $this->isPlatformAdmin() ? 'admin' : 'branch';
+
+        $this->notify(new ResetPasswordNotification($token, $portal));
     }
 }

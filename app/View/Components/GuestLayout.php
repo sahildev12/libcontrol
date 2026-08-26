@@ -7,9 +7,17 @@ use Illuminate\View\View;
 
 class GuestLayout extends Component
 {
-    /**
-     * Get the view / contents that represents the component.
-     */
+    public function __construct(
+        public string $portal = 'branch',
+        public string $title = '',
+        public string $subtitle = '',
+        public string $name = '',
+        public ?string $logoUrl = null,
+        public ?string $faviconUrl = null,
+    ) {
+        $this->name = $name ?: config('app.name', 'LibSpace');
+    }
+
     public function render(): View
     {
         return view('layouts.guest');

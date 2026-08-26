@@ -24,7 +24,7 @@
                 @click="bulkDelete()"
                 class="inline-flex h-9 items-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
             >
-                Delete Selected (<span x-text="selectedIds.length"></span>)
+                Delete all (<span x-text="selectedIds.length"></span>)
             </button>
         @endif
         @if ($showBulkCancel)

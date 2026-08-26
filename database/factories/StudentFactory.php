@@ -22,8 +22,8 @@ class StudentFactory extends Factory
             'branch_id' => Branch::factory(),
             'student_code' => strtoupper(fake()->lexify('???')).'-'.fake()->unique()->numerify('###'),
             'name' => fake()->name(),
-            'phone' => fake()->numerify('9#########'),
-            'email' => fake()->safeEmail(),
+            'phone' => fake()->unique()->numerify('9#########'),
+            'email' => fake()->unique()->safeEmail(),
             'status' => 'active',
             'student_type' => Student::TYPE_REGULAR,
         ];

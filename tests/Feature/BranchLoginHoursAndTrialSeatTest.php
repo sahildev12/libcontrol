@@ -28,12 +28,12 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
             'name' => 'East Library',
             'contact_person' => 'Priya',
             'phone' => '9876543210',
-            'login_email' => 'east.admin@libspace.test',
+            'email' => 'east.admin@libspace.test',
             'password' => 'secret123',
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('branch.login_email', 'east.admin@libspace.test');
+            ->assertJsonPath('branch.email', 'east.admin@libspace.test');
 
         $this->assertDatabaseHas('users', [
             'email' => 'east.admin@libspace.test',
@@ -55,15 +55,15 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
             'password' => 'old-password',
         ]);
 
-        $response = $this->actingAs($admin)->postJson(route('branch.reset-password', $branch));
+        $response = $this->actingAs($admin)->postJson(route('branch.reset-password', $branch), [
+            'password' => 'CustomPass1',
+        ]);
 
         $response->assertOk()
             ->assertJsonPath('login_email', 'west.admin@libspace.test')
-            ->assertJsonStructure(['password', 'message']);
+            ->assertJsonPath('password', 'CustomPass1');
 
-        $password = $response->json('password');
-        $this->assertNotEmpty($password);
-        $this->assertTrue(Hash::check($password, $login->fresh()->password));
+        $this->assertTrue(Hash::check('CustomPass1', $login->fresh()->password));
         $this->assertFalse(Hash::check('old-password', $login->fresh()->password));
     }
 
@@ -100,6 +100,21 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         $this->assertSame(0, $schedule->openMinutes());
         $this->assertSame(24 * 60, $schedule->closeMinutes());
         $this->assertSame([0, 24 * 60], $schedule->slotWindow('full_day'));
+        $this->assertSame('Full Day (open 24 hours)', $schedule->slotLabel('full_day'));
+        $this->assertSame('Custom Hours (any time · open 24 hours)', $schedule->slotLabel('custom_hours'));
+    }
+
+    public function test_custom_hours_are_clamped_to_library_hours(): void
+    {
+        $branch = Branch::factory()->create([
+            'library_open_time' => '09:00:00',
+            'library_close_time' => '18:00:00',
+            'is_open_24_hours' => false,
+        ]);
+        $schedule = LibraryScheduleService::forBranch($branch);
+
+        $this->assertSame([540, 1080], $schedule->slotWindow('custom_hours', '08:00', '19:00'));
+        $this->assertSame('Custom Hours (9:00 AM – 6:00 PM)', $schedule->slotLabel('custom_hours'));
     }
 
     public function test_half_day_booking_is_vacant_outside_current_window(): void
@@ -211,6 +226,95 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         $this->actingAs($user)->get(route('trial-seats.index'))
             ->assertOk()
             ->assertSee('Trial Seats');
+
+        Carbon::setTestNow();
+    }
+
+    public function test_expired_seats_become_vacant_after_one_day(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-19 11:00:00', 'Asia/Kolkata'));
+
+        [$branch, $user, $seat, $student] = $this->branchWithSeat();
+
+        SeatBooking::query()->create([
+            'seat_id' => $seat->id,
+            'student_id' => $student->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'monthly',
+            'fee_amount' => 500,
+            'joining_date' => '2026-07-01',
+            'plan_expiry_date' => '2026-08-18',
+            'status' => 'occupied',
+        ]);
+
+        $seat->load('bookings.student');
+        $this->assertSame('expired', app(SeatStatusService::class)->resolveForSeat($seat, $branch));
+
+        Carbon::setTestNow(Carbon::parse('2026-08-20 11:00:00', 'Asia/Kolkata'));
+        $seat->unsetRelation('bookings');
+        $seat->load('bookings.student');
+        $this->assertSame('available', app(SeatStatusService::class)->resolveForSeat($seat, $branch));
+
+        $response = $this->actingAs($user)->getJson(route('seats.data'));
+        $this->assertSame('available', collect($response->json('seats'))->firstWhere('id', $seat->id)['status']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_trial_map_hides_regular_expired_and_shows_trial_expired(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-19 11:00:00', 'Asia/Kolkata'));
+
+        [$branch, $user, $regularSeat, $regularStudent] = $this->branchWithSeat();
+        $hall = $regularSeat->hall;
+        $trialSeat = Seat::factory()->create([
+            'hall_id' => $hall->id,
+            'seat_number' => '2',
+            'row_number' => 1,
+            'column_number' => 2,
+        ]);
+        $trialStudent = Student::factory()->create(['branch_id' => $branch->id, 'student_type' => 'trial']);
+
+        SeatBooking::query()->create([
+            'seat_id' => $regularSeat->id,
+            'student_id' => $regularStudent->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'monthly',
+            'fee_amount' => 500,
+            'joining_date' => '2026-07-01',
+            'plan_expiry_date' => '2026-08-18',
+            'status' => 'occupied',
+        ]);
+
+        SeatBooking::query()->create([
+            'seat_id' => $trialSeat->id,
+            'student_id' => $trialStudent->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'custom',
+            'fee_amount' => 0,
+            'joining_date' => '2026-08-17',
+            'plan_expiry_date' => '2026-08-18',
+            'trial_start' => '2026-08-17',
+            'trial_end' => '2026-08-18',
+            'status' => 'on_trial',
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('trial-seats.data'));
+        $response->assertOk();
+
+        $seats = collect($response->json('seats'));
+        $this->assertNull($seats->firstWhere('id', $regularSeat->id));
+
+        $trialPayload = $seats->firstWhere('id', $trialSeat->id);
+        $this->assertNotNull($trialPayload);
+        $this->assertSame('expired', $trialPayload['status']);
+        $this->assertTrue($trialPayload['expired_from_trial']);
+
+        $regularMap = $this->actingAs($user)->getJson(route('seats.data'));
+        $regularSeats = collect($regularMap->json('seats'));
+        $this->assertNotNull($regularSeats->firstWhere('id', $regularSeat->id));
+        $this->assertSame('expired', $regularSeats->firstWhere('id', $regularSeat->id)['status']);
+        $this->assertNull($regularSeats->firstWhere('id', $trialSeat->id));
 
         Carbon::setTestNow();
     }

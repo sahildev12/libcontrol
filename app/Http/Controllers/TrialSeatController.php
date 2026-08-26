@@ -20,37 +20,42 @@ class TrialSeatController extends Controller
 {
     public function index(Request $request, SeatMapService $seatMapService): View
     {
-        $branchId = $this->activeBranchId($request);
-        $branch = $this->activeBranch($request);
+        $branchId = $this->optionalActiveBranchId($request);
         $payload = $seatMapService->payloadForBranch($branchId);
+        $statusService = app(SeatStatusService::class);
         $seats = array_values(array_filter(
             $payload['seats'],
-            fn (array $seat) => empty($seat['has_regular_assignment']),
+            fn (array $seat) => $statusService->visibleOnTrialMap($seat),
         ));
 
-        $students = Student::query()
-            ->where('branch_id', $branchId)
-            ->where('status', 'active')
-            ->where('student_type', Student::TYPE_TRIAL)
-            ->orderBy('name')
-            ->get(['id', 'student_code', 'name', 'phone', 'student_type']);
+        $students = $this->availableTrialStudents($request);
 
         return view('trial-seats.index', [
             'halls' => $payload['halls'],
             'seats' => $seats,
             'students' => $students,
             'timeSlotOptions' => $payload['time_slot_options'],
-            'branchName' => $branch->name,
+            'branches' => \App\Models\Branch::query()->when(
+                ! $request->user()?->isPlatformAdmin(),
+                fn ($query) => $query->where('id', $branchId)
+            )->orderBy('name')->get(['id', 'name']),
+            'defaultBranchId' => $branchId,
+            'viewingAll' => $this->viewingAllBranches($request),
+            'branchName' => $this->viewingAllBranches($request)
+                ? 'All branches'
+                : ($this->optionalActiveBranch($request)?->name ?? ''),
         ]);
     }
 
     public function data(Request $request, SeatMapService $seatMapService): JsonResponse
     {
-        $payload = $seatMapService->payloadForBranch($this->activeBranchId($request));
+        $payload = $seatMapService->payloadForBranch($this->optionalActiveBranchId($request));
+        $statusService = app(SeatStatusService::class);
         $payload['seats'] = array_values(array_filter(
             $payload['seats'],
-            fn (array $seat) => empty($seat['has_regular_assignment']),
+            fn (array $seat) => $statusService->visibleOnTrialMap($seat),
         ));
+        $payload['students'] = $this->availableTrialStudents($request);
 
         return response()->json($payload);
     }
@@ -66,12 +71,10 @@ class TrialSeatController extends Controller
             'custom_end_time' => ['nullable', 'date_format:H:i'],
         ]);
 
-        abort_unless(
-            Hall::query()->where('id', $validated['hall_id'])->where('branch_id', $this->activeBranchId($request))->exists(),
-            403,
-        );
+        $hall = Hall::query()->with('branch')->where('id', $validated['hall_id'])->firstOrFail();
+        $this->assertCanAccessBranch($request, $hall->branch_id);
 
-        $branch = $this->activeBranch($request);
+        $branch = $hall->branch;
         $conflictService = SeatConflictService::forBranch($branch);
         $availability = SeatAvailabilityService::forBranch($branch);
         $start = Carbon::parse($validated['trial_start']);
@@ -113,24 +116,21 @@ class TrialSeatController extends Controller
         StoreTrialSeatBookingRequest $request,
         SeatMapService $seatMapService,
     ): JsonResponse {
-        $branchId = $this->activeBranchId($request);
-        $branch = $this->activeBranch($request);
-        $conflictService = SeatConflictService::forBranch($branch);
+        $seat = Seat::query()->with('hall.branch')->where('id', $request->integer('seat_id'))->firstOrFail();
+        $this->assertCanAccessBranch($request, $seat->hall?->branch_id);
+        abort_unless($request->integer('hall_id') === $seat->hall_id, 422, 'Seat does not belong to selected hall.');
 
         $student = Student::query()
             ->where('id', $request->integer('student_id'))
-            ->where('branch_id', $branchId)
+            ->where('branch_id', $seat->hall->branch_id)
             ->firstOrFail();
 
         if ($student->student_type !== Student::TYPE_TRIAL) {
             $student->update(['student_type' => Student::TYPE_TRIAL]);
         }
 
-        $seat = Seat::query()->with('hall')->where('id', $request->integer('seat_id'))->firstOrFail();
-
-        abort_unless($seat->hall?->branch_id === $branchId, 403);
-        abort_unless($request->integer('hall_id') === $seat->hall_id, 422, 'Seat does not belong to selected hall.');
-
+        $branch = $seat->hall->branch;
+        $conflictService = SeatConflictService::forBranch($branch);
         $seat->load('bookings.student');
 
         $trialStart = Carbon::parse($request->input('trial_start'));
@@ -164,11 +164,42 @@ class TrialSeatController extends Controller
             'status' => 'on_trial',
         ]);
 
-        $seatMapService->broadcastForBranch($branchId);
+        $seatMapService->broadcastForBranch($seat->hall->branch_id);
+        $this->logActivity(
+            $request,
+            'trial.assigned',
+            "Assigned trial seat {$seat->seat_number} to {$student->name}.",
+            $booking,
+            $seat->hall->branch_id,
+        );
 
         return response()->json([
             'message' => 'Trial seat assigned successfully.',
             'booking_id' => $booking->id,
         ], 201);
+    }
+
+    /**
+     * Trial students with no active seat assignment.
+     *
+     * @return \Illuminate\Support\Collection<int, Student>
+     */
+    private function availableTrialStudents(Request $request)
+    {
+        $today = Carbon::today()->toDateString();
+
+        return $this->constrainByActiveBranch(Student::query(), $request)
+            ->where('status', 'active')
+            ->where('student_type', Student::TYPE_TRIAL)
+            ->whereDoesntHave('bookings', function ($query) use ($today) {
+                $query->whereNull('cancelled_at')
+                    ->where('status', '!=', 'cancelled')
+                    ->where(function ($active) use ($today) {
+                        $active->whereDate('plan_expiry_date', '>=', $today)
+                            ->orWhereDate('trial_end', '>=', $today);
+                    });
+            })
+            ->orderBy('name')
+            ->get(['id', 'student_code', 'name', 'phone', 'student_type', 'branch_id']);
     }
 }

@@ -26,9 +26,9 @@ Route::get('/', function () {
         : redirect()->route('login');
 });
 
-Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'branch'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'branch', 'page.activity'])->name('dashboard');
 
-Route::middleware(['auth', 'branch'])->group(function () {
+Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -55,6 +55,7 @@ Route::middleware(['auth', 'branch'])->group(function () {
 
     Route::get('/seats', [SeatController::class, 'index'])->name('seats.index');
     Route::get('/seats/data', [SeatController::class, 'data'])->name('seats.data');
+    Route::get('/seats/{seat}/schedule', [SeatController::class, 'schedule'])->name('seats.schedule');
 
     Route::get('/trial-seats', [TrialSeatController::class, 'index'])->name('trial-seats.index');
     Route::get('/trial-seats/data', [TrialSeatController::class, 'data'])->name('trial-seats.data');
@@ -67,6 +68,7 @@ Route::middleware(['auth', 'branch'])->group(function () {
     Route::post('/students/registration-invites', [StudentRegistrationInviteController::class, 'store'])->name('students.registration-invites.store');
     Route::get('/students/{student}/photo', [StudentController::class, 'photo'])->name('students.photo');
     Route::get('/students/{student}/id-proof', [StudentController::class, 'idProof'])->name('students.id-proof');
+    Route::get('/students/{student}/id-card', [StudentController::class, 'idCard'])->name('students.id-card');
     Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
     Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
@@ -74,18 +76,34 @@ Route::middleware(['auth', 'branch'])->group(function () {
     Route::get('/seat-assignments', [SeatBookingController::class, 'index'])->name('seat-assignments.index');
     Route::get('/seat-assignments/available-seats', [SeatBookingController::class, 'availableSeats'])->name('seat-assignments.available-seats');
     Route::post('/seat-assignments', [SeatBookingController::class, 'store'])->name('seat-assignments.store');
+    Route::post('/seat-assignments/transfer', [SeatBookingController::class, 'transfer'])->name('seat-assignments.transfer');
     Route::post('/seat-assignments/bulk-cancel', [SeatBookingController::class, 'bulkCancel'])->name('seat-assignments.bulk-cancel');
     Route::get('/seat-assignments/{booking}', [SeatBookingController::class, 'show'])->name('seat-assignments.show');
     Route::post('/seat-assignments/{booking}/cancel', [SeatBookingController::class, 'cancel'])->name('seat-assignments.cancel');
+    Route::post('/seat-assignments/{booking}/convert-to-regular', [SeatBookingController::class, 'convertToRegular'])->name('seat-assignments.convert-to-regular');
 
     Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries.index');
     Route::post('/enquiries', [EnquiryController::class, 'store'])->name('enquiries.store');
     Route::patch('/enquiries/{enquiry}', [EnquiryController::class, 'update'])->name('enquiries.update');
+    Route::post('/enquiries/bulk-delete', [EnquiryController::class, 'bulkDestroy'])->name('enquiries.bulk-destroy');
     Route::delete('/enquiries/{enquiry}', [EnquiryController::class, 'destroy'])->name('enquiries.destroy');
     Route::post('/enquiries/{enquiry}/convert', [EnquiryController::class, 'convert'])->name('enquiries.convert');
 
     Route::get('/fees', [FeeController::class, 'index'])->name('fees.index');
+    Route::post('/fees', [FeeController::class, 'store'])->name('fees.store');
+    Route::post('/fees/bulk-delete', [FeeController::class, 'bulkDestroy'])->name('fees.bulk-destroy');
+    Route::post('/fees/{booking}/pay', [FeeController::class, 'markPaid'])->name('fees.pay');
+    Route::post('/fees/{booking}/payments', [FeeController::class, 'recordPayment'])->name('fees.payments.store');
+    Route::post('/fees/{booking}/installments/{installment}/pay', [FeeController::class, 'payInstallment'])->name('fees.installments.pay');
+    Route::get('/fees/{booking}', [FeeController::class, 'show'])->name('fees.show');
+    Route::patch('/fees/{booking}', [FeeController::class, 'update'])->name('fees.update');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/bulk-delete', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk-destroy');
+    Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::post('/activity-logs/bulk-delete', [\App\Http\Controllers\ActivityLogController::class, 'bulkDestroy'])->name('activity-logs.bulk-destroy');
+    Route::get('/activity-logs/{activityLog}', [\App\Http\Controllers\ActivityLogController::class, 'show'])->name('activity-logs.show');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');

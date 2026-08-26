@@ -73,6 +73,7 @@ class StudentRegistrationInviteTest extends TestCase
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'phone' => '9876543210',
+            'email' => 'first@example.com',
         ];
 
         $this->post(route('students.register.store', $invite->token), $payload)->assertOk();
@@ -82,6 +83,7 @@ class StudentRegistrationInviteTest extends TestCase
             'gender' => 'female',
             'date_of_birth' => '2001-02-20',
             'phone' => '9123456780',
+            'email' => 'second@example.com',
         ])->assertStatus(410);
 
         $this->assertSame(1, Student::query()->count());
@@ -102,6 +104,7 @@ class StudentRegistrationInviteTest extends TestCase
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'phone' => '9876543210',
+            'email' => 'late@example.com',
         ])->assertStatus(410);
     }
 }

@@ -16,6 +16,20 @@ class LibraryScheduleService
         return new self($branch);
     }
 
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function defaultOptions(): array
+    {
+        $branch = new Branch([
+            'library_open_time' => '09:00',
+            'library_close_time' => '18:00',
+            'is_open_24_hours' => false,
+        ]);
+
+        return (new self($branch))->timeSlotOptions();
+    }
+
     public function is24Hours(): bool
     {
         return (bool) $this->branch->is_open_24_hours;
@@ -51,17 +65,24 @@ class LibraryScheduleService
         return match ($timeSlot) {
             'day_first_half' => [$open, $mid],
             'day_end_half' => [$mid, $close],
-            'custom_hours' => $this->clampWindow(
-                $this->minutesFromTime($customStart ?? '09:00'),
-                $this->minutesFromTime($customEnd ?? '18:00'),
-            ),
+            'custom_hours' => $this->customWindow($customStart, $customEnd),
             default => [$open, $close],
         };
     }
 
     public function slotLabel(string $timeSlot, ?string $customStart = null, ?string $customEnd = null): string
     {
-        [$start, $end] = $this->slotWindow($timeSlot, $customStart, $customEnd);
+        if ($timeSlot === 'custom_hours' && $customStart === null && $customEnd === null) {
+            if ($this->is24Hours()) {
+                return 'Custom Hours (any time · open 24 hours)';
+            }
+
+            return sprintf(
+                'Custom Hours (%s – %s)',
+                $this->formatMinutes($this->openMinutes()),
+                $this->formatMinutes($this->closeMinutes()),
+            );
+        }
 
         $base = match ($timeSlot) {
             'day_first_half' => 'Day First Half',
@@ -69,6 +90,12 @@ class LibraryScheduleService
             'custom_hours' => 'Custom Hours',
             default => 'Full Day',
         };
+
+        if ($this->is24Hours() && $timeSlot === 'full_day') {
+            return 'Full Day (open 24 hours)';
+        }
+
+        [$start, $end] = $this->slotWindow($timeSlot, $customStart, $customEnd);
 
         return sprintf('%s (%s – %s)', $base, $this->formatMinutes($start), $this->formatMinutes($end));
     }
@@ -126,6 +153,19 @@ class LibraryScheduleService
         $now = $this->currentMinutes();
 
         return $startMinutes < $now && $endMinutes > $now;
+    }
+
+    /**
+     * Custom hours are clamped to library open/close times.
+     *
+     * @return array{0: int, 1: int}
+     */
+    private function customWindow(?string $customStart, ?string $customEnd): array
+    {
+        return $this->clampWindow(
+            $this->minutesFromTime($customStart ?? '09:00'),
+            $this->minutesFromTime($customEnd ?? '18:00'),
+        );
     }
 
     /**

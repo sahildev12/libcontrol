@@ -18,14 +18,19 @@ class StoreHallRequest extends FormRequest
     public function rules(): array
     {
         $branchId = $this->resolvedBranchId();
+        $branchRule = $this->user()?->isPlatformAdmin()
+            ? Rule::exists('branches', 'id')
+            : Rule::exists('branches', 'id')->where(fn ($query) => $query->where('id', $branchId));
 
         return [
-            'branch_id' => [
+            'branch_id' => ['required', 'integer', $branchRule],
+            'name' => [
                 'required',
-                'integer',
-                Rule::exists('branches', 'id')->where(fn ($query) => $query->where('id', $branchId)),
+                'string',
+                'min:2',
+                'max:255',
+                Rule::unique('halls', 'name')->where(fn ($query) => $query->where('branch_id', $branchId)),
             ],
-            'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'seat_capacity' => ['required', 'integer', 'min:1', 'max:500'],
         ];
@@ -33,6 +38,11 @@ class StoreHallRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->merge([
+            'name' => $this->filled('name') ? trim((string) $this->input('name')) : null,
+            'description' => $this->filled('description') ? trim((string) $this->input('description')) : null,
+        ]);
+
         if (! $this->filled('branch_id')) {
             $branchId = $this->resolvedBranchId();
 
@@ -50,14 +60,20 @@ class StoreHallRequest extends FormRequest
             return null;
         }
 
-        if ($user->branch_id) {
-            return (int) $user->branch_id;
+        if ($user->isPlatformAdmin()) {
+            if ($this->filled('branch_id')) {
+                return (int) $this->input('branch_id');
+            }
+
+            $sessionBranchId = session('active_branch_id');
+
+            if ($sessionBranchId && $sessionBranchId !== 'all') {
+                return (int) $sessionBranchId;
+            }
+
+            return null;
         }
 
-        if ($user->isPlatformAdmin() && session('active_branch_id')) {
-            return (int) session('active_branch_id');
-        }
-
-        return null;
+        return $user->branch_id ? (int) $user->branch_id : null;
     }
 }

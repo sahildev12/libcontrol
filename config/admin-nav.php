@@ -8,10 +8,10 @@ return [
         ['label' => 'Seats', 'route' => 'seats.index', 'icon' => 'grid'],
         ['label' => 'Trial Seats', 'route' => 'trial-seats.index', 'icon' => 'clock'],
         ['label' => 'Students', 'route' => 'students.index', 'icon' => 'users'],
-        ['label' => 'Seat Assignment', 'route' => 'seat-assignments.index', 'icon' => 'ticket'],
         ['label' => 'Enquiry', 'route' => 'enquiries.index', 'icon' => 'inbox'],
         ['label' => 'Fee Management', 'route' => 'fees.index', 'icon' => 'currency'],
         ['label' => 'Notifications', 'route' => 'notifications.index', 'icon' => 'bell'],
+        ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart'],
         ['label' => 'Settings', 'route' => 'settings.index', 'icon' => 'settings'],
     ],
 ];

@@ -18,35 +18,50 @@ class SeatMapService
     /**
      * @return array{halls: list<array<string, mixed>>, seats: list<array<string, mixed>>, time_slot_options: list<array{value: string, label: string}>}
      */
-    public function payloadForBranch(int $branchId): array
+    public function payloadForBranch(?int $branchId): array
     {
-        $branch = Branch::query()->findOrFail($branchId);
-        $schedule = LibraryScheduleService::forBranch($branch);
+        $hallQuery = Hall::query()->with('branch:id,name')->orderBy('name');
 
-        $halls = Hall::query()
-            ->where('branch_id', $branchId)
-            ->orderBy('name')
-            ->get(['id', 'name', 'seat_capacity']);
+        if ($branchId) {
+            $hallQuery->where('branch_id', $branchId);
+        }
 
-        $seats = Seat::query()
+        $halls = $hallQuery->get(['id', 'name', 'seat_capacity', 'branch_id']);
+
+        $seatQuery = Seat::query()
             ->with([
-                'hall:id,name,branch_id',
+                'hall.branch',
                 'bookings.student:id,student_code,name,student_type',
             ])
-            ->whereHas('hall', fn ($query) => $query->where('branch_id', $branchId))
             ->orderBy('hall_id')
+            ->orderByRaw('CAST(seat_number AS UNSIGNED)')
+            ->orderBy('seat_number')
             ->orderBy('row_number')
-            ->orderBy('column_number')
-            ->get();
+            ->orderBy('column_number');
+
+        if ($branchId) {
+            $seatQuery->whereHas('hall', fn ($query) => $query->where('branch_id', $branchId));
+        }
+
+        $seats = $seatQuery->get();
+        $includeBranchName = $branchId === null;
+        $scheduleBranch = $branchId
+            ? Branch::query()->find($branchId)
+            : $halls->first()?->branch;
 
         return [
             'halls' => $halls->map(fn (Hall $hall) => [
                 'id' => $hall->id,
-                'name' => $hall->name,
+                'branch_id' => $hall->branch_id,
+                'name' => $includeBranchName && $hall->branch
+                    ? "{$hall->name} ({$hall->branch->name})"
+                    : $hall->name,
                 'seat_capacity' => $hall->seat_capacity,
             ])->values()->all(),
-            'seats' => $this->seatStatusService->mapSeatsForBranch($seats, $branch),
-            'time_slot_options' => $schedule->timeSlotOptions(),
+            'seats' => $this->seatStatusService->mapSeatsForBranch($seats, $scheduleBranch),
+            'time_slot_options' => $scheduleBranch
+                ? LibraryScheduleService::forBranch($scheduleBranch)->timeSlotOptions()
+                : LibraryScheduleService::defaultOptions(),
         ];
     }
 

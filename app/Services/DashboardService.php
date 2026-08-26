@@ -18,11 +18,11 @@ class DashboardService
     /**
      * @return array<string, mixed>
      */
-    public function statsForBranch(int $branchId): array
+    public function statsForBranch(?int $branchId): array
     {
         $seats = Seat::query()
-            ->with(['bookings.student'])
-            ->whereHas('hall', fn ($query) => $query->where('branch_id', $branchId))
+            ->with(['bookings.student', 'hall.branch'])
+            ->when($branchId, fn ($query) => $query->whereHas('hall', fn ($hallQuery) => $hallQuery->where('branch_id', $branchId)))
             ->get();
 
         $counts = [
@@ -34,10 +34,10 @@ class DashboardService
             'on_trial' => 0,
         ];
 
-        $branch = Branch::query()->find($branchId);
+        $branch = $branchId ? Branch::query()->find($branchId) : null;
 
         foreach ($seats as $seat) {
-            $status = $this->seatStatusService->resolveForSeat($seat, $branch);
+            $status = $this->seatStatusService->resolveForSeat($seat, $seat->hall?->branch ?? $branch);
 
             if ($status === 'occupied') {
                 $counts['occupied']++;
@@ -54,9 +54,9 @@ class DashboardService
 
         return [
             ...$counts,
-            'total_students' => Student::query()->where('branch_id', $branchId)->count(),
-            'total_halls' => Hall::query()->where('branch_id', $branchId)->count(),
-            'new_enquiries' => Enquiry::query()->where('branch_id', $branchId)->where('status', 'new')->count(),
+            'total_students' => Student::query()->when($branchId, fn ($query) => $query->where('branch_id', $branchId))->count(),
+            'total_halls' => Hall::query()->when($branchId, fn ($query) => $query->where('branch_id', $branchId))->count(),
+            'new_enquiries' => Enquiry::query()->when($branchId, fn ($query) => $query->where('branch_id', $branchId))->where('status', 'new')->count(),
         ];
     }
 }

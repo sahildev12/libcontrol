@@ -93,8 +93,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Time Slot</label>
                             <select x-model="form.time_slot" @change="loadSeats()" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                                <template x-for="option in timeSlotOptions" :key="option.value">
-                                    <option :value="option.value" x-text="option.label"></option>
+                                <template x-for="option in assignableSlotOptions()" :key="option.value">
+                                    <option :value="option.value" :disabled="option.disabled" x-text="option.label"></option>
                                 </template>
                             </select>
                             <p x-show="assignmentTimeError()" class="mt-1 text-xs text-red-600" x-text="assignmentTimeError()"></p>
@@ -132,17 +132,26 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Fee Type</label>
-                            <select x-model="form.fee_type" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                            <select x-model="form.fee_type" @change="if (form.fee_type === 'one_time') form.payment_plan = 'full'" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
                                 <option value="monthly">Monthly</option>
                                 <option value="yearly">Yearly</option>
                                 <option value="custom">Custom</option>
                                 <option value="membership">Membership</option>
+                                <option value="one_time">One-time</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Fee Amount</label>
                             <input type="number" min="0" step="0.01" x-model.number="form.fee_amount" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Payment plan</label>
+                        <select x-model="form.payment_plan" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                            <option value="full">Full payment</option>
+                            <option value="installments" :disabled="form.fee_type === 'one_time'">Installments</option>
+                        </select>
+                        <p x-show="form.fee_type === 'one_time'" class="mt-1 text-xs text-gray-500">One-time fees use full payment only.</p>
                     </div>
                     <div x-show="form.fee_type === 'membership'">
                         <label class="block text-sm font-medium text-gray-700">Membership Mode</label>

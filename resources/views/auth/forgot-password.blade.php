@@ -1,22 +1,28 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
+<x-guest-layout
+    :portal="$portal"
+    :title="$title"
+    :subtitle="$subtitle"
+    :name="$name"
+    :logo-url="$logo_url"
+    :favicon-url="$favicon_url"
+>
+    <p class="mb-4 text-sm text-gray-600">
+        Enter the email for this {{ $portal === 'admin' ? 'admin' : 'branch' }} account. We will send a reset link if it matches.
+    </p>
 
-    <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ $portal === 'admin' ? route('admin.password.email') : route('password.email') }}">
         @csrf
 
-        <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="mt-6 flex items-center justify-between">
+            <a href="{{ $portal === 'admin' ? route('admin.login') : route('login') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to login</a>
             <x-primary-button>
                 {{ __('Email Password Reset Link') }}
             </x-primary-button>

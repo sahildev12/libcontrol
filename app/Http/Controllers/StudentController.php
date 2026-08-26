@@ -15,13 +15,19 @@ class StudentController extends Controller
 {
     public function index(Request $request): View
     {
-        $students = Student::query()
-            ->where('branch_id', $this->activeBranchId($request))
+        $students = $this->constrainByActiveBranch(Student::query()->with('branch:id,name'), $request)
             ->orderByDesc('id')
             ->get()
             ->map(fn (Student $student) => $this->serializeStudent($student));
 
-        return view('students.index', compact('students'));
+        $viewingAll = $this->viewingAllBranches($request);
+        $branchName = $viewingAll ? 'All branches' : ($this->optionalActiveBranch($request)?->name ?? '');
+        $branches = $request->user()?->isPlatformAdmin()
+            ? \App\Models\Branch::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
+        $defaultBranchId = $this->optionalActiveBranchId($request);
+
+        return view('students.index', compact('students', 'viewingAll', 'branchName', 'branches', 'defaultBranchId'));
     }
 
     public function show(Request $request, Student $student): JsonResponse
@@ -51,16 +57,18 @@ class StudentController extends Controller
 
     public function store(StoreStudentRequest $request, StudentCreator $studentCreator): JsonResponse
     {
-        $branch = $this->activeBranch($request);
+        $branch = $this->resolveWritableBranch($request, $request->integer('branch_id') ?: null);
 
         abort_unless($branch, 403);
 
         $student = $studentCreator->create(
             $branch,
-            $request->safe()->except(['id_proof', 'photo']),
+            $request->safe()->except(['id_proof', 'photo', 'branch_id']),
             $request->file('photo'),
             $request->file('id_proof'),
         );
+
+        $this->logActivity($request, 'student.created', "Created student {$student->student_code} ({$student->name}).", $student, $student->branch_id);
 
         return response()->json([
             'message' => "Student \"{$student->name}\" created.",
@@ -98,11 +106,24 @@ class StudentController extends Controller
         ]);
     }
 
+    public function idCard(Request $request, Student $student): View
+    {
+        $this->authorizeStudent($request, $student);
+        $student->load('branch');
+
+        return view('students.id-card', [
+            'student' => $student,
+            'branchName' => $student->branch?->display_name ?: $student->branch?->name,
+        ]);
+    }
+
     public function destroy(Request $request, Student $student): JsonResponse
     {
         $this->authorizeStudent($request, $student);
 
         $name = $student->name;
+        $code = $student->student_code;
+        $branchId = $student->branch_id;
 
         if ($student->id_proof_path) {
             Storage::disk('local')->delete($student->id_proof_path);
@@ -113,6 +134,7 @@ class StudentController extends Controller
         }
 
         $student->delete();
+        $this->logActivity($request, 'student.deleted', "Deleted student {$code} ({$name}).", null, $branchId);
 
         return response()->json(['message' => "Student \"{$name}\" deleted."]);
     }
@@ -124,8 +146,7 @@ class StudentController extends Controller
             'ids.*' => ['integer'],
         ]);
 
-        $students = Student::query()
-            ->where('branch_id', $this->activeBranchId($request))
+        $students = $this->constrainByActiveBranch(Student::query(), $request)
             ->whereIn('id', $validated['ids'])
             ->get();
 
@@ -152,7 +173,8 @@ class StudentController extends Controller
 
     private function authorizeStudent(Request $request, Student $student): void
     {
-        abort_unless($student->branch_id === $this->activeBranchId($request), 403);
+        abort_unless($student->branch_id, 403);
+        $this->assertCanAccessBranch($request, $student->branch_id);
     }
 
     /**
@@ -160,6 +182,7 @@ class StudentController extends Controller
      */
     private function serializeStudent(Student $student, bool $detailed = false): array
     {
+        $student->loadMissing('branch:id,name');
         $payload = [
             'id' => $student->id,
             'student_code' => $student->student_code,
@@ -174,6 +197,8 @@ class StudentController extends Controller
             'status' => $student->status,
             'student_type' => $student->student_type ?: Student::TYPE_REGULAR,
             'student_type_label' => $student->typeLabel(),
+            'branch_id' => $student->branch_id,
+            'branch_name' => $student->branch?->name,
             'has_id_proof' => (bool) $student->idProofUrl(),
             'has_photo' => (bool) $student->photoUrl(),
             'photo_url' => $student->photoUrl(),

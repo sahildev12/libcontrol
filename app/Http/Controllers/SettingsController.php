@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\PlatformSetting;
 use App\Services\BranchBrandService;
 use App\Services\LibraryScheduleService;
+use App\Services\LoginBrandingService;
 use App\Services\StudentCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,23 +22,22 @@ class SettingsController extends Controller
 
     public function index(Request $request, BranchBrandService $branchBrandService): View
     {
-        $branch = $this->activeBranch($request);
+        $branch = $this->optionalActiveBranch($request);
+        $viewingAll = $this->viewingAllBranches($request);
 
-        abort_unless($branch, 403);
+        abort_unless($branch || $request->user()?->isPlatformAdmin(), 403);
 
-        $settings = $this->serializeSettings($branch, $branchBrandService);
+        $settings = $branch ? $this->serializeSettings($branch, $branchBrandService) : null;
         $platformSettings = PlatformSetting::current();
         $isPlatformAdmin = (bool) $request->user()?->isPlatformAdmin();
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin'));
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'viewingAll'));
     }
 
     public function update(UpdateBranchSettingsRequest $request, BranchBrandService $branchBrandService): JsonResponse
     {
-        /** @var Branch $branch */
-        $branch = $this->activeBranch($request);
-
-        abort_unless($branch, 403);
+        $branch = $this->optionalActiveBranch($request);
+        abort_unless($branch, 422, 'Select a specific branch to update library hours and branding.');
 
         $data = $request->safe()->except(['logo_with_text', 'simple_logo', 'favicon']);
 
@@ -61,13 +61,23 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function updatePlatform(UpdatePlatformSettingsRequest $request): JsonResponse
+    public function updatePlatform(UpdatePlatformSettingsRequest $request, LoginBrandingService $loginBranding): JsonResponse
     {
         $settings = PlatformSetting::current();
-        $settings->update($request->validated());
+        $data = $request->safe()->except(['logo', 'favicon']);
+
+        if ($request->hasFile('logo')) {
+            $data['logo_path'] = $loginBranding->storePlatformLogo($request->file('logo'), 'logo');
+        }
+
+        if ($request->hasFile('favicon')) {
+            $data['favicon_path'] = $loginBranding->storePlatformLogo($request->file('favicon'), 'favicon');
+        }
+
+        $settings->update($data);
 
         return response()->json([
-            'message' => 'Global student code settings saved.',
+            'message' => 'Global settings saved.',
             'platform_settings' => $this->serializePlatformSettings($settings->fresh()),
         ]);
     }
@@ -99,6 +109,9 @@ class SettingsController extends Controller
             'student_code_prefix' => $settings->student_code_prefix,
             'student_code_padding' => $settings->student_code_padding ?: config('libspace.defaults.student_code_padding'),
             'sample_student_code' => $this->studentCodeService->preview(),
+            'display_name' => $settings->display_name,
+            'logo_url' => $settings->logoUrl(),
+            'favicon_url' => $settings->faviconUrl(),
         ];
     }
 }

@@ -6,13 +6,16 @@
             inviteStoreUrl: @js(route('students.registration-invites.store')),
             bulkDeleteUrl: @js(route('students.bulk-destroy')),
             csrf: @js(csrf_token()),
+            branches: @js($branches ?? []),
+            defaultBranchId: @js($defaultBranchId ?? null),
+            viewingAll: @js($viewingAll ?? false),
         })"
         x-init="init()"
     >
         <header class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Students</h1>
-                <p class="mt-1 text-sm text-gray-600">Manage students for {{ Auth::user()->branch?->name }}.</p>
+                <p class="mt-1 text-sm text-gray-600">Manage students{{ !empty($branchName) ? ' for '.$branchName : '' }}.</p>
             </div>
             <button type="button" @click="openCreate()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
                 Add Student
@@ -31,6 +34,7 @@
                             </th>
                             <th class="px-4 py-3">Code</th>
                             <th class="px-4 py-3">Name</th>
+                            <th class="px-4 py-3" x-show="viewingAll">Branch</th>
                             <th class="px-4 py-3">Phone</th>
                             <th class="px-4 py-3">Email</th>
                             <th class="px-4 py-3">Type</th>
@@ -61,6 +65,7 @@
                                         <span class="font-medium text-gray-900" x-text="row.name"></span>
                                     </div>
                                 </td>
+                                <td class="px-4 py-3 text-gray-600" x-show="viewingAll" x-text="row.branch_name || '—'"></td>
                                 <td class="px-4 py-3" x-text="row.phone"></td>
                                 <td class="px-4 py-3" x-text="row.email || '—'"></td>
                                 <td class="px-4 py-3" x-text="row.student_type_label || (row.student_type === 'trial' ? 'Trial Student' : 'Regular Student')"></td>
@@ -68,6 +73,7 @@
                                 <td class="px-4 py-3 text-right">
                                     <div class="inline-flex gap-1.5">
                                         <button type="button" @click="openView(row)" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">View</button>
+                                        <a :href="`/students/${row.id}/id-card`" target="_blank" class="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100">ID card</a>
                                         <button type="button" @click="openEdit(row)" class="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Edit</button>
                                         <button type="button" @click="deleteOne(row)" class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100">Delete</button>
                                     </div>

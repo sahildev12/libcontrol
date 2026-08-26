@@ -68,22 +68,18 @@
                     </div>
                 </section>
 
-                <section class="border-t border-gray-100 pt-5" x-show="viewAssignment?.today_windows?.length">
-                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Today's schedule</h4>
-                    <ul class="mt-3 space-y-1.5">
-                        <template x-for="(window, index) in viewAssignment?.today_windows || []" :key="index">
-                            <li class="flex items-center justify-between rounded-lg border px-3 py-2 text-xs"
-                                :class="{
-                                    'border-gray-200 bg-gray-50 text-gray-700': window.type === 'free',
-                                    'border-emerald-200 bg-emerald-50 text-emerald-800': window.type === 'booked',
-                                    'border-cyan-200 bg-cyan-50 text-cyan-800': window.type === 'trial',
-                                }"
+                <section class="border-t border-gray-100 pt-5" x-show="occupiedSchedule(viewAssignment).length">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-400">Occupied today</h4>
+                    <div class="mt-2 flex flex-wrap gap-1">
+                        <template x-for="(window, index) in occupiedSchedule(viewAssignment)" :key="index">
+                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium"
+                                :class="window.type === 'trial' ? 'bg-cyan-100 text-cyan-900' : 'bg-emerald-100 text-emerald-900'"
                             >
                                 <span x-text="`${window.from} – ${window.to}`"></span>
-                                <span class="font-semibold" x-text="window.type === 'free' ? 'Vacant' : window.label"></span>
-                            </li>
+                                <span class="opacity-80" x-text="window.label"></span>
+                            </span>
                         </template>
-                    </ul>
+                    </div>
                 </section>
 
                 <section class="border-t border-gray-100 pt-5" x-show="viewAssignment?.student">

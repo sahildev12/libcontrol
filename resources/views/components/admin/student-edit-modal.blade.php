@@ -42,11 +42,15 @@
                         <label class="block text-sm font-medium text-gray-700">Student Type <span class="text-red-500">*</span></label>
                         <select
                             x-model="editForm.student_type"
-                            class="admin-select mt-1 block w-full px-3 py-2"
-                            :class="editFormErrors.student_type ? 'border-red-400' : ''"
+                            class="admin-select mt-1 block w-full px-3 py-2 font-semibold"
+                            :class="editFormErrors.student_type
+                                ? 'border-red-400'
+                                : (editForm.student_type === 'trial'
+                                    ? 'border-sky-400 bg-sky-50 text-sky-800'
+                                    : 'border-emerald-400 bg-emerald-50 text-emerald-800')"
                         >
-                            <option value="regular">Regular Student</option>
                             <option value="trial">Trial Student</option>
+                            <option value="regular">Regular Student</option>
                         </select>
                         <p x-show="editFormErrors.student_type" x-text="editFormErrors.student_type" class="mt-1 text-xs text-red-600"></p>
                     </div>
@@ -83,7 +87,7 @@
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <label class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
                         <input
                             type="email"
                             x-model="editForm.email"

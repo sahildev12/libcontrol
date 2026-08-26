@@ -7,14 +7,15 @@
             storeUrl: @js(route('halls.store')),
             bulkDeleteUrl: @js(route('halls.bulk-destroy')),
             csrf: @js(csrf_token()),
-            defaultBranchId: @js(Auth::user()->branch_id),
+            defaultBranchId: @js($defaultBranchId),
+            viewingAll: @js($viewingAll ?? false),
         })"
         x-init="init()"
     >
         <header class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Halls</h1>
-                <p class="mt-1 text-sm text-gray-600">Manage halls for {{ $branchName }}.</p>
+                <p class="mt-1 text-sm text-gray-600">{{ ($viewingAll ?? false) ? 'Halls across all branches.' : 'Manage halls for '.$branchName.'.' }}</p>
             </div>
             <button type="button" @click="openCreate()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
                 Add Hall
@@ -31,7 +32,7 @@
                             <th class="px-4 py-3 w-10">
                                 <input type="checkbox" @change="toggleSelectAll($event)" :checked="allPageSelected()" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             </th>
-                            <!-- <th class="px-4 py-3">Branch</th> -->
+                            <th class="px-4 py-3" x-show="viewingAll">Branch</th>
                             <th class="px-4 py-3">Hall</th>
                             <th class="px-4 py-3">Capacity</th>
                             <th class="px-4 py-3">Filled</th>
@@ -45,22 +46,16 @@
                                 <td class="px-4 py-3">
                                     <input type="checkbox" :value="hall.id" x-model="selectedIds" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                 </td>
-                                <!-- <td class="px-4 py-3 text-gray-600" x-text="hall.branch_name"></td> -->
+                                <td class="px-4 py-3 text-gray-600" x-show="viewingAll" x-text="hall.branch_name"></td>
                                 <td class="px-4 py-3 font-medium text-gray-900" x-text="hall.name"></td>
                                 <td class="px-4 py-3" x-text="hall.seat_capacity"></td>
                                 <td class="px-4 py-3" x-text="hall.filled_seats_count"></td>
                                 <td class="px-4 py-3 max-w-xs truncate" x-text="hall.description || '—'"></td>
                                 <td class="px-4 py-3 text-right">
                                     <div class="inline-flex gap-1.5">
-                                        <x-admin.icon-button tone="sky" @click="openView(hall)" title="View">
-                                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </x-admin.icon-button>
-                                        <x-admin.icon-button tone="indigo" @click="openEdit(hall)" title="Edit">
-                                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </x-admin.icon-button>
-                                        <x-admin.icon-button tone="red" @click="deleteOne(hall)" title="Delete">
-                                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </x-admin.icon-button>
+                                        <x-admin.icon-button tone="sky" @click="openView(hall)">View</x-admin.icon-button>
+                                        <x-admin.icon-button tone="indigo" @click="openEdit(hall)">Edit</x-admin.icon-button>
+                                        <x-admin.icon-button tone="red" @click="deleteOne(hall)">Delete</x-admin.icon-button>
                                     </div>
                                 </td>
                             </tr>
@@ -105,8 +100,8 @@
                 <div class="border-b border-gray-200 px-5 py-4">
                     <h3 class="text-lg font-semibold text-gray-900" x-text="formMode === 'create' ? 'Add Hall' : 'Edit Hall'"></h3>
                 </div>
-                <form @submit.prevent="submitForm()" class="space-y-4 p-5">
-                    <div>
+                <form @submit.prevent="submitForm()" class="p-5">
+                    <div x-show="viewingAll" x-cloak class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Branch</label>
                         <select x-model.number="form.branch_id" required class="admin-select mt-1 block w-full px-3 py-2">
                             <template x-for="branch in branches" :key="branch.id">
@@ -114,16 +109,18 @@
                             </template>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Hall Name</label>
-                        <input type="text" x-model="form.name" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Hall Name <span class="text-red-500">*</span></label>
+                        <input type="text" x-model="form.name" required minlength="2" class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm" :class="formErrors.name ? 'border-red-400' : 'border-gray-300'">
+                        <p class="mt-1 text-xs text-red-600" x-show="formErrors.name" x-text="formErrors.name"></p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Seat Capacity</label>
-                        <input type="number" :min="form.min_seat_capacity || 1" x-model.number="form.seat_capacity" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Seat Capacity <span class="text-red-500">*</span></label>
+                        <input type="number" :min="form.min_seat_capacity || 1" max="500" x-model.number="form.seat_capacity" required class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm" :class="formErrors.seat_capacity ? 'border-red-400' : 'border-gray-300'">
+                        <p class="mt-1 text-xs text-red-600" x-show="formErrors.seat_capacity" x-text="formErrors.seat_capacity"></p>
                         <p x-show="form.min_seat_capacity > 1" class="mt-1 text-xs text-amber-700">Capacity cannot be reduced below <span x-text="form.min_seat_capacity"></span> while students are assigned.</p>
                     </div>
-                    <div>
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Description</label>
                         <textarea x-model="form.description" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"></textarea>
                     </div>

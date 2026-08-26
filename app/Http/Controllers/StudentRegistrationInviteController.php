@@ -16,7 +16,9 @@ class StudentRegistrationInviteController extends Controller
             'Set the global student code prefix in Settings before sharing registration links.',
         );
 
-        $branchId = $this->activeBranchId($request);
+        $branchId = $request->integer('branch_id') ?: $this->optionalActiveBranchId($request);
+        abort_unless($branchId, 422, 'Select a branch before creating a registration link.');
+        $this->assertCanAccessBranch($request, $branchId);
 
         $invite = StudentRegistrationInvite::createForBranch(
             $branchId,

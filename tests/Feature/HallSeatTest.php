@@ -88,4 +88,30 @@ class HallSeatTest extends TestCase
 
         $response->assertOk()->assertJson(['ok' => true, 'branch_id' => $branch->id]);
     }
+
+    public function test_platform_admin_can_create_hall_for_any_branch(): void
+    {
+        $adminUser = User::factory()->create(['branch_id' => null]);
+        \App\Models\Admin::query()->create([
+            'user_id' => $adminUser->id,
+            'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
+        ]);
+        $active = Branch::factory()->create(['name' => 'Active Branch']);
+        $other = Branch::factory()->create(['name' => 'Other Branch']);
+
+        $this->actingAs($adminUser)->withSession(['active_branch_id' => $active->id]);
+
+        $response = $this->postJson(route('halls.store'), [
+            'branch_id' => $other->id,
+            'name' => 'East Reading Hall',
+            'seat_capacity' => 8,
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('halls', [
+            'branch_id' => $other->id,
+            'name' => 'East Reading Hall',
+            'seat_capacity' => 8,
+        ]);
+    }
 }

@@ -78,6 +78,8 @@ class BranchController extends Controller
 
         $this->syncBranchLogin($branch, $validated, true);
 
+        $this->logActivity($request, 'branch.created', "Created branch \"{$branch->name}\".", $branch, $branch->id);
+
         $request->session()->put('active_branch_id', $branch->id);
 
         return response()->json([
@@ -93,7 +95,7 @@ class BranchController extends Controller
 
         abort_unless($branch, 403);
 
-        $branch->update(collect($request->validated())->except(['login_email', 'password'])->all());
+        $branch->update(collect($request->validated())->except(['password'])->all());
 
         return response()->json([
             'message' => 'Branch details updated.',
@@ -106,7 +108,7 @@ class BranchController extends Controller
         abort_unless($request->user()?->isPlatformAdmin(), 403);
 
         $validated = $request->validated();
-        $branch->update(collect($validated)->except(['login_email', 'password'])->all());
+        $branch->update(collect($validated)->except(['password'])->all());
         $this->syncBranchLogin($branch->fresh(), $validated, false);
 
         return response()->json([
@@ -123,7 +125,11 @@ class BranchController extends Controller
 
         abort_unless($user, 422, 'This branch does not have a login user yet.');
 
-        $password = Str::password(12);
+        $validated = $request->validate([
+            'password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        $password = $validated['password'] ?? Str::password(12);
         $user->update(['password' => $password]);
 
         return response()->json([
@@ -146,6 +152,7 @@ class BranchController extends Controller
         $name = $branch->name;
         $branchId = $branch->id;
         $branch->delete();
+        $this->logActivity($request, 'branch.deleted', "Deleted branch \"{$name}\".", null, null, ['branch_id' => $branchId]);
 
         if ((int) $request->session()->get('active_branch_id') === $branchId) {
             $nextBranchId = Branch::query()->orderBy('name')->value('id');
@@ -167,12 +174,27 @@ class BranchController extends Controller
         abort_unless($request->user()?->isPlatformAdmin(), 403);
 
         $validated = $request->validate([
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'branch_id' => ['required'],
         ]);
 
-        $request->session()->put('active_branch_id', $validated['branch_id']);
+        if ((string) $validated['branch_id'] === 'all') {
+            $request->session()->put('active_branch_id', 'all');
+            $this->logActivity($request, 'branch.switched', 'Switched view to all branches.', null, null);
 
-        $branch = Branch::query()->findOrFail($validated['branch_id']);
+            return response()->json([
+                'message' => 'Now viewing all branches.',
+                'branch' => ['id' => 'all', 'name' => 'All branches'],
+            ]);
+        }
+
+        $request->validate([
+            'branch_id' => ['integer', 'exists:branches,id'],
+        ]);
+
+        $request->session()->put('active_branch_id', (int) $validated['branch_id']);
+
+        $branch = Branch::query()->findOrFail((int) $validated['branch_id']);
+        $this->logActivity($request, 'branch.switched', "Switched active branch to {$branch->name}.", $branch, $branch->id);
 
         return response()->json([
             'message' => "Active branch switched to {$branch->name}.",
@@ -190,8 +212,8 @@ class BranchController extends Controller
             'name' => $branch->name,
             'contact_person' => $branch->contact_person,
             'phone' => $branch->phone,
-            'email' => $branch->email,
-            'login_email' => $branch->users->sortBy('id')->first()?->email,
+            'email' => $branch->email ?: $branch->users->sortBy('id')->first()?->email,
+            'login_email' => $branch->users->sortBy('id')->first()?->email ?: $branch->email,
             'address' => $branch->address,
             'users_count' => $branch->users_count ?? $branch->users()->count(),
             'halls_count' => $branch->halls_count ?? $branch->halls()->count(),
@@ -204,7 +226,7 @@ class BranchController extends Controller
      */
     private function syncBranchLogin(Branch $branch, array $validated, bool $requirePassword): void
     {
-        $loginEmail = $validated['login_email'] ?? null;
+        $loginEmail = $validated['email'] ?? $validated['login_email'] ?? null;
 
         if (! $loginEmail && ! $requirePassword) {
             return;

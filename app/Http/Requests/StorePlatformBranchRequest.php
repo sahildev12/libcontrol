@@ -16,8 +16,7 @@ class StorePlatformBranchRequest extends FormRequest
     {
         $this->merge([
             'phone' => $this->filled('phone') ? trim((string) $this->input('phone')) : null,
-            'email' => $this->filled('email') ? trim((string) $this->input('email')) : null,
-            'login_email' => $this->filled('login_email') ? trim((string) $this->input('login_email')) : null,
+            'email' => $this->filled('email') ? trim((string) $this->input('email')) : ($this->filled('login_email') ? trim((string) $this->input('login_email')) : null),
             'contact_person' => $this->filled('contact_person') ? trim((string) $this->input('contact_person')) : null,
             'address' => $this->filled('address') ? trim((string) $this->input('address')) : null,
         ]);
@@ -29,11 +28,10 @@ class StorePlatformBranchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'min:2', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'phone' => ValidationRules::phoneOptional(),
-            'email' => ValidationRules::emailOptional(),
-            'login_email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'address' => ['nullable', 'string', 'max:1000'],
         ];
@@ -47,9 +45,9 @@ class StorePlatformBranchRequest extends FormRequest
         return [
             'name.required' => 'Branch name is required.',
             'phone.regex' => 'Enter a valid 10-digit Indian mobile number.',
+            'email.required' => 'Email is required.',
             'email.email' => 'Enter a valid email address.',
-            'login_email.required' => 'Login email is required.',
-            'login_email.unique' => 'This login email is already in use.',
+            'email.unique' => 'This email is already in use.',
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
         ];

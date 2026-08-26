@@ -3,7 +3,11 @@
         x-data="enquiryTable({
             rows: @js($enquiries),
             storeUrl: @js(route('enquiries.store')),
+            bulkDeleteUrl: @js(route('enquiries.bulk-destroy')),
             csrf: @js(csrf_token()),
+            branches: @js($branches ?? []),
+            defaultBranchId: @js($defaultBranchId ?? null),
+            viewingAll: @js($viewingAll ?? false),
         })"
         x-init="init()"
     >
@@ -18,7 +22,7 @@
         </header>
 
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <x-admin.data-table-toolbar search-placeholder="Search enquiries..." />
+            <x-admin.data-table-toolbar search-placeholder="Search enquiries..." :show-bulk-delete="true" />
 
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[900px]">
@@ -72,6 +76,14 @@
                     <h3 class="text-lg font-semibold text-gray-900" x-text="formMode === 'create' ? 'Add Enquiry' : 'Edit Enquiry'"></h3>
                 </div>
                 <form @submit.prevent="submitForm()" class="space-y-4 p-5">
+                    <div x-show="viewingAll" x-cloak>
+                        <label class="block text-sm font-medium text-gray-700">Branch</label>
+                        <select x-model="form.branch_id" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                            <template x-for="branch in (branches || [])" :key="branch.id">
+                                <option :value="branch.id" x-text="branch.name"></option>
+                            </template>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Name</label>
                         <input type="text" x-model="form.name" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">

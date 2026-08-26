@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SeatBooking extends Model
 {
@@ -17,7 +18,11 @@ class SeatBooking extends Model
         'custom_start_time',
         'custom_end_time',
         'fee_type',
+        'payment_plan',
+        'installment_frequency',
         'fee_amount',
+        'amount_paid',
+        'fee_paid_at',
         'membership_mode',
         'joining_date',
         'plan_expiry_date',
@@ -41,7 +46,9 @@ class SeatBooking extends Model
             'trial_end' => 'date',
             'cancelled_at' => 'datetime',
             'expiry_reminder_sent_at' => 'datetime',
+            'fee_paid_at' => 'datetime',
             'fee_amount' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
         ];
     }
 
@@ -53,5 +60,15 @@ class SeatBooking extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
+    }
+
+    public function installments(): HasMany
+    {
+        return $this->hasMany(FeeInstallment::class)->orderBy('installment_number');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(FeePayment::class)->orderByDesc('payment_date')->orderByDesc('id');
     }
 }
