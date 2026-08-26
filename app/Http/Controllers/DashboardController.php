@@ -3,21 +3,50 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
-use App\Services\FeeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, DashboardService $dashboardService, FeeService $feeService): View
+    public function __invoke(Request $request, DashboardService $dashboardService): View
     {
         $branchId = $this->optionalActiveBranchId($request);
-        $stats = $dashboardService->statsForBranch($branchId);
-        $feeOverview = $feeService->overviewForBranch($branchId);
-        $scopeLabel = $this->viewingAllBranches($request)
+        $viewingAll = $this->viewingAllBranches($request);
+        $isAdminOverview = (bool) $request->user()?->isPlatformAdmin() && $viewingAll;
+        $scopeLabel = $viewingAll
             ? 'All branches'
             : ($this->optionalActiveBranch($request)?->name ?? '');
 
-        return view('dashboard', compact('stats', 'feeOverview', 'scopeLabel'));
+        if ($isAdminOverview) {
+            $from = $request->filled('from')
+                ? Carbon::parse($request->input('from'))->startOfDay()
+                : Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->startOfMonth();
+            $to = $request->filled('to')
+                ? Carbon::parse($request->input('to'))->endOfDay()
+                : Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->endOfDay();
+
+            if ($from->gt($to)) {
+                [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+            }
+
+            $admin = $dashboardService->adminOverview($from, $to);
+
+            return view('dashboard', [
+                'mode' => 'admin',
+                'scopeLabel' => $scopeLabel,
+                'admin' => $admin,
+                'branch' => null,
+            ]);
+        }
+
+        $branch = $dashboardService->branchOverview($branchId);
+
+        return view('dashboard', [
+            'mode' => 'branch',
+            'scopeLabel' => $scopeLabel !== '' ? $scopeLabel : 'Branch',
+            'admin' => null,
+            'branch' => $branch,
+        ]);
     }
 }
