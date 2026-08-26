@@ -50,7 +50,6 @@ class DashboardService
         $to ??= Carbon::now($tz)->endOfDay();
         $prevFrom = $from->copy()->subMonthNoOverflow()->startOfMonth();
         $prevTo = $from->copy()->subMonthNoOverflow()->endOfMonth();
-        $today = Carbon::now($tz)->startOfDay();
 
         $branches = Branch::query()
             ->withCount(['halls', 'students', 'users'])
@@ -110,23 +109,6 @@ class DashboardService
         $expiredPlans = $feeOverview['expired'];
         $expiringSoon = $feeOverview['expiring_soon'];
 
-        $expiring1to3 = $expiringSoon->filter(function (SeatBooking $booking) use ($today) {
-            if (! $booking->plan_expiry_date) {
-                return false;
-            }
-            $days = $today->diffInDays($booking->plan_expiry_date->copy()->startOfDay(), false);
-
-            return $days >= 0 && $days <= 3;
-        });
-        $expiring4to7 = $expiringSoon->filter(function (SeatBooking $booking) use ($today) {
-            if (! $booking->plan_expiry_date) {
-                return false;
-            }
-            $days = $today->diffInDays($booking->plan_expiry_date->copy()->startOfDay(), false);
-
-            return $days >= 4 && $days <= 7;
-        });
-
         $utilization = $branchRows
             ->filter(fn ($row) => $row['seats'] > 0)
             ->sortByDesc('occupancy')
@@ -134,9 +116,6 @@ class DashboardService
 
         $highest = $utilization->first();
         $lowest = $utilization->last();
-        $avgOccupancy = $utilization->isNotEmpty()
-            ? round($utilization->avg('occupancy'), 1)
-            : 0.0;
 
         $attention = [];
         if ($expiredPlans->isNotEmpty()) {
@@ -155,11 +134,11 @@ class DashboardService
                 'url' => route('fees.index'),
             ];
         }
-        if ($lowest && $lowest['occupancy'] < 40) {
+        if ($lowest && $lowest['occupancy'] < 40 && $lowest['available'] > 0) {
             $attention[] = [
                 'tone' => 'yellow',
                 'title' => $lowest['available'].' seats still available',
-                'detail' => $lowest['name'].' · '.$lowest['occupancy'].'% occupancy',
+                'detail' => 'In '.$lowest['name'],
                 'url' => route('seats.index'),
             ];
         }
@@ -177,38 +156,20 @@ class DashboardService
             $attention[] = [
                 'tone' => 'blue',
                 'title' => $inactiveAdmins.' branch admins inactive',
-                'detail' => 'No activity in the last 30 days',
+                'detail' => 'Last login more than 30 days',
                 'url' => route('branch.index'),
             ];
         }
 
-        $systemAlerts = [];
-        if ($expiredPlans->isNotEmpty()) {
-            $systemAlerts[] = [
-                'tone' => 'red',
-                'label' => $expiredPlans->count().' expired plans need renewal',
-            ];
-        }
-        if ($expiring1to3->isNotEmpty()) {
-            $systemAlerts[] = [
-                'tone' => 'amber',
-                'label' => $expiring1to3->count().' plans expire within 3 days',
-            ];
-        }
-        if ($available > 0 && $totalSeats > 0 && ($available / $totalSeats) >= 0.5) {
-            $systemAlerts[] = [
-                'tone' => 'cyan',
-                'label' => number_format($available).' seats available system-wide ('.round(($available / $totalSeats) * 100).'% free)',
-            ];
-        }
-
-        $planExpiryTotal = $expiredPlans->count() + $expiring1to3->count() + $expiring4to7->count();
+        $revenueMonths = $this->revenueByMonth(6);
+        $revenueMonthsTotal = collect($revenueMonths)->sum('amount');
 
         return [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'from_label' => $from->format('M j'),
             'to_label' => $to->format('M j, Y'),
+            'range_label' => $from->format('M j').' – '.$to->format('M j, Y'),
             'switchUrl' => route('active-branch.switch'),
             'kpis' => [
                 'branches' => $branches->count(),
@@ -226,19 +187,9 @@ class DashboardService
             ],
             'branches' => $branchRows,
             'attention' => $attention,
-            'plan_expiry' => [
-                'expired' => $expiredPlans->count(),
-                'days_1_3' => $expiring1to3->count(),
-                'days_4_7' => $expiring4to7->count(),
-                'total' => $planExpiryTotal,
-            ],
-            'utilization' => [
-                'rows' => $utilization->take(8)->values(),
-                'highest' => $highest,
-                'lowest' => $lowest,
-                'average' => $avgOccupancy,
-            ],
-            'system_alerts' => $systemAlerts,
+            'revenue_months' => $revenueMonths,
+            'revenue_months_total' => $revenueMonthsTotal,
+            'recent_activity' => $this->recentActivity(8),
         ];
     }
 
@@ -423,5 +374,83 @@ class DashboardService
             ->whereNotIn('id', $recentUserIds)
             ->where('updated_at', '<', $cutoff)
             ->count();
+    }
+
+    /**
+     * @return list<array{key: string, label: string, amount: float}>
+     */
+    private function revenueByMonth(int $months = 6): array
+    {
+        $tz = config('libspace.timezone', 'Asia/Kolkata');
+        $end = Carbon::now($tz)->endOfMonth();
+        $start = $end->copy()->subMonthsNoOverflow($months - 1)->startOfMonth();
+
+        $payments = FeePayment::query()
+            ->select(['payment_date', 'amount'])
+            ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
+            ->get();
+
+        $totals = [];
+        foreach ($payments as $payment) {
+            $key = Carbon::parse($payment->payment_date)->format('Y-m');
+            $totals[$key] = ($totals[$key] ?? 0) + (float) $payment->amount;
+        }
+
+        $result = [];
+        for ($i = 0; $i < $months; $i++) {
+            $month = $start->copy()->addMonthsNoOverflow($i);
+            $key = $month->format('Y-m');
+            $result[] = [
+                'key' => $key,
+                'label' => $month->format("M 'y"),
+                'amount' => round((float) ($totals[$key] ?? 0), 2),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<array{id: int, title: string, subject: string, branch: string, ago: string, tone: string}>
+     */
+    private function recentActivity(int $limit = 8): array
+    {
+        return ActivityLog::query()
+            ->with(['user:id,name', 'branch:id,name'])
+            ->where(function ($query) {
+                $query->where('action', 'not like', 'page.%')
+                    ->where('action', 'not like', 'auth.%');
+            })
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->map(function (ActivityLog $log) {
+                $action = strtolower((string) $log->action);
+                $tone = match (true) {
+                    str_contains($action, 'student') && (str_contains($action, 'creat') || str_contains($action, 'store') || str_contains($action, 'add')) => 'emerald',
+                    str_contains($action, 'payment') || str_contains($action, 'fee') => 'amber',
+                    str_contains($action, 'cancel') || str_contains($action, 'delete') => 'rose',
+                    str_contains($action, 'booking') || str_contains($action, 'seat') || str_contains($action, 'assign') => 'sky',
+                    str_contains($action, 'plan') || str_contains($action, 'booking') => 'violet',
+                    default => 'indigo',
+                };
+
+                $subject = $log->user?->name
+                    ?: (string) (data_get($log->properties, 'name')
+                        ?: data_get($log->properties, 'student_name')
+                        ?: data_get($log->properties, 'subject_label')
+                        ?: '');
+
+                return [
+                    'id' => $log->id,
+                    'title' => $log->description ?: $log->actionLabel(),
+                    'subject' => $subject !== '' ? $subject : '—',
+                    'branch' => $log->branch?->name ?: ($log->actor_type === 'admin' ? 'Admin office' : '—'),
+                    'ago' => $log->created_at?->diffForHumans() ?? '',
+                    'tone' => $tone,
+                ];
+            })
+            ->values()
+            ->all();
     }
 }
