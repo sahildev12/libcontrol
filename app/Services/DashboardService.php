@@ -45,20 +45,59 @@ class DashboardService
      */
     public function adminOverview(?Carbon $from = null, ?Carbon $to = null): array
     {
-        $from ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->startOfMonth();
-        $to ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->endOfDay();
+        $tz = config('libspace.timezone', 'Asia/Kolkata');
+        $from ??= Carbon::now($tz)->startOfMonth();
+        $to ??= Carbon::now($tz)->endOfDay();
         $prevFrom = $from->copy()->subMonthNoOverflow()->startOfMonth();
         $prevTo = $from->copy()->subMonthNoOverflow()->endOfMonth();
+        $today = Carbon::now($tz)->startOfDay();
 
-        $branches = Branch::query()->orderBy('name')->get();
-        $seatCounts = $this->seatStatusCounts(null);
-        $totalSeats = $seatCounts['total_seats'];
-        $occupied = $seatCounts['occupied'] + $seatCounts['expiring_soon'] + $seatCounts['on_trial'];
-        $available = $seatCounts['available'];
-        $totalStudents = Student::query()->count();
-        $branchCount = $branches->count();
+        $branches = Branch::query()
+            ->withCount(['halls', 'students', 'users'])
+            ->orderBy('name')
+            ->get();
 
-        $monthRevenue = $this->revenueBetween($from, $to);
+        $allSeats = Seat::query()
+            ->with(['bookings.student', 'hall.branch'])
+            ->get();
+
+        $seatsByBranch = $allSeats->groupBy(fn (Seat $seat) => (int) ($seat->hall?->branch_id ?? 0));
+
+        $revenueByBranch = FeePayment::query()
+            ->selectRaw('halls.branch_id as branch_id, SUM(fee_payments.amount) as total')
+            ->join('seat_bookings', 'seat_bookings.id', '=', 'fee_payments.seat_booking_id')
+            ->join('seats', 'seats.id', '=', 'seat_bookings.seat_id')
+            ->join('halls', 'halls.id', '=', 'seats.hall_id')
+            ->whereBetween('fee_payments.payment_date', [$from->toDateString(), $to->toDateString()])
+            ->groupBy('halls.branch_id')
+            ->pluck('total', 'branch_id');
+
+        $branchRows = $branches->map(function (Branch $branch) use ($seatsByBranch, $revenueByBranch) {
+            $counts = $this->countSeatStatuses($seatsByBranch->get($branch->id, collect()), $branch);
+            $seats = $counts['total_seats'];
+            $occupied = $counts['occupied'] + $counts['expiring_soon'] + $counts['on_trial'];
+            $available = $counts['available'];
+            $occupancy = $seats > 0 ? round(($occupied / $seats) * 100, 1) : 0.0;
+            $status = $branch->halls_count > 0 ? 'Active' : 'Setup';
+
+            return [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'students' => (int) $branch->students_count,
+                'seats' => $seats,
+                'occupied' => $occupied,
+                'available' => $available,
+                'occupancy' => $occupancy,
+                'revenue' => round((float) ($revenueByBranch[$branch->id] ?? 0), 2),
+                'status' => $status,
+                'status_tone' => $status === 'Active' ? 'emerald' : 'amber',
+            ];
+        })->values();
+
+        $totalSeats = $branchRows->sum('seats');
+        $occupied = $branchRows->sum('occupied');
+        $available = $branchRows->sum('available');
+        $monthRevenue = $branchRows->sum('revenue');
         $prevMonthRevenue = $this->revenueBetween($prevFrom, $prevTo);
 
         $studentsThisMonth = Student::query()->whereBetween('created_at', [$from, $to])->count();
@@ -67,59 +106,114 @@ class DashboardService
         $seatsThisMonth = Seat::query()->whereBetween('created_at', [$from, $to])->count();
         $seatsPrevMonth = Seat::query()->whereBetween('created_at', [$prevFrom, $prevTo])->count();
 
-        $branchRows = $branches->map(function (Branch $branch) use ($from, $to) {
-            $counts = $this->seatStatusCounts($branch->id);
-            $seats = $counts['total_seats'];
-            $occupied = $counts['occupied'] + $counts['expiring_soon'] + $counts['on_trial'];
-            $available = $counts['available'];
-            $students = Student::query()->where('branch_id', $branch->id)->count();
-            $revenue = $this->revenueBetween($from, $to, $branch->id);
-            $occupancy = $seats > 0 ? round(($occupied / $seats) * 100, 1) : 0;
-
-            return [
-                'id' => $branch->id,
-                'name' => $branch->name,
-                'students' => $students,
-                'seats' => $seats,
-                'occupied' => $occupied,
-                'available' => $available,
-                'occupancy' => $occupancy,
-                'revenue' => $revenue,
-                'status' => 'active',
-            ];
-        })->values();
-
         $feeOverview = $this->feeService->overviewForBranch(null);
-        $expiredCount = $feeOverview['expired']->count();
-        $expiringCount = $feeOverview['expiring_soon']->count();
-        $expiredBranches = $feeOverview['expired']
-            ->map(fn ($b) => $b->seat?->hall?->branch_id)
-            ->filter()
-            ->unique()
-            ->count();
-        $expiringBranches = $feeOverview['expiring_soon']
-            ->map(fn ($b) => $b->seat?->hall?->branch_id)
-            ->filter()
-            ->unique()
-            ->count();
+        $expiredPlans = $feeOverview['expired'];
+        $expiringSoon = $feeOverview['expiring_soon'];
 
-        $lowOccupancy = $branchRows
-            ->filter(fn ($row) => $row['seats'] > 0 && $row['occupancy'] < 40)
-            ->sortBy('occupancy')
-            ->take(1)
-            ->first();
+        $expiring1to3 = $expiringSoon->filter(function (SeatBooking $booking) use ($today) {
+            if (! $booking->plan_expiry_date) {
+                return false;
+            }
+            $days = $today->diffInDays($booking->plan_expiry_date->copy()->startOfDay(), false);
+
+            return $days >= 0 && $days <= 3;
+        });
+        $expiring4to7 = $expiringSoon->filter(function (SeatBooking $booking) use ($today) {
+            if (! $booking->plan_expiry_date) {
+                return false;
+            }
+            $days = $today->diffInDays($booking->plan_expiry_date->copy()->startOfDay(), false);
+
+            return $days >= 4 && $days <= 7;
+        });
+
+        $utilization = $branchRows
+            ->filter(fn ($row) => $row['seats'] > 0)
+            ->sortByDesc('occupancy')
+            ->values();
+
+        $highest = $utilization->first();
+        $lowest = $utilization->last();
+        $avgOccupancy = $utilization->isNotEmpty()
+            ? round($utilization->avg('occupancy'), 1)
+            : 0.0;
+
+        $attention = [];
+        if ($expiredPlans->isNotEmpty()) {
+            $attention[] = [
+                'tone' => 'red',
+                'title' => $expiredPlans->count().' expired plans',
+                'detail' => 'Across '.$expiredPlans->map(fn ($b) => $b->seat?->hall?->branch_id)->filter()->unique()->count().' branches',
+                'url' => route('fees.index'),
+            ];
+        }
+        if ($expiringSoon->isNotEmpty()) {
+            $attention[] = [
+                'tone' => 'amber',
+                'title' => $expiringSoon->count().' plans expiring in next 7 days',
+                'detail' => 'Across '.$expiringSoon->map(fn ($b) => $b->seat?->hall?->branch_id)->filter()->unique()->count().' branches',
+                'url' => route('fees.index'),
+            ];
+        }
+        if ($lowest && $lowest['occupancy'] < 40) {
+            $attention[] = [
+                'tone' => 'yellow',
+                'title' => $lowest['available'].' seats still available',
+                'detail' => $lowest['name'].' · '.$lowest['occupancy'].'% occupancy',
+                'url' => route('seats.index'),
+            ];
+        }
+        if ($highest && $highest['occupancy'] >= 90) {
+            $attention[] = [
+                'tone' => 'indigo',
+                'title' => $highest['name'].' near full capacity',
+                'detail' => $highest['occupancy'].'% occupancy · '.$highest['available'].' seats left',
+                'url' => route('seats.index'),
+            ];
+        }
 
         $inactiveAdmins = $this->inactiveBranchAdminsCount();
+        if ($inactiveAdmins > 0) {
+            $attention[] = [
+                'tone' => 'blue',
+                'title' => $inactiveAdmins.' branch admins inactive',
+                'detail' => 'No activity in the last 30 days',
+                'url' => route('branch.index'),
+            ];
+        }
+
+        $systemAlerts = [];
+        if ($expiredPlans->isNotEmpty()) {
+            $systemAlerts[] = [
+                'tone' => 'red',
+                'label' => $expiredPlans->count().' expired plans need renewal',
+            ];
+        }
+        if ($expiring1to3->isNotEmpty()) {
+            $systemAlerts[] = [
+                'tone' => 'amber',
+                'label' => $expiring1to3->count().' plans expire within 3 days',
+            ];
+        }
+        if ($available > 0 && $totalSeats > 0 && ($available / $totalSeats) >= 0.5) {
+            $systemAlerts[] = [
+                'tone' => 'cyan',
+                'label' => number_format($available).' seats available system-wide ('.round(($available / $totalSeats) * 100).'% free)',
+            ];
+        }
+
+        $planExpiryTotal = $expiredPlans->count() + $expiring1to3->count() + $expiring4to7->count();
 
         return [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'from_label' => $from->format('M j'),
             'to_label' => $to->format('M j, Y'),
+            'switchUrl' => route('active-branch.switch'),
             'kpis' => [
-                'branches' => $branchCount,
+                'branches' => $branches->count(),
                 'branches_delta' => $branchesThisMonth,
-                'students' => $totalStudents,
+                'students' => (int) $branches->sum('students_count'),
                 'students_delta_pct' => $this->percentChange($studentsThisMonth, $studentsPrevMonth),
                 'seats' => $totalSeats,
                 'seats_delta_pct' => $this->percentChange($seatsThisMonth, $seatsPrevMonth),
@@ -131,15 +225,20 @@ class DashboardService
                 'revenue_delta_pct' => $this->percentChange($monthRevenue, $prevMonthRevenue),
             ],
             'branches' => $branchRows,
-            'revenue_months' => $this->revenueByMonth(6),
-            'attention' => [
-                'expired_plans' => $expiredCount,
-                'expired_branches' => $expiredBranches,
-                'expiring_plans' => $expiringCount,
-                'expiring_branches' => $expiringBranches,
-                'low_occupancy' => $lowOccupancy,
-                'inactive_admins' => $inactiveAdmins,
+            'attention' => $attention,
+            'plan_expiry' => [
+                'expired' => $expiredPlans->count(),
+                'days_1_3' => $expiring1to3->count(),
+                'days_4_7' => $expiring4to7->count(),
+                'total' => $planExpiryTotal,
             ],
+            'utilization' => [
+                'rows' => $utilization->take(8)->values(),
+                'highest' => $highest,
+                'lowest' => $lowest,
+                'average' => $avgOccupancy,
+            ],
+            'system_alerts' => $systemAlerts,
         ];
     }
 
@@ -250,6 +349,17 @@ class DashboardService
             ->when($branchId, fn ($query) => $query->whereHas('hall', fn ($hallQuery) => $hallQuery->where('branch_id', $branchId)))
             ->get();
 
+        $branch = $branchId ? Branch::query()->find($branchId) : null;
+
+        return $this->countSeatStatuses($seats, $branch);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, Seat>  $seats
+     * @return array{total_seats: int, occupied: int, available: int, expiring_soon: int, expired: int, on_trial: int}
+     */
+    private function countSeatStatuses($seats, ?Branch $branch = null): array
+    {
         $counts = [
             'total_seats' => $seats->count(),
             'occupied' => 0,
@@ -258,8 +368,6 @@ class DashboardService
             'expired' => 0,
             'on_trial' => 0,
         ];
-
-        $branch = $branchId ? Branch::query()->find($branchId) : null;
 
         foreach ($seats as $seat) {
             $status = $this->seatStatusService->resolveForSeat($seat, $seat->hall?->branch ?? $branch);
@@ -288,28 +396,6 @@ class DashboardService
                 $query->whereHas('booking.seat.hall', fn ($hall) => $hall->where('branch_id', $branchId));
             })
             ->sum('amount');
-    }
-
-    /**
-     * @return list<array{label: string, amount: float}>
-     */
-    private function revenueByMonth(int $months = 6): array
-    {
-        $tz = config('libspace.timezone', 'Asia/Kolkata');
-        $cursor = Carbon::now($tz)->startOfMonth()->subMonthsNoOverflow($months - 1);
-        $rows = [];
-
-        for ($i = 0; $i < $months; $i++) {
-            $start = $cursor->copy()->startOfMonth();
-            $end = $cursor->copy()->endOfMonth();
-            $rows[] = [
-                'label' => $start->format("M 'y"),
-                'amount' => $this->revenueBetween($start, $end),
-            ];
-            $cursor->addMonthNoOverflow();
-        }
-
-        return $rows;
     }
 
     private function percentChange(float|int $current, float|int $previous): ?float
