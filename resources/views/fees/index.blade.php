@@ -139,14 +139,14 @@
 
         <div x-show="viewOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-gray-900/50" @click="closeView()"></div>
-            <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" @click.stop>
+            <div class="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl" @click.stop>
                 <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                     <h3 class="text-lg font-semibold text-gray-900">Fee details</h3>
                     <button type="button" @click="closeView()" class="rounded-lg p-1 text-gray-400 hover:bg-gray-100" aria-label="Close">
                         <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-                <div class="space-y-3 px-5 py-4 text-sm">
+                <div class="max-h-[70vh] space-y-3 overflow-y-auto px-5 py-4 text-sm">
                     <div>
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Student</p>
                         <p class="mt-0.5 font-medium text-gray-900" x-text="viewRow?.student_name"></p>
@@ -207,14 +207,35 @@
                             <p class="mt-0.5 text-gray-900" x-text="viewRow?.amount_due != null ? `₹${viewRow.amount_due}` : ''"></p>
                         </div>
                     </div>
+                    <div x-show="(viewRow?.payments || []).length > 0">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Payment history</p>
+                        <div class="mt-2 overflow-hidden rounded-lg border border-gray-100">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-50 text-gray-500">
+                                    <tr>
+                                        <th class="px-3 py-2">Received</th>
+                                        <th class="px-3 py-2">Amount</th>
+                                        <th class="px-3 py-2">Method</th>
+                                        <th class="px-3 py-2">Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="payment in (viewRow?.payments || [])" :key="payment.id">
+                                        <tr class="border-t border-gray-100">
+                                            <td class="px-3 py-2 text-gray-700">
+                                                <span x-text="payment.recorded_at || payment.payment_date"></span>
+                                            </td>
+                                            <td class="px-3 py-2 font-medium text-gray-900" x-text="`₹${payment.amount}`"></td>
+                                            <td class="px-3 py-2 capitalize text-gray-700" x-text="payment.payment_method_label"></td>
+                                            <td class="px-3 py-2 text-gray-600" x-text="payment.notes || payment.reference || '—'"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div x-show="viewRow?.is_flexible_installment" class="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">
                         Flexible payments can be received at any time before the plan end date.
-                    </div>
-                    <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-3">
-                        <p class="text-xs text-emerald-800">Record money received for this student.</p>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            <button type="button" @click="openReceivePayment(viewRow); closeView()" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Add fee</button>
-                        </div>
                     </div>
                     <div x-show="viewRow?.is_installment && ! viewRow?.is_flexible_installment">
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Installment schedule</p>

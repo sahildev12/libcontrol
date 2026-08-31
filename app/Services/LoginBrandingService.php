@@ -17,6 +17,23 @@ class LoginBrandingService
     /**
      * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null}
      */
+    public function forPasswordReset(): array
+    {
+        $settings = PlatformSetting::current();
+
+        return [
+            'portal' => 'auth',
+            'title' => 'Forgot password',
+            'subtitle' => config('libspace.product.byline'),
+            'name' => config('libspace.product.name'),
+            'logo_url' => $settings->logoUrl(),
+            'favicon_url' => $settings->faviconUrl(),
+        ];
+    }
+
+    /**
+     * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null}
+     */
     public function forPortal(string $portal, ?Request $request = null): array
     {
         if ($portal === self::PORTAL_ADMIN) {
@@ -24,7 +41,7 @@ class LoginBrandingService
                 'portal' => self::PORTAL_ADMIN,
                 'title' => 'Admin login',
                 'subtitle' => 'For the people who manage the whole system',
-                'name' => config('app.name', 'LibSpace'),
+                'name' => config('libspace.product.name'),
                 'logo_url' => PlatformSetting::current()->logoUrl(),
                 'favicon_url' => PlatformSetting::current()->faviconUrl(),
             ];

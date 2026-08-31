@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Hall;
+use App\Services\PlanLimitService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -76,6 +77,16 @@ class UpdateHallRequest extends FormRequest
                         ? "Capacity cannot be reduced below {$minimum} while students are assigned."
                         : 'Seat capacity must be at least 1.',
                 );
+
+                return;
+            }
+
+            try {
+                app(PlanLimitService::class)->assertSeatCapacity($newCapacity, $hall->id);
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                foreach ($exception->errors()['seat_capacity'] ?? [] as $message) {
+                    $validator->errors()->add('seat_capacity', $message);
+                }
             }
         });
     }

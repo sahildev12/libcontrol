@@ -75,58 +75,82 @@
     </div>
 
     {{-- Today's Overview + Recent Enquiries --}}
-    <div class="flex flex-col gap-4 md:flex-row md:items-stretch">
-        <section class="min-w-0 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:w-[60%]">
-            <h2 class="text-base font-semibold text-gray-900">Today's Overview</h2>
-            <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div>
-                    <div class="mb-2 inline-flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z"/></svg>
+    <div class="flex flex-col gap-4 md:flex-row md:items-start">
+        <section class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm md:w-[58%] lg:w-[60%]">
+            <div class="border-b border-gray-100 px-4 py-3">
+                <h2 class="text-sm font-semibold text-gray-900">Today's Overview</h2>
+            </div>
+            <div class="grid grid-cols-2 gap-3 p-4 lg:grid-cols-4">
+                <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">New Enquiries</p>
+                            <p class="mt-0.5 text-xl font-bold tabular-nums leading-none text-gray-900">{{ number_format($today['enquiries']) }}</p>
+                            @if ($today['enquiries_delta_pct'] !== null)
+                                <p class="mt-1 text-[11px] font-semibold {{ $today['enquiries_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                                    {{ $today['enquiries_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($today['enquiries_delta_pct']) }}% vs yesterday
+                                </p>
+                            @else
+                                <p class="mt-1 text-[11px] text-gray-400">vs yesterday</p>
+                            @endif
+                        </div>
+                        <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z"/></svg>
+                        </span>
                     </div>
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">New Enquiries</p>
-                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($today['enquiries']) }}</p>
-                    @if ($today['enquiries_delta_pct'] !== null)
-                        <p class="mt-1 text-xs font-semibold {{ $today['enquiries_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                            {{ $today['enquiries_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($today['enquiries_delta_pct']) }}% vs yesterday
-                        </p>
-                    @endif
                 </div>
-                <div>
-                    <div class="mb-2 inline-flex size-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">New Students</p>
+                            <p class="mt-0.5 text-xl font-bold tabular-nums leading-none text-gray-900">{{ number_format($today['students']) }}</p>
+                            @if ($today['students_delta_pct'] !== null)
+                                <p class="mt-1 text-[11px] font-semibold {{ $today['students_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                                    {{ $today['students_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($today['students_delta_pct']) }}% vs yesterday
+                                </p>
+                            @else
+                                <p class="mt-1 text-[11px] text-gray-400">vs yesterday</p>
+                            @endif
+                        </div>
+                        <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </span>
                     </div>
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">New Students</p>
-                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($today['students']) }}</p>
-                    @if ($today['students_delta_pct'] !== null)
-                        <p class="mt-1 text-xs font-semibold {{ $today['students_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                            {{ $today['students_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($today['students_delta_pct']) }}% vs yesterday
-                        </p>
-                    @endif
                 </div>
-                <div>
-                    <div class="mb-2 inline-flex size-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+                <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Today's Revenue</p>
+                            <p class="mt-0.5 text-xl font-bold tabular-nums leading-none text-gray-900">₹{{ number_format($today['revenue']) }}</p>
+                            @if ($today['revenue_delta_pct'] !== null)
+                                <p class="mt-1 text-[11px] font-semibold {{ $today['revenue_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                                    {{ $today['revenue_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($today['revenue_delta_pct']) }}% vs yesterday
+                                </p>
+                            @else
+                                <p class="mt-1 text-[11px] text-gray-400">vs yesterday</p>
+                            @endif
+                        </div>
+                        <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+                        </span>
                     </div>
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Today's Revenue</p>
-                    <p class="mt-1 text-2xl font-bold text-gray-900">₹{{ number_format($today['revenue']) }}</p>
-                    @if ($today['revenue_delta_pct'] !== null)
-                        <p class="mt-1 text-xs font-semibold {{ $today['revenue_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                            {{ $today['revenue_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($today['revenue_delta_pct']) }}% vs yesterday
-                        </p>
-                    @endif
                 </div>
-                <div>
-                    <div class="mb-2 inline-flex size-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Expiring Plans</p>
+                            <p class="mt-0.5 text-xl font-bold tabular-nums leading-none text-gray-900">{{ number_format($today['expiring_plans']) }}</p>
+                            <p class="mt-1 text-[11px] text-gray-500">Next 7 days</p>
+                        </div>
+                        <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
                     </div>
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Expiring Plans</p>
-                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($today['expiring_plans']) }}</p>
-                    <p class="mt-1 text-xs text-gray-500">Next 7 days</p>
                 </div>
             </div>
         </section>
 
-        <section class="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:w-[40%]">
+        <section class="min-w-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                 <h2 class="text-base font-semibold text-gray-900">Recent Enquiries</h2>
                 <a href="{{ route('enquiries.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View all</a>

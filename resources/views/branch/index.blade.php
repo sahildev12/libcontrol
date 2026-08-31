@@ -2,6 +2,7 @@
     <div
         x-data="platformBranchesPage({
             branches: @js($branches),
+            planSnapshot: @js($planSnapshot),
             storeUrl: @js(route('branch.store')),
         })"
         x-init="init()"
@@ -11,10 +12,15 @@
                 <h1 class="text-2xl font-bold text-gray-900">Branches</h1>
                 <p class="mt-1 text-sm text-gray-600">Create and manage all library branches. Use the top bar to switch the active branch for halls, students, and settings.</p>
             </div>
-            <button type="button" @click="openCreate()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
+            <button type="button" @click="openCreate()" :disabled="! canAddBranch()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
                 Create Branch
             </button>
         </header>
+
+        <div class="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-950" x-show="planSnapshot">
+            Plan: <span class="font-semibold" x-text="planSnapshot.limits.plan_label"></span>
+            · Branches <span x-text="planSnapshot.usage.branches"></span>/<span x-text="planSnapshot.limits.max_branches ?? '∞'"></span>
+        </div>
 
         <section
             class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"

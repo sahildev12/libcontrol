@@ -6,6 +6,7 @@ use App\Http\Requests\StorePlatformBranchRequest;
 use App\Http\Requests\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Models\User;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -24,7 +25,9 @@ class BranchController extends Controller
             ->get()
             ->map(fn (Branch $branch) => $this->serializeBranchRow($branch));
 
-        return view('branch.index', compact('branches'));
+        $planSnapshot = app(PlanLimitService::class)->snapshot();
+
+        return view('branch.index', compact('branches', 'planSnapshot'));
     }
 
     public function show(Request $request, Branch $branch): JsonResponse
@@ -64,8 +67,10 @@ class BranchController extends Controller
         ]);
     }
 
-    public function store(StorePlatformBranchRequest $request): JsonResponse
+    public function store(StorePlatformBranchRequest $request, PlanLimitService $planLimitService): JsonResponse
     {
+        $planLimitService->assertCanAddBranch();
+
         $validated = $request->validated();
 
         $branch = Branch::create([

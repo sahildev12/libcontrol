@@ -7,12 +7,13 @@
     :favicon-url="$favicon_url"
 >
     <p class="mb-4 text-sm text-gray-600">
-        Enter the email for this {{ $portal === 'admin' ? 'admin' : 'branch' }} account. We will send a reset link if it matches.
+        Enter the email for your account. We will send a reset link if it matches.
     </p>
+    <p class="mb-4 text-xs text-gray-500">{{ config('libspace.product.byline') }}</p>
 
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ $portal === 'admin' ? route('admin.password.email') : route('password.email') }}">
+    <form method="POST" action="{{ route('password.email') }}">
         @csrf
 
         <div>
@@ -22,7 +23,7 @@
         </div>
 
         <div class="mt-6 flex items-center justify-between">
-            <a href="{{ $portal === 'admin' ? route('admin.login') : route('login') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to login</a>
+            <a href="{{ $loginReturn }}" class="text-sm text-gray-600 hover:text-gray-900">Back to login</a>
             <x-primary-button>
                 {{ __('Email Password Reset Link') }}
             </x-primary-button>

@@ -81,8 +81,6 @@ class User extends Authenticatable
 
     public function sendPasswordResetNotification(mixed $token): void
     {
-        $portal = $this->isPlatformAdmin() ? 'admin' : 'branch';
-
-        $this->notify(new ResetPasswordNotification($token, $portal));
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

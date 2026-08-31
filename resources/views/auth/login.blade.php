@@ -29,7 +29,7 @@
                 <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
             </label>
 
-            <a class="text-sm font-medium text-indigo-600 hover:text-indigo-800" href="{{ $portal === 'admin' ? route('admin.password.request') : route('password.request') }}">
+            <a class="text-sm font-medium text-indigo-600 hover:text-indigo-800" href="{{ route('password.request', $portal === 'admin' ? ['from' => 'admin'] : []) }}">
                 {{ __('Forgot password?') }}
             </a>
         </div>

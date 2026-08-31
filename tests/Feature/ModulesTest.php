@@ -10,6 +10,7 @@ use App\Models\Seat;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ModulesTest extends TestCase
@@ -48,17 +49,17 @@ class ModulesTest extends TestCase
         $user = User::factory()->create(['branch_id' => $branch->id]);
 
         $response = $this->actingAs($user)->postJson(route('students.store'), [
-            'name' => 'Rahul Sharma',
+            'name' => 'Rahul Kumar',
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'phone' => '9876543210',
             'email' => 'rahul@example.com',
         ]);
 
-        $response->assertCreated()->assertJsonPath('student.name', 'Rahul Sharma');
+        $response->assertCreated()->assertJsonPath('student.name', 'Rahul Kumar');
         $this->assertDatabaseHas('students', [
             'branch_id' => $branch->id,
-            'name' => 'Rahul Sharma',
+            'name' => 'Rahul Kumar',
         ]);
     }
 
@@ -380,6 +381,9 @@ class ModulesTest extends TestCase
 
     public function test_monthly_and_yearly_fees_calculate_plan_end_dates(): void
     {
+        Carbon::setTestNow('2026-08-08');
+
+        try {
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
         $hall = Hall::factory()->create(['branch_id' => $branch->id]);
@@ -417,6 +421,9 @@ class ModulesTest extends TestCase
         ]);
 
         $yearly->assertCreated()->assertJsonPath('row.plan_expiry_date_iso', '2027-08-07');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_one_time_and_custom_fees(): void
@@ -602,6 +609,7 @@ class ModulesTest extends TestCase
         ])->assertOk();
 
         $first->assertJsonPath('row.amount_paid', 1000)
+            ->assertJsonCount(1, 'row.payments')
             ->assertJsonPath('row.installments_paid', 1)
             ->assertJsonPath('row.payment_status', 'partial');
 
@@ -611,6 +619,7 @@ class ModulesTest extends TestCase
         ])->assertOk();
 
         $advance->assertJsonPath('row.amount_paid', 2500)
+            ->assertJsonCount(2, 'row.payments')
             ->assertJsonPath('row.installments_paid', 2)
             ->assertJsonPath('row.amount_due', 1500);
 

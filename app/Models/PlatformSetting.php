@@ -12,6 +12,10 @@ class PlatformSetting extends Model
     protected $fillable = [
         'student_code_prefix',
         'student_code_padding',
+        'plan_tier',
+        'max_seats_override',
+        'max_halls_override',
+        'max_branches_override',
         'display_name',
         'logo_path',
         'favicon_path',
@@ -24,6 +28,9 @@ class PlatformSetting extends Model
     {
         return [
             'student_code_padding' => 'integer',
+            'max_seats_override' => 'integer',
+            'max_halls_override' => 'integer',
+            'max_branches_override' => 'integer',
         ];
     }
 
@@ -31,12 +38,20 @@ class PlatformSetting extends Model
     {
         return static::query()->firstOrCreate([], [
             'student_code_padding' => config('libspace.defaults.student_code_padding', 3),
+            'plan_tier' => config('libspace.defaults.plan_tier', 'starter'),
         ]);
+    }
+
+    public function planTier(): string
+    {
+        $tier = (string) ($this->plan_tier ?: config('libspace.defaults.plan_tier', 'starter'));
+
+        return array_key_exists($tier, config('libspace.plans', [])) ? $tier : 'starter';
     }
 
     public function displayName(): string
     {
-        return $this->display_name ?: config('app.name', 'LibSpace');
+        return $this->display_name ?: config('libspace.product.name');
     }
 
     public function logoUrl(): ?string

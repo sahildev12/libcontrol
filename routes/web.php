@@ -108,6 +108,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::patch('/settings/platform', [SettingsController::class, 'updatePlatform'])->name('settings.platform.update')->middleware('platform_admin');
+    Route::patch('/settings/platform/plan', [SettingsController::class, 'updatePlatformPlan'])->name('settings.platform.plan.update')->middleware('platform_admin');
 });
 
 Route::post('/webhooks/libspace/seat-map', [WebhookController::class, 'refreshSeatMap'])

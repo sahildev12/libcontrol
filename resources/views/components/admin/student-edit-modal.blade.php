@@ -20,7 +20,7 @@
                         <input
                             type="text"
                             x-model="editForm.name"
-                            placeholder="e.g. Rahul Sharma"
+                            placeholder="e.g. "
                             class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm"
                             :class="editFormErrors.name ? 'border-red-400 focus:border-red-500 focus:ring-red-500/30' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500/30'"
                         >

@@ -6,7 +6,9 @@ use App\Http\Requests\StoreHallRequest;
 use App\Http\Requests\UpdateHallRequest;
 use App\Models\Branch;
 use App\Models\Hall;
+use App\Models\Seat;
 use App\Services\HallSeatGenerator;
+use App\Services\PlanLimitService;
 use App\Services\SeatMapService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +23,7 @@ class HallController extends Controller
         $branchId = $this->optionalActiveBranchId($request);
         $branch = $this->optionalActiveBranch($request);
 
-        $halls = $this->constrainByActiveBranch(Hall::query(), $request)
+        $hallsQuery = $this->constrainByActiveBranch(Hall::query(), $request)
             ->with('branch:id,name')
             ->withCount([
                 'seats',
@@ -32,9 +34,12 @@ class HallController extends Controller
                         ->where('status', '!=', 'cancelled'),
                 ),
             ])
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Hall $hall) => [
+            ->orderBy('name');
+
+        $hallsCollection = $hallsQuery->get();
+        $maxSeatByHall = $this->maxSeatNumberByHall($hallsCollection->pluck('id'));
+
+        $halls = $hallsCollection->map(fn (Hall $hall) => [
                 'id' => $hall->id,
                 'branch_id' => $hall->branch_id,
                 'branch_name' => $hall->branch?->name,
@@ -42,6 +47,7 @@ class HallController extends Controller
                 'description' => $hall->description,
                 'seat_capacity' => $hall->seat_capacity,
                 'filled_seats_count' => $hall->filled_seats_count,
+                'max_seat_number' => (int) ($maxSeatByHall[$hall->id] ?? 0),
                 'has_assigned_students' => $hall->hasAssignedStudents(),
                 'min_seat_capacity' => $hall->minimumSeatCapacity(),
                 'created_at' => $hall->created_at?->format('M d, Y'),
@@ -54,8 +60,9 @@ class HallController extends Controller
         $viewingAll = $this->viewingAllBranches($request);
         $branchName = $viewingAll ? 'All branches' : ($branch?->name ?? 'Branch');
         $defaultBranchId = $branchId ?: $branches->first()?->id;
+        $planSnapshot = app(PlanLimitService::class)->snapshot();
 
-        return view('halls.index', compact('halls', 'branches', 'branchName', 'defaultBranchId', 'viewingAll'));
+        return view('halls.index', compact('halls', 'branches', 'branchName', 'defaultBranchId', 'viewingAll', 'planSnapshot'));
     }
 
     public function show(Request $request, Hall $hall): JsonResponse
@@ -79,9 +86,14 @@ class HallController extends Controller
 
     public function store(StoreHallRequest $request, HallSeatGenerator $hallSeatGenerator, SeatMapService $seatMapService): JsonResponse|RedirectResponse
     {
-        $hall = Hall::create($request->validated());
+        $hall = Hall::create($request->safe()->only(['branch_id', 'name', 'description', 'seat_capacity']));
 
-        $hallSeatGenerator->generate($hall);
+        $startFrom = 1;
+        if ($request->boolean('continue_seat_numbering')) {
+            $startFrom = $hallSeatGenerator->nextSeatNumberAfterHall((int) $request->input('continue_from_hall_id'));
+        }
+
+        $hallSeatGenerator->generate($hall, 8, $startFrom);
         $hall->load(['branch:id,name'])->loadCount($this->hallCountRelations());
 
         $seatMapService->broadcastForBranch($hall->branch_id);
@@ -207,6 +219,25 @@ class HallController extends Controller
         ]);
     }
 
+    /**
+     * @param  \Illuminate\Support\Collection<int, int>  $hallIds
+     * @return array<int, int>
+     */
+    private function maxSeatNumberByHall($hallIds): array
+    {
+        if ($hallIds->isEmpty()) {
+            return [];
+        }
+
+        return Seat::query()
+            ->whereIn('hall_id', $hallIds)
+            ->selectRaw('hall_id, MAX(CAST(seat_number AS UNSIGNED)) as max_num')
+            ->groupBy('hall_id')
+            ->pluck('max_num', 'hall_id')
+            ->map(fn ($max) => (int) $max)
+            ->all();
+    }
+
     private function authorizeHall(Request $request, Hall $hall): void
     {
         $this->assertCanAccessBranch($request, $hall->branch_id);
@@ -225,6 +256,10 @@ class HallController extends Controller
             'description' => $hall->description,
             'seat_capacity' => $hall->seat_capacity,
             'filled_seats_count' => $hall->filled_seats_count ?? 0,
+            'max_seat_number' => (int) (Seat::query()
+                ->where('hall_id', $hall->id)
+                ->selectRaw('MAX(CAST(seat_number AS UNSIGNED)) as max_num')
+                ->value('max_num') ?: 0),
             'has_assigned_students' => $hall->hasAssignedStudents(),
             'min_seat_capacity' => $hall->minimumSeatCapacity(),
             'created_at' => $hall->created_at?->format('M d, Y'),

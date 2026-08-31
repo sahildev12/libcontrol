@@ -153,7 +153,7 @@ class FeeController extends Controller
             'fee_type' => $feeType,
             'payment_plan' => $feeService->normalizePaymentPlan($request->input('payment_plan'), (string) $request->input('fee_type')),
             'installment_frequency' => $request->input('installment_frequency'),
-            'fee_amount' => $request->input('fee_amount'),
+            'fee_amount' => round((float) ($request->input('fee_amount') ?? 0), 2),
             'amount_paid' => 0,
             'membership_mode' => $request->input('membership_mode'),
             'joining_date' => $joining,

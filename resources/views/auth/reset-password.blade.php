@@ -10,7 +10,6 @@
         @csrf
 
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
-        <input type="hidden" name="portal" value="{{ $portal }}">
 
         <div>
             <x-input-label for="email" :value="__('Email')" />

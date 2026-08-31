@@ -44,7 +44,7 @@
 
             <div
                 class="flex h-svh min-h-0 min-w-0 flex-col transition-[margin] duration-200 ease-out"
-                :class="collapsed ? 'lg:ml-[72px]' : 'lg:ml-[240px]'"
+                :class="collapsed ? 'lg:ml-[72px]' : 'lg:ml-[200px]'"
             >
                 @include('layouts.partials.admin-topbar')
 

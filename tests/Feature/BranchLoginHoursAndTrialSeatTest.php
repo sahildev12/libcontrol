@@ -230,6 +230,37 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_trial_seat_assignment_allows_empty_optional_fee(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-27 10:00:00', 'Asia/Kolkata'));
+
+        [, $user, $seat, $student] = $this->branchWithSeat();
+        $trialStudent = Student::factory()->create([
+            'branch_id' => $seat->hall->branch_id,
+            'student_type' => 'trial',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('trial-seats.store'), [
+            'student_id' => $trialStudent->id,
+            'hall_id' => $seat->hall_id,
+            'seat_id' => $seat->id,
+            'time_slot' => 'full_day',
+            'trial_start' => '2026-08-27',
+            'trial_days' => 14,
+            'fee_amount' => null,
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('seat_bookings', [
+            'seat_id' => $seat->id,
+            'student_id' => $trialStudent->id,
+            'status' => 'on_trial',
+            'fee_amount' => 0,
+        ]);
+
+        Carbon::setTestNow();
+    }
+
     public function test_expired_seats_become_vacant_after_one_day(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-19 11:00:00', 'Asia/Kolkata'));

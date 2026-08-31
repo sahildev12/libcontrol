@@ -44,7 +44,7 @@ class StudentRegistrationInviteTest extends TestCase
         $invite = StudentRegistrationInvite::createForBranch($branch->id);
 
         $response = $this->post(route('students.register.store', $invite->token), [
-            'name' => 'Rahul Sharma',
+            'name' => 'Rahul Kumar',
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'phone' => '9876543210',
@@ -54,7 +54,7 @@ class StudentRegistrationInviteTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseHas('students', [
             'branch_id' => $branch->id,
-            'name' => 'Rahul Sharma',
+            'name' => 'Rahul Kumar',
             'phone' => '9876543210',
         ]);
 

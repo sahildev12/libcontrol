@@ -341,7 +341,7 @@ class SeatBookingController extends Controller
             'payment_plan' => $paymentPlan,
             // Installments are flexible (pay as received) — no fixed schedule from seats assign.
             'installment_frequency' => $paymentPlan === 'installments' ? 'custom' : null,
-            'fee_amount' => $request->input('fee_amount'),
+            'fee_amount' => round((float) ($request->input('fee_amount') ?? 0), 2),
             'amount_paid' => 0,
             'membership_mode' => $request->input('membership_mode'),
             'joining_date' => $joining,

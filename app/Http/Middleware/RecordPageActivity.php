@@ -60,7 +60,6 @@ class RecordPageActivity
             'admin.login',
             'admin.login.store',
             'password.email',
-            'admin.password.email',
             'password.store',
             'notifications.mark-read',
             'notifications.mark-all-read',

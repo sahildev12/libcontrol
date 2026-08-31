@@ -2,30 +2,22 @@
 
 namespace App\Notifications;
 
+use App\Mail\PasswordResetMail;
+use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Notifications\Messages\MailMessage;
 
 class ResetPasswordNotification extends ResetPassword
 {
-    public function __construct(
-        string $token,
-        public string $portal = 'branch',
-    ) {
-        parent::__construct($token);
-    }
-
-    public function toMail($notifiable)
+    public function toMail($notifiable): PasswordResetMail
     {
-        $url = $this->resetUrl($notifiable);
-        $loginLabel = $this->portal === 'admin' ? 'admin login' : 'branch login';
+        /** @var User $notifiable */
+        $expireMinutes = (int) config('auth.passwords.users.expire', 60);
 
-        return (new MailMessage)
-            ->subject('Reset your LibSpace password')
-            ->greeting('Reset your password')
-            ->line('We received a request to reset the password for your '.$loginLabel.' account.')
-            ->action('Reset Password', $url)
-            ->line('This link expires in '.config('auth.passwords.users.expire', 60).' minutes.')
-            ->line('If you did not request a password reset, you can ignore this email.');
+        return (new PasswordResetMail(
+            resetUrl: $this->resetUrl($notifiable),
+            recipientName: $notifiable->name,
+            expireMinutes: $expireMinutes,
+        ))->to($notifiable->getEmailForPasswordReset());
     }
 
     protected function resetUrl(mixed $notifiable): string
@@ -33,7 +25,6 @@ class ResetPasswordNotification extends ResetPassword
         return url(route('password.reset', [
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
-            'portal' => $this->portal,
         ], false));
     }
 }

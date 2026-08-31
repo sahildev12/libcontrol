@@ -7,9 +7,16 @@ use App\Models\Seat;
 
 class HallSeatGenerator
 {
-    public function generate(Hall $hall, int $columns = 8): void
+    public function generate(Hall $hall, int $columns = 8, int $startFrom = 1): void
     {
-        $this->createSeatsUpTo($hall, (int) $hall->seat_capacity, $columns);
+        $this->createSeatsUpTo($hall, (int) $hall->seat_capacity, $columns, $startFrom);
+    }
+
+    public function nextSeatNumberAfterHall(int $hallId): int
+    {
+        $max = $this->maxSeatNumberInHall($hallId);
+
+        return $max > 0 ? $max + 1 : 1;
     }
 
     public function appendToCapacity(Hall $hall, int $columns = 8): void
@@ -87,30 +94,37 @@ class HallSeatGenerator
         }
     }
 
-    private function createSeatsUpTo(Hall $hall, int $targetCapacity, int $columns): void
+    private function createSeatsUpTo(Hall $hall, int $targetCapacity, int $columns, int $startFrom = 1): void
     {
-        $existingNumbers = $hall->seats()->pluck('seat_number')->map(fn ($n) => (int) $n)->flip()->all();
+        $existingNumbers = $hall->seats()
+            ->pluck('seat_number')
+            ->mapWithKeys(fn ($number) => [(int) $number => true])
+            ->all();
 
-        $rows = (int) ceil($targetCapacity / $columns);
-        $seatNumber = 1;
+        for ($position = 0; $position < $targetCapacity; $position++) {
+            $seatNumber = $startFrom + $position;
 
-        for ($row = 1; $row <= $rows; $row++) {
-            for ($col = 1; $col <= $columns; $col++) {
-                if ($seatNumber > $targetCapacity) {
-                    break;
-                }
-
-                if (! isset($existingNumbers[$seatNumber])) {
-                    Seat::create([
-                        'hall_id' => $hall->id,
-                        'seat_number' => (string) $seatNumber,
-                        'row_number' => $row,
-                        'column_number' => $col,
-                    ]);
-                }
-
-                $seatNumber++;
+            if (isset($existingNumbers[$seatNumber])) {
+                continue;
             }
+
+            $row = (int) floor($position / $columns) + 1;
+            $col = ($position % $columns) + 1;
+
+            Seat::create([
+                'hall_id' => $hall->id,
+                'seat_number' => (string) $seatNumber,
+                'row_number' => $row,
+                'column_number' => $col,
+            ]);
         }
+    }
+
+    private function maxSeatNumberInHall(int $hallId): int
+    {
+        return (int) (Seat::query()
+            ->where('hall_id', $hallId)
+            ->selectRaw('MAX(CAST(seat_number AS UNSIGNED)) as max_num')
+            ->value('max_num') ?: 0);
     }
 }

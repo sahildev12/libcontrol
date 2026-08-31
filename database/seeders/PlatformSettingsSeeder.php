@@ -12,6 +12,7 @@ class PlatformSettingsSeeder extends Seeder
         PlatformSetting::query()->firstOrCreate([], [
             'student_code_prefix' => 'LIB',
             'student_code_padding' => config('libspace.defaults.student_code_padding', 3),
+            'plan_tier' => config('libspace.defaults.plan_tier', 'starter'),
         ]);
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateBranchSettingsRequest;
+use App\Http\Requests\UpdatePlatformPlanRequest;
 use App\Http\Requests\UpdatePlatformSettingsRequest;
 use App\Models\Branch;
 use App\Models\PlatformSetting;
 use App\Services\BranchBrandService;
 use App\Services\LibraryScheduleService;
 use App\Services\LoginBrandingService;
+use App\Services\PlanLimitService;
 use App\Services\StudentCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,7 @@ class SettingsController extends Controller
 {
     public function __construct(
         private StudentCodeService $studentCodeService,
+        private PlanLimitService $planLimitService,
     ) {}
 
     public function index(Request $request, BranchBrandService $branchBrandService): View
@@ -30,8 +33,10 @@ class SettingsController extends Controller
         $settings = $branch ? $this->serializeSettings($branch, $branchBrandService) : null;
         $platformSettings = PlatformSetting::current();
         $isPlatformAdmin = (bool) $request->user()?->isPlatformAdmin();
+        $isDeveloperAdmin = (bool) $request->user()?->isDeveloperAdmin();
+        $planSnapshot = $this->planLimitService->snapshot();
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'viewingAll'));
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll'));
     }
 
     public function update(UpdateBranchSettingsRequest $request, BranchBrandService $branchBrandService): JsonResponse
@@ -79,6 +84,17 @@ class SettingsController extends Controller
         return response()->json([
             'message' => 'Global settings saved.',
             'platform_settings' => $this->serializePlatformSettings($settings->fresh()),
+        ]);
+    }
+
+    public function updatePlatformPlan(UpdatePlatformPlanRequest $request): JsonResponse
+    {
+        $settings = PlatformSetting::current();
+        $settings->update($request->validated());
+
+        return response()->json([
+            'message' => 'Plan settings saved.',
+            'plan' => $this->planLimitService->snapshot(),
         ]);
     }
 

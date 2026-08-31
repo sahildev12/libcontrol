@@ -83,6 +83,7 @@ class SettingsTest extends TestCase
             'gender' => 'female',
             'date_of_birth' => '1999-05-20',
             'phone' => '9876543210',
+            'email' => 'test@example.com',
         ]);
 
         $response->assertCreated()->assertJsonPath('student.student_code', 'CIT-001');

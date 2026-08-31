@@ -11,6 +11,14 @@ class StoreTrialSeatBookingRequest extends FormRequest
         return $this->user() !== null;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $feeAmount = $this->input('fee_amount');
+        if ($feeAmount === null || $feeAmount === '') {
+            $this->merge(['fee_amount' => 0]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

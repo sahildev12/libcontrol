@@ -30,7 +30,7 @@
             <form id="seat-student-create-form" @submit.prevent="submitNewStudent()" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="lg:col-span-2">
                     <label class="block text-xs font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-                    <input type="text" x-model="studentForm.name" placeholder="Rahul Sharma" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.name ? 'border-red-400' : 'border-gray-300'">
+                    <input type="text" x-model="studentForm.name" placeholder="" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.name ? 'border-red-400' : 'border-gray-300'">
                     <p x-show="studentFormErrors.name" x-text="studentFormErrors.name" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>

@@ -21,6 +21,7 @@ class FeeService
                 'seat.hall:id,name,branch_id',
                 'seat.hall.branch:id,name',
                 'installments',
+                'payments' => fn ($query) => $query->orderByDesc('payment_date')->orderByDesc('created_at'),
             ])
             ->when($branchId, fn ($query) => $query->whereHas('seat.hall', fn ($hallQuery) => $hallQuery->where('branch_id', $branchId)))
             ->whereNull('cancelled_at')
@@ -492,6 +493,24 @@ class FeeService
             ];
         }
 
+        $payments = $booking->relationLoaded('payments')
+            ? $booking->payments
+            : $booking->payments()->orderByDesc('payment_date')->orderByDesc('created_at')->get();
+
+        $serializedPayments = $payments->map(function (FeePayment $payment) {
+            return [
+                'id' => $payment->id,
+                'amount' => $payment->amount,
+                'payment_method' => $payment->payment_method,
+                'payment_method_label' => ucfirst(str_replace('_', ' ', (string) ($payment->payment_method ?? 'cash'))),
+                'payment_date' => $payment->payment_date?->format('M d, Y'),
+                'payment_time' => $payment->created_at?->format('g:i A'),
+                'recorded_at' => $payment->created_at?->format('M d, Y g:i A'),
+                'reference' => $payment->reference,
+                'notes' => $payment->notes,
+            ];
+        })->values()->all();
+
         return [
             'id' => $booking->id,
             'student_code' => $booking->student?->student_code,
@@ -532,6 +551,7 @@ class FeeService
             'amount_due' => $this->amountDue($booking),
             'fee_paid_at' => $booking->fee_paid_at?->toDateString(),
             'installments' => $serializedInstallments,
+            'payments' => $serializedPayments,
         ];
     }
 }

@@ -1,0 +1,16 @@
+# Restore Apache/XAMPP PHP handler (parent folder may use Hostinger lsphp)
+<IfModule php_module>
+  <FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+  </FilesMatch>
+</IfModule>
+
+# Block direct access to mail credentials
+<Files "mail-config.php">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
+</Files>

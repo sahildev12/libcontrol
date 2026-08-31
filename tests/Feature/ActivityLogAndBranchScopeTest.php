@@ -119,6 +119,7 @@ class ActivityLogAndBranchScopeTest extends TestCase
             'branch_id' => $branch->id,
             'name' => 'Old Name',
             'phone' => '9876543210',
+            'email' => 'old@example.com',
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'student_type' => 'regular',
@@ -130,6 +131,7 @@ class ActivityLogAndBranchScopeTest extends TestCase
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'phone' => '9123456789',
+            'email' => 'new@example.com',
             'status' => 'active',
             'student_type' => 'regular',
         ])->assertOk();

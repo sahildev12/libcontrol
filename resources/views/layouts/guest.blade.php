@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ?: $name }} · {{ config('app.name', 'LibSpace') }}</title>
+        <title>{{ $title ?: $name }} · {{ config('libspace.product.name') }}</title>
 
         @if ($faviconUrl)
             <link rel="icon" href="{{ $faviconUrl }}">
@@ -39,6 +39,10 @@
                 <div class="rounded-2xl border border-gray-200 bg-white px-6 py-6 shadow-xl">
                     {{ $slot }}
                 </div>
+
+                <p class="mt-6 text-center text-xs text-gray-500">
+                    {{ config('libspace.product.byline') }}
+                </p>
             </div>
         </div>
     </body>

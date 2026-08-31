@@ -17,6 +17,11 @@ class StoreSeatBookingRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $feeAmount = $this->input('fee_amount');
+        if ($feeAmount === null || $feeAmount === '') {
+            $this->merge(['fee_amount' => 0]);
+        }
+
         $type = (string) $this->input('fee_type');
 
         if ($type === 'installment') {

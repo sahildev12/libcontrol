@@ -30,6 +30,27 @@ class PasswordResetTest extends TestCase
         Notification::assertSentTo($user, ResetPasswordNotification::class);
     }
 
+    public function test_platform_admin_can_request_reset_from_shared_forgot_password_page(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['branch_id' => null]);
+        \App\Models\Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
+        ]);
+
+        $this->post('/forgot-password', ['email' => $user->email]);
+
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
+    }
+
+    public function test_admin_forgot_password_url_redirects_to_shared_page(): void
+    {
+        $this->get('/admin/forgot-password')
+            ->assertRedirect('/forgot-password?from=admin');
+    }
+
     public function test_reset_password_screen_can_be_rendered(): void
     {
         Notification::fake();
@@ -71,7 +92,7 @@ class PasswordResetTest extends TestCase
         });
     }
 
-    public function test_admin_can_request_a_password_reset_email(): void
+    public function test_platform_admin_is_redirected_to_admin_login_after_reset(): void
     {
         Notification::fake();
 
@@ -81,8 +102,21 @@ class PasswordResetTest extends TestCase
             'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
         ]);
 
-        $this->post('/admin/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', ['email' => $user->email]);
 
-        Notification::assertSentTo($user, ResetPasswordNotification::class);
+        Notification::assertSentTo($user, ResetPasswordNotification::class, function ($notification) use ($user) {
+            $response = $this->post('/reset-password', [
+                'token' => $notification->token,
+                'email' => $user->email,
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ]);
+
+            $response
+                ->assertSessionHasNoErrors()
+                ->assertRedirect(route('admin.login'));
+
+            return true;
+        });
     }
 }

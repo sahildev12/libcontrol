@@ -18,11 +18,9 @@ class NewPasswordController extends Controller
 {
     public function create(Request $request, LoginBrandingService $branding): View
     {
-        $portal = $request->query('portal', LoginBrandingService::PORTAL_BRANCH);
-
         return view('auth.reset-password', array_merge(
-            $branding->forPortal($portal, $request),
-            ['request' => $request, 'portal' => $portal],
+            $branding->forPasswordReset(),
+            ['request' => $request],
         ));
     }
 
@@ -32,7 +30,6 @@ class NewPasswordController extends Controller
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'portal' => ['nullable', 'in:admin,branch'],
         ]);
 
         $status = Password::reset(
@@ -47,12 +44,14 @@ class NewPasswordController extends Controller
             }
         );
 
-        $portal = $request->input('portal', LoginBrandingService::PORTAL_BRANCH);
-        $loginRoute = $portal === LoginBrandingService::PORTAL_ADMIN ? 'admin.login' : 'login';
-
-        return $status == Password::PASSWORD_RESET
-            ? redirect()->route($loginRoute)->with('status', __($status))
-            : back()->withInput($request->only('email'))
+        if ($status != Password::PASSWORD_RESET) {
+            return back()->withInput($request->only('email'))
                 ->withErrors(['email' => __($status)]);
+        }
+
+        $user = User::query()->where('email', $request->input('email'))->first();
+        $loginRoute = $user?->isPlatformAdmin() ? 'admin.login' : 'login';
+
+        return redirect()->route($loginRoute)->with('status', __($status));
     }
 }

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LibSpace — Library &amp; Study Seat Management Software | Phenomit</title>
+  <meta name="description" content="LibSpace is library management software for reading halls and study centres. Live seat maps, trial seats, fee collection, student registry, and multi-branch dashboards — by Phenomit.com.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Phenomit.com">
+  <link rel="canonical" href="https://phenomit.com/libspace/">
+  <meta property="og:title" content="LibSpace — Library &amp; study seat management">
+  <meta property="og:description" content="Manage halls, seats, trials, students, and fees from one dashboard. Monthly or yearly plans for single and multi-branch libraries.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://phenomit.com/libspace/">
+  <meta property="og:site_name" content="Phenomit">
+  <meta property="og:locale" content="en_IN">
+  <meta property="og:image" content="https://phenomit.com/libspace/assets/screenshots/admin-dashboard.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LibSpace — Library &amp; study seat management">
+  <meta name="twitter:description" content="Seat maps, trials, fees, renewals, and multi-branch dashboards for reading libraries.">
+  <meta name="twitter:image" content="https://phenomit.com/libspace/assets/screenshots/admin-dashboard.png">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=22">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "LibSpace",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Library and study-seat management software with live seat maps, trial seats, fee plans, student registry, and multi-branch admin dashboards.",
+    "url": "https://phenomit.com/libspace/",
+    "provider": {
+      "@type": "Organization",
+      "name": "Phenomit",
+      "url": "https://phenomit.com/"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Starter",
+        "price": "299",
+        "priceCurrency": "INR",
+        "description": "Up to 100 seats, 5 halls, 1 branch — launch offer from ₹499"
+      },
+      {
+        "@type": "Offer",
+        "name": "Pro",
+        "price": "799",
+        "priceCurrency": "INR",
+        "description": "Up to 500 seats, 10 halls, 2 branches"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <nav class="guide-nav" aria-label="Primary">
+    <div class="container-xl d-flex align-items-center justify-content-between">
+      <a class="brand" href="#top">
+        <span class="brand-mark">
+          <img src="assets/only-logo.png" alt="LibSpace" width="220" height="56" decoding="async">
+          <span class="plan-amount" style="font-weight: 700;font-size: 35px;">Lib<span style="color:#ffc800">Space</span></span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Menu" id="navToggle">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="nav-links" id="navLinks">
+        <a href="#why">Problems & Fixes</a>
+        <a href="#showcase">Screens</a>
+        <a href="#modules">Modules</a>
+        <a href="#overview">Panels</a>
+        <a href="#workflow">Onboarding</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#support">Support</a>
+        <button type="button" class="nav-demo-btn open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content">
+  <header class="hero" id="top">
+    <div class="hero-waves" aria-hidden="true"></div>
+    <div class="container-xl hero-product">
+      <div class="hero-copy">
+        <h1>Run every seat. <br> See every branch. <br> Collect every fee.</h1>
+        <p class="libspace-byline">A library management product by Phenomit.com</p>
+        <p class="hero-lead">Manage seats, students, fees, renewals, and multiple branches from one system — and get started quickly.</p>
+        <div class="hero-cta-bar">
+          <div class="hero-actions">
+            <button type="button" class="btn-main btn-primary-lg btn-shine open-demo-form" id="openDemoForm"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+            <a class="btn-ghost" href="#showcase">See How It Works</a>
+          </div>
+        </div>
+        <ul class="hero-proof" aria-label="What LibSpace covers">
+          <li><i class="fa-solid fa-building" aria-hidden="true"></i> Multi-branch</li>
+          <li><i class="fa-solid fa-chair" aria-hidden="true"></i> Seat maps &amp; trials</li>
+          <li><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Fees &amp; renewals</li>
+        </ul>
+      </div>
+      <div class="hero-visual browser-frame">
+        <button type="button" class="section-shot" data-full="assets/screenshots/admin-dashboard.png" aria-label="View full-size admin dashboard screenshot">
+          <img src="assets/screenshots/admin-dashboard.png" width="1920" height="1080" fetchpriority="high" decoding="async" alt="LibSpace platform admin dashboard showing branch performance and occupancy KPIs">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="pain-section" id="why">
+    <div class="pain-glow" aria-hidden="true"></div>
+    <div class="container-xl">
+      <div class="pain-intro">
+        <p class="eyebrow">What LibSpace fixes</p>
+        <h2>From daily chaos to one live system</h2>
+        <p class="pain-lead">Every problem below maps to something LibSpace handles out of the box — seats, students, fees, trials, and branches in one place.</p>
+      </div>
+      <div class="pain-grid pain-grid-six">
+        <article class="pain-card">
+          <div class="pain-num">01</div>
+          <div class="pain-icon"><i class="fa-solid fa-book"></i></div>
+          <h3>Manual registers everywhere</h3>
+          <p class="pain-problem">Seat logs, fee notes, and student details spread across notebooks and loose sheets.</p>
+          <div class="pain-fix"><span>LibSpace fix</span><p>One student registry with seat history, documents, and fee records linked to each member.</p></div>
+        </article>
+        <article class="pain-card">
+          <div class="pain-num">02</div>
+          <div class="pain-icon"><i class="fa-solid fa-chair"></i></div>
+          <h3>Seat allocation confusion</h3>
+          <p class="pain-problem">Staff disagree on who sits where — regular, trial, and vacant seats get mixed up.</p>
+          <div class="pain-fix"><span>LibSpace fix</span><p>Live seat map with colour-coded occupied, vacant, trial, and expiring states per hall.</p></div>
+        </article>
+        <article class="pain-card">
+          <div class="pain-num">03</div>
+          <div class="pain-icon"><i class="fa-solid fa-clock"></i></div>
+          <h3>Missed renewals</h3>
+          <p class="pain-problem">Plans expire quietly. Members leave before anyone notices the due date passed.</p>
+          <div class="pain-fix"><span>LibSpace fix</span><p>Expiry alerts, renewal tracking, and dashboard flags for plans ending in the next 7 days.</p></div>
+        </article>
+        <article class="pain-card">
+          <div class="pain-num">04</div>
+          <div class="pain-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          <h3>Fee tracking falls apart</h3>
+          <p class="pain-problem">Partial payments, dues, and instalments tracked in memory or on WhatsApp chats.</p>
+          <div class="pain-fix"><span>LibSpace fix</span><p>Fee plans with partial payments, instalments, and full payment history on every booking.</p></div>
+        </article>
+        <article class="pain-card">
+          <div class="pain-num">05</div>
+          <div class="pain-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h3>Trial seats hard to manage</h3>
+          <p class="pain-problem">Trial periods, free hours, and conversions tracked with no clear view on the map.</p>
+          <div class="pain-fix"><span>LibSpace fix</span><p>Dedicated trial seat module — duration, optional fee, and convert-to-member from the map.</p></div>
+        </article>
+        <article class="pain-card">
+          <div class="pain-num">06</div>
+          <div class="pain-icon"><i class="fa-solid fa-table-cells"></i></div>
+          <h3>No view across branches</h3>
+          <p class="pain-problem">Spreadsheets and WhatsApp groups can&rsquo;t show occupancy, fees, or performance network-wide.</p>
+          <div class="pain-fix"><span>LibSpace fix</span><p>Platform admin dashboard — branch comparison, revenue, occupancy, and attention items in one view.</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="showcase">
+    <div class="container-xl">
+      <div class="section-head left">
+        <p class="eyebrow">Inside LibSpace</p>
+        <h2>Real screens. Real workflows.</h2>
+        <p>Tap any screenshot for full view — this is what your team uses every day.</p>
+      </div>
+      <div class="row g-3 mt-2 showcase-grid">
+        <div class="col-md-6 col-xl-4">
+          <div class="feat-card">
+            <div class="feat-card-top">
+              <div class="feat-card-icon"><i class="fa-solid fa-chart-pie"></i></div>
+              <div class="feat-card-meta">
+                <h3>Branch dashboard</h3>
+              </div>
+            </div>
+            <p class="feat-card-desc">Today&rsquo;s KPIs, expiring plans, seat status.</p>
+            <button type="button" class="feat-shot" data-full="assets/screenshots/dashboard.png" aria-label="View full-size branch dashboard screenshot">
+              <img src="assets/screenshots/thumbs/dashboard.png" width="640" height="360" loading="lazy" decoding="async" alt="LibSpace branch dashboard with today's KPIs, expiring plans, and seat status">
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <div class="feat-card">
+            <div class="feat-card-top">
+              <div class="feat-card-icon"><i class="fa-solid fa-border-all"></i></div>
+              <div class="feat-card-meta">
+                <h3>Seat map</h3>
+              </div>
+            </div>
+            <p class="feat-card-desc">Live occupancy and quick assign.</p>
+            <button type="button" class="feat-shot" data-full="assets/screenshots/seat-map.png" aria-label="View full-size seat map screenshot">
+              <img src="assets/screenshots/thumbs/seat-map.png" width="640" height="360" loading="lazy" decoding="async" alt="LibSpace live seat map with colour-coded occupied and vacant seats">
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <div class="feat-card">
+            <div class="feat-card-top">
+              <div class="feat-card-icon"><i class="fa-solid fa-hourglass-start"></i></div>
+              <div class="feat-card-meta">
+                <h3>Trial seats</h3>
+              </div>
+            </div>
+            <p class="feat-card-desc">Trial periods and conversions on the map.</p>
+            <button type="button" class="feat-shot" data-full="assets/screenshots/trial-seats.png" aria-label="View full-size trial seats screenshot">
+              <img src="assets/screenshots/thumbs/trial-seats.png" width="640" height="360" loading="lazy" decoding="async" alt="LibSpace trial seat management with duration tracking and map view">
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <div class="feat-card">
+            <div class="feat-card-top">
+              <div class="feat-card-icon"><i class="fa-solid fa-wallet"></i></div>
+              <div class="feat-card-meta">
+                <h3>Fee management</h3>
+              </div>
+            </div>
+            <p class="feat-card-desc">Plans, partial payments, and dues.</p>
+            <button type="button" class="feat-shot" data-full="assets/screenshots/fees.png" aria-label="View full-size fee management screenshot">
+              <img src="assets/screenshots/thumbs/fees.png" width="640" height="360" loading="lazy" decoding="async" alt="LibSpace fee management with plans, partial payments, and dues tracking">
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <div class="feat-card">
+            <div class="feat-card-top">
+              <div class="feat-card-icon"><i class="fa-solid fa-users"></i></div>
+              <div class="feat-card-meta">
+                <h3>Students</h3>
+              </div>
+            </div>
+            <p class="feat-card-desc">Member registry with codes and documents.</p>
+            <button type="button" class="feat-shot" data-full="assets/screenshots/students.png" aria-label="View full-size students registry screenshot">
+              <img src="assets/screenshots/thumbs/students.png" width="640" height="360" loading="lazy" decoding="async" alt="LibSpace student registry with member codes, documents, and status">
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <div class="feat-card">
+            <div class="feat-card-top">
+              <div class="feat-card-icon"><i class="fa-solid fa-building-columns"></i></div>
+              <div class="feat-card-meta">
+                <h3>Admin overview</h3>
+              </div>
+            </div>
+            <p class="feat-card-desc">Network-wide branch performance.</p>
+            <button type="button" class="feat-shot" data-full="assets/screenshots/admin-dashboard.png" aria-label="View full-size admin overview screenshot">
+              <img src="assets/screenshots/thumbs/admin-dashboard.png" width="640" height="360" loading="lazy" decoding="async" alt="LibSpace admin overview with network-wide branch performance metrics">
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="modules-section" id="modules">
+    <div class="container-xl">
+      <div class="section-head">
+        <p class="eyebrow">Core system</p>
+        <h2>Six modules. One system.</h2>
+        <p>Everything a modern reading library needs — explore each module in depth.</p>
+      </div>
+      <div class="module-tabs-wrap reveal">
+        <div class="module-tabs" role="tablist" aria-label="LibSpace modules" id="moduleTabs"></div>
+
+        <div class="module-showcase" id="moduleShowcase">
+          <div class="module-showcase-body is-visible" id="moduleShowcaseBody">
+            <div class="module-showcase-copy" id="moduleShowcaseCopy"></div>
+            <div class="module-showcase-divider" aria-hidden="true"></div>
+            <div class="module-showcase-features" id="moduleShowcaseFeatures"></div>
+          </div>
+        </div>
+
+        <div class="module-benefits">
+          <article class="module-benefit">
+            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+            <div>
+              <strong>Centralized Control</strong>
+              <p>Manage branches, halls, students, fees, and operations from one system.</p>
+            </div>
+          </article>
+          <article class="module-benefit">
+            <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
+            <div>
+              <strong>Real-time Visibility</strong>
+              <p>Know what&rsquo;s happening across your library without checking multiple registers.</p>
+            </div>
+          </article>
+          <article class="module-benefit">
+            <i class="fa-solid fa-users-gear" aria-hidden="true"></i>
+            <div>
+              <strong>Role-based Access</strong>
+              <p>Give staff the right level of access for their responsibilities.</p>
+            </div>
+          </article>
+          <article class="module-benefit">
+            <i class="fa-solid fa-clock" aria-hidden="true"></i>
+            <div>
+              <strong>Save Time</strong>
+              <p>Reduce repetitive manual work and spend more time running your library.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="overview">
+    <div class="container-xl">
+      <div class="section-head">
+        <h2>One product. Two workspaces.</h2>
+        <p>Owners see the network. Branch staff run the desk — same data, different views.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <article class="panel-intro admin-tone">
+            <p class="panel-audience">For owners &amp; network admins</p>
+            <div class="panel-intro-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h3>Platform Admin</h3>
+            <p class="panel-value">Control every branch from one screen.</p>
+            <p>Revenue, occupancy, fees, and renewals across your network — without calling each branch.</p>
+            <ul>
+              <li>Compare branches on revenue and occupancy</li>
+              <li>Spot low-performing halls early</li>
+              <li>Track fees and renewals network-wide</li>
+              <li>Create branches and manage logins</li>
+            </ul>
+          </article>
+        </div>
+        <div class="col-lg-6">
+          <article class="panel-intro centre-tone">
+            <p class="panel-audience">For branch desk staff</p>
+            <div class="panel-intro-icon"><i class="fa-solid fa-book"></i></div>
+            <h3>Branch Panel</h3>
+            <p class="panel-value">Desk staff run daily operations.</p>
+            <p>Seats, students, fees, renewals, and trials — without admin clutter.</p>
+            <ul>
+              <li>Assign and transfer seats on the live map</li>
+              <li>Manage trial seats and convert to members</li>
+              <li>Record fees, partial payments, and renewals</li>
+              <li>Handle enquiries and walk-ins</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="workflow-screen workflow-featured" id="workflow">
+    <div class="workflow-orb" aria-hidden="true"></div>
+    <div class="container-xl workflow-grid">
+      <div class="workflow-copy">
+        <p class="eyebrow">Fast onboarding</p>
+        <h2>Go live in days, not months</h2>
+        <hr class="hr-onboarding">
+        <p>Five clear steps. No long IT project — your branch can start operating quickly.</p>
+      </div>
+      <ol class="flow-track">
+        <li><span class="flow-step">01</span><div class="flow-body"><strong>Create branch &amp; halls</strong><p>Add your centre, halls, and operating hours.</p></div></li>
+        <li><span class="flow-step">02</span><div class="flow-body"><strong>Set up seats</strong><p>Define seat numbers and layout on the map.</p></div></li>
+        <li><span class="flow-step">03</span><div class="flow-body"><strong>Assign seats</strong><p>Put students on regular or trial seats.</p></div></li>
+        <li><span class="flow-step">04</span><div class="flow-body"><strong>Add students</strong><p>Register members and capture walk-in enquiries.</p></div></li>
+        <li><span class="flow-step">05</span><div class="flow-body"><strong>Manage fees &amp; renewals</strong><p>Collect payments and track renewals from day one.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="pricing">
+    <div class="container-xl">
+      <div class="section-head">
+        <p class="eyebrow">Pricing</p>
+        <h2>Monthly or yearly — pick what fits</h2>
+        <p>Same features on every plan. Switch billing anytime — upgrade limits on Custom when you outgrow Pro.</p>
+      </div>
+      <div class="pricing-billing-wrap">
+        <div class="pricing-billing-toggle" role="group" aria-label="Billing period">
+          <span class="billing-label is-active" id="billingMonthly">Monthly</span>
+          <button type="button" class="billing-switch" id="billingToggle" role="switch" aria-checked="false" aria-labelledby="billingMonthly billingYearly">
+            <span class="billing-switch-track" aria-hidden="true"><span class="billing-switch-knob"></span></span>
+          </button>
+          <span class="billing-label" id="billingYearly">Yearly</span>
+          <span class="billing-save-badge">Save 2 months</span>
+        </div>
+      </div>
+      <div class="plan-grid">
+        <article class="plan-card plan-starter">
+          <div class="plan-ribbon">Starter</div>
+          <div class="plan-price">
+            <div class="plan-price-row">
+              <s class="plan-price-was" data-monthly="₹499" data-yearly="₹5,990">₹499</s>
+              <strong class="plan-amount" data-monthly="₹299" data-yearly="₹2,990">₹299</strong>
+            </div>
+            <p class="plan-billing" data-monthly-label="per month" data-yearly-label="per year">per month</p>
+            <p class="plan-equiv plan-equiv-yearly" hidden>Billed once · ₹249/mo equivalent</p>
+            <p class="plan-term plan-term-strong"><span></span> Single branch setup <span></span></p>
+          </div>
+          <p class="plan-summary">For one reading centre moving off registers and WhatsApp.</p>
+          <div class="plan-limits" aria-label="Starter limits">
+            <div class="plan-limit"><strong>100</strong><span>Seats</span></div>
+            <div class="plan-limit"><strong>5</strong><span>Halls</span></div>
+            <div class="plan-limit"><strong>1</strong><span>Branch</span></div>
+          </div>
+          <ul class="plan-checklist">
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Up to 100 seats &amp; 5 halls</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Live seat map &amp; trial seats</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Student registry &amp; enquiries</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Fee plans, partial payments &amp; renewals</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> In-app notifications &amp; expiry alerts</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Student ID cards (print &amp; download)</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Branch dashboard &amp; reports</li>
+          </ul>
+          <div class="plan-cta">
+            <button type="button" class="plan-choose plan-choose-primary open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+          </div>
+        </article>
+        <article class="plan-card plan-pro plan-recommended">
+          <div class="plan-recommended-badge">Most popular</div>
+          <div class="plan-ribbon">Pro</div>
+          <div class="plan-price">
+            <div class="plan-price-row">
+              <s class="plan-price-was" data-monthly="₹1,199" data-yearly="₹11,990">₹1,199</s>
+              <strong class="plan-amount" data-monthly="₹799" data-yearly="₹7,990">₹799</strong>
+            </div>
+            <p class="plan-billing" data-monthly-label="per month" data-yearly-label="per year">per month</p>
+            <p class="plan-equiv plan-equiv-yearly" hidden>Billed once · ₹666/mo equivalent</p>
+            <p class="plan-term plan-term-strong"><span></span> Multi-branch setup <span></span></p>
+          </div>
+          <p class="plan-summary">For owners running 2 branches who need a central network view.</p>
+          <div class="plan-limits" aria-label="Pro limits">
+            <div class="plan-limit"><strong>500</strong><span>Seats</span></div>
+            <div class="plan-limit"><strong>10</strong><span>Halls</span></div>
+            <div class="plan-limit"><strong>2</strong><span>Branches</span></div>
+          </div>
+          <ul class="plan-checklist">
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Up to 500 seats, 10 halls, 2 branches</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Platform admin + branch panels</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Multi-branch analytics dashboard</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Role-based access per branch</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Activity log &amp; audit trail</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Registration invites &amp; QR links</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Everything in Starter</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Priority onboarding support</li>
+          </ul>
+          <div class="plan-cta">
+            <button type="button" class="plan-choose plan-choose-primary open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+          </div>
+        </article>
+        <article class="plan-card plan-custom">
+          <div class="plan-ribbon">Custom</div>
+          <div class="plan-price">
+            <div class="plan-price-row"><strong class="plan-amount">Custom</strong></div>
+            <p class="plan-billing">Quoted for your network</p>
+            <p class="plan-term plan-term-strong"><span></span> Tailored to you <span></span></p>
+          </div>
+          <p class="plan-summary">Need higher limits, new modules, or a workflow built for your library?</p>
+          <div class="plan-limits plan-limits-custom" aria-label="Custom limits">
+            <div class="plan-limit"><strong>∞</strong><span>Seats</span></div>
+            <div class="plan-limit"><strong>∞</strong><span>Halls</span></div>
+            <div class="plan-limit"><strong>5+</strong><span>Branches</span></div>
+          </div>
+          <ul class="plan-checklist">
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Custom seat, hall &amp; branch limits</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> New features or modules built for you</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> System updates tailored to your workflow</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Large networks &amp; franchise setups</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Cloud or on-premise deployment options</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Dedicated onboarding &amp; training</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Everything in Pro</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-choose plan-choose-outline" href="https://wa.me/918901223423?text=I%20want%20a%20custom%20LibSpace%20quote" target="_blank" rel="noopener">Get Custom Quote</a>
+          </div>
+        </article>
+      </div>
+      <p class="pricing-footnote">Prices exclude GST. Yearly billing saves two months compared to paying monthly. Seat, hall, and branch limits apply per plan. Need more capacity or a custom build? Choose Custom and we&rsquo;ll quote it.</p>
+    </div>
+  </section>
+
+  <section class="section section-cta" id="cta">
+    <div class="container-xl">
+      <div class="callout callout-cta reveal">
+        <h3>Ready to run your library without the paperwork?</h3>
+        <p class="mb-2 callout-lead">Seats, students, fees, and renewals in one system — stop juggling registers and&nbsp;WhatsApp.</p>
+        <div class="cta-actions">
+          <button type="button" class="btn-main btn-primary-lg btn-shine open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+          <a class="btn-pain-wa" href="https://wa.me/918901223423?text=I%20want%20to%20know%20about%20LibSpace" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Chat On WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="support">
+    <div class="container-xl">
+      <div class="section-head">
+        <p class="eyebrow">Support</p>
+        <h2>We help you launch</h2>
+        <p>Real support during setup — so your staff use LibSpace from day one.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <article class="support-card">
+            <i class="fa-solid fa-phone"></i>
+            <h3>Call</h3>
+            <p>Setup help while you&rsquo;re on screen.</p>
+            <a href="tel:+918901223423">+91 89012-23423</a>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <article class="support-card">
+            <i class="fa-solid fa-envelope"></i>
+            <h3>Email</h3>
+            <p>Send details — we reply on working days.</p>
+            <a href="mailto:info@phenomit.com">info@phenomit.com</a>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <article class="support-card">
+            <i class="fa-brands fa-whatsapp"></i>
+            <h3>WhatsApp</h3>
+            <p>Quick help for seats, fees, or login.</p>
+            <a href="https://wa.me/918901223423" target="_blank" rel="noopener">Chat on WhatsApp</a>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <article class="support-card">
+            <i class="fa-solid fa-clock"></i>
+            <h3>Working hours</h3>
+            <p>Mon&ndash;Sat, 9:00&ndash;18:00 IST</p>
+            <span>Hisar, India</span>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <footer class="guide-footer">
+    <div class="container-xl">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="#top">
+            <span class="brand-mark">
+              <img src="assets/only-logo.png" alt="LibSpace" width="220" height="56" decoding="async">
+              <span class="plan-amount" style="font-weight: 700;font-size: 35px;">Lib<span style="color:#ffc800">Space</span></span>
+            </span>
+          </a>
+          <p>Library &amp; study-seat management for reading halls, co-working libraries, and multi-branch networks.</p>
+          <p class="mt-2" style="font-size:0.85rem;opacity:0.8;">LibSpace is a product by <a href="https://phenomit.com/" style="color:#ffc800">Phenomit.com</a></p>
+        </div>
+        <div class="footer-col">
+          <h3>Guide</h3>
+          <ul class="footer-nav">
+            <li><a href="#why">Problems & Fixes</a></li>
+            <li><a href="#showcase">Screens</a></li>
+            <li><a href="#modules">Modules</a></li>
+            <li><a href="#overview">Panels</a></li>
+            <li><a href="#workflow">Onboarding</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#support">Support</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Contact</h3>
+          <ul>
+            <li>PhenomIT Rishi Nagar<br>Hisar 125001 (HRY)</li>
+            <li><a href="mailto:info@phenomit.com">info@phenomit.com</a></li>
+            <li><a href="tel:+918901223423">+91 89012-23423</a></li>
+            <li>Mon – Sat 9.00 – 18.00</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-copy">
+        <p>© 2026 Phenomit.com · LibSpace is a product by Phenomit.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/918901223423" class="wa-float" target="_blank" rel="noopener" aria-label="Contact us on WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i><span>Chat Now</span>
+  </a>
+  <a href="#top" class="back-to-top" id="backToTop" aria-label="Back to top"><i class="fa-solid fa-arrow-up"></i></a>
+
+  <div class="img-lightbox" id="imgLightbox" hidden>
+    <div class="img-lightbox-stage">
+      <button type="button" class="img-lightbox-close" id="imgLightboxClose" aria-label="Close">&times;</button>
+      <img id="imgLightboxPhoto" class="img-lightbox-photo" alt="">
+    </div>
+  </div>
+
+  <div class="demo-modal" id="demoModal" hidden>
+    <div class="demo-modal-panel" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle">
+      <button type="button" class="demo-modal-close" id="demoModalClose" aria-label="Close">&times;</button>
+      <div class="demo-modal-head">
+        <h2 id="demoModalTitle">Book a LibSpace Demo</h2>
+        <p>Tell us about your library — we&rsquo;ll show seats, fees, and dashboards on a live walkthrough.</p>
+      </div>
+      <form class="demo-form" id="demoForm" novalidate>
+        <div class="demo-form-grid">
+          <div class="demo-form-row">
+            <label for="demoName">Full name *</label>
+            <input type="text" id="demoName" name="name" required placeholder="Your name" autocomplete="name">
+          </div>
+          <div class="demo-form-row">
+            <label for="demoPhone">WhatsApp / Phone *</label>
+            <input type="tel" id="demoPhone" name="phone" required placeholder="10-digit mobile" autocomplete="tel">
+          </div>
+          <div class="demo-form-row">
+            <label for="demoInstitute">Library / institute name *</label>
+            <input type="text" id="demoInstitute" name="institute" required placeholder="Your library name">
+          </div>
+          <div class="demo-form-row">
+            <label for="demoCity">City</label>
+            <input type="text" id="demoCity" name="city" placeholder="City">
+          </div>
+        </div>
+        <div class="demo-form-row">
+          <label for="demoMessage">Message</label>
+          <textarea id="demoMessage" name="message" rows="2" placeholder="What do you want to see in the demo?"></textarea>
+        </div>
+        <p class="demo-form-error" id="demoFormError" hidden></p>
+        <button type="submit" class="demo-form-submit" id="demoFormSubmit">Book a Demo</button>
+      </form>
+      <div class="demo-form-success" id="demoFormSuccess" hidden>
+        <i class="fa-solid fa-circle-check"></i>
+        <p>Thank you! We received your request and will contact you shortly.</p>
+        <button type="button" class="demo-form-submit" id="demoFormDone">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="modules-data.js?v=10"></script>
+  <script src="script.js?v=12"></script>
+</body>
+</html>

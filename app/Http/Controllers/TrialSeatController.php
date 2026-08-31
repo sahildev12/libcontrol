@@ -155,7 +155,7 @@ class TrialSeatController extends Controller
             'custom_start_time' => $request->input('custom_start_time'),
             'custom_end_time' => $request->input('custom_end_time'),
             'fee_type' => 'custom',
-            'fee_amount' => $request->input('fee_amount', 0),
+            'fee_amount' => round((float) ($request->input('fee_amount') ?? 0), 2),
             'membership_mode' => 'assigned_seat',
             'joining_date' => $trialStart,
             'plan_expiry_date' => $trialEnd,

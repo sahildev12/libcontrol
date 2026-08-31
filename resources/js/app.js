@@ -1556,6 +1556,7 @@ Alpine.data('seatMap', (config) => ({
 
         try {
             const payload = { ...this.assignForm };
+            payload.fee_amount = Number(payload.fee_amount) || 0;
             if (! this.assignForm.receive_payment || Number(payload.amount_received || 0) <= 0) {
                 payload.amount_received = 0;
                 delete payload.payment_method;
@@ -2278,6 +2279,7 @@ Alpine.data('trialSeatMap', (config) => ({
 
         try {
             const payload = { ...this.assignForm };
+            payload.fee_amount = Number(payload.fee_amount) || 0;
             const response = await window.axios.post(this.storeUrl, payload);
             await this.refreshSeats();
             showToast(response.data.message);
@@ -2353,11 +2355,10 @@ Alpine.data('trialSeatMap', (config) => ({
         }
 
         const rect = event.currentTarget.getBoundingClientRect();
-        this.hoverTimer = window.setTimeout(() => {
-            this.hoverSeat = seat;
-            this.hoverOpen = true;
-            this.positionSeatHover(rect);
-        }, 2000);
+
+        this.hoverSeat = seat;
+        this.hoverOpen = true;
+        this.positionSeatHover(rect);
     },
 
     keepSeatHover() {
@@ -2456,8 +2457,9 @@ Alpine.data('hallTable', (config) => ({
     formMode: 'create',
     saving: false,
     formErrors: {},
-    form: { id: null, branch_id: null, name: '', seat_capacity: 10, min_seat_capacity: 1, description: '' },
+    form: { id: null, branch_id: null, name: '', seat_capacity: 10, min_seat_capacity: 1, description: '', continue_seat_numbering: false, continue_from_hall_id: null },
     branches: config.branches || [],
+    planSnapshot: config.planSnapshot || null,
     defaultBranchId: config.defaultBranchId || null,
     viewingAll: config.viewingAll || false,
     exportUrl: config.exportUrl,
@@ -2481,7 +2483,99 @@ Alpine.data('hallTable', (config) => ({
         this.initDataTable();
     },
 
+    canAddHall() {
+        const remaining = this.planSnapshot?.remaining?.halls;
+        return remaining === null || remaining === undefined || remaining > 0;
+    },
+
+    maxSeatCapacityForForm() {
+        const limits = this.planSnapshot?.limits;
+        const usage = this.planSnapshot?.usage;
+        if (! limits || limits.max_seats === null || limits.max_seats === undefined) {
+            return 500;
+        }
+
+        let currentHallCapacity = 0;
+        if (this.formMode === 'edit' && this.form.id) {
+            const existing = this.rows.find((row) => row.id === this.form.id);
+            currentHallCapacity = Number(existing?.seat_capacity || 0);
+        }
+
+        const otherSeats = Number(usage?.seats || 0) - currentHallCapacity;
+        const remaining = Math.max(0, Number(limits.max_seats) - otherSeats);
+
+        return Math.max(this.form.min_seat_capacity || 1, Math.min(500, remaining || 1));
+    },
+
+    resolvedSeatNumberStart() {
+        if (! this.form.continue_seat_numbering) {
+            return 1;
+        }
+
+        const sourceHall = this.hallsForSelectedBranch().find(
+            (hall) => Number(hall.id) === Number(this.form.continue_from_hall_id),
+        );
+
+        return Number(sourceHall?.max_seat_number || 0) + 1;
+    },
+
+    seatNumberPreview() {
+        if (! this.form.continue_seat_numbering) {
+            return '';
+        }
+
+        const capacity = Number(this.form.seat_capacity);
+        if (! Number.isInteger(capacity) || capacity < 1) {
+            return '';
+        }
+
+        const start = this.resolvedSeatNumberStart();
+        const end = start + capacity - 1;
+
+        return start === end ? `${start}` : `${start}–${end}`;
+    },
+
+    hallsForSelectedBranch() {
+        const branchId = Number(this.form.branch_id);
+        if (! branchId) {
+            return [];
+        }
+
+        return this.rows
+            .filter((hall) => Number(hall.branch_id) === branchId)
+            .sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')));
+    },
+
+    onContinueSeatNumberingToggle() {
+        if (! this.form.continue_seat_numbering) {
+            this.form.continue_from_hall_id = null;
+            return;
+        }
+
+        const halls = this.hallsForSelectedBranch();
+        if (! halls.length) {
+            this.form.continue_seat_numbering = false;
+            return;
+        }
+
+        const preferredHall = halls.reduce((best, hall) => (
+            Number(hall.max_seat_number || 0) >= Number(best.max_seat_number || 0) ? hall : best
+        ), halls[0]);
+
+        this.form.continue_from_hall_id = preferredHall?.id || null;
+    },
+
+    onBranchChangeForHallForm() {
+        this.form.continue_seat_numbering = false;
+        this.form.continue_from_hall_id = null;
+    },
+
     openCreate() {
+        if (! this.canAddHall()) {
+            showToast('Your plan has reached the maximum number of halls.', 'error');
+            return;
+        }
+
         this.formMode = 'create';
         this.form = {
             id: null,
@@ -2489,6 +2583,8 @@ Alpine.data('hallTable', (config) => ({
             name: '',
             seat_capacity: 10,
             description: '',
+            continue_seat_numbering: false,
+            continue_from_hall_id: null,
         };
         this.formOpen = true;
         this.error = '';
@@ -2537,12 +2633,23 @@ Alpine.data('hallTable', (config) => ({
         }
 
         const capacity = Number(this.form.seat_capacity);
+        const maxCapacity = this.maxSeatCapacityForForm();
         if (! Number.isInteger(capacity) || capacity < 1) {
             errors.seat_capacity = 'Seat capacity must be at least 1.';
+        } else if (capacity > maxCapacity) {
+            errors.seat_capacity = `Seat capacity cannot exceed ${maxCapacity} on your current plan.`;
         } else if (capacity > 500) {
             errors.seat_capacity = 'Seat capacity cannot exceed 500.';
         } else if (this.formMode === 'edit' && this.form.min_seat_capacity && capacity < this.form.min_seat_capacity) {
             errors.seat_capacity = `Capacity cannot be reduced below ${this.form.min_seat_capacity} while students are assigned.`;
+        }
+
+        if (this.formMode === 'create' && this.form.continue_seat_numbering) {
+            if (! this.form.continue_from_hall_id) {
+                errors.continue_from_hall_id = 'Select which hall to continue seat numbering from.';
+            } else if (! this.hallsForSelectedBranch().some((hall) => Number(hall.id) === Number(this.form.continue_from_hall_id))) {
+                errors.continue_from_hall_id = 'Selected hall must belong to the same branch.';
+            }
         }
 
         this.formErrors = errors;
@@ -2566,6 +2673,11 @@ Alpine.data('hallTable', (config) => ({
                 seat_capacity: this.form.seat_capacity,
                 description: this.form.description,
             };
+
+            if (this.formMode === 'create' && this.form.continue_seat_numbering) {
+                payload.continue_seat_numbering = true;
+                payload.continue_from_hall_id = Number(this.form.continue_from_hall_id);
+            }
 
             const response = this.formMode === 'create'
                 ? await window.axios.post(this.storeUrl, payload)
@@ -2621,6 +2733,7 @@ Alpine.data('hallTable', (config) => ({
 
 Alpine.data('platformBranchesPage', (config) => ({
     branches: config.branches || [],
+    planSnapshot: config.planSnapshot || null,
     storeUrl: config.storeUrl,
     createOpen: false,
     editOpen: false,
@@ -2663,6 +2776,11 @@ Alpine.data('platformBranchesPage', (config) => ({
     },
 
     init() {},
+
+    canAddBranch() {
+        const remaining = this.planSnapshot?.remaining?.branches;
+        return remaining === null || remaining === undefined || remaining > 0;
+    },
 
     filteredBranches(search) {
         const term = (search || '').trim().toLowerCase();
@@ -2718,6 +2836,11 @@ Alpine.data('platformBranchesPage', (config) => ({
     },
 
     openCreate() {
+        if (! this.canAddBranch()) {
+            showToast('Your plan has reached the maximum number of branches.', 'error');
+            return;
+        }
+
         this.resetCreateForm();
         this.createFormErrors = {};
         this.createOpen = true;
@@ -4400,7 +4523,16 @@ Alpine.data('branchSwitcher', (config) => ({
 Alpine.data('settingsPage', (config) => ({
     settings: config.settings,
     platformSettings: config.platformSettings || {},
+    planSnapshot: config.planSnapshot || {},
+    planForm: {
+        plan_tier: config.planForm?.plan_tier || 'starter',
+        max_seats_override: config.planForm?.max_seats_override ?? '',
+        max_halls_override: config.planForm?.max_halls_override ?? '',
+        max_branches_override: config.planForm?.max_branches_override ?? '',
+    },
+    planTiers: config.planTiers || ['starter', 'pro', 'custom'],
     isPlatformAdmin: config.isPlatformAdmin || false,
+    isDeveloperAdmin: config.isDeveloperAdmin || false,
     viewingAll: config.viewingAll || false,
     form: {
         display_name: config.settings?.display_name || '',
@@ -4417,10 +4549,12 @@ Alpine.data('settingsPage', (config) => ({
         student_code_padding: config.platformSettings?.student_code_padding || 3,
     },
     saving: false,
+    savingPlan: false,
     flash: '',
     error: '',
     updateUrl: config.updateUrl,
     platformUpdateUrl: config.platformUpdateUrl,
+    platformPlanUpdateUrl: config.platformPlanUpdateUrl,
     timezone: config.timezone,
 
     init() {},
@@ -4480,6 +4614,30 @@ Alpine.data('settingsPage', (config) => ({
         }
 
         return null;
+    },
+
+    async savePlanSettings() {
+        if (! this.isDeveloperAdmin) {
+            return;
+        }
+
+        this.savingPlan = true;
+        try {
+            const payload = {
+                plan_tier: this.planForm.plan_tier,
+                max_seats_override: this.planForm.max_seats_override || null,
+                max_halls_override: this.planForm.max_halls_override || null,
+                max_branches_override: this.planForm.max_branches_override || null,
+            };
+            const response = await window.axios.patch(this.platformPlanUpdateUrl, payload);
+            this.planSnapshot = response.data.plan;
+            this.planForm.plan_tier = this.planSnapshot.limits.plan_tier;
+            showToast(response.data.message || 'Plan settings saved.');
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not save plan settings.', 'error');
+        } finally {
+            this.savingPlan = false;
+        }
     },
 
     async saveSettings() {
