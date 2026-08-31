@@ -6,6 +6,16 @@
     display: none !important;
 }
 
+@media (min-width: 1024px) {
+    .admin-main-shell {
+        margin-left: 200px;
+    }
+
+    .admin-main-shell.is-collapsed {
+        margin-left: 72px;
+    }
+}
+
 select.admin-select {
     appearance: none;
     -webkit-appearance: none;

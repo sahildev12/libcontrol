@@ -14,6 +14,7 @@ use App\Services\PlanLimitService;
 use App\Services\StudentCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -35,8 +36,23 @@ class SettingsController extends Controller
         $isPlatformAdmin = (bool) $request->user()?->isPlatformAdmin();
         $isDeveloperAdmin = (bool) $request->user()?->isDeveloperAdmin();
         $planSnapshot = $this->planLimitService->snapshot();
+        $licenseServerEnabled = (bool) config('libspace.license_server.enabled');
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll'));
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled'));
+    }
+
+    public function clearCache(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
+
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('route:clear');
+        Artisan::call('view:clear');
+
+        return response()->json([
+            'message' => 'Application cache cleared.',
+        ]);
     }
 
     public function update(UpdateBranchSettingsRequest $request, BranchBrandService $branchBrandService): JsonResponse

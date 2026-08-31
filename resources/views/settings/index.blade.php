@@ -22,6 +22,9 @@
             isDeveloperAdmin: @js($isDeveloperAdmin),
             viewingAll: @js($viewingAll ?? false),
             timezone: @js(config('libspace.timezone')),
+            clearCacheUrl: @js(route('settings.clear-cache')),
+            licenseServerEnabled: @js($licenseServerEnabled ?? false),
+            deploymentsUrl: @js(($licenseServerEnabled ?? false) ? route('developer.deployments.index') : null),
         })"
         x-init="init()"
     >
@@ -202,6 +205,39 @@
                         <input type="number" min="1" max="90" x-model.number="form.expiry_reminder_days" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
                     </div>
                     <p class="text-xs text-gray-500">Students must have an email on their profile. Each booking receives one reminder per expiry cycle.</p>
+                </div>
+            </section>
+            @endif
+
+            @if ($isDeveloperAdmin)
+            <section class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                <div class="border-b border-slate-200 bg-slate-50 px-5 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Developer tools</h2>
+                    <p class="mt-1 text-xs text-gray-600">Clear stale cache on the live server and manage licensed client domains.</p>
+                </div>
+                <div class="space-y-4 p-5">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button
+                            type="button"
+                            @click="clearApplicationCache()"
+                            :disabled="clearingCache"
+                            class="inline-flex h-10 items-center rounded-lg bg-slate-800 px-5 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
+                            x-text="clearingCache ? 'Clearing cache...' : 'Clear application cache'"
+                        ></button>
+                        @if ($licenseServerEnabled ?? false)
+                            <a
+                                href="{{ route('developer.deployments.index') }}"
+                                class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                            >
+                                Deployments &amp; domains
+                            </a>
+                        @endif
+                    </div>
+                    @unless ($licenseServerEnabled ?? false)
+                        <p class="text-xs text-gray-500">
+                            To see all client domains in the sidebar, set <code class="rounded bg-gray-100 px-1 py-0.5">LIBSPACE_LICENSE_SERVER=true</code> in <code class="rounded bg-gray-100 px-1 py-0.5">.env</code>, run migrations, then reload this page.
+                        </p>
+                    @endunless
                 </div>
             </section>
             @endif

@@ -146,6 +146,12 @@
             if (($item['platform_admin_only'] ?? false) && ! ($isPlatformAdmin ?? false)) {
                 continue;
             }
+            if (($item['developer_admin_only'] ?? false) && ! ($isDeveloperAdmin ?? false)) {
+                continue;
+            }
+            if (($item['license_server_only'] ?? false) && ! ($licenseServerEnabled ?? false)) {
+                continue;
+            }
             $disabled = ($item['disabled'] ?? false) || empty($item['route']);
             $isActive = ! $disabled && $item['route'] && ($currentRoute === $item['route'] || str_starts_with((string) $currentRoute, strtok($item['route'], '.').'.'));
         @endphp

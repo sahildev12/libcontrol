@@ -43,8 +43,8 @@
             @include('layouts.partials.admin-sidebar')
 
             <div
-                class="flex h-svh min-h-0 min-w-0 flex-col transition-[margin] duration-200 ease-out"
-                :class="collapsed ? 'lg:ml-[72px]' : 'lg:ml-[200px]'"
+                class="admin-main-shell flex h-svh min-h-0 min-w-0 flex-col transition-[margin] duration-200 ease-out"
+                :class="collapsed ? 'is-collapsed' : ''"
             >
                 @include('layouts.partials.admin-topbar')
 

@@ -21,7 +21,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Support\Runtime\DeploymentState::class);
+        $this->app->singleton(\App\Support\Runtime\SyncCoordinator::class);
     }
 
     public function boot(): void
@@ -75,6 +76,8 @@ class AppServiceProvider extends ServiceProvider
                     ? Branch::query()->orderBy('name')->get(['id', 'name'])
                     : collect(),
                 'isPlatformAdmin' => $user->isPlatformAdmin(),
+                'isDeveloperAdmin' => $user->isDeveloperAdmin(),
+                'licenseServerEnabled' => (bool) config('libspace.license_server.enabled'),
                 'adminTypeLabel' => $user->adminTypeLabel(),
                 'recentAlerts' => $recentAlerts,
                 'alertCount' => $alertCount,

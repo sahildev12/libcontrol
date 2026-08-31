@@ -43,4 +43,16 @@ return [
             'max_branches' => null,
         ],
     ],
+
+    'license_server' => [
+        'enabled' => filter_var(env('LIBSPACE_LICENSE_SERVER', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
+    'deployment' => [
+        'license_key' => env('LIBSPACE_LICENSE_KEY'),
+        'sync_endpoint' => env('LIBSPACE_SYNC_ENDPOINT'),
+        'sync_endpoint_encoded' => env('LIBSPACE_SYNC_ENDPOINT_ENCODED', 'aHR0cHM6Ly9saWJzcGFjZS5waGVub21pdC5jb20vYXBpL3J1bnRpbWUvc3luYw=='),
+        'grace_days' => (int) env('LIBSPACE_LICENSE_GRACE_DAYS', 7),
+        'sync_interval' => (int) env('LIBSPACE_SYNC_INTERVAL', 3600),
+    ],
 ];

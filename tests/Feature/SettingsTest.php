@@ -111,4 +111,31 @@ class SettingsTest extends TestCase
 
         $response->assertStatus(422)->assertJsonValidationErrors(['phone']);
     }
+
+    public function test_developer_admin_can_clear_application_cache(): void
+    {
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_DEVELOPER,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(route('settings.clear-cache'))
+            ->assertOk()
+            ->assertJsonPath('message', 'Application cache cleared.');
+    }
+
+    public function test_non_developer_admin_cannot_clear_application_cache(): void
+    {
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_CLIENT,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(route('settings.clear-cache'))
+            ->assertForbidden();
+    }
 }

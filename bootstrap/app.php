@@ -16,6 +16,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch' => \App\Http\Middleware\EnsureUserHasBranch::class,
             'platform_admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
             'page.activity' => \App\Http\Middleware\RecordPageActivity::class,
+            'developer_admin' => \App\Http\Middleware\EnsureDeveloperAdmin::class,
+            'license_server' => \App\Http\Middleware\EnsureLicenseServer::class,
+        ]);
+
+        $middleware->web(prepend: [
+            \App\Http\Middleware\EnsureDeploymentLicensed::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\RuntimeProbe::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

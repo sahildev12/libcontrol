@@ -4550,11 +4550,15 @@ Alpine.data('settingsPage', (config) => ({
     },
     saving: false,
     savingPlan: false,
+    clearingCache: false,
     flash: '',
     error: '',
     updateUrl: config.updateUrl,
     platformUpdateUrl: config.platformUpdateUrl,
     platformPlanUpdateUrl: config.platformPlanUpdateUrl,
+    clearCacheUrl: config.clearCacheUrl,
+    licenseServerEnabled: config.licenseServerEnabled || false,
+    deploymentsUrl: config.deploymentsUrl,
     timezone: config.timezone,
 
     init() {},
@@ -4614,6 +4618,22 @@ Alpine.data('settingsPage', (config) => ({
         }
 
         return null;
+    },
+
+    async clearApplicationCache() {
+        if (! this.isDeveloperAdmin || ! this.clearCacheUrl) {
+            return;
+        }
+
+        this.clearingCache = true;
+        try {
+            const response = await window.axios.post(this.clearCacheUrl);
+            showToast(response.data.message || 'Application cache cleared.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.clearingCache = false;
+        }
     },
 
     async savePlanSettings() {

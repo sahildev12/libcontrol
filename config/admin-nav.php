@@ -13,5 +13,6 @@ return [
         ['label' => 'Notifications', 'route' => 'notifications.index', 'icon' => 'bell'],
         ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart'],
         ['label' => 'Settings', 'route' => 'settings.index', 'icon' => 'settings'],
+        ['label' => 'Deployments & Domains', 'route' => 'developer.deployments.index', 'icon' => 'branch', 'platform_admin_only' => true, 'developer_admin_only' => true, 'license_server_only' => true],
     ],
 ];
