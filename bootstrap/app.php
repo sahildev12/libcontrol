@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'api/runtime/sync',
+        ]);
+
         $middleware->alias([
             'branch' => \App\Http\Middleware\EnsureUserHasBranch::class,
             'platform_admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,

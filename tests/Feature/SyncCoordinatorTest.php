@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\LicensedDeployment;
-use App\Models\LicensedDeployment;
 use App\Support\Runtime\DeploymentState;
 use App\Support\Runtime\SyncCoordinator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
