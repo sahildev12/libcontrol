@@ -29,8 +29,8 @@ return new class extends Migration
             $table->string('php_version', 32)->nullable();
             $table->string('app_version', 32)->nullable();
             $table->boolean('is_authorized')->default(false);
-            $table->timestamp('first_seen_at');
-            $table->timestamp('last_seen_at');
+            $table->dateTime('first_seen_at');
+            $table->dateTime('last_seen_at');
             $table->unsignedInteger('hit_count')->default(1);
             $table->timestamps();
 

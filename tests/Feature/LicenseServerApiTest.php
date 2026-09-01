@@ -101,6 +101,42 @@ class LicenseServerApiTest extends TestCase
         ]);
     }
 
+    public function test_discovery_ping_without_license_key_is_logged(): void
+    {
+        Config::set('libspace.discovery.secret', 'test-discovery-secret');
+
+        $payload = [
+            'domain' => 'library.dise.org.in',
+            'app_url' => 'https://library.dise.org.in',
+            'fingerprint' => hash('sha256', 'install-discovery'),
+            'meta' => ['php' => PHP_VERSION, 'app' => '1.0'],
+        ];
+
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+
+        $response = $this->call(
+            'POST',
+            '/api/runtime/sync',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+                'HTTP_X_SYNC_TOKEN' => hash_hmac('sha256', $body, 'test-discovery-secret'),
+            ],
+            $body,
+        );
+
+        $response->assertOk()->assertJsonPath('status', 'pending');
+
+        $this->assertDatabaseHas('installation_events', [
+            'license_key_hash' => LicensedDeployment::discoveryKeyHash(),
+            'domain' => 'library.dise.org.in',
+            'is_authorized' => 0,
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      */

@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
 
+Route::get('/install', [\App\Http\Controllers\InstallController::class, 'show'])->name('install.show');
+Route::post('/install', [\App\Http\Controllers\InstallController::class, 'run'])->name('install.run');
+
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')

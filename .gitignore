@@ -78,6 +78,12 @@ Homestead.yaml
 /temp/
 project.txt
 
+# Client release artifacts (generated locally)
+/releases/client/**/libspace-client-*.zip
+/releases/client/**/libspace-client-*.sql
+/releases/client/**/SETUP-TOKEN.txt
+/releases/client/**/staging/
+
 
 phenomit.com
 phenomit.com/libspace/mail-config.php

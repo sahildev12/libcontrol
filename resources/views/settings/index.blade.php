@@ -98,11 +98,6 @@
                             </div>
                         </div>
 
-                        <div class="rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                            Current plan: <span class="font-bold" x-text="planSnapshot.limits.plan_label"></span>
-                            <span class="text-amber-800" x-show="! isDeveloperAdmin"> — only a developer admin can change the plan tier.</span>
-                        </div>
-
                         <template x-if="isDeveloperAdmin">
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div>

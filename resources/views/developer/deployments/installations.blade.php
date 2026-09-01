@@ -31,7 +31,13 @@
                             <td class="px-4 py-3 text-gray-600">{{ $event->app_url ?: '—' }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold {{ $event->is_authorized ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                    {{ $event->is_authorized ? 'Yes' : 'No' }}
+                                    @if ($event->is_authorized)
+                                        Yes
+                                    @elseif ($event->license_key_hash === \App\Models\LicensedDeployment::discoveryKeyHash())
+                                        Discovery
+                                    @else
+                                        No
+                                    @endif
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $event->hit_count }}</td>

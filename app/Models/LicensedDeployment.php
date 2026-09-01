@@ -37,9 +37,23 @@ class LicensedDeployment extends Model
         return $this->hasMany(InstallationEvent::class, 'license_key_hash', 'license_key_hash');
     }
 
+    public const PLACEHOLDER_LICENSE_KEY = 'your_license_key_from_phenomit';
+
     public static function hashKey(string $licenseKey): string
     {
         return hash('sha256', $licenseKey);
+    }
+
+    public static function discoveryKeyHash(): string
+    {
+        return hash('sha256', 'libspace:discovery');
+    }
+
+    public static function isPlaceholderLicenseKey(?string $licenseKey): bool
+    {
+        $licenseKey = trim((string) $licenseKey);
+
+        return $licenseKey === '' || $licenseKey === self::PLACEHOLDER_LICENSE_KEY;
     }
 
     public static function generateKey(): string

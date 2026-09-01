@@ -19,7 +19,12 @@ class DeploymentController extends Controller
             ->orderByDesc('updated_at')
             ->get();
 
-        return view('developer.deployments.index', compact('deployments'));
+        $recentInstallations = InstallationEvent::query()
+            ->orderByDesc('last_seen_at')
+            ->limit(10)
+            ->get();
+
+        return view('developer.deployments.index', compact('deployments', 'recentInstallations'));
     }
 
     public function create(): View

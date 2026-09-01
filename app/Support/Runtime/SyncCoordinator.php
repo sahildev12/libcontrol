@@ -28,12 +28,6 @@ class SyncCoordinator
             return;
         }
 
-        $licenseKey = (string) config('libspace.deployment.license_key');
-
-        if ($licenseKey === '') {
-            return;
-        }
-
         if (! $this->state->shouldSync()) {
             return;
         }
@@ -47,9 +41,10 @@ class SyncCoordinator
             return;
         }
 
-        $licenseKey = (string) config('libspace.deployment.license_key');
+        $licenseKey = $this->resolvedLicenseKey();
+        $signingKey = $licenseKey ?? (string) config('libspace.discovery.secret');
 
-        if ($licenseKey === '') {
+        if ($signingKey === '') {
             return;
         }
 
@@ -64,17 +59,22 @@ class SyncCoordinator
         ];
 
         $body = json_encode($payload, JSON_THROW_ON_ERROR);
-        $token = hash_hmac('sha256', $body, $licenseKey);
+        $token = hash_hmac('sha256', $body, $signingKey);
         $endpoint = $this->endpoint();
+
+        $headers = [
+            'X-Sync-Token' => $token,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ];
+
+        if ($licenseKey !== null) {
+            $headers['X-License-Key'] = $licenseKey;
+        }
 
         try {
             $response = Http::timeout(8)
-                ->withHeaders([
-                    'X-Sync-Token' => $token,
-                    'X-License-Key' => $licenseKey,
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])
+                ->withHeaders($headers)
                 ->withBody($body, 'application/json')
                 ->post($endpoint);
 
@@ -96,6 +96,17 @@ class SyncCoordinator
         } catch (\Throwable) {
             // Fail open on network errors.
         }
+    }
+
+    private function resolvedLicenseKey(): ?string
+    {
+        $licenseKey = trim((string) config('libspace.deployment.license_key'));
+
+        if (LicensedDeployment::isPlaceholderLicenseKey($licenseKey)) {
+            return null;
+        }
+
+        return $licenseKey;
     }
 
     private function currentDomain(): string

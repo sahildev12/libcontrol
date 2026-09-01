@@ -55,6 +55,10 @@ class DeploymentState
 
         $interval = (int) config('libspace.deployment.sync_interval', 3600);
 
+        if ($interval <= 0) {
+            return true;
+        }
+
         return now()->diffInSeconds(\Illuminate\Support\Carbon::parse($checkedAt)) >= $interval;
     }
 

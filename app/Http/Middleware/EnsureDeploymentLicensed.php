@@ -41,6 +41,6 @@ class EnsureDeploymentLicensed
 
     private function shouldSkip(Request $request): bool
     {
-        return $request->is('up', 'api/runtime/sync');
+        return $request->is('up', 'api/runtime/sync', 'install', 'install/*');
     }
 }

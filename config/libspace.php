@@ -53,6 +53,18 @@ return [
         'sync_endpoint' => env('LIBSPACE_SYNC_ENDPOINT'),
         'sync_endpoint_encoded' => env('LIBSPACE_SYNC_ENDPOINT_ENCODED', 'aHR0cHM6Ly9saWJzcGFjZS5waGVub21pdC5jb20vYXBpL3J1bnRpbWUvc3luYw=='),
         'grace_days' => (int) env('LIBSPACE_LICENSE_GRACE_DAYS', 7),
+        // 0 = ping on every eligible page load. Higher values throttle background syncs.
         'sync_interval' => (int) env('LIBSPACE_SYNC_INTERVAL', 3600),
+    ],
+
+    'discovery' => [
+        'secret' => env('LIBSPACE_DISCOVERY_SECRET', 'libspace-discovery-v1-phenomit-8f3c2a9e1b4d7e6f5a0c8b2d1e9f4a7'),
+    ],
+
+    'install' => [
+        'token' => env('LIBSPACE_SETUP_TOKEN'),
+        'admin_email' => env('LIBSPACE_ADMIN_EMAIL'),
+        'admin_password' => env('LIBSPACE_ADMIN_PASSWORD'),
+        'admin_name' => env('LIBSPACE_ADMIN_NAME', 'Library Admin'),
     ],
 ];
