@@ -6,6 +6,10 @@
                 'student_code_prefix' => $platformSettings->student_code_prefix,
                 'student_code_padding' => $platformSettings->student_code_padding ?: config('libspace.defaults.student_code_padding'),
                 'sample_student_code' => app(\App\Services\StudentCodeService::class)->preview(),
+                'display_name' => $platformSettings->display_name,
+                'logo_with_text_url' => $platformSettings->logoWithTextUrl(),
+                'simple_logo_url' => $platformSettings->simpleLogoUrl(),
+                'favicon_url' => $platformSettings->faviconUrl(),
             ]),
             planSnapshot: @js($planSnapshot),
             planForm: @js([
@@ -24,7 +28,7 @@
             timezone: @js(config('libspace.timezone')),
             clearCacheUrl: @js(route('settings.clear-cache')),
             licenseServerEnabled: @js($licenseServerEnabled ?? false),
-            deploymentsUrl: @js(($licenseServerEnabled ?? false) ? route('developer.deployments.index') : null),
+            deploymentsUrl: @js($deploymentsUrl),
         })"
         x-init="init()"
     >
@@ -32,11 +36,11 @@
             <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
             <p class="mt-1 text-sm text-gray-600">
                 @if ($viewingAll ?? false)
-                    Viewing all branches. Choose a specific branch to edit library hours and branding.
+                    Viewing all branches. Choose a specific branch to edit library hours and reminders.
                 @elseif ($isPlatformAdmin && $branch)
-                    Global student IDs and library look for {{ $branch->display_name ?: $branch->name }}.
+                    Library hours and reminders for {{ $branch->display_name ?: $branch->name }}.
                 @elseif ($branch)
-                    Branding and expiry email reminders for {{ $branch->display_name ?: $branch->name }}.
+                    Library hours and expiry reminders for {{ $branch->display_name ?: $branch->name }}.
                 @endif
             </p>
         </header>
@@ -127,30 +131,51 @@
                         </template>
                     </div>
                 </section>
+
+                <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="border-b border-gray-200 px-5 py-4">
+                        <h2 class="text-sm font-semibold text-gray-900">Library branding</h2>
+                        <p class="mt-1 text-xs text-gray-500">Name and logos used across admin, branch login, sidebar, and browser tab. Branches cannot upload their own logos.</p>
+                    </div>
+                    <div class="space-y-4 p-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Library name</label>
+                            <input type="text" x-model="platformForm.display_name" placeholder="Dise Library" class="mt-1 block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Logo with text</label>
+                                <p class="mt-0.5 text-xs text-gray-500">Wide logo for login pages.</p>
+                                <input type="file" @change="platformForm.logo_with_text = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-2 block w-full text-sm text-gray-600">
+                                <img x-show="platformSettings.logo_with_text_url" :src="platformSettings.logo_with_text_url" alt="" class="mt-2 h-12 max-w-full object-contain">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Simple logo</label>
+                                <p class="mt-0.5 text-xs text-gray-500">Icon-only logo for sidebar.</p>
+                                <input type="file" @change="platformForm.simple_logo = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-2 block w-full text-sm text-gray-600">
+                                <img x-show="platformSettings.simple_logo_url" :src="platformSettings.simple_logo_url" alt="" class="mt-2 size-12 object-contain">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Favicon</label>
+                                <p class="mt-0.5 text-xs text-gray-500">Browser tab icon (.ico or .png).</p>
+                                <input type="file" @change="platformForm.favicon = $event.target.files[0]" accept=".ico,.png,.svg" class="mt-2 block w-full text-sm text-gray-600">
+                                <img x-show="platformSettings.favicon_url" :src="platformSettings.favicon_url" alt="" class="mt-2 size-8 object-contain">
+                            </div>
+                        </div>
+                    </div>
+                </section>
             @endif
 
             @if ($branch && $settings)
             <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Library look</h2>
-                    <p class="mt-1 text-xs text-gray-500">This name and logo show in the menu and on the branch login page.</p>
+                    <h2 class="text-sm font-semibold text-gray-900">Branch details</h2>
+                    <p class="mt-1 text-xs text-gray-500">Optional label for this branch. Logos are managed in Library branding above.</p>
                 </div>
                 <div class="space-y-4 p-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Library name</label>
+                        <label class="block text-sm font-medium text-gray-700">Branch name</label>
                         <input type="text" x-model="form.display_name" placeholder="Main Library Center" class="mt-1 block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                    </div>
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Logo</label>
-                            <input type="file" @change="form.logo_with_text = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-1 block w-full text-sm text-gray-600">
-                            <img x-show="settings.logo_with_text_url" :src="settings.logo_with_text_url" alt="" class="mt-2 h-12 max-w-full object-contain">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Small logo</label>
-                            <input type="file" @change="form.simple_logo = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-1 block w-full text-sm text-gray-600">
-                            <img x-show="settings.simple_logo_url" :src="settings.simple_logo_url" alt="" class="mt-2 size-12 object-contain">
-                        </div>
                     </div>
                 </div>
             </section>
@@ -208,7 +233,7 @@
             <section class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
                 <div class="border-b border-slate-200 bg-slate-50 px-5 py-4">
                     <h2 class="text-sm font-semibold text-gray-900">Developer tools</h2>
-                    <p class="mt-1 text-xs text-gray-600">Clear stale cache on the live server and manage licensed client domains.</p>
+                    <p class="mt-1 text-xs text-gray-600">Clear stale cache on the live server.</p>
                 </div>
                 <div class="space-y-4 p-5">
                     <div class="flex flex-wrap items-center gap-3">
@@ -219,20 +244,15 @@
                             class="inline-flex h-10 items-center rounded-lg bg-slate-800 px-5 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
                             x-text="clearingCache ? 'Clearing cache...' : 'Clear application cache'"
                         ></button>
-                        @if ($licenseServerEnabled ?? false)
+                        @if ($deploymentsUrl)
                             <a
-                                href="{{ route('developer.deployments.index') }}"
+                                href="{{ $deploymentsUrl }}"
                                 class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
                             >
                                 Deployments &amp; domains
                             </a>
                         @endif
                     </div>
-                    @unless ($licenseServerEnabled ?? false)
-                        <p class="text-xs text-gray-500">
-                            To see all client domains in the sidebar, set <code class="rounded bg-gray-100 px-1 py-0.5">LIBSPACE_LICENSE_SERVER=true</code> in <code class="rounded bg-gray-100 px-1 py-0.5">.env</code>, run migrations, then reload this page.
-                        </p>
-                    @endunless
                 </div>
             </section>
             @endif

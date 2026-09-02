@@ -53,9 +53,6 @@ class UpdateBranchSettingsRequest extends FormRequest
             'library_open_time' => ['nullable', 'date_format:H:i'],
             'library_close_time' => ['nullable', 'date_format:H:i'],
             'is_open_24_hours' => ['nullable', 'boolean'],
-            'logo_with_text' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:4096'],
-            'simple_logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:4096'],
-            'favicon' => ['nullable', 'file', 'mimes:ico,png,svg', 'max:1024'],
         ];
     }
 }

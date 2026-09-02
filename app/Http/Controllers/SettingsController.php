@@ -9,12 +9,13 @@ use App\Models\Branch;
 use App\Models\PlatformSetting;
 use App\Services\BranchBrandService;
 use App\Services\LibraryScheduleService;
-use App\Services\LoginBrandingService;
+use App\Services\PlatformBrandService;
 use App\Services\PlanLimitService;
 use App\Services\StudentCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -37,8 +38,11 @@ class SettingsController extends Controller
         $isDeveloperAdmin = (bool) $request->user()?->isDeveloperAdmin();
         $planSnapshot = $this->planLimitService->snapshot();
         $licenseServerEnabled = (bool) config('libspace.license_server.enabled');
+        $deploymentsUrl = $licenseServerEnabled && Route::has('developer.deployments.index')
+            ? route('developer.deployments.index')
+            : null;
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled'));
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl'));
     }
 
     public function clearCache(Request $request): JsonResponse
@@ -62,18 +66,6 @@ class SettingsController extends Controller
 
         $data = $request->safe()->except(['logo_with_text', 'simple_logo', 'favicon']);
 
-        if ($request->hasFile('logo_with_text')) {
-            $data['logo_with_text_path'] = $branchBrandService->storeUpload($branch, $request->file('logo_with_text'), 'logo_with_text');
-        }
-
-        if ($request->hasFile('simple_logo')) {
-            $data['simple_logo_path'] = $branchBrandService->storeUpload($branch, $request->file('simple_logo'), 'simple_logo');
-        }
-
-        if ($request->hasFile('favicon')) {
-            $data['favicon_path'] = $branchBrandService->storeUpload($branch, $request->file('favicon'), 'favicon');
-        }
-
         $branch->update($data);
 
         return response()->json([
@@ -82,17 +74,25 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function updatePlatform(UpdatePlatformSettingsRequest $request, LoginBrandingService $loginBranding): JsonResponse
+    public function updatePlatform(UpdatePlatformSettingsRequest $request, PlatformBrandService $platformBrand): JsonResponse
     {
         $settings = PlatformSetting::current();
-        $data = $request->safe()->except(['logo', 'favicon']);
+        $data = $request->safe()->except(['logo_with_text', 'simple_logo', 'favicon', 'logo']);
 
-        if ($request->hasFile('logo')) {
-            $data['logo_path'] = $loginBranding->storePlatformLogo($request->file('logo'), 'logo');
+        if ($request->hasFile('logo_with_text')) {
+            $data['logo_with_text_path'] = $platformBrand->storeUpload($request->file('logo_with_text'), 'logo_with_text');
+        }
+
+        if ($request->hasFile('simple_logo')) {
+            $data['simple_logo_path'] = $platformBrand->storeUpload($request->file('simple_logo'), 'simple_logo');
         }
 
         if ($request->hasFile('favicon')) {
-            $data['favicon_path'] = $loginBranding->storePlatformLogo($request->file('favicon'), 'favicon');
+            $data['favicon_path'] = $platformBrand->storeUpload($request->file('favicon'), 'favicon');
+        }
+
+        if ($request->hasFile('logo')) {
+            $data['logo_with_text_path'] = $platformBrand->storeUpload($request->file('logo'), 'logo_with_text');
         }
 
         $settings->update($data);
@@ -142,6 +142,8 @@ class SettingsController extends Controller
             'student_code_padding' => $settings->student_code_padding ?: config('libspace.defaults.student_code_padding'),
             'sample_student_code' => $this->studentCodeService->preview(),
             'display_name' => $settings->display_name,
+            'logo_with_text_url' => $settings->logoWithTextUrl(),
+            'simple_logo_url' => $settings->simpleLogoUrl(),
             'logo_url' => $settings->logoUrl(),
             'favicon_url' => $settings->faviconUrl(),
         ];

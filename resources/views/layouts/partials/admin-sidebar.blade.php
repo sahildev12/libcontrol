@@ -65,6 +65,9 @@
                     if (($item['license_server_only'] ?? false) && ! ($licenseServerEnabled ?? false)) {
                         continue;
                     }
+                    if (($item['tenancy_only'] ?? false) && ! ($tenancyEnabled ?? false)) {
+                        continue;
+                    }
                     $isActive = $item['route'] && ($currentRoute === $item['route'] || str_starts_with((string) $currentRoute, strtok($item['route'], '.').'.'));
                     $disabled = ($item['disabled'] ?? false) || empty($item['route']);
                 @endphp

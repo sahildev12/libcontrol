@@ -8,11 +8,11 @@ return [
         ['label' => 'Seats', 'route' => 'seats.index', 'icon' => 'grid'],
         ['label' => 'Trial Seats', 'route' => 'trial-seats.index', 'icon' => 'clock'],
         ['label' => 'Students', 'route' => 'students.index', 'icon' => 'users'],
-        ['label' => 'Enquiry', 'route' => 'enquiries.index', 'icon' => 'inbox'],
         ['label' => 'Fee Management', 'route' => 'fees.index', 'icon' => 'currency'],
         ['label' => 'Notifications', 'route' => 'notifications.index', 'icon' => 'bell'],
         ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart'],
         ['label' => 'Settings', 'route' => 'settings.index', 'icon' => 'settings'],
-        ['label' => 'Deployments & Domains', 'route' => 'developer.deployments.index', 'icon' => 'branch', 'platform_admin_only' => true, 'developer_admin_only' => true, 'license_server_only' => true],
+        ['label' => 'Client Libraries', 'route' => 'developer.tenants.index', 'icon' => 'branch', 'platform_admin_only' => true, 'developer_admin_only' => true, 'tenancy_only' => true],
+        ['label' => 'Dev & Domains', 'route' => 'developer.deployments.index', 'icon' => 'branch', 'platform_admin_only' => true, 'developer_admin_only' => true, 'license_server_only' => true],
     ],
 ];

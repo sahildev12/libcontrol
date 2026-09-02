@@ -35,7 +35,7 @@ class SyncCoordinator
         $this->sync();
     }
 
-    public function sync(): void
+    public function sync(bool $setupComplete = false): void
     {
         if (config('libspace.license_server.enabled')) {
             return;
@@ -55,6 +55,7 @@ class SyncCoordinator
             'meta' => [
                 'php' => PHP_VERSION,
                 'app' => (string) config('app.version', '1.0'),
+                'event' => $setupComplete ? 'setup_complete' : 'heartbeat',
             ],
         ];
 

@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ?: $name }} · {{ config('libspace.product.name') }}</title>
+        <title>{{ $title ?: $name }}</title>
 
         @if ($faviconUrl)
             <link rel="icon" href="{{ $faviconUrl }}">

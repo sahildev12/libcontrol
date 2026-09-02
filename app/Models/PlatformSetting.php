@@ -18,6 +18,8 @@ class PlatformSetting extends Model
         'max_branches_override',
         'display_name',
         'logo_path',
+        'simple_logo_path',
+        'logo_with_text_path',
         'favicon_path',
     ];
 
@@ -51,34 +53,45 @@ class PlatformSetting extends Model
 
     public function displayName(): string
     {
-        return $this->display_name ?: config('libspace.product.name');
+        return $this->display_name
+            ?: config('libspace.install.product_name')
+            ?: config('app.name')
+            ?: config('libspace.product.name');
+    }
+
+    public function simpleLogoUrl(): ?string
+    {
+        return $this->assetUrl($this->simple_logo_path, config('libspace.brand.default_simple_logo'));
+    }
+
+    public function logoWithTextUrl(): ?string
+    {
+        return $this->assetUrl(
+            $this->logo_with_text_path ?: $this->logo_path,
+            config('libspace.brand.default_logo_with_text'),
+        );
     }
 
     public function logoUrl(): ?string
     {
-        if ($this->logo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->logo_path)) {
-            return '/storage/'.ltrim(str_replace('\\', '/', $this->logo_path), '/');
-        }
-
-        $default = config('libspace.brand.default_logo_with_text') ?: config('libspace.brand.default_simple_logo');
-
-        if ($default && file_exists(public_path($default))) {
-            return asset($default);
-        }
-
-        return null;
+        return $this->logoWithTextUrl() ?: $this->simpleLogoUrl();
     }
 
     public function faviconUrl(): ?string
     {
-        if ($this->favicon_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->favicon_path)) {
-            return '/storage/'.ltrim(str_replace('\\', '/', $this->favicon_path), '/');
+        return $this->assetUrl($this->favicon_path, config('libspace.brand.default_favicon'));
+    }
+
+    private function assetUrl(?string $path, ?string $defaultPublicPath = null): ?string
+    {
+        $path = ltrim(str_replace('\\', '/', (string) $path), '/');
+
+        if ($path && \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            return '/storage/'.$path;
         }
 
-        $default = config('libspace.brand.default_favicon');
-
-        if ($default && file_exists(public_path($default))) {
-            return asset($default);
+        if ($defaultPublicPath && file_exists(public_path($defaultPublicPath))) {
+            return asset($defaultPublicPath);
         }
 
         return null;

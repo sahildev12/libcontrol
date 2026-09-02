@@ -13,6 +13,11 @@ use Illuminate\View\View;
 
 class EnquiryController extends Controller
 {
+    public function __construct()
+    {
+        abort_unless(config('libspace.modules.enquiries'), 404);
+    }
+
     public function index(Request $request): View
     {
         $enquiries = $this->constrainByActiveBranch(Enquiry::query(), $request)

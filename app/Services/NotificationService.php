@@ -92,33 +92,35 @@ class NotificationService
         ));
         }
 
-        $newEnquiries = Enquiry::query()
-            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->where('status', 'new')
-            ->orderByDesc('created_at')
-            ->get();
+        if (config('libspace.modules.enquiries')) {
+            $newEnquiries = Enquiry::query()
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->where('status', 'new')
+                ->orderByDesc('created_at')
+                ->get();
 
-        foreach ($newEnquiries as $enquiry) {
-            $key = 'new_enquiry:'.$enquiry->id;
-            $date = $enquiry->created_at?->format('M d, Y');
+            foreach ($newEnquiries as $enquiry) {
+                $key = 'new_enquiry:'.$enquiry->id;
+                $date = $enquiry->created_at?->format('M d, Y');
 
-            $alerts->push($this->formatAlert(
-            $key,
-            'new_enquiry',
-            'New enquiry',
-            "{$enquiry->name} asked about joining.",
-            $date,
-            $enquiry->created_at,
-            route('enquiries.index'),
-            [
-                ['label' => 'Name', 'value' => $enquiry->name],
-                ['label' => 'Phone', 'value' => $enquiry->phone ?: '—'],
-                ['label' => 'Email', 'value' => $enquiry->email ?: '—'],
-                ['label' => 'Received', 'value' => $date],
-            ],
-            $readKeys,
-            'Open enquiries',
-        ));
+                $alerts->push($this->formatAlert(
+                    $key,
+                    'new_enquiry',
+                    'New enquiry',
+                    "{$enquiry->name} asked about joining.",
+                    $date,
+                    $enquiry->created_at,
+                    route('enquiries.index'),
+                    [
+                        ['label' => 'Name', 'value' => $enquiry->name],
+                        ['label' => 'Phone', 'value' => $enquiry->phone ?: '—'],
+                        ['label' => 'Email', 'value' => $enquiry->email ?: '—'],
+                        ['label' => 'Received', 'value' => $date],
+                    ],
+                    $readKeys,
+                    'Open enquiries',
+                ));
+            }
         }
 
         $alerts = $alerts

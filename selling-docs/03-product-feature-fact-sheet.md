@@ -92,14 +92,7 @@
 
 ---
 
-### 7. Enquiries
-- Capture walk-in / phone enquiries
-- Status tracking
-- Convert enquiry → student in one action
-
----
-
-### 8. Seat assignments
+### 7. Seat assignments
 - Assign seat + fee plan to student
 - Transfer seat (preserves fee context; conflict checks)
 - Cancel assignment
@@ -108,7 +101,7 @@
 
 ---
 
-### 9. Fees
+### 8. Fees
 **Fee types:** monthly, yearly, one_time, custom  
 **Payment plans:** full payment, installments  
 **Installment frequencies:** weekly, monthly, quarterly, half_yearly, yearly, custom  
@@ -126,20 +119,20 @@
 
 ---
 
-### 10. Notifications
+### 9. Notifications
 - In-app alerts (expiring plans, attention items)
 - Mark read / mark all read
 
 ---
 
-### 11. Activity log *(Pro)*
+### 10. Activity log *(Pro)*
 - Logs logins, page views, creates, updates, deletes
 - Field-level change history on updates
 - Filterable listing; detail view per log entry
 
 ---
 
-### 12. Settings
+### 11. Settings
 **Branch settings**
 - Branch profile, library hours, branding logo
 - Slot labels tied to library hours
@@ -151,7 +144,7 @@
 
 ---
 
-### 13. Authentication & security
+### 12. Authentication & security
 - Branch login and separate admin login
 - Password reset via email
 - Platform admin cannot log in on branch login page
@@ -160,13 +153,13 @@
 
 ---
 
-### 14. Email (when SMTP configured)
+### 13. Email (when SMTP configured)
 - Password reset emails
 - Plan expiry reminder emails to students
 
 ---
 
-### 15. Scheduled jobs
+### 14. Scheduled jobs
 - Daily plan expiry reminder command (9:00 AM IST via Laravel scheduler)
 
 ---

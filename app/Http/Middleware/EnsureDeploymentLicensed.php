@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\Runtime\DeploymentState;
+use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,10 @@ class EnsureDeploymentLicensed
     public function handle(Request $request, Closure $next): Response
     {
         if (config('libspace.license_server.enabled')) {
+            return $next($request);
+        }
+
+        if (config('libspace.tenancy.enabled') && TenantContext::isTenantRequest()) {
             return $next($request);
         }
 
@@ -41,6 +46,6 @@ class EnsureDeploymentLicensed
 
     private function shouldSkip(Request $request): bool
     {
-        return $request->is('up', 'api/runtime/sync', 'install', 'install/*');
+        return $request->is('up', 'api/runtime/sync', 'install', 'install/*', 'setup', 'setup/*');
     }
 }

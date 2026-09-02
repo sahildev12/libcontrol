@@ -3,7 +3,7 @@
 use App\Http\Controllers\Developer\DeploymentController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'platform_admin', 'developer_admin', 'license_server'])
+Route::middleware(['auth', 'platform_admin', 'developer_admin', 'license_server', 'landlord_host'])
     ->prefix('developer/deployments')
     ->name('developer.deployments.')
     ->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Branch;
+use App\Models\PlatformSetting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,17 +35,17 @@ class BranchBrandService
 
     public function faviconUrl(Branch $branch): ?string
     {
-        return $this->assetUrl($branch, $branch->favicon_path, config('libspace.brand.default_favicon'));
+        return PlatformSetting::current()->faviconUrl();
     }
 
     public function simpleLogoUrl(Branch $branch): ?string
     {
-        return $this->assetUrl($branch, $branch->simple_logo_path, config('libspace.brand.default_simple_logo'));
+        return PlatformSetting::current()->simpleLogoUrl();
     }
 
     public function logoWithTextUrl(Branch $branch): ?string
     {
-        return $this->assetUrl($branch, $branch->logo_with_text_path, config('libspace.brand.default_logo_with_text'));
+        return PlatformSetting::current()->logoWithTextUrl();
     }
 
     public function storeUpload(Branch $branch, UploadedFile $file, string $type): string

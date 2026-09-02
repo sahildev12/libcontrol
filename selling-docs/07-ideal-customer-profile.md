@@ -8,7 +8,7 @@
 |-----------|--------|
 | **Business type** | Reading library, study hall, competitive exam centre, co-working study space |
 | **Locations** | 1–2 branches today; plans to expand or already struggling with 2 |
-| **Seats** | 40–300 active seats |
+| **Seats** | 20–300+ active seats |
 | **Staff** | 2–15 (owner + front desk + 1 manager) |
 | **Current tools** | Paper register, Excel, WhatsApp groups, maybe a generic billing app |
 | **Revenue model** | Monthly/yearly student memberships; trials common |
@@ -64,20 +64,6 @@
 
 ---
 
-## Discovery questions (first call)
-
-1. How many seats and halls do you operate today?  
-2. How do you assign a seat when a new student pays?  
-3. How do trial students work — and how do you convert them?  
-4. What happens when a monthly plan expires?  
-5. If you have two branches, how do you compare performance?  
-6. What tool do you use for fees today?  
-7. Who will use the system daily — and are they comfortable with a browser?  
-
-**Scoring:** 4+ pain answers → hot lead. Route to demo.
-
----
-
 ## Industries / segments
 
 | Segment | Fit | Notes |
@@ -93,24 +79,7 @@
 
 ## Lead sources that work
 
-- Referrals from existing Phenomit clients  
 - Local library owner associations  
 - Coaching centre owners expanding to reading rooms  
 - Google / Meta ads — "library management software India"  
 - WhatsApp forwards from satisfied clients  
-
----
-
-## Disqualification email template
-
-```
-Hi [Name],
-
-Thank you for your interest in LibSpace. Based on our conversation, [reason — e.g. you need full accounting / book-lending only / under 15 seats with no growth plans] may be a better fit for a different solution than ours today.
-
-LibSpace is purpose-built for assigned-seat reading libraries. If your model changes or you open a study-hall operation, we'd be happy to reconnect.
-
-Best,
-[Your name]
-Phenomit.com · LibSpace
-```

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\Runtime\SyncCoordinator;
+use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +35,10 @@ class RuntimeProbe
     private function shouldSkip(Request $request, Response $response): bool
     {
         if (config('libspace.license_server.enabled')) {
+            return true;
+        }
+
+        if (config('libspace.tenancy.enabled') && TenantContext::isTenantRequest()) {
             return true;
         }
 

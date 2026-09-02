@@ -4540,13 +4540,14 @@ Alpine.data('settingsPage', (config) => ({
         library_open_time: config.settings?.library_open_time || '09:00',
         library_close_time: config.settings?.library_close_time || '18:00',
         is_open_24_hours: config.settings?.is_open_24_hours || false,
-        logo_with_text: null,
-        simple_logo: null,
-        favicon: null,
     },
     platformForm: {
         student_code_prefix: config.platformSettings?.student_code_prefix || '',
         student_code_padding: config.platformSettings?.student_code_padding || 3,
+        display_name: config.platformSettings?.display_name || '',
+        logo_with_text: null,
+        simple_logo: null,
+        favicon: null,
     },
     saving: false,
     savingPlan: false,
@@ -4593,9 +4594,6 @@ Alpine.data('settingsPage', (config) => ({
             }
         });
         data.append('is_open_24_hours', this.form.is_open_24_hours ? '1' : '0');
-        if (this.form.logo_with_text) data.append('logo_with_text', this.form.logo_with_text);
-        if (this.form.simple_logo) data.append('simple_logo', this.form.simple_logo);
-        if (this.form.favicon) data.append('favicon', this.form.favicon);
         return data;
     },
 
@@ -4674,6 +4672,12 @@ Alpine.data('settingsPage', (config) => ({
                 const platformData = new FormData();
                 platformData.append('student_code_prefix', String(this.platformForm.student_code_prefix || '').trim().toUpperCase());
                 platformData.append('student_code_padding', String(this.platformForm.student_code_padding || 3));
+                if (this.platformForm.display_name) {
+                    platformData.append('display_name', this.platformForm.display_name);
+                }
+                if (this.platformForm.logo_with_text) platformData.append('logo_with_text', this.platformForm.logo_with_text);
+                if (this.platformForm.simple_logo) platformData.append('simple_logo', this.platformForm.simple_logo);
+                if (this.platformForm.favicon) platformData.append('favicon', this.platformForm.favicon);
 
                 const platformResponse = await window.axios.post(`${this.platformUpdateUrl}?_method=PATCH`, platformData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
@@ -4681,6 +4685,10 @@ Alpine.data('settingsPage', (config) => ({
                 this.platformSettings = platformResponse.data.platform_settings;
                 this.platformForm.student_code_prefix = this.platformSettings.student_code_prefix;
                 this.platformForm.student_code_padding = this.platformSettings.student_code_padding;
+                this.platformForm.display_name = this.platformSettings.display_name || '';
+                this.platformForm.logo_with_text = null;
+                this.platformForm.simple_logo = null;
+                this.platformForm.favicon = null;
             }
 
             if (! this.viewingAll) {
@@ -4693,9 +4701,6 @@ Alpine.data('settingsPage', (config) => ({
             this.form.library_open_time = this.settings.library_open_time || '09:00';
             this.form.library_close_time = this.settings.library_close_time || '18:00';
             this.form.is_open_24_hours = Boolean(this.settings.is_open_24_hours);
-            this.form.logo_with_text = null;
-            this.form.simple_logo = null;
-            this.form.favicon = null;
             }
 
             showToast(this.isPlatformAdmin ? 'Settings saved.' : (this.viewingAll ? 'Global settings saved.' : 'Settings saved.'));

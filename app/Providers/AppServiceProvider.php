@@ -14,6 +14,7 @@ use App\Observers\RecordsModelChanges;
 use App\Services\BranchContext;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +24,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(\App\Support\Runtime\DeploymentState::class);
         $this->app->singleton(\App\Support\Runtime\SyncCoordinator::class);
+
+        if (! $this->app->runningInConsole() && ! File::exists(storage_path('app/install.lock'))) {
+            config([
+                'session.driver' => 'file',
+                'cache.default' => 'file',
+                'queue.default' => 'sync',
+            ]);
+        }
     }
 
     public function boot(): void
@@ -78,6 +87,7 @@ class AppServiceProvider extends ServiceProvider
                 'isPlatformAdmin' => $user->isPlatformAdmin(),
                 'isDeveloperAdmin' => $user->isDeveloperAdmin(),
                 'licenseServerEnabled' => (bool) config('libspace.license_server.enabled'),
+                'tenancyEnabled' => (bool) config('libspace.tenancy.enabled'),
                 'adminTypeLabel' => $user->adminTypeLabel(),
                 'recentAlerts' => $recentAlerts,
                 'alertCount' => $alertCount,

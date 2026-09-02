@@ -3,6 +3,10 @@
 return [
     'timezone' => env('APP_TIMEZONE', 'Asia/Kolkata'),
 
+    'modules' => [
+        'enquiries' => filter_var(env('LIBSPACE_ENQUIRIES_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
     'product' => [
         'name' => env('LIBSPACE_PRODUCT_NAME', 'LibSpace'),
         'company' => env('LIBSPACE_COMPANY_NAME', 'Phenomit'),
@@ -61,10 +65,23 @@ return [
         'secret' => env('LIBSPACE_DISCOVERY_SECRET', 'libspace-discovery-v1-phenomit-8f3c2a9e1b4d7e6f5a0c8b2d1e9f4a7'),
     ],
 
+    'tenancy' => [
+        'enabled' => filter_var(env('LIBSPACE_TENANCY_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'base_domain' => env('LIBSPACE_TENANT_BASE_DOMAIN', 'phenomit.com'),
+        'landlord_hosts' => array_values(array_filter(array_map(
+            static fn (string $host) => strtolower(trim($host)),
+            explode(',', (string) env('LIBSPACE_TENANT_LANDLORD_HOSTS', 'libspace.phenomit.com,localhost,127.0.0.1'))
+        ))),
+        'landlord_connection' => env('LIBSPACE_TENANT_LANDLORD_CONNECTION', 'mysql'),
+    ],
+
     'install' => [
         'token' => env('LIBSPACE_SETUP_TOKEN'),
+        'product_name' => env('LIBSPACE_PRODUCT_NAME'),
+        'developer_email' => env('LIBSPACE_DEVELOPER_EMAIL'),
+        'developer_password' => env('LIBSPACE_DEVELOPER_PASSWORD'),
         'admin_email' => env('LIBSPACE_ADMIN_EMAIL'),
         'admin_password' => env('LIBSPACE_ADMIN_PASSWORD'),
-        'admin_name' => env('LIBSPACE_ADMIN_NAME', 'Library Admin'),
+        'admin_name' => env('LIBSPACE_ADMIN_NAME', 'Admin'),
     ],
 ];

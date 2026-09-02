@@ -1,51 +1,76 @@
-# Environment files & secrets
+# ------------------------------------------------------------------------------
+# Environment & secrets
+# ------------------------------------------------------------------------------
 .env
-.env.backup
-.env.production
-.env.local
-.env.*.local
-.env.dev
-.env.development
-.env.testing
-.env.test
-.env.staging
-.env.ci
-
-# PHP / Composer
-/vendor
-composer.phar
+.env.*
+!.env.example
 auth.json
 
-# Node / NPM
+# Local SMTP config for the marketing site (use mail-config.example.php as a template)
+/libspace-website/mail-config.php
+
+# ------------------------------------------------------------------------------
+# PHP / Composer
+# ------------------------------------------------------------------------------
+/vendor
+composer.phar
+
+# ------------------------------------------------------------------------------
+# Node / frontend build
+# ------------------------------------------------------------------------------
 /node_modules
+/public/build
+/public/hot
+/public/storage
+/.vite
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Laravel generated files
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
+# ------------------------------------------------------------------------------
+# Laravel runtime & generated files
+# ------------------------------------------------------------------------------
 /bootstrap/cache/*.php
 /bootstrap/cache/*.ser
+/storage/*.key
+/storage/pail
+/storage/app/install.lock
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/private/
+!/storage/app/public/
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+!/storage/framework/cache/data/
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
 
-# Laravel logs
+# Local SQLite databases (tests / quick dev)
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# ------------------------------------------------------------------------------
+# Logs & test artifacts
+# ------------------------------------------------------------------------------
 *.log
-
-# Testing / Cache
 .phpunit.result.cache
 /.phpunit.cache
-/.phpunit.cache/
 /coverage/
 coverage.xml
 clover.xml
 .phpstan-cache/
 .pest/
 
-# IDE / Editor files
+# ------------------------------------------------------------------------------
+# IDE / editor / OS
+# ------------------------------------------------------------------------------
 /.fleet
 /.idea
 /.nova
@@ -59,31 +84,25 @@ clover.xml
 *.sublime-project
 .c9/
 .theia/
-
-# OS-specific files
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# Homestead (Laravel local dev VM)
+# ------------------------------------------------------------------------------
+# Local dev tooling
+# ------------------------------------------------------------------------------
 Homestead.json
 Homestead.yaml
-
-# Vite cache
-.vite/
-
-# Project-specific temporary / work files
 /temp/
 project.txt
 
-# Client release artifacts (generated locally)
-/releases/client/**/libspace-client-*.zip
-/releases/client/**/libspace-client-*.sql
-/releases/client/**/SETUP-TOKEN.txt
-/releases/client/**/staging/
-
-
-phenomit.com
-phenomit.com/libspace/mail-config.php
+# ------------------------------------------------------------------------------
+# Release build artifacts
+# Keep README.md, INSTALL.md, and VERSION.txt in git; ignore generated payloads.
+# ------------------------------------------------------------------------------
+/releases/**/staging/
+/releases/**/*.zip
+/releases/**/*.sql
+/releases/**/SETUP-TOKEN.txt

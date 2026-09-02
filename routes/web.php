@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
 
+Route::get('/setup', [\App\Http\Controllers\SetupController::class, 'show'])->name('setup.show');
+Route::post('/setup/test-database', [\App\Http\Controllers\SetupController::class, 'testDatabase'])->name('setup.test-database');
+Route::post('/setup/install', [\App\Http\Controllers\SetupController::class, 'install'])->name('setup.install');
+
 Route::get('/install', [\App\Http\Controllers\InstallController::class, 'show'])->name('install.show');
 Route::post('/install', [\App\Http\Controllers\InstallController::class, 'run'])->name('install.run');
 
@@ -120,5 +124,6 @@ Route::post('/webhooks/libspace/seat-map', [WebhookController::class, 'refreshSe
 
 require __DIR__.'/license-server.php';
 require __DIR__.'/developer.php';
+require __DIR__.'/tenants.php';
 
 require __DIR__.'/auth.php';

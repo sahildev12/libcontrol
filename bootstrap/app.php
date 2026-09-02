@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
             'api/runtime/sync',
+            'setup/install',
+            'setup/test-database',
         ]);
 
         $middleware->alias([
@@ -22,9 +24,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'page.activity' => \App\Http\Middleware\RecordPageActivity::class,
             'developer_admin' => \App\Http\Middleware\EnsureDeveloperAdmin::class,
             'license_server' => \App\Http\Middleware\EnsureLicenseServer::class,
+            'landlord_host' => \App\Http\Middleware\EnsureLandlordHost::class,
         ]);
 
         $middleware->web(prepend: [
+            \App\Http\Middleware\RedirectToSetup::class,
+            \App\Http\Middleware\IdentifyTenant::class,
             \App\Http\Middleware\EnsureDeploymentLicensed::class,
         ]);
 

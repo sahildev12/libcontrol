@@ -18,7 +18,7 @@
 |---|-------------|-----------------|
 | 1 | Seat logs in notebooks; staff disagree on who sits where | **Live seat map** — vacant, occupied, trial, expiring at a glance |
 | 2 | Trial students and conversions tracked informally | **Trial seat module** — assign, track expiry, convert to member from the map |
-| 3 | Fees, partial payments, and dues on WhatsApp | **Fee management** — plans, installments, partial payments, full history |
+| 3 | Fees, partial payments, and dues on Email | **Fee management** — plans, installments, partial payments, full history |
 | 4 | Renewals missed; students leave quietly | **Expiry alerts** — dashboard flags, in-app notifications, email reminders |
 | 5 | Owner cannot see all branches | **Platform admin dashboard** — revenue, occupancy, branch comparison (Pro) |
 
@@ -99,7 +99,6 @@ See `07-ideal-customer-profile.md` for full ICP.
 | "Unlimited everything on Starter" | 100 seats / 5 halls / 1 branch |
 | "Works offline" | Web-based; needs internet |
 | "Mobile app in Play Store" | Responsive web; no native app yet |
-| "Automatic WhatsApp fee reminders" | Email expiry reminders yes; WhatsApp is for sales/support contact |
 
 ---
 

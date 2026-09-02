@@ -115,16 +115,3 @@ Setup: Guided onboarding included [Pro: priority]
 Support: Mon–Sat 9–6 IST · info@phenomit.com · +91 89012-23423
 Valid for: 30 days
 ```
-
----
-
-## Discount authority
-
-| Discount | Who approves |
-|----------|--------------|
-| Standard published pricing | Sales rep |
-| Yearly vs monthly (built-in) | Automatic on yearly toggle |
-| &gt;10% off published price | Sales manager |
-| Custom plan pricing | Phenomit leadership |
-
-*(Adjust approval matrix to your internal policy.)*
