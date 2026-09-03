@@ -35,8 +35,8 @@ return [
         ],
     ],
 
-    'libspace' => [
-        'webhook_token' => env('LIBSPACE_WEBHOOK_TOKEN', 'libspace-dev-webhook-token'),
+    'libcontrol' => [
+        'webhook_token' => env('LIBCONTROL_WEBHOOK_TOKEN', 'libcontrol-dev-webhook-token'),
     ],
 
 ];

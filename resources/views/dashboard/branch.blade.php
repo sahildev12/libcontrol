@@ -76,12 +76,12 @@
 
     {{-- Today's Overview @if enquiries enabled + Recent Enquiries --}}
     <div class="flex flex-col gap-4 md:flex-row md:items-start">
-        <section class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm {{ config('libspace.modules.enquiries') ? 'md:w-[58%] lg:w-[60%]' : 'w-full' }}">
+        <section class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm {{ config('libcontrol.modules.enquiries') ? 'md:w-[58%] lg:w-[60%]' : 'w-full' }}">
             <div class="border-b border-gray-100 px-4 py-3">
                 <h2 class="text-sm font-semibold text-gray-900">Today's Overview</h2>
             </div>
-            <div class="grid grid-cols-2 gap-3 p-4 {{ config('libspace.modules.enquiries') ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }}">
-                @if (config('libspace.modules.enquiries'))
+            <div class="grid grid-cols-2 gap-3 p-4 {{ config('libcontrol.modules.enquiries') ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }}">
+                @if (config('libcontrol.modules.enquiries'))
                 <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
@@ -152,7 +152,7 @@
             </div>
         </section>
 
-        @if (config('libspace.modules.enquiries'))
+        @if (config('libcontrol.modules.enquiries'))
         <section class="min-w-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                 <h2 class="text-base font-semibold text-gray-900">Recent Enquiries</h2>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Install LibSpace</title>
+    <title>Install LibControl</title>
     <style>
         body { font-family: system-ui, sans-serif; background: #f3f4f6; margin: 0; padding: 2rem; color: #111827; }
         .card { max-width: 560px; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05); }
@@ -20,8 +20,8 @@
 </head>
 <body>
     <div class="card">
-        <h1>Install LibSpace</h1>
-        <p>Before continuing, confirm your <code>.env</code> file has the correct database credentials, <code>APP_URL</code>, and <code>LIBSPACE_LICENSE_KEY</code>.</p>
+        <h1>Install LibControl</h1>
+        <p>Before continuing, confirm your <code>.env</code> file has the correct database credentials, <code>APP_URL</code>, and <code>LIBCONTROL_LICENSE_KEY</code>.</p>
         <ul>
             <li>App URL: <code>{{ $appUrl }}</code></li>
             <li>Database: <code>{{ $dbDatabase ?: 'not set' }}</code></li>

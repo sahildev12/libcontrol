@@ -1,6 +1,6 @@
-# LibSpace — Pricing & Plans
+# LibControl — Pricing & Plans
 
-> **Source:** Public pricing on LibSpace landing page + `config/libspace.php` system limits.  
+> **Source:** Public pricing on LibControl landing page + `config/libcontrol.php` system limits.  
 > **Note:** Prices exclude GST unless your quote says otherwise.
 
 ---
@@ -99,7 +99,7 @@
 **Scenario:** 80-seat library, ₹1,500/month average fee, loses 3 renewals/month from poor tracking.
 
 - Lost revenue: ~₹4,500/month  
-- LibSpace Starter: ₹299/month  
+- LibControl Starter: ₹299/month  
 - **Pitch:** *"The software pays for itself if it saves you one seat renewal per month."*
 
 ---
@@ -107,7 +107,7 @@
 ## Quote template (copy for proposals)
 
 ```
-LibSpace — [Starter / Pro / Custom] Plan
+LibControl — [Starter / Pro / Custom] Plan
 Billing: [Monthly / Yearly]
 Amount: ₹[X] + GST
 Includes: up to [N] seats, [N] halls, [N] branch(es)

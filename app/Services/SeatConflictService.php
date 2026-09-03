@@ -51,7 +51,7 @@ class SeatConflictService
             ->when($ignoreBookingId, fn ($q) => $q->where('id', '!=', $ignoreBookingId))
             ->get();
 
-        $today = Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->startOfDay();
+        $today = Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->startOfDay();
 
         foreach ($bookings as $booking) {
             if ($planExpiryDate->lt($booking->joining_date) || $joiningDate->gt($booking->plan_expiry_date)) {

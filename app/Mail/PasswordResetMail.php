@@ -24,7 +24,7 @@ class PasswordResetMail extends Mailable
         $replyTo = config('mail.reply_to.address');
 
         return new Envelope(
-            subject: config('libspace.product.name').' password reset',
+            subject: config('libcontrol.product.name').' password reset',
             replyTo: $replyTo
                 ? [new Address($replyTo, (string) config('mail.reply_to.name'))]
                 : [],

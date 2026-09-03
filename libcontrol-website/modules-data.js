@@ -1,5 +1,5 @@
 (function (global) {
-  global.LIBSPACE_MODULES = {
+  global.LIBCONTROL_MODULES = {
     order: ['branch', 'seats', 'trials', 'students', 'fees', 'expenses'],
     items: {
       branch: {

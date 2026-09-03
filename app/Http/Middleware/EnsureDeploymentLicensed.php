@@ -19,11 +19,11 @@ class EnsureDeploymentLicensed
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('libspace.license_server.enabled')) {
+        if (config('libcontrol.license_server.enabled')) {
             return $next($request);
         }
 
-        if (config('libspace.tenancy.enabled') && TenantContext::isTenantRequest()) {
+        if (config('libcontrol.tenancy.enabled') && TenantContext::isTenantRequest()) {
             return $next($request);
         }
 

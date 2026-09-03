@@ -9,7 +9,7 @@
     <p class="mb-4 text-sm text-gray-600">
         Enter the email for your account. We will send a reset link if it matches.
     </p>
-    <p class="mb-4 text-xs text-gray-500">{{ config('libspace.product.byline') }}</p>
+    <p class="mb-4 text-xs text-gray-500">{{ config('libcontrol.product.byline') }}</p>
 
     <x-auth-session-status class="mb-4" :status="session('status')" />
 

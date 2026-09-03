@@ -1,4 +1,4 @@
-# LibSpace client release packager
+# LibControl client release packager
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1
 
 $ErrorActionPreference = "Stop"
@@ -7,9 +7,9 @@ $Version = "1.0.0"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = Join-Path $Root "releases\client\v$Version"
 $StagingDir = Join-Path $ReleaseDir "staging"
-$ZipPath = Join-Path $ReleaseDir "libspace-client-v$Version.zip"
+$ZipPath = Join-Path $ReleaseDir "LibControl-client-v$Version.zip"
 
-Write-Host "Building LibSpace client release v$Version..."
+Write-Host "Building LibControl client release v$Version..."
 
 if (Test-Path $StagingDir) {
     Remove-Item $StagingDir -Recurse -Force
@@ -24,9 +24,9 @@ try {
     Write-Host "Building frontend assets..."
     npm run build | Out-Host
 
-    $sqlPath = Join-Path $ReleaseDir "libspace-client-v$Version.sql"
+    $sqlPath = Join-Path $ReleaseDir "LibControl-client-v$Version.sql"
     Write-Host "Exporting client database SQL..."
-    php artisan libspace:export-client-sql --output="$sqlPath" | Out-Host
+    php artisan LibControl:export-client-sql --output="$sqlPath" | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "SQL export failed. Check MySQL is running and mysqldump is available."
     }
@@ -35,7 +35,7 @@ try {
     $setupToken = -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
 
     $clientEnv = @"
-APP_NAME=LibSpace
+APP_NAME=LibControl
 APP_ENV=production
 APP_KEY=$appKey
 APP_DEBUG=false
@@ -85,29 +85,29 @@ MAIL_REPLY_TO_NAME="`${APP_NAME}"
 
 VITE_APP_NAME="`${APP_NAME}"
 
-LIBSPACE_PRODUCT_NAME=LibSpace
-LIBSPACE_COMPANY_NAME=Phenomit
-LIBSPACE_COMPANY_URL=https://phenomit.com
-LIBSPACE_PRODUCT_BYLINE="LibSpace is a product by Phenomit.com"
+LIBCONTROL_PRODUCT_NAME=LibControl
+LIBCONTROL_COMPANY_NAME=Phenomit
+LIBCONTROL_COMPANY_URL=https://phenomit.com
+LIBCONTROL_PRODUCT_BYLINE="LibControl is a product by Phenomit.com"
 
 # Deployment licensing (required on client servers)
-LIBSPACE_LICENSE_KEY=your_license_key_from_phenomit
-LIBSPACE_SYNC_ENDPOINT=https://libspace.phenomit.com/api/runtime/sync
-LIBSPACE_LICENSE_GRACE_DAYS=7
-LIBSPACE_SYNC_INTERVAL=0
-LIBSPACE_LICENSE_SERVER=false
+LIBCONTROL_LICENSE_KEY=your_license_key_from_phenomit
+LIBCONTROL_SYNC_ENDPOINT=https://libcontrol.phenomit.com/api/runtime/sync
+LIBCONTROL_LICENSE_GRACE_DAYS=7
+LIBCONTROL_SYNC_INTERVAL=0
+LIBCONTROL_LICENSE_SERVER=false
 
 # Browser installer (no SSH) — keep token secret until install is done
-LIBSPACE_SETUP_TOKEN=$setupToken
-LIBSPACE_ADMIN_EMAIL=admin@your-domain.com
-LIBSPACE_ADMIN_PASSWORD=ChangeMeAfterLogin123!
-LIBSPACE_ADMIN_NAME=Library Admin
+LIBCONTROL_SETUP_TOKEN=$setupToken
+LIBCONTROL_ADMIN_EMAIL=admin@your-domain.com
+LIBCONTROL_ADMIN_PASSWORD=ChangeMeAfterLogin123!
+LIBCONTROL_ADMIN_NAME=Library Admin
 "@
 
     $excludeDirs = @(
         ".git",
         "node_modules",
-        "libspace-website",
+        "libcontrol-website",
         "tests",
         "releases",
         ".cursor"
@@ -166,18 +166,18 @@ LIBSPACE_ADMIN_NAME=Library Admin
 
     Set-Content -Path (Join-Path $StagingDir ".env") -Value $clientEnv -Encoding UTF8
     Set-Content -Path (Join-Path $StagingDir "VERSION") -Value $Version -Encoding UTF8
-    Copy-Item -Path $sqlPath -Destination (Join-Path $StagingDir "database\libspace-install.sql") -Force
+    Copy-Item -Path $sqlPath -Destination (Join-Path $StagingDir "database\LibControl-install.sql") -Force
 
     $installUrl = "https://your-domain.com/install?token=$setupToken"
     $installDoc = @"
-# LibSpace Client Release v$Version
+# LibControl Client Release v$Version
 
 ## Package contents
 
-Upload and extract ``libspace-client-v$Version.zip`` to your hosting account.
+Upload and extract ``LibControl-client-v$Version.zip`` to your hosting account.
 Point your domain document root to the ``public`` folder inside the extracted app.
 
-The zip also includes ``database/libspace-install.sql`` for direct phpMyAdmin import.
+The zip also includes ``database/LibControl-install.sql`` for direct phpMyAdmin import.
 
 ## Before install
 
@@ -185,14 +185,14 @@ The zip also includes ``database/libspace-install.sql`` for direct phpMyAdmin im
 2. Edit ``.env`` in the extracted folder (File Manager):
    - ``APP_URL`` - your live site URL (https)
    - ``DB_*`` - database name, user, password
-   - ``LIBSPACE_LICENSE_KEY`` - key from Phenomit
+   - ``LIBCONTROL_LICENSE_KEY`` - key from Phenomit
    - ``MAIL_*`` - SMTP settings (optional at first)
-   - ``LIBSPACE_ADMIN_EMAIL`` / ``LIBSPACE_ADMIN_PASSWORD`` - first admin login
+   - ``LIBCONTROL_ADMIN_EMAIL`` / ``LIBCONTROL_ADMIN_PASSWORD`` - first admin login
 
 ## Option A: Import SQL (recommended on shared hosting)
 
 1. Open phpMyAdmin for the client database.
-2. Import ``database/libspace-install.sql`` (or the standalone ``libspace-client-v$Version.sql`` from this release folder).
+2. Import ``database/LibControl-install.sql`` (or the standalone ``LibControl-client-v$Version.sql`` from this release folder).
 3. Create an empty file at ``storage/app/install.lock`` in File Manager.
 4. Open the site and log in with the admin email/password from ``.env``.
 
@@ -203,7 +203,7 @@ Default seeded login (change in ``.env`` before import if you edit the SQL manua
 
 ## Option B: Browser installer (no SQL import)
 
-Open this URL once in your browser (token is in your ``.env`` as ``LIBSPACE_SETUP_TOKEN``):
+Open this URL once in your browser (token is in your ``.env`` as ``LIBCONTROL_SETUP_TOKEN``):
 
     /install?token=$setupToken
 
@@ -217,14 +217,14 @@ Click **Run installation**. This creates tables and your admin user.
 
 - Log in with the admin email/password from ``.env``
 - Change the admin password immediately
-- Remove or keep ``LIBSPACE_SETUP_TOKEN`` - installer is locked after success
-- Do not enable ``LIBSPACE_LICENSE_SERVER`` on client servers
+- Remove or keep ``LIBCONTROL_SETUP_TOKEN`` - installer is locked after success
+- Do not enable ``LIBCONTROL_LICENSE_SERVER`` on client servers
 
 ## Support
 
 Licensed installs phone home to:
 
-    https://libspace.phenomit.com/api/runtime/sync
+    https://libcontrol.phenomit.com/api/runtime/sync
 
 Contact Phenomit if the site shows an unlicensed error.
 "@

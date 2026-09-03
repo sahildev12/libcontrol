@@ -1,8 +1,8 @@
 <x-mail::layout>
 {{-- Header --}}
 <x-slot:header>
-<x-mail::header :url="config('libspace.product.company_url')">
-{{ config('libspace.product.name') }}
+<x-mail::header :url="config('libcontrol.product.company_url')">
+{{ config('libcontrol.product.name') }}
 </x-mail::header>
 </x-slot:header>
 
@@ -21,7 +21,7 @@
 {{-- Footer --}}
 <x-slot:footer>
 <x-mail::footer>
-© {{ date('Y') }} {{ config('libspace.product.company') }}.com · {{ config('libspace.product.byline') }}
+© {{ date('Y') }} {{ config('libcontrol.product.company') }}.com · {{ config('libcontrol.product.byline') }}
 </x-mail::footer>
 </x-slot:footer>
 </x-mail::layout>

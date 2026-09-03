@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Process;
 
 class ExportClientReleaseSql extends Command
 {
-    protected $signature = 'libspace:export-client-sql
+    protected $signature = 'LibControl:export-client-sql
         {--output= : Output SQL file path}
         {--admin-email=admin@your-domain.com : Default admin email in the seed data}
         {--admin-password=ChangeMeAfterLogin123! : Default admin password in the seed data}
@@ -28,9 +28,9 @@ class ExportClientReleaseSql extends Command
             return self::FAILURE;
         }
 
-        $output = $this->option('output') ?: database_path('libspace-client-install.sql');
+        $output = $this->option('output') ?: database_path('LibControl-client-install.sql');
         $originalDatabase = config('database.connections.mysql.database');
-        $exportDatabase = 'libspace_client_export_'.now()->format('YmdHis');
+        $exportDatabase = 'LIBCONTROL_client_export_'.now()->format('YmdHis');
 
         $host = (string) config('database.connections.mysql.host');
         $port = (string) config('database.connections.mysql.port', '3306');
@@ -53,9 +53,9 @@ class ExportClientReleaseSql extends Command
             DB::reconnect('mysql');
 
             config([
-                'libspace.install.admin_email' => (string) $this->option('admin-email'),
-                'libspace.install.admin_password' => (string) $this->option('admin-password'),
-                'libspace.install.admin_name' => (string) $this->option('admin-name'),
+                'libcontrol.install.admin_email' => (string) $this->option('admin-email'),
+                'libcontrol.install.admin_password' => (string) $this->option('admin-password'),
+                'libcontrol.install.admin_name' => (string) $this->option('admin-name'),
             ]);
 
             $this->info('Running migrations...');
@@ -91,7 +91,7 @@ class ExportClientReleaseSql extends Command
             }
 
             $header = implode("\n", [
-                '-- LibSpace client install SQL',
+                '-- LibControl client install SQL',
                 '-- Generated: '.now()->toIso8601String(),
                 '-- Default admin login:',
                 '--   Email: '.$this->option('admin-email'),

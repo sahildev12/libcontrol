@@ -1,4 +1,4 @@
-# LibSpace library (client) release packager
+# LibControl library (client) release packager
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/build-library-release.ps1
 
 $ErrorActionPreference = "Stop"
@@ -7,9 +7,9 @@ $Version = "2.0.2"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = Join-Path $Root "releases\library\v$Version"
 $StagingDir = Join-Path $ReleaseDir "staging"
-$ZipPath = Join-Path $ReleaseDir "libspace-library-v$Version.zip"
+$ZipPath = Join-Path $ReleaseDir "LibControl-library-v$Version.zip"
 
-Write-Host "Building LibSpace library release v$Version..."
+Write-Host "Building LibControl library release v$Version..."
 
 if (Test-Path $StagingDir) {
     Remove-Item $StagingDir -Recurse -Force
@@ -27,7 +27,7 @@ try {
     $appKey = (php artisan key:generate --show).Trim()
 
     $libraryEnv = @"
-APP_NAME=LibSpace
+APP_NAME=LibControl
 APP_ENV=production
 APP_KEY=$appKey
 APP_DEBUG=false
@@ -63,19 +63,19 @@ MAIL_PASSWORD=
 MAIL_FROM_ADDRESS=
 MAIL_FROM_NAME="`${APP_NAME}"
 
-LIBSPACE_LICENSE_SERVER=false
-LIBSPACE_TENANCY_ENABLED=false
-LIBSPACE_SYNC_ENDPOINT=https://libspace.phenomit.com/api/runtime/sync
+LIBCONTROL_LICENSE_SERVER=false
+LIBCONTROL_TENANCY_ENABLED=false
+LIBCONTROL_SYNC_ENDPOINT=https://libcontrol.phenomit.com/api/runtime/sync
 
-LIBSPACE_ADMIN_EMAIL=admin@your-domain.com
-LIBSPACE_ADMIN_PASSWORD=ChangeMeAfterLogin123!
-LIBSPACE_ADMIN_NAME=Admin
+LIBCONTROL_ADMIN_EMAIL=admin@your-domain.com
+LIBCONTROL_ADMIN_PASSWORD=ChangeMeAfterLogin123!
+LIBCONTROL_ADMIN_NAME=Admin
 "@
 
     $excludeDirs = @(
         ".git",
         "node_modules",
-        "libspace-website",
+        "libcontrol-website",
         "tests",
         "releases",
         ".cursor"
@@ -165,14 +165,14 @@ LIBSPACE_ADMIN_NAME=Admin
     Set-Content -Path (Join-Path $StagingDir "VERSION") -Value $Version -Encoding UTF8
 
     $installDoc = @"
-# LibSpace Library Release v$Version
+# LibControl Library Release v$Version
 
 ## What this is
 
 This zip is for a **single client library** (e.g. dise.phenomit.com).
 It does **not** include Dev & Domains or Client Libraries admin tools.
 
-After setup, this domain automatically pings libspace.phenomit.com so Phenomit can see the new installation.
+After setup, this domain automatically pings libcontrol.phenomit.com so Phenomit can see the new installation.
 
 ## Upload steps
 
@@ -181,16 +181,16 @@ After setup, this domain automatically pings libspace.phenomit.com so Phenomit c
 3. Open ``https://dise.phenomit.com/setup``.
 4. Set **App name** to your library name (e.g. Dise).
 5. Enter database details and click **Prepare database (auto-migrate)**.
-6. Enter your **admin email and password** and click **Install LibSpace**.
+6. Enter your **admin email and password** and click **Install LibControl**.
 7. Log in at ``/admin/login``.
 
 ## Phenomit visibility
 
 When install finishes, a discovery ping is sent to:
 
-``https://libspace.phenomit.com/api/runtime/sync``
+``https://libcontrol.phenomit.com/api/runtime/sync``
 
-You will see the domain under **Dev & Domains -> Live installations** on libspace.phenomit.com (developer login).
+You will see the domain under **Dev & Domains -> Live installations** on libcontrol.phenomit.com (developer login).
 
 ## Not included
 

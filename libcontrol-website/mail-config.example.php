@@ -1,6 +1,6 @@
 <?php
 /**
- * SMTP settings for LibSpace demo form.
+ * SMTP settings for LibControl demo form.
  * Copy to mail-config.php and fill in your credentials.
  */
 return [
@@ -10,7 +10,7 @@ return [
     'username' => 'contact@example.com',
     'password' => 'your-smtp-password',
     'from_email' => 'contact@example.com',
-    'from_name' => 'LibSpace Demo Requests',
+    'from_name' => 'LibControl Demo Requests',
     'to_email' => 'you@example.com',
-    'to_name' => 'LibSpace',
+    'to_name' => 'LibControl',
 ];

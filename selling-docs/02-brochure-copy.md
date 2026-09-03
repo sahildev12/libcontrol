@@ -1,4 +1,4 @@
-# LibSpace — Brochure Copy (Ready to Paste)
+# LibControl — Brochure Copy (Ready to Paste)
 
 > **For:** Graphic designers, PDF brochures, slide decks, website blocks.  
 > **Format:** Headlines, subheads, body, bullets — copy/paste friendly.
@@ -7,7 +7,7 @@
 
 ## Cover
 
-**Logo:** LibSpace  
+**Logo:** LibControl  
 **Tagline:** Run every seat. See every branch. Collect every fee.  
 **Subline:** Library & study-seat management software by Phenomit.com  
 **Footer strip:** Seats · Students · Fees · Trials · Multi-branch
@@ -22,7 +22,7 @@ Still running your library on registers and WhatsApp?
 ### Body
 Reading libraries lose time and money every day when seat allocation is unclear, trial students slip through the cracks, and fee renewals are tracked in memory. Spreadsheets cannot show you a live seat map. WhatsApp cannot tell you who has not paid this month.
 
-**LibSpace fixes that** — one clean system for halls, seats, students, and fees.
+**LibControl fixes that** — one clean system for halls, seats, students, and fees.
 
 ### Pain bullets (icon row)
 - Manual registers everywhere  
@@ -115,7 +115,7 @@ Simple plans. Same features. Scale when you grow.
 
 ---
 
-## Inside spread 6 — Why LibSpace
+## Inside spread 6 — Why LibControl
 
 ### Headline
 Built for how Indian libraries actually work
@@ -138,11 +138,11 @@ Ready to run your library without the paperwork?
 **Book a Demo** · **WhatsApp: +91 89012-23423** · **info@phenomit.com**
 
 ### Support line
-We help you launch — real setup support so your staff use LibSpace from day one.  
+We help you launch — real setup support so your staff use LibControl from day one.  
 Mon–Sat, 9:00–18:00 IST
 
 ### Legal footer
-© Phenomit.com · LibSpace is a product by Phenomit.com  
+© Phenomit.com · LibControl is a product by Phenomit.com  
 PhenomIT, Rishi Nagar, Hisar 125001 (Haryana)
 
 ---
@@ -150,10 +150,10 @@ PhenomIT, Rishi Nagar, Hisar 125001 (Haryana)
 ## Short blurbs (for ads / social)
 
 **50 words**  
-LibSpace helps reading libraries manage seats, students, trials, and fees in one system. Live seat maps, renewal tracking, and branch dashboards — built by Phenomit.com for Indian study centres. Plans from ₹299/month. Book a demo today.
+LibControl helps reading libraries manage seats, students, trials, and fees in one system. Live seat maps, renewal tracking, and branch dashboards — built by Phenomit.com for Indian study centres. Plans from ₹299/month. Book a demo today.
 
 **25 words**  
-Stop juggling registers. LibSpace gives your library a live seat map, fee tracking, and renewals in one app. By Phenomit.com.
+Stop juggling registers. LibControl gives your library a live seat map, fee tracking, and renewals in one app. By Phenomit.com.
 
 **10 words**  
 One system for seats, students, and fees.

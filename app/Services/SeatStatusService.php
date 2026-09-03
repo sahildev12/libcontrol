@@ -28,7 +28,7 @@ class SeatStatusService
 
     public function resolveForSeat(Seat $seat, ?Branch $branch = null, ?Carbon $moment = null): string
     {
-        $moment ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'));
+        $moment ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'));
         $today = $moment->copy()->startOfDay();
         $booking = $this->displayBookingForSeat($seat, $today);
 
@@ -85,7 +85,7 @@ class SeatStatusService
 
     public function displayBookingForSeat(Seat $seat, ?Carbon $today = null): ?SeatBooking
     {
-        $today ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
+        $today ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
 
         return $seat->bookings
             ->filter(fn (SeatBooking $booking) => $booking->cancelled_at === null && $booking->status !== 'cancelled')
@@ -105,7 +105,7 @@ class SeatStatusService
 
     public function isRecentlyExpired(SeatBooking $booking, ?Carbon $today = null): bool
     {
-        $today ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
+        $today ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
         $expiry = $this->bookingExpiryDate($booking);
 
         return $expiry->lt($today) && $expiry->gte($today->copy()->subDay());
@@ -113,7 +113,7 @@ class SeatStatusService
 
     public function isStaleExpired(SeatBooking $booking, ?Carbon $today = null): bool
     {
-        $today ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
+        $today ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
 
         return $this->bookingExpiryDate($booking)->lt($today->copy()->subDay());
     }
@@ -154,7 +154,7 @@ class SeatStatusService
 
     public function hasActiveRegularAssignment(Seat $seat, ?Carbon $moment = null): bool
     {
-        $today = ($moment ?? Carbon::now(config('libspace.timezone', 'Asia/Kolkata')))->copy()->startOfDay();
+        $today = ($moment ?? Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata')))->copy()->startOfDay();
 
         return $seat->bookings->contains(function (SeatBooking $booking) use ($today) {
             if ($booking->cancelled_at !== null || $booking->status === 'cancelled') {
@@ -200,7 +200,7 @@ class SeatStatusService
      */
     public function mapSeatsForBranch(Collection $seats, ?Branch $branch = null, ?Carbon $moment = null): array
     {
-        $moment ??= Carbon::now(config('libspace.timezone', 'Asia/Kolkata'));
+        $moment ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'));
         $availability = $branch ? ($this->availability ?? SeatAvailabilityService::forBranch($branch)) : null;
         $schedule = $branch ? LibraryScheduleService::forBranch($branch) : null;
 

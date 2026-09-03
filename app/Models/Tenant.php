@@ -39,12 +39,12 @@ class Tenant extends Model
 
     public function getConnectionName(): ?string
     {
-        return config('libspace.tenancy.landlord_connection') ?: config('database.default');
+        return config('libcontrol.tenancy.landlord_connection') ?: config('database.default');
     }
 
     public function host(): string
     {
-        $base = (string) config('libspace.tenancy.base_domain', 'phenomit.com');
+        $base = (string) config('libcontrol.tenancy.base_domain', 'phenomit.com');
 
         return $this->subdomain.'.'.$base;
     }
@@ -66,8 +66,8 @@ class Tenant extends Model
 
     public function planTier(): string
     {
-        $tier = (string) ($this->plan_tier ?: config('libspace.defaults.plan_tier', 'starter'));
+        $tier = (string) ($this->plan_tier ?: config('libcontrol.defaults.plan_tier', 'starter'));
 
-        return array_key_exists($tier, config('libspace.plans', [])) ? $tier : 'starter';
+        return array_key_exists($tier, config('libcontrol.plans', [])) ? $tier : 'starter';
     }
 }

@@ -53,6 +53,6 @@ class StudentCodeService
 
     private function padding(PlatformSetting $settings): int
     {
-        return max(1, min(6, (int) ($settings->student_code_padding ?: config('libspace.defaults.student_code_padding', 3))));
+        return max(1, min(6, (int) ($settings->student_code_padding ?: config('libcontrol.defaults.student_code_padding', 3))));
     }
 }

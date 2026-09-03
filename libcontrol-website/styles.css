@@ -2804,7 +2804,7 @@ body {
   .compare-table td:first-child::before { display: none; }
 }
 
-/* LibSpace modules — text-only interactive showcase */
+/* LibControl modules — text-only interactive showcase */
 .modules-section { padding: 72px 0; background: #fff; }
 .module-tabs-wrap { margin-top: 32px; }
 .module-tabs {
@@ -3103,22 +3103,22 @@ body {
   .module-benefits { grid-template-columns: 1fr; }
   .module-showcase-hero h3 { font-size: 1.25rem; }
 }
-.libspace-brand-text {
+.libcontrol-brand-text {
   font-weight: 800;
   letter-spacing: -0.02em;
 }
-.libspace-byline {
+.libcontrol-byline {
   font-size: 0.88rem;
   color: rgba(255, 255, 255, 0.72);
   margin: 8px 0 0;
 }
-.brand .libspace-logo-text {
+.brand .libcontrol-logo-text {
   font-size: 1.35rem;
   font-weight: 800;
   color: #fff;
   letter-spacing: -0.03em;
 }
-.brand .libspace-logo-text span { color: var(--accent); }
+.brand .libcontrol-logo-text span { color: var(--accent); }
 
 .hr-onboarding {
   width: 10%;

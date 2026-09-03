@@ -46,7 +46,7 @@ class LicensedDeployment extends Model
 
     public static function discoveryKeyHash(): string
     {
-        return hash('sha256', 'libspace:discovery');
+        return hash('sha256', 'LibControl:discovery');
     }
 
     public static function isPlaceholderLicenseKey(?string $licenseKey): bool

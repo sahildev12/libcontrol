@@ -12,10 +12,10 @@ Artisan::command('inspire', function () {
 
 Schedule::command(SendPlanExpiryReminders::class)
     ->dailyAt('09:00')
-    ->timezone(config('libspace.timezone', 'Asia/Kolkata'))
+    ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
     ->description('Send plan expiry reminder emails to students');
 
 Schedule::command(SyncRuntimeMetrics::class)
     ->dailyAt('03:15')
-    ->timezone(config('libspace.timezone', 'Asia/Kolkata'))
+    ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
     ->description('Synchronize runtime metrics');

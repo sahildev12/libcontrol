@@ -138,7 +138,7 @@ class LibraryScheduleService
 
     public function nowInBranchTimezone(): Carbon
     {
-        return Carbon::now(config('libspace.timezone', 'Asia/Kolkata'));
+        return Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'));
     }
 
     public function currentMinutes(): int

@@ -21,10 +21,10 @@ class DashboardController extends Controller
         if ($isAdminOverview) {
             $from = $request->filled('from')
                 ? Carbon::parse($request->input('from'))->startOfDay()
-                : Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->startOfMonth();
+                : Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->startOfMonth();
             $to = $request->filled('to')
                 ? Carbon::parse($request->input('to'))->endOfDay()
-                : Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->endOfDay();
+                : Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->endOfDay();
 
             if ($from->gt($to)) {
                 [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];

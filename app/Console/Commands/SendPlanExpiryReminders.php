@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\Mail;
 
 class SendPlanExpiryReminders extends Command
 {
-    protected $signature = 'libspace:send-expiry-reminders {--branch= : Limit to a branch ID}';
+    protected $signature = 'LibControl:send-expiry-reminders {--branch= : Limit to a branch ID}';
 
     protected $description = 'Email students whose plan expiry is approaching (per branch settings, Asia/Kolkata day boundary)';
 
     public function handle(BranchBrandService $branchBrandService): int
     {
-        $today = Carbon::today(config('libspace.timezone', 'Asia/Kolkata'));
+        $today = Carbon::today(config('libcontrol.timezone', 'Asia/Kolkata'));
         $branchQuery = Branch::query();
 
         if ($this->option('branch')) {
@@ -28,7 +28,7 @@ class SendPlanExpiryReminders extends Command
         $sent = 0;
 
         foreach ($branchQuery->cursor() as $branch) {
-            $daysBefore = (int) ($branch->expiry_reminder_days ?: config('libspace.defaults.expiry_reminder_days', 10));
+            $daysBefore = (int) ($branch->expiry_reminder_days ?: config('libcontrol.defaults.expiry_reminder_days', 10));
             $targetDate = $today->copy()->addDays($daysBefore);
 
             $bookings = SeatBooking::query()

@@ -1,10 +1,10 @@
-# LibSpace — One-Pager (Elevator Pitch)
+# LibControl — One-Pager (Elevator Pitch)
 
 ---
 
-## LibSpace in 30 seconds
+## LibControl in 30 seconds
 
-LibSpace is library management software by **Phenomit.com**. It gives reading libraries a **live seat map**, **student records**, **trial seat tracking**, and **fee & renewal management** in one web app. Owners see revenue and expiring plans on the dashboard; desk staff assign seats in clicks. Plans from **₹299/month**.
+LibControl is library management software by **Phenomit.com**. It gives reading libraries a **live seat map**, **student records**, **trial seat tracking**, and **fee & renewal management** in one web app. Owners see revenue and expiring plans on the dashboard; desk staff assign seats in clicks. Plans from **₹299/month**.
 
 ---
 
@@ -67,4 +67,4 @@ Reading libraries still run on **registers, Excel, and WhatsApp**. Seat disputes
 
 **Run every seat. See every branch. Collect every fee.**
 
-*LibSpace is a product by Phenomit.com*
+*LibControl is a product by Phenomit.com*

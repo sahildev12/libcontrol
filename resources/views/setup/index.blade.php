@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Setup LibSpace</title>
+    <title>Setup LibControl</title>
     <style>
         body { font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; }
         .wrap { max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem; }
@@ -33,8 +33,8 @@
         csrf: @js(csrf_token()),
     })" x-init="init()">
         <div class="card">
-            <h1>Setup LibSpace</h1>
-            <p>Use this wizard when copying LibSpace to a new server. It writes your <code>.env</code>, creates tables, switches sessions to the database, and creates your admin account.</p>
+            <h1>Setup LibControl</h1>
+            <p>Use this wizard when copying LibControl to a new server. It writes your <code>.env</code>, creates tables, switches sessions to the database, and creates your admin account.</p>
         </div>
 
         <div class="card">
@@ -115,7 +115,7 @@
             </div>
 
             <div style="margin-top: 1.5rem;">
-                <button type="submit" :disabled="saving" x-text="saving ? 'Installing...' : 'Install LibSpace'"></button>
+                <button type="submit" :disabled="saving" x-text="saving ? 'Installing...' : 'Install LibControl'"></button>
             </div>
             <div class="status" :class="statusType" x-text="statusMessage" x-show="statusMessage"></div>
         </form>
@@ -133,7 +133,7 @@
                 dbStatusMessage: '',
                 dbStatusType: '',
                 form: {
-                    app_name: 'LibSpace',
+                    app_name: 'LibControl',
                     app_url: config.detectedUrl,
                     timezone: 'Asia/Kolkata',
                     tenant_base_domain: config.defaultBaseDomain,

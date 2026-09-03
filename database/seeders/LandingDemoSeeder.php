@@ -22,7 +22,7 @@ class LandingDemoSeeder extends Seeder
      */
     public function run(): void
     {
-        $tz = config('libspace.timezone', 'Asia/Kolkata');
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
         $today = Carbon::now($tz)->startOfDay();
 
         $this->removeNonDemoBranches();
@@ -37,7 +37,7 @@ class LandingDemoSeeder extends Seeder
                 'address' => '12 MG Road, Pune, Maharashtra 411001',
                 'admin' => [
                     'name' => 'Main Center Admin',
-                    'email' => 'admin@main.libspace.test',
+                    'email' => 'admin@main.LibControl.test',
                 ],
                 'halls' => [
                     ['name' => 'Reading Hall — Ground Floor', 'description' => 'Bright open study hall with natural light', 'capacity' => 48, 'cols' => 8],
@@ -58,7 +58,7 @@ class LandingDemoSeeder extends Seeder
                 'address' => '45 Civil Lines, Nagpur, Maharashtra 440001',
                 'admin' => [
                     'name' => 'North Branch Admin',
-                    'email' => 'admin@north.libspace.test',
+                    'email' => 'admin@north.LibControl.test',
                 ],
                 'halls' => [
                     ['name' => 'Study Hall A', 'description' => 'Main reading room', 'capacity' => 36, 'cols' => 6],

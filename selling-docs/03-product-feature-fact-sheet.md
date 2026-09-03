@@ -1,4 +1,4 @@
-# LibSpace — Product Feature Fact Sheet
+# LibControl — Product Feature Fact Sheet
 
 > **Authoritative list of what is LIVE in the software today.**  
 > If it is not on this list, do not sell it.
@@ -9,7 +9,7 @@
 
 | Item | Detail |
 |------|--------|
-| **Product name** | LibSpace |
+| **Product name** | LibControl |
 | **Vendor** | Phenomit.com |
 | **Type** | Web application (browser-based, responsive) |
 | **Primary users** | Library owners, branch managers, front-desk staff |

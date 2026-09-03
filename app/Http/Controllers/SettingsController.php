@@ -37,7 +37,7 @@ class SettingsController extends Controller
         $isPlatformAdmin = (bool) $request->user()?->isPlatformAdmin();
         $isDeveloperAdmin = (bool) $request->user()?->isDeveloperAdmin();
         $planSnapshot = $this->planLimitService->snapshot();
-        $licenseServerEnabled = (bool) config('libspace.license_server.enabled');
+        $licenseServerEnabled = (bool) config('libcontrol.license_server.enabled');
         $deploymentsUrl = $licenseServerEnabled && Route::has('developer.deployments.index')
             ? route('developer.deployments.index')
             : null;
@@ -121,7 +121,7 @@ class SettingsController extends Controller
     {
         return [
             'display_name' => $branch->display_name,
-            'expiry_reminder_days' => $branch->expiry_reminder_days ?: config('libspace.defaults.expiry_reminder_days'),
+            'expiry_reminder_days' => $branch->expiry_reminder_days ?: config('libcontrol.defaults.expiry_reminder_days'),
             'library_open_time' => $branch->library_open_time ? substr((string) $branch->library_open_time, 0, 5) : '09:00',
             'library_close_time' => $branch->library_close_time ? substr((string) $branch->library_close_time, 0, 5) : '18:00',
             'is_open_24_hours' => (bool) $branch->is_open_24_hours,
@@ -139,7 +139,7 @@ class SettingsController extends Controller
     {
         return [
             'student_code_prefix' => $settings->student_code_prefix,
-            'student_code_padding' => $settings->student_code_padding ?: config('libspace.defaults.student_code_padding'),
+            'student_code_padding' => $settings->student_code_padding ?: config('libcontrol.defaults.student_code_padding'),
             'sample_student_code' => $this->studentCodeService->preview(),
             'display_name' => $settings->display_name,
             'logo_with_text_url' => $settings->logoWithTextUrl(),

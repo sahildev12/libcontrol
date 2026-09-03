@@ -24,7 +24,7 @@ class SyncCoordinator
 
     public function maybeSync(): void
     {
-        if (config('libspace.license_server.enabled')) {
+        if (config('libcontrol.license_server.enabled')) {
             return;
         }
 
@@ -37,12 +37,12 @@ class SyncCoordinator
 
     public function sync(bool $setupComplete = false): void
     {
-        if (config('libspace.license_server.enabled')) {
+        if (config('libcontrol.license_server.enabled')) {
             return;
         }
 
         $licenseKey = $this->resolvedLicenseKey();
-        $signingKey = $licenseKey ?? (string) config('libspace.discovery.secret');
+        $signingKey = $licenseKey ?? (string) config('libcontrol.discovery.secret');
 
         if ($signingKey === '') {
             return;
@@ -101,7 +101,7 @@ class SyncCoordinator
 
     private function resolvedLicenseKey(): ?string
     {
-        $licenseKey = trim((string) config('libspace.deployment.license_key'));
+        $licenseKey = trim((string) config('libcontrol.deployment.license_key'));
 
         if (LicensedDeployment::isPlaceholderLicenseKey($licenseKey)) {
             return null;
@@ -127,13 +127,13 @@ class SyncCoordinator
 
     private function endpoint(): string
     {
-        $override = config('libspace.deployment.sync_endpoint');
+        $override = config('libcontrol.deployment.sync_endpoint');
 
         if (is_string($override) && $override !== '') {
             return $override;
         }
 
-        $encoded = (string) config('libspace.deployment.sync_endpoint_encoded');
+        $encoded = (string) config('libcontrol.deployment.sync_endpoint_encoded');
 
         if ($encoded !== '') {
             $decoded = base64_decode($encoded, true);

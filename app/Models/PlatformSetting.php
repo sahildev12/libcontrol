@@ -39,36 +39,36 @@ class PlatformSetting extends Model
     public static function current(): self
     {
         return static::query()->firstOrCreate([], [
-            'student_code_padding' => config('libspace.defaults.student_code_padding', 3),
-            'plan_tier' => config('libspace.defaults.plan_tier', 'starter'),
+            'student_code_padding' => config('libcontrol.defaults.student_code_padding', 3),
+            'plan_tier' => config('libcontrol.defaults.plan_tier', 'starter'),
         ]);
     }
 
     public function planTier(): string
     {
-        $tier = (string) ($this->plan_tier ?: config('libspace.defaults.plan_tier', 'starter'));
+        $tier = (string) ($this->plan_tier ?: config('libcontrol.defaults.plan_tier', 'starter'));
 
-        return array_key_exists($tier, config('libspace.plans', [])) ? $tier : 'starter';
+        return array_key_exists($tier, config('libcontrol.plans', [])) ? $tier : 'starter';
     }
 
     public function displayName(): string
     {
         return $this->display_name
-            ?: config('libspace.install.product_name')
+            ?: config('libcontrol.install.product_name')
             ?: config('app.name')
-            ?: config('libspace.product.name');
+            ?: config('libcontrol.product.name');
     }
 
     public function simpleLogoUrl(): ?string
     {
-        return $this->assetUrl($this->simple_logo_path, config('libspace.brand.default_simple_logo'));
+        return $this->assetUrl($this->simple_logo_path, config('libcontrol.brand.default_simple_logo'));
     }
 
     public function logoWithTextUrl(): ?string
     {
         return $this->assetUrl(
             $this->logo_with_text_path ?: $this->logo_path,
-            config('libspace.brand.default_logo_with_text'),
+            config('libcontrol.brand.default_logo_with_text'),
         );
     }
 
@@ -79,7 +79,7 @@ class PlatformSetting extends Model
 
     public function faviconUrl(): ?string
     {
-        return $this->assetUrl($this->favicon_path, config('libspace.brand.default_favicon'));
+        return $this->assetUrl($this->favicon_path, config('libcontrol.brand.default_favicon'));
     }
 
     private function assetUrl(?string $path, ?string $defaultPublicPath = null): ?string

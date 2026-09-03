@@ -19,14 +19,14 @@ class BranchSeeder extends Seeder
                 'name' => 'Main Library Center',
                 'user' => [
                     'name' => 'Main Center Admin',
-                    'email' => 'admin@main.libspace.test',
+                    'email' => 'admin@main.LibControl.test',
                 ],
             ],
             [
                 'name' => 'North Branch Center',
                 'user' => [
                     'name' => 'North Branch Admin',
-                    'email' => 'admin@north.libspace.test',
+                    'email' => 'admin@north.LibControl.test',
                 ],
             ],
         ];

@@ -38,7 +38,7 @@ return new class extends Migration
             $ids = DB::table('students')->where('email', $email)->orderBy('id')->pluck('id');
             foreach ($ids->slice(1) as $id) {
                 DB::table('students')->where('id', $id)->update([
-                    'email' => 'student'.$id.'@libspace.local',
+                    'email' => 'student'.$id.'@LibControl.local',
                 ]);
             }
         }
@@ -51,7 +51,7 @@ return new class extends Migration
             ->get()
             ->each(function ($row) {
                 DB::table('students')->where('id', $row->id)->update([
-                    'email' => 'student'.$row->id.'@libspace.local',
+                    'email' => 'student'.$row->id.'@LibControl.local',
                 ]);
             });
 

@@ -15,7 +15,7 @@ class GuestLayout extends Component
         public ?string $logoUrl = null,
         public ?string $faviconUrl = null,
     ) {
-        $this->name = $name ?: config('libspace.product.name');
+        $this->name = $name ?: config('libcontrol.product.name');
     }
 
     public function render(): View

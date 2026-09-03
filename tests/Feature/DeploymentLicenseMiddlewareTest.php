@@ -17,7 +17,7 @@ class DeploymentLicenseMiddlewareTest extends TestCase
 
     public function test_blocked_installation_returns_license_page(): void
     {
-        Config::set('libspace.license_server.enabled', false);
+        Config::set('libcontrol.license_server.enabled', false);
 
         Cache::put(DeploymentState::CACHE_KEY, [
             'status' => 'pending',
@@ -37,7 +37,7 @@ class DeploymentLicenseMiddlewareTest extends TestCase
 
     public function test_authorized_installation_allows_access(): void
     {
-        Config::set('libspace.license_server.enabled', false);
+        Config::set('libcontrol.license_server.enabled', false);
 
         Cache::put(DeploymentState::CACHE_KEY, [
             'status' => 'ok',
@@ -56,7 +56,7 @@ class DeploymentLicenseMiddlewareTest extends TestCase
 
     public function test_license_server_instance_skips_enforcement(): void
     {
-        Config::set('libspace.license_server.enabled', true);
+        Config::set('libcontrol.license_server.enabled', true);
 
         Cache::put(DeploymentState::CACHE_KEY, [
             'status' => 'pending',

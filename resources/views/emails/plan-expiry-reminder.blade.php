@@ -13,5 +13,5 @@ Please contact the library desk to renew your plan.
 
 Thanks,<br>
 {{ $libraryName }}<br>
-<span style="color: #6b7280;">{{ config('libspace.product.byline') }}</span>
+<span style="color: #6b7280;">{{ config('libcontrol.product.byline') }}</span>
 </x-mail::message>

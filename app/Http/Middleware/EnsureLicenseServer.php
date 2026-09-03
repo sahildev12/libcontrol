@@ -13,7 +13,7 @@ class EnsureLicenseServer
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! config('libspace.license_server.enabled')) {
+        if (! config('libcontrol.license_server.enabled')) {
             abort(404);
         }
 

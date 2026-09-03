@@ -1,4 +1,4 @@
-# LibSpace — Ideal Customer Profile (ICP)
+# LibControl — Ideal Customer Profile (ICP)
 
 ---
 

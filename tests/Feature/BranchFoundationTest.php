@@ -64,10 +64,10 @@ class BranchFoundationTest extends TestCase
 
         $this->assertDatabaseCount('branches', 2);
         $this->assertDatabaseHas('users', [
-            'email' => 'admin@main.libspace.test',
+            'email' => 'admin@main.LibControl.test',
         ]);
         $this->assertDatabaseHas('users', [
-            'email' => 'admin@north.libspace.test',
+            'email' => 'admin@north.LibControl.test',
         ]);
     }
 }

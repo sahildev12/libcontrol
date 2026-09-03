@@ -3,7 +3,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Client Libraries</h1>
-                <p class="mt-1 text-sm text-gray-600">Each client gets their own subdomain and isolated database on {{ config('libspace.tenancy.base_domain') }}.</p>
+                <p class="mt-1 text-sm text-gray-600">Each client gets their own subdomain and isolated database on {{ config('libcontrol.tenancy.base_domain') }}.</p>
             </div>
             <a href="{{ route('developer.tenants.create') }}" class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Add client library</a>
         </div>

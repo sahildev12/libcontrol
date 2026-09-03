@@ -18,7 +18,7 @@ class UpdatePlatformPlanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'plan_tier' => ['required', 'string', Rule::in(array_keys(config('libspace.plans', [])))],
+            'plan_tier' => ['required', 'string', Rule::in(array_keys(config('libcontrol.plans', [])))],
             'max_seats_override' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'max_halls_override' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'max_branches_override' => ['nullable', 'integer', 'min:1', 'max:1000'],

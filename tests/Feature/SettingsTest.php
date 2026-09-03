@@ -105,7 +105,7 @@ class SettingsTest extends TestCase
         $response = $this->actingAs($user)->postJson(route('branch.store'), [
             'name' => 'East Branch',
             'phone' => 'asdfasdfas',
-            'email' => 'east@libspace.test',
+            'email' => 'east@LibControl.test',
             'password' => 'password123',
         ]);
 

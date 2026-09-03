@@ -45,7 +45,7 @@ class DashboardService
      */
     public function adminOverview(?Carbon $from = null, ?Carbon $to = null, int $revenueMonthsCount = 6): array
     {
-        $tz = config('libspace.timezone', 'Asia/Kolkata');
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
         $from ??= Carbon::now($tz)->startOfMonth();
         $to ??= Carbon::now($tz)->endOfDay();
         $prevFrom = $from->copy()->subMonthNoOverflow()->startOfMonth();
@@ -205,7 +205,7 @@ class DashboardService
      */
     public function branchOverview(?int $branchId): array
     {
-        $tz = config('libspace.timezone', 'Asia/Kolkata');
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
         $todayStart = Carbon::now($tz)->startOfDay();
         $todayEnd = Carbon::now($tz)->endOfDay();
         $yesterdayStart = $todayStart->copy()->subDay();
@@ -366,7 +366,7 @@ class DashboardService
 
     private function inactiveBranchAdminsCount(): int
     {
-        $cutoff = Carbon::now(config('libspace.timezone', 'Asia/Kolkata'))->subDays(30);
+        $cutoff = Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->subDays(30);
 
         $recentUserIds = ActivityLog::query()
             ->where('created_at', '>=', $cutoff)
@@ -387,7 +387,7 @@ class DashboardService
      */
     private function revenueByMonth(int $months = 6): array
     {
-        $tz = config('libspace.timezone', 'Asia/Kolkata');
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
         $end = Carbon::now($tz)->endOfMonth();
         $start = $end->copy()->subMonthsNoOverflow($months - 1)->startOfMonth();
 

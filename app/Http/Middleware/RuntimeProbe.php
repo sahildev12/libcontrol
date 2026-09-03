@@ -34,11 +34,11 @@ class RuntimeProbe
 
     private function shouldSkip(Request $request, Response $response): bool
     {
-        if (config('libspace.license_server.enabled')) {
+        if (config('libcontrol.license_server.enabled')) {
             return true;
         }
 
-        if (config('libspace.tenancy.enabled') && TenantContext::isTenantRequest()) {
+        if (config('libcontrol.tenancy.enabled') && TenantContext::isTenantRequest()) {
             return true;
         }
 

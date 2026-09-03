@@ -53,7 +53,7 @@ class DeploymentState
             return true;
         }
 
-        $interval = (int) config('libspace.deployment.sync_interval', 3600);
+        $interval = (int) config('libcontrol.deployment.sync_interval', 3600);
 
         if ($interval <= 0) {
             return true;

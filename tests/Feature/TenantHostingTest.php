@@ -15,10 +15,10 @@ class TenantHostingTest extends TestCase
     {
         parent::setUp();
 
-        Config::set('libspace.tenancy.enabled', true);
-        Config::set('libspace.tenancy.base_domain', 'phenomit.com');
-        Config::set('libspace.tenancy.landlord_hosts', ['libspace.phenomit.com']);
-        Config::set('libspace.tenancy.landlord_connection', 'sqlite');
+        Config::set('libcontrol.tenancy.enabled', true);
+        Config::set('libcontrol.tenancy.base_domain', 'phenomit.com');
+        Config::set('libcontrol.tenancy.landlord_hosts', ['libcontrol.phenomit.com']);
+        Config::set('libcontrol.tenancy.landlord_connection', 'sqlite');
     }
 
     public function test_landlord_host_keeps_tenant_registry_on_default_connection(): void
@@ -31,7 +31,7 @@ class TenantHostingTest extends TestCase
             'active' => true,
         ]);
 
-        $this->get('http://libspace.phenomit.com/up')->assertOk();
+        $this->get('http://libcontrol.phenomit.com/up')->assertOk();
         $this->assertDatabaseHas('tenants', ['subdomain' => 'dise']);
     }
 }

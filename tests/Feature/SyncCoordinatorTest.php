@@ -16,9 +16,9 @@ class SyncCoordinatorTest extends TestCase
 
     public function test_sync_stores_authorized_state_from_api_response(): void
     {
-        Config::set('libspace.license_server.enabled', false);
-        Config::set('libspace.deployment.license_key', 'ls_test_key');
-        Config::set('libspace.deployment.sync_endpoint', 'https://sync.test/ping');
+        Config::set('libcontrol.license_server.enabled', false);
+        Config::set('libcontrol.deployment.license_key', 'ls_test_key');
+        Config::set('libcontrol.deployment.sync_endpoint', 'https://sync.test/ping');
 
         Http::fake([
             'https://sync.test/ping' => Http::response([
@@ -36,9 +36,9 @@ class SyncCoordinatorTest extends TestCase
 
     public function test_sync_stores_pending_state_for_unauthorized_domain(): void
     {
-        Config::set('libspace.license_server.enabled', false);
-        Config::set('libspace.deployment.license_key', 'ls_test_key');
-        Config::set('libspace.deployment.sync_endpoint', 'https://sync.test/ping');
+        Config::set('libcontrol.license_server.enabled', false);
+        Config::set('libcontrol.deployment.license_key', 'ls_test_key');
+        Config::set('libcontrol.deployment.sync_endpoint', 'https://sync.test/ping');
 
         Http::fake([
             'https://sync.test/ping' => Http::response([
@@ -58,10 +58,10 @@ class SyncCoordinatorTest extends TestCase
 
     public function test_discovery_sync_runs_without_license_key(): void
     {
-        Config::set('libspace.license_server.enabled', false);
-        Config::set('libspace.deployment.license_key', LicensedDeployment::PLACEHOLDER_LICENSE_KEY);
-        Config::set('libspace.deployment.sync_endpoint', 'https://sync.test/ping');
-        Config::set('libspace.discovery.secret', 'test-discovery-secret');
+        Config::set('libcontrol.license_server.enabled', false);
+        Config::set('libcontrol.deployment.license_key', LicensedDeployment::PLACEHOLDER_LICENSE_KEY);
+        Config::set('libcontrol.deployment.sync_endpoint', 'https://sync.test/ping');
+        Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
 
         Http::fake([
             'https://sync.test/ping' => Http::response([

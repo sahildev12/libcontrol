@@ -15,12 +15,12 @@ class AdminSeeder extends Seeder
             [
                 'admin_type' => Admin::TYPE_DEVELOPER,
                 'name' => 'Developer Admin',
-                'email' => 'developer@libspace.dev',
+                'email' => 'developer@LibControl.dev',
             ],
             [
                 'admin_type' => Admin::TYPE_CLIENT,
                 'name' => 'Client Admin',
-                'email' => 'client@libspace.test',
+                'email' => 'client@LibControl.test',
             ],
         ];
 

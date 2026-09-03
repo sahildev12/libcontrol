@@ -1,6 +1,6 @@
 # Brand assets
 
-Store **static** LibSpace brand files here (served directly from `/brand/...`):
+Store **static** LibControl brand files here (served directly from `/brand/...`):
 
 - `favicon.ico`
 - `apple-touch-icon.png`

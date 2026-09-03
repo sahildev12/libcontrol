@@ -10,7 +10,7 @@ class TenantConnectionManager
 {
     public function useLandlord(): void
     {
-        $landlord = (string) config('libspace.tenancy.landlord_connection', 'mysql');
+        $landlord = (string) config('libcontrol.tenancy.landlord_connection', 'mysql');
 
         Config::set('database.default', $landlord);
         DB::purge($landlord);
@@ -19,7 +19,7 @@ class TenantConnectionManager
 
     public function useTenant(Tenant $tenant): void
     {
-        $landlord = (string) config('libspace.tenancy.landlord_connection', 'mysql');
+        $landlord = (string) config('libcontrol.tenancy.landlord_connection', 'mysql');
         $base = config("database.connections.{$landlord}");
 
         if (! is_array($base)) {

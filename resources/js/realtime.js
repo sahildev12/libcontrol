@@ -53,7 +53,7 @@ export function initRealtime() {
     window.Echo.private(`branch.${branchId}`)
         .listen('.seat-map.updated', (payload) => {
             setRealtimeStatus(true);
-            window.dispatchEvent(new CustomEvent('libspace:seats-updated', { detail: payload }));
+            window.dispatchEvent(new CustomEvent('LibControl:seats-updated', { detail: payload }));
         })
         .error(() => {
             setRealtimeStatus(false);
@@ -76,11 +76,11 @@ export function initRealtime() {
 }
 
 function startPolling(branchId, csrfToken) {
-    if (window.__libspaceSeatPolling) {
+    if (window.__LibControlSeatPolling) {
         return;
     }
 
-    window.__libspaceSeatPolling = true;
+    window.__LibControlSeatPolling = true;
     const poll = async () => {
         try {
             const response = await window.axios.get('/seats/data', {
@@ -90,7 +90,7 @@ function startPolling(branchId, csrfToken) {
                 },
             });
 
-            window.dispatchEvent(new CustomEvent('libspace:seats-updated', { detail: response.data }));
+            window.dispatchEvent(new CustomEvent('LibControl:seats-updated', { detail: response.data }));
             setRealtimeStatus(true);
         } catch (error) {
             setRealtimeStatus(false);

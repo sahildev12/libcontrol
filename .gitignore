@@ -7,7 +7,7 @@
 auth.json
 
 # Local SMTP config for the marketing site (use mail-config.example.php as a template)
-/libspace-website/mail-config.php
+/libcontrol-website/mail-config.php
 
 # ------------------------------------------------------------------------------
 # PHP / Composer

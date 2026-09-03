@@ -1,4 +1,4 @@
-# LibSpace — Demo Walkthrough Script (30 minutes)
+# LibControl — Demo Walkthrough Script (30 minutes)
 
 > **Goal:** Show the client's daily workflow, not every screen.  
 > **Duration:** 25–30 min demo + 5 min Q&A  
@@ -22,7 +22,7 @@
 ## Part 1 — Hook (2 min)
 
 **Say:**  
-*"LibSpace replaces the register, the WhatsApp group, and the Excel sheet with one live system. I'll show you exactly what your desk staff would use tomorrow morning."*
+*"LibControl replaces the register, the WhatsApp group, and the Excel sheet with one live system. I'll show you exactly what your desk staff would use tomorrow morning."*
 
 **Show:** Branch dashboard  
 - Point to seat KPIs (total, occupied, vacant, trial)  
@@ -107,7 +107,7 @@
 
 ## Close (3 min)
 
-**Recap their pain in their words + how LibSpace fixed each.**
+**Recap their pain in their words + how LibControl fixed each.**
 
 **Recommend plan:**
 - 1 branch → **Starter** ₹299/mo or ₹2,990/yr  

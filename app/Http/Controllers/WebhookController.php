@@ -10,11 +10,11 @@ class WebhookController extends Controller
 {
     public function refreshSeatMap(Request $request, SeatMapService $seatMapService): JsonResponse
     {
-        $token = $request->header('X-LibSpace-Webhook-Token')
+        $token = $request->header('X-LibControl-Webhook-Token')
             ?? $request->input('token');
 
         abort_unless(
-            is_string($token) && hash_equals((string) config('services.libspace.webhook_token'), $token),
+            is_string($token) && hash_equals((string) config('services.libcontrol.webhook_token'), $token),
             401,
             'Invalid webhook token.'
         );

@@ -15,7 +15,7 @@ class LicenseServerApiTest extends TestCase
     {
         parent::setUp();
 
-        Config::set('libspace.license_server.enabled', true);
+        Config::set('libcontrol.license_server.enabled', true);
     }
 
     public function test_authorized_domain_returns_ok_status(): void
@@ -103,7 +103,7 @@ class LicenseServerApiTest extends TestCase
 
     public function test_discovery_ping_without_license_key_is_logged(): void
     {
-        Config::set('libspace.discovery.secret', 'test-discovery-secret');
+        Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
 
         $payload = [
             'domain' => 'library.dise.org.in',
@@ -139,7 +139,7 @@ class LicenseServerApiTest extends TestCase
 
     public function test_sync_endpoint_does_not_require_csrf_token(): void
     {
-        Config::set('libspace.discovery.secret', 'test-discovery-secret');
+        Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
 
         $payload = [
             'domain' => 'csrf-free.test',

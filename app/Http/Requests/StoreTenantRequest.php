@@ -22,7 +22,7 @@ class StoreTenantRequest extends FormRequest
             'client_name' => ['required', 'string', 'max:120'],
             'subdomain' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/', Rule::unique('tenants', 'subdomain')],
             'database_name' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('tenants', 'database_name')],
-            'plan_tier' => ['required', 'string', Rule::in(array_keys(config('libspace.plans', [])))],
+            'plan_tier' => ['required', 'string', Rule::in(array_keys(config('libcontrol.plans', [])))],
             'max_seats_override' => ['nullable', 'integer', 'min:1'],
             'max_halls_override' => ['nullable', 'integer', 'min:1'],
             'max_branches_override' => ['nullable', 'integer', 'min:1'],

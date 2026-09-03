@@ -28,7 +28,7 @@
   }
 
   function initModuleShowcase() {
-    var data = window.LIBSPACE_MODULES;
+    var data = window.LIBCONTROL_MODULES;
     var tabsEl = document.getElementById('moduleTabs');
     var copyEl = document.getElementById('moduleShowcaseCopy');
     var featuresEl = document.getElementById('moduleShowcaseFeatures');
@@ -303,7 +303,7 @@
                 ok: false,
                 message: res.status >= 500
                   ? 'Server error while sending email. Please try again.'
-                  : 'Mail service is not available. Open via XAMPP: http://localhost/libspace/phenomit.com/libspace/'
+                  : 'Mail service is not available. Open via XAMPP: http://localhost/libcontrol/phenomit.com/libcontrol/'
               };
             }
             return { ok: res.ok && data.ok, message: data.message || '' };

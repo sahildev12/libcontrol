@@ -19,7 +19,7 @@ class RuntimeSyncController extends Controller
         if (! is_array($payload)) {
             return response()->json([
                 'status' => 'pending',
-                'grace_until' => now()->addDays((int) config('libspace.deployment.grace_days', 7))->toIso8601String(),
+                'grace_until' => now()->addDays((int) config('libcontrol.deployment.grace_days', 7))->toIso8601String(),
             ]);
         }
 
@@ -58,7 +58,7 @@ class RuntimeSyncController extends Controller
 
         $deployment = LicensedDeployment::findByLicenseKey($licenseKey);
         $licenseKeyHash = LicensedDeployment::hashKey($licenseKey);
-        $graceDays = (int) config('libspace.deployment.grace_days', 7);
+        $graceDays = (int) config('libcontrol.deployment.grace_days', 7);
 
         if (! $deployment || ! $deployment->active) {
             InstallationEvent::recordHeartbeat($licenseKeyHash, $eventPayload, false);
@@ -91,7 +91,7 @@ class RuntimeSyncController extends Controller
      */
     private function recordDiscoveryPing(string $rawBody, string $token, array $eventPayload): JsonResponse
     {
-        $secret = (string) config('libspace.discovery.secret');
+        $secret = (string) config('libcontrol.discovery.secret');
         $expected = hash_hmac('sha256', $rawBody, $secret);
 
         if ($secret === '' || ! hash_equals($expected, $token)) {
@@ -104,7 +104,7 @@ class RuntimeSyncController extends Controller
             false,
         );
 
-        $graceDays = (int) config('libspace.deployment.grace_days', 7);
+        $graceDays = (int) config('libcontrol.deployment.grace_days', 7);
 
         return response()->json([
             'status' => 'pending',
@@ -114,7 +114,7 @@ class RuntimeSyncController extends Controller
 
     private function unauthorizedResponse(): JsonResponse
     {
-        $graceDays = (int) config('libspace.deployment.grace_days', 7);
+        $graceDays = (int) config('libcontrol.deployment.grace_days', 7);
 
         return response()->json([
             'status' => 'pending',

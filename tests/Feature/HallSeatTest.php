@@ -164,14 +164,14 @@ class HallSeatTest extends TestCase
 
     public function test_webhook_triggers_seat_map_refresh(): void
     {
-        config(['services.libspace.webhook_token' => 'test-token']);
+        config(['services.libcontrol.webhook_token' => 'test-token']);
 
         $branch = Branch::factory()->create();
 
         $response = $this->postJson(route('webhooks.seat-map'), [
             'branch_id' => $branch->id,
         ], [
-            'X-LibSpace-Webhook-Token' => 'test-token',
+            'X-LibControl-Webhook-Token' => 'test-token',
         ]);
 
         $response->assertOk()->assertJson(['ok' => true, 'branch_id' => $branch->id]);

@@ -92,7 +92,7 @@ class NotificationService
         ));
         }
 
-        if (config('libspace.modules.enquiries')) {
+        if (config('libcontrol.modules.enquiries')) {
             $newEnquiries = Enquiry::query()
                 ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                 ->where('status', 'new')

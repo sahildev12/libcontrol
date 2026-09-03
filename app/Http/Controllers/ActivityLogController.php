@@ -91,7 +91,7 @@ class ActivityLogController extends Controller
      */
     private function serializeLog(ActivityLog $log, bool $detailed = false): array
     {
-        $timezone = config('libspace.timezone', 'Asia/Kolkata');
+        $timezone = config('libcontrol.timezone', 'Asia/Kolkata');
 
         $payload = [
             'id' => $log->id,

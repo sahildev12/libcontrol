@@ -25,7 +25,7 @@ class TenantProvisioner
         $this->connections->runOnTenant($tenant, function () use ($tenant, $adminEmail, $adminPassword, $adminName) {
             $settings = PlatformSetting::query()->firstOrCreate([], [
                 'student_code_prefix' => 'LIB',
-                'student_code_padding' => config('libspace.defaults.student_code_padding', 3),
+                'student_code_padding' => config('libcontrol.defaults.student_code_padding', 3),
                 'plan_tier' => $tenant->planTier(),
                 'max_seats_override' => $tenant->max_seats_override,
                 'max_halls_override' => $tenant->max_halls_override,
@@ -79,7 +79,7 @@ class TenantProvisioner
 
     public function databaseExists(string $databaseName): bool
     {
-        $connection = (string) config('libspace.tenancy.landlord_connection', 'mysql');
+        $connection = (string) config('libcontrol.tenancy.landlord_connection', 'mysql');
         $result = DB::connection($connection)->select(
             'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?',
             [$databaseName],

@@ -28,19 +28,19 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
             'name' => 'East Library',
             'contact_person' => 'Priya',
             'phone' => '9876543210',
-            'email' => 'east.admin@libspace.test',
+            'email' => 'east.admin@LibControl.test',
             'password' => 'secret123',
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('branch.email', 'east.admin@libspace.test');
+            ->assertJsonPath('branch.email', 'east.admin@LibControl.test');
 
         $this->assertDatabaseHas('users', [
-            'email' => 'east.admin@libspace.test',
+            'email' => 'east.admin@LibControl.test',
             'name' => 'Priya',
         ]);
 
-        $user = User::query()->where('email', 'east.admin@libspace.test')->first();
+        $user = User::query()->where('email', 'east.admin@LibControl.test')->first();
         $this->assertTrue(Hash::check('secret123', $user->password));
         $this->assertSame((int) $response->json('branch.id'), $user->branch_id);
     }
@@ -51,7 +51,7 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         $branch = Branch::factory()->create(['name' => 'West Library']);
         $login = User::factory()->create([
             'branch_id' => $branch->id,
-            'email' => 'west.admin@libspace.test',
+            'email' => 'west.admin@LibControl.test',
             'password' => 'old-password',
         ]);
 
@@ -60,7 +60,7 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('login_email', 'west.admin@libspace.test')
+            ->assertJsonPath('login_email', 'west.admin@LibControl.test')
             ->assertJsonPath('password', 'CustomPass1');
 
         $this->assertTrue(Hash::check('CustomPass1', $login->fresh()->password));

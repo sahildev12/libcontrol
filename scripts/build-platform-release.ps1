@@ -1,4 +1,4 @@
-# LibSpace platform (landlord) release packager
+# LibControl platform (landlord) release packager
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/build-platform-release.ps1
 
 $ErrorActionPreference = "Stop"
@@ -7,9 +7,9 @@ $Version = "2.0.0"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = Join-Path $Root "releases\platform\v$Version"
 $StagingDir = Join-Path $ReleaseDir "staging"
-$ZipPath = Join-Path $ReleaseDir "libspace-platform-v$Version.zip"
+$ZipPath = Join-Path $ReleaseDir "LibControl-platform-v$Version.zip"
 
-Write-Host "Building LibSpace platform release v$Version..."
+Write-Host "Building LibControl platform release v$Version..."
 
 if (Test-Path $StagingDir) {
     Remove-Item $StagingDir -Recurse -Force
@@ -27,11 +27,11 @@ try {
     $appKey = (php artisan key:generate --show).Trim()
 
     $platformEnv = @"
-APP_NAME=LibSpace
+APP_NAME=LibControl
 APP_ENV=production
 APP_KEY=$appKey
 APP_DEBUG=false
-APP_URL=https://libspace.phenomit.com
+APP_URL=https://libcontrol.phenomit.com
 APP_TIMEZONE=Asia/Kolkata
 
 APP_LOCALE=en
@@ -63,20 +63,20 @@ MAIL_PASSWORD=
 MAIL_FROM_ADDRESS=
 MAIL_FROM_NAME="`${APP_NAME}"
 
-LIBSPACE_LICENSE_SERVER=true
-LIBSPACE_TENANCY_ENABLED=true
-LIBSPACE_TENANT_BASE_DOMAIN=phenomit.com
-LIBSPACE_TENANT_LANDLORD_HOSTS=libspace.phenomit.com
+LIBCONTROL_LICENSE_SERVER=true
+LIBCONTROL_TENANCY_ENABLED=true
+LIBCONTROL_TENANT_BASE_DOMAIN=phenomit.com
+LIBCONTROL_TENANT_LANDLORD_HOSTS=libcontrol.phenomit.com
 
-LIBSPACE_ADMIN_EMAIL=developer@your-domain.com
-LIBSPACE_ADMIN_PASSWORD=ChangeMeAfterLogin123!
-LIBSPACE_ADMIN_NAME=Admin
+LIBCONTROL_ADMIN_EMAIL=developer@your-domain.com
+LIBCONTROL_ADMIN_PASSWORD=ChangeMeAfterLogin123!
+LIBCONTROL_ADMIN_NAME=Admin
 "@
 
     $excludeDirs = @(
         ".git",
         "node_modules",
-        "libspace-website",
+        "libcontrol-website",
         "tests",
         "releases",
         ".cursor"
@@ -135,19 +135,19 @@ LIBSPACE_ADMIN_NAME=Admin
     Set-Content -Path (Join-Path $StagingDir "VERSION") -Value $Version -Encoding UTF8
 
     $installDoc = @"
-# LibSpace Platform Release v$Version
+# LibControl Platform Release v$Version
 
 ## What this is
 
-This zip is for your **main LibSpace server** (landlord), e.g. libspace.phenomit.com.
+This zip is for your **main LibControl server** (landlord), e.g. libcontrol.phenomit.com.
 It supports subdomain multi-tenancy: each client gets clientname.phenomit.com with its own database.
 
 ## Upload steps
 
 1. Upload and extract this zip on your hosting.
-2. Point libspace.phenomit.com to the ``public`` folder.
+2. Point libcontrol.phenomit.com to the ``public`` folder.
 3. Point wildcard DNS ``*.phenomit.com`` to the same hosting.
-4. Open ``https://libspace.phenomit.com/setup`` if not installed yet.
+4. Open ``https://libcontrol.phenomit.com/setup`` if not installed yet.
 5. Enter landlord database details and click **Prepare database (auto-migrate)**.
 6. Finish setup and log in at ``/admin/login``.
 

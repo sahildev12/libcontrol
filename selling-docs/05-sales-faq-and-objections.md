@@ -1,11 +1,11 @@
-# LibSpace — Sales FAQ & Objection Handling
+# LibControl — Sales FAQ & Objection Handling
 
 ---
 
 ## General questions
 
-### What is LibSpace?
-LibSpace is web-based software for reading libraries and study centres. It manages seat maps, student records, trial seats, fees, renewals, and — on Pro — multiple branches from one owner dashboard.
+### What is LibControl?
+LibControl is web-based software for reading libraries and study centres. It manages seat maps, student records, trial seats, fees, renewals, and — on Pro — multiple branches from one owner dashboard.
 
 ### Who is it for?
 Owners and managers of reading libraries, study halls, and co-working study spaces — especially those still using registers, Excel, or WhatsApp for operations.
@@ -20,7 +20,7 @@ Not a native app. The interface is mobile-responsive in the browser.
 Data is stored on Phenomit-hosted cloud. Access is login-protected; branch users only see their branch. Pro includes activity logs for audit.
 
 ### Can we try before buying?
-Yes — book a demo. Offer a guided walkthrough with their real workflow (seat map → assign → fee). Try Demo (https://libspace.phenomit.com/)
+Yes — book a demo. Offer a guided walkthrough with their real workflow (seat map → assign → fee). Try Demo (https://libcontrol.phenomit.com/)
 
 ---
 
@@ -43,16 +43,16 @@ Yes — book a demo. Offer a guided walkthrough with their real workflow (seat m
 ## Feature objections
 
 ### "We already use Excel."
-*Response:* Excel does not show a **live seat map**, cannot block double-booking a seat, and does not send expiry reminders. LibSpace is built for real-time desk operations.
+*Response:* Excel does not show a **live seat map**, cannot block double-booking a seat, and does not send expiry reminders. LibControl is built for real-time desk operations.
 
 ### "We use WhatsApp groups."
-*Response:* WhatsApp is great for chat, terrible as a database. Who is on seat 23? Who paid partial fee last Tuesday? LibSpace answers in one click.
+*Response:* WhatsApp is great for chat, terrible as a database. Who is on seat 23? Who paid partial fee last Tuesday? LibControl answers in one click.
 
 ### "Our staff are not technical."
 *Response:* Branch panel is designed for front desk — large seat map, few clicks to assign.
 
 ### "We need expenses / accounting."
-*Response:* Be honest — **expense tracking is not in LibSpace today**. Fee collection and renewal tracking are. For full accounting they may keep Tally/Excel for books; LibSpace handles seat-student-fee operations.
+*Response:* Be honest — **expense tracking is not in LibControl today**. Fee collection and renewal tracking are. For full accounting they may keep Tally/Excel for books; LibControl handles seat-student-fee operations.
 
 ### "We need WhatsApp reminders to students."
-*Response:* LibSpace sends **email** plan expiry reminders when SMTP is set up. In-app notifications alert staff. WhatsApp integration is not live today.lll
+*Response:* LibControl sends **email** plan expiry reminders when SMTP is set up. In-app notifications alert staff. WhatsApp integration is not live today.lll

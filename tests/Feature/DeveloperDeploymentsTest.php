@@ -17,7 +17,7 @@ class DeveloperDeploymentsTest extends TestCase
     {
         parent::setUp();
 
-        Config::set('libspace.license_server.enabled', true);
+        Config::set('libcontrol.license_server.enabled', true);
     }
 
     public function test_developer_admin_can_view_deployments_index(): void

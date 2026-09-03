@@ -41,7 +41,7 @@
                 </div>
 
                 <p class="mt-6 text-center text-xs text-gray-500">
-                    {{ config('libspace.product.byline') }}
+                    {{ config('libcontrol.product.byline') }}
                 </p>
             </div>
         </div>

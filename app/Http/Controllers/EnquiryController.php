@@ -15,7 +15,7 @@ class EnquiryController extends Controller
 {
     public function __construct()
     {
-        abort_unless(config('libspace.modules.enquiries'), 404);
+        abort_unless(config('libcontrol.modules.enquiries'), 404);
     }
 
     public function index(Request $request): View

@@ -14,7 +14,7 @@ class EnsureLandlordHost
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('libspace.tenancy.enabled') && TenantContext::isTenantRequest()) {
+        if (config('libcontrol.tenancy.enabled') && TenantContext::isTenantRequest()) {
             abort(404);
         }
 

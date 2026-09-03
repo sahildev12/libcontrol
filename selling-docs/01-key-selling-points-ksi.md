@@ -1,4 +1,4 @@
-# LibSpace — Key Selling Points (KSI)
+# LibControl — Key Selling Points (KSI)
 
 > **Purpose:** Core messages every salesperson must know. Use these as the backbone of pitches, decks, and client conversations.
 
@@ -6,7 +6,7 @@
 
 ## One-line positioning
 
-**LibSpace is library and study-seat management software that replaces registers, WhatsApp chaos, and spreadsheets with one live system for seats, students, fees, and renewals.**
+**LibControl is library and study-seat management software that replaces registers, WhatsApp chaos, and spreadsheets with one live system for seats, students, fees, and renewals.**
 
 **By Phenomit.com** — built for reading libraries, study centres, and multi-branch networks in India.
 
@@ -14,7 +14,7 @@
 
 ## The 5 problems we solve (pain → proof)
 
-| # | Client pain | LibSpace answer |
+| # | Client pain | LibControl answer |
 |---|-------------|-----------------|
 | 1 | Seat logs in notebooks; staff disagree on who sits where | **Live seat map** — vacant, occupied, trial, expiring at a glance |
 | 2 | Trial students and conversions tracked informally | **Trial seat module** — assign, track expiry, convert to member from the map |
@@ -81,7 +81,7 @@ Starter and Pro plans with clear seat/hall/branch limits. Yearly billing saves t
 
 ---
 
-## Who buys LibSpace?
+## Who buys LibControl?
 
 **Primary buyer:** Library owner / director (1–2 centres today, growth-minded)  
 **Champion:** Branch manager or front-desk lead who feels daily pain  

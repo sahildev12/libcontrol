@@ -28,8 +28,8 @@ class TenantController extends Controller
     public function create(): View
     {
         return view('developer.tenants.create', [
-            'planTiers' => array_keys(config('libspace.plans', [])),
-            'baseDomain' => config('libspace.tenancy.base_domain'),
+            'planTiers' => array_keys(config('libcontrol.plans', [])),
+            'baseDomain' => config('libcontrol.tenancy.base_domain'),
         ]);
     }
 
@@ -101,8 +101,8 @@ class TenantController extends Controller
     {
         return view('developer.tenants.edit', [
             'tenant' => $tenant,
-            'planTiers' => array_keys(config('libspace.plans', [])),
-            'baseDomain' => config('libspace.tenancy.base_domain'),
+            'planTiers' => array_keys(config('libcontrol.plans', [])),
+            'baseDomain' => config('libcontrol.tenancy.base_domain'),
         ]);
     }
 

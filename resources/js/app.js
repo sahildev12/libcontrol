@@ -606,14 +606,14 @@ Alpine.data('toastHost', () => ({
 Alpine.data('adminShell', () => ({
     collapsed: false,
     init() {
-        const stored = localStorage.getItem('libspace-admin-sidebar-collapsed');
+        const stored = localStorage.getItem('LibControl-admin-sidebar-collapsed');
         if (stored === '1') {
             this.collapsed = true;
         }
     },
     toggleCollapsed() {
         this.collapsed = ! this.collapsed;
-        localStorage.setItem('libspace-admin-sidebar-collapsed', this.collapsed ? '1' : '0');
+        localStorage.setItem('LibControl-admin-sidebar-collapsed', this.collapsed ? '1' : '0');
     },
 }));
 
@@ -1242,7 +1242,7 @@ Alpine.data('seatMap', (config) => ({
     ...createSeatScheduleMixin(),
 
     init() {
-        window.addEventListener('libspace:seats-updated', (event) => {
+        window.addEventListener('LibControl:seats-updated', (event) => {
             if (event.detail?.seats) {
                 this.seats = event.detail.seats.filter((seat) => visibleOnRegularMap(seat));
             }
@@ -2075,7 +2075,7 @@ Alpine.data('trialSeatMap', (config) => ({
     ...createSeatScheduleMixin(),
 
     init() {
-        window.addEventListener('libspace:seats-updated', (event) => {
+        window.addEventListener('LibControl:seats-updated', (event) => {
             if (event.detail?.seats) {
                 this.seats = event.detail.seats.filter((seat) => visibleOnTrialMap(seat));
             }

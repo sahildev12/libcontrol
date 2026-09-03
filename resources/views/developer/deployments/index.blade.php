@@ -19,7 +19,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50 px-4 py-3">
                 <div>
                     <h2 class="text-sm font-semibold text-gray-900">Recent live installations</h2>
-                    <p class="text-xs text-gray-600">Domains that loaded LibSpace and pinged this server.</p>
+                    <p class="text-xs text-gray-600">Domains that loaded LibControl and pinged this server.</p>
                 </div>
                 <a href="{{ route('developer.deployments.installations') }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-800">View all</a>
             </div>

@@ -1,8 +1,8 @@
 @component('mail::layout')
 {{-- Header --}}
 @slot('header')
-@component('mail::header', ['url' => config('libspace.product.company_url')])
-{{ config('libspace.product.name') }}
+@component('mail::header', ['url' => config('libcontrol.product.company_url')])
+{{ config('libcontrol.product.name') }}
 @endcomponent
 @endslot
 
@@ -21,7 +21,7 @@
 {{-- Footer --}}
 @slot('footer')
 @component('mail::footer')
-© {{ date('Y') }} {{ config('libspace.product.company') }}.com · {{ config('libspace.product.byline') }}
+© {{ date('Y') }} {{ config('libcontrol.product.company') }}.com · {{ config('libcontrol.product.byline') }}
 @endcomponent
 @endslot
 @endcomponent

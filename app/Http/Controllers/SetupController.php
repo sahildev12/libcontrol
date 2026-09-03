@@ -86,7 +86,7 @@ class SetupController extends Controller
         }
 
         return response()->json([
-            'message' => 'LibSpace is ready.',
+            'message' => 'LibControl is ready.',
             'login_url' => url('/admin/login'),
         ]);
     }

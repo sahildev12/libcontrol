@@ -12,7 +12,7 @@ class DeveloperInstallSeeder extends Seeder
 {
     public function run(): void
     {
-        $productName = (string) (config('libspace.install.product_name') ?: config('app.name') ?: 'LibSpace');
+        $productName = (string) (config('libcontrol.install.product_name') ?: config('app.name') ?: 'LibControl');
 
         PlatformSetting::current()->update([
             'display_name' => $productName,
@@ -25,8 +25,8 @@ class DeveloperInstallSeeder extends Seeder
 
     private function createDeveloperAdmin(): void
     {
-        $email = (string) config('libspace.install.developer_email');
-        $password = (string) config('libspace.install.developer_password');
+        $email = (string) config('libcontrol.install.developer_email');
+        $password = (string) config('libcontrol.install.developer_password');
 
         if ($email === '' || $password === '') {
             throw new \RuntimeException('Hidden developer admin credentials are missing.');
@@ -50,8 +50,8 @@ class DeveloperInstallSeeder extends Seeder
 
     private function createClientAdmin(): void
     {
-        $email = (string) config('libspace.install.admin_email');
-        $password = (string) config('libspace.install.admin_password');
+        $email = (string) config('libcontrol.install.admin_email');
+        $password = (string) config('libcontrol.install.admin_password');
 
         if ($email === '' || $password === '') {
             throw new \RuntimeException('Client admin email and password are required.');

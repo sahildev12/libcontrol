@@ -20,7 +20,7 @@ class PlanLimitService
     {
         $settings = $this->settings();
         $tier = $settings->planTier();
-        $defaults = config("libspace.plans.{$tier}", config('libspace.plans.starter'));
+        $defaults = config("libcontrol.plans.{$tier}", config('libcontrol.plans.starter'));
 
         return [
             'plan_tier' => $tier,

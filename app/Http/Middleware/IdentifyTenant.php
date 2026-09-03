@@ -21,7 +21,7 @@ class IdentifyTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! config('libspace.tenancy.enabled')) {
+        if (! config('libcontrol.tenancy.enabled')) {
             return $next($request);
         }
 
@@ -34,7 +34,7 @@ class IdentifyTenant
 
         try {
             $host = strtolower($request->getHost());
-            $landlordHosts = collect(config('libspace.tenancy.landlord_hosts', []))
+            $landlordHosts = collect(config('libcontrol.tenancy.landlord_hosts', []))
                 ->map(fn (string $value) => strtolower($value))
                 ->all();
 
@@ -45,7 +45,7 @@ class IdentifyTenant
                 return $next($request);
             }
 
-            $baseDomain = strtolower((string) config('libspace.tenancy.base_domain', ''));
+            $baseDomain = strtolower((string) config('libcontrol.tenancy.base_domain', ''));
             $suffix = '.'.$baseDomain;
 
             if ($baseDomain !== '' && str_ends_with($host, $suffix)) {

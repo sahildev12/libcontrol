@@ -90,7 +90,7 @@ $htmlBody = <<<HTML
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New LibSpace Demo Request</title>
+  <title>New LibControl Demo Request</title>
 </head>
 <body style="margin:0;padding:0;background:#eef1f6;font-family:Arial,Helvetica,sans-serif;color:#001131;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f6;padding:28px 12px;">
@@ -99,7 +99,7 @@ $htmlBody = <<<HTML
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 12px 36px rgba(0,17,49,0.12);">
           <tr>
             <td style="background:#001131;padding:28px 32px;border-left:6px solid #ffc800;">
-              <p style="margin:0 0 6px;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#ffc800;font-weight:700;">LibSpace · Demo Request</p>
+              <p style="margin:0 0 6px;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#ffc800;font-weight:700;">LibControl · Demo Request</p>
               <h1 style="margin:0;font-size:24px;line-height:1.3;color:#ffffff;font-weight:700;">New demo enquiry received</h1>
               <p style="margin:10px 0 0;font-size:14px;color:rgba(255,255,255,0.78);">Submitted on {$submittedAt}</p>
             </td>
@@ -107,7 +107,7 @@ $htmlBody = <<<HTML
           <tr>
             <td style="padding:28px 32px 8px;">
               <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#3d4a63;">
-                Someone requested a live walkthrough of LibSpace — library &amp; study seat management by Phenomit.
+                Someone requested a live walkthrough of LibControl — library &amp; study seat management by Phenomit.
               </p>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
                 <tr>
@@ -155,7 +155,7 @@ $htmlBody = <<<HTML
           <tr>
             <td style="background:#001131;padding:18px 32px;border-top:3px solid #ffc800;">
               <p style="margin:0;font-size:12px;line-height:1.5;color:rgba(255,255,255,0.72);">
-                LibSpace is a product by Phenomit.com · Sent from the LibSpace demo form
+                LibControl is a product by Phenomit.com · Sent from the LibControl demo form
               </p>
             </td>
           </tr>
@@ -167,7 +167,7 @@ $htmlBody = <<<HTML
 </html>
 HTML;
 
-$plainBody = "New LibSpace Demo Request\n"
+$plainBody = "New LibControl Demo Request\n"
     . "Submitted: {$submittedAt}\n\n"
     . "Name: {$name}\n"
     . "Phone: {$phone}\n"
@@ -193,7 +193,7 @@ try {
     $mail->addReplyTo((string) $config['from_email'], $name);
 
     $mail->isHTML(true);
-    $mail->Subject = 'LibSpace Demo Request — ' . $institute;
+    $mail->Subject = 'LibControl Demo Request — ' . $institute;
     $mail->Body    = $htmlBody;
     $mail->AltBody = $plainBody;
 

@@ -13,9 +13,9 @@ class ClientInstallSeeder extends Seeder
     {
         $this->call(PlatformSettingsSeeder::class);
 
-        $email = (string) config('libspace.install.admin_email');
-        $password = (string) config('libspace.install.admin_password');
-        $name = (string) config('libspace.install.admin_name', 'Library Admin');
+        $email = (string) config('libcontrol.install.admin_email');
+        $password = (string) config('libcontrol.install.admin_password');
+        $name = (string) config('libcontrol.install.admin_name', 'Library Admin');
 
         if ($email === '' || $password === '') {
             return;

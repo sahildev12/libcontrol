@@ -13,11 +13,11 @@ class InstallController extends Controller
     public function show(Request $request): View|Response
     {
         if ($this->isInstalled()) {
-            return response('LibSpace is already installed. Delete storage/app/install.lock only if you need to reinstall.', 403);
+            return response('LibControl is already installed. Delete storage/app/install.lock only if you need to reinstall.', 403);
         }
 
         if (! $this->tokenIsValid($request)) {
-            abort(403, 'Invalid install token. Check LIBSPACE_SETUP_TOKEN in your .env file.');
+            abort(403, 'Invalid install token. Check LIBCONTROL_SETUP_TOKEN in your .env file.');
         }
 
         return view('install.index', [
@@ -66,7 +66,7 @@ class InstallController extends Controller
 
     private function tokenIsValid(Request $request): bool
     {
-        $expected = (string) config('libspace.install.token', '');
+        $expected = (string) config('libcontrol.install.token', '');
 
         if ($expected === '') {
             return false;

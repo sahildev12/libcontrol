@@ -119,7 +119,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/settings/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.clear-cache')->middleware('developer_admin');
 });
 
-Route::post('/webhooks/libspace/seat-map', [WebhookController::class, 'refreshSeatMap'])
+Route::post('/webhooks/LibControl/seat-map', [WebhookController::class, 'refreshSeatMap'])
     ->name('webhooks.seat-map');
 
 require __DIR__.'/license-server.php';

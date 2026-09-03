@@ -69,7 +69,7 @@ class SetupInstaller
         $tenancyEnabled = filter_var($input['tenancy_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
         $baseDomain = (string) ($input['tenant_base_domain'] ?? 'phenomit.com');
         $landlordHosts = (string) ($input['tenant_landlord_hosts'] ?? parse_url($appUrl, PHP_URL_HOST) ?: 'localhost');
-        $appName = (string) ($input['app_name'] ?? 'LibSpace');
+        $appName = (string) ($input['app_name'] ?? 'LibControl');
         $developerEmail = 'developer@'.(parse_url($appUrl, PHP_URL_HOST) ?: 'localhost');
         $developerPassword = Str::password(32);
 
@@ -85,27 +85,27 @@ class SetupInstaller
             'DB_DATABASE' => (string) ($input['db_database'] ?? ''),
             'DB_USERNAME' => (string) ($input['db_username'] ?? ''),
             'DB_PASSWORD' => (string) ($input['db_password'] ?? ''),
-            'LIBSPACE_LICENSE_SERVER' => $tenancyEnabled ? 'true' : 'false',
-            'LIBSPACE_TENANCY_ENABLED' => $tenancyEnabled ? 'true' : 'false',
-            'LIBSPACE_TENANT_BASE_DOMAIN' => $baseDomain,
-            'LIBSPACE_TENANT_LANDLORD_HOSTS' => $landlordHosts,
-            'LIBSPACE_PRODUCT_NAME' => $appName,
-            'LIBSPACE_DEVELOPER_EMAIL' => $developerEmail,
-            'LIBSPACE_DEVELOPER_PASSWORD' => $developerPassword,
-            'LIBSPACE_ADMIN_EMAIL' => (string) ($input['admin_email'] ?? ''),
-            'LIBSPACE_ADMIN_PASSWORD' => (string) ($input['admin_password'] ?? ''),
-            'LIBSPACE_ADMIN_NAME' => 'Admin',
+            'LIBCONTROL_LICENSE_SERVER' => $tenancyEnabled ? 'true' : 'false',
+            'LIBCONTROL_TENANCY_ENABLED' => $tenancyEnabled ? 'true' : 'false',
+            'LIBCONTROL_TENANT_BASE_DOMAIN' => $baseDomain,
+            'LIBCONTROL_TENANT_LANDLORD_HOSTS' => $landlordHosts,
+            'LIBCONTROL_PRODUCT_NAME' => $appName,
+            'LIBCONTROL_DEVELOPER_EMAIL' => $developerEmail,
+            'LIBCONTROL_DEVELOPER_PASSWORD' => $developerPassword,
+            'LIBCONTROL_ADMIN_EMAIL' => (string) ($input['admin_email'] ?? ''),
+            'LIBCONTROL_ADMIN_PASSWORD' => (string) ($input['admin_password'] ?? ''),
+            'LIBCONTROL_ADMIN_NAME' => 'Admin',
         ]);
 
         config(['app.key' => $appKey]);
         $this->applyDatabaseConfig($input);
         config([
-            'libspace.install.product_name' => $appName,
-            'libspace.install.developer_email' => $developerEmail,
-            'libspace.install.developer_password' => $developerPassword,
-            'libspace.install.admin_email' => (string) ($input['admin_email'] ?? ''),
-            'libspace.install.admin_password' => (string) ($input['admin_password'] ?? ''),
-            'libspace.install.admin_name' => 'Admin',
+            'libcontrol.install.product_name' => $appName,
+            'libcontrol.install.developer_email' => $developerEmail,
+            'libcontrol.install.developer_password' => $developerPassword,
+            'libcontrol.install.admin_email' => (string) ($input['admin_email'] ?? ''),
+            'libcontrol.install.admin_password' => (string) ($input['admin_password'] ?? ''),
+            'libcontrol.install.admin_name' => 'Admin',
         ]);
 
         Artisan::call('migrate', ['--force' => true]);
@@ -114,7 +114,7 @@ class SetupInstaller
         File::ensureDirectoryExists(storage_path('app'));
         File::put(storage_path('app/install.lock'), now()->toIso8601String());
 
-        if (! config('libspace.license_server.enabled')) {
+        if (! config('libcontrol.license_server.enabled')) {
             try {
                 app(SyncCoordinator::class)->sync(setupComplete: true);
             } catch (\Throwable) {
@@ -173,18 +173,18 @@ CACHE_STORE={$cacheStore}
 
 MAIL_MAILER=log
 
-LIBSPACE_LICENSE_SERVER={$values['LIBSPACE_LICENSE_SERVER']}
-LIBSPACE_TENANCY_ENABLED={$values['LIBSPACE_TENANCY_ENABLED']}
-LIBSPACE_TENANT_BASE_DOMAIN={$values['LIBSPACE_TENANT_BASE_DOMAIN']}
-LIBSPACE_TENANT_LANDLORD_HOSTS={$values['LIBSPACE_TENANT_LANDLORD_HOSTS']}
+LIBCONTROL_LICENSE_SERVER={$values['LIBCONTROL_LICENSE_SERVER']}
+LIBCONTROL_TENANCY_ENABLED={$values['LIBCONTROL_TENANCY_ENABLED']}
+LIBCONTROL_TENANT_BASE_DOMAIN={$values['LIBCONTROL_TENANT_BASE_DOMAIN']}
+LIBCONTROL_TENANT_LANDLORD_HOSTS={$values['LIBCONTROL_TENANT_LANDLORD_HOSTS']}
 
-LIBSPACE_PRODUCT_NAME={$values['LIBSPACE_PRODUCT_NAME']}
-LIBSPACE_DEVELOPER_EMAIL={$values['LIBSPACE_DEVELOPER_EMAIL']}
-LIBSPACE_DEVELOPER_PASSWORD={$this->quoteEnvValue($values['LIBSPACE_DEVELOPER_PASSWORD'], alwaysQuote: true)}
+LIBCONTROL_PRODUCT_NAME={$values['LIBCONTROL_PRODUCT_NAME']}
+LIBCONTROL_DEVELOPER_EMAIL={$values['LIBCONTROL_DEVELOPER_EMAIL']}
+LIBCONTROL_DEVELOPER_PASSWORD={$this->quoteEnvValue($values['LIBCONTROL_DEVELOPER_PASSWORD'], alwaysQuote: true)}
 
-LIBSPACE_ADMIN_EMAIL={$values['LIBSPACE_ADMIN_EMAIL']}
-LIBSPACE_ADMIN_PASSWORD={$this->quoteEnvValue($values['LIBSPACE_ADMIN_PASSWORD'], alwaysQuote: true)}
-LIBSPACE_ADMIN_NAME={$values['LIBSPACE_ADMIN_NAME']}
+LIBCONTROL_ADMIN_EMAIL={$values['LIBCONTROL_ADMIN_EMAIL']}
+LIBCONTROL_ADMIN_PASSWORD={$this->quoteEnvValue($values['LIBCONTROL_ADMIN_PASSWORD'], alwaysQuote: true)}
+LIBCONTROL_ADMIN_NAME={$values['LIBCONTROL_ADMIN_NAME']}
 
 ENV;
     }

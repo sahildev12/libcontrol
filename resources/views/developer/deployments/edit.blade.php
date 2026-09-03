@@ -13,7 +13,7 @@
             <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <p class="font-semibold">License key (copy now):</p>
                 <code class="mt-2 block break-all rounded bg-white px-3 py-2 text-xs">{{ session('issued_license_key') }}</code>
-                <p class="mt-2 text-xs">Set as <code>LIBSPACE_LICENSE_KEY</code> in the client server .env file.</p>
+                <p class="mt-2 text-xs">Set as <code>LIBCONTROL_LICENSE_KEY</code> in the client server .env file.</p>
             </div>
         @endif
 

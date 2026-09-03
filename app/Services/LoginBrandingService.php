@@ -27,7 +27,7 @@ class LoginBrandingService
         return [
             'portal' => 'auth',
             'title' => 'Forgot password',
-            'subtitle' => config('libspace.product.byline'),
+            'subtitle' => config('libcontrol.product.byline'),
             'name' => $settings->displayName(),
             'logo_url' => $settings->logoUrl(),
             'favicon_url' => $settings->faviconUrl(),
