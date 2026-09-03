@@ -1,4 +1,6 @@
 @php
+    use App\Support\AdminNav;
+
     $navItems = config('admin-nav.primary', []);
     $currentRoute = request()->route()?->getName();
 @endphp
@@ -156,7 +158,7 @@
                 continue;
             }
             $disabled = ($item['disabled'] ?? false) || empty($item['route']);
-            $isActive = ! $disabled && $item['route'] && ($currentRoute === $item['route'] || str_starts_with((string) $currentRoute, strtok($item['route'], '.').'.'));
+            $isActive = ! $disabled && AdminNav::isActive($currentRoute, $item);
         @endphp
         @if ($disabled)
             <span class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-gray-400">{{ $item['label'] }}</span>

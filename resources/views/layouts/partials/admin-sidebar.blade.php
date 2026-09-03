@@ -1,4 +1,6 @@
 @php
+    use App\Support\AdminNav;
+
     $navItems = config('admin-nav.primary', []);
     $currentRoute = request()->route()?->getName();
 @endphp
@@ -68,7 +70,7 @@
                     if (($item['tenancy_only'] ?? false) && ! ($tenancyEnabled ?? false)) {
                         continue;
                     }
-                    $isActive = $item['route'] && ($currentRoute === $item['route'] || str_starts_with((string) $currentRoute, strtok($item['route'], '.').'.'));
+                    $isActive = AdminNav::isActive($currentRoute, $item);
                     $disabled = ($item['disabled'] ?? false) || empty($item['route']);
                 @endphp
                 <li>

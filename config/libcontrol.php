@@ -75,6 +75,19 @@ return [
         'landlord_connection' => env('LIBCONTROL_TENANT_LANDLORD_CONNECTION', 'mysql'),
     ],
 
+    'expense_categories' => [
+        'rent' => 'Rent & Lease',
+        'utilities' => 'Utilities',
+        'salaries' => 'Salaries & Wages',
+        'maintenance' => 'Maintenance & Repairs',
+        'supplies' => 'Supplies & Stationery',
+        'marketing' => 'Marketing & Advertising',
+        'equipment' => 'Equipment & Furniture',
+        'internet' => 'Internet & Software',
+        'taxes' => 'Taxes & Licenses',
+        'other' => 'Other',
+    ],
+
     'install' => [
         'token' => env('LIBCONTROL_SETUP_TOKEN'),
         'product_name' => env('LIBCONTROL_PRODUCT_NAME'),

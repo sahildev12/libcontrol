@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSeatBookingRequest;
+use App\Http\Requests\StoreFeeRequest;
 use App\Http\Requests\UpdateFeeRequest;
 use App\Models\FeeInstallment;
-use App\Models\Hall;
-use App\Models\Seat;
 use App\Models\SeatBooking;
 use App\Models\Student;
 use App\Services\FeeService;
 use App\Services\LibraryScheduleService;
-use App\Services\PlanExpiryService;
 use App\Services\SeatConflictService;
 use App\Services\SeatMapService;
 use Illuminate\Http\JsonResponse;
@@ -40,20 +37,9 @@ class FeeController extends Controller
             ->get()
             ->map(fn (Student $student) => $this->serializeStudentForFeeForm($student));
 
-        $halls = $this->constrainByActiveBranch(Hall::query()->with('branch'), $request)
-            ->orderBy('name')
-            ->get(['id', 'name', 'branch_id']);
-
-        $scheduleBranch = $this->optionalActiveBranch($request) ?? $halls->first()?->branch;
-        $schedule = $scheduleBranch
-            ? LibraryScheduleService::forBranch($scheduleBranch)
-            : null;
-
         return view('fees.index', [
             'rows' => $rows,
             'students' => $students,
-            'halls' => $halls,
-            'timeSlotOptions' => $schedule?->timeSlotOptions() ?? LibraryScheduleService::defaultOptions(),
             'scopeLabel' => $this->viewingAllBranches($request)
                 ? 'all branches'
                 : ($this->optionalActiveBranch($request)?->name ?? ''),
@@ -61,23 +47,12 @@ class FeeController extends Controller
     }
 
     public function store(
-        StoreSeatBookingRequest $request,
-        PlanExpiryService $planExpiryService,
+        StoreFeeRequest $request,
         SeatMapService $seatMapService,
         FeeService $feeService,
     ): JsonResponse {
-        $seat = Seat::query()->with('hall.branch')->where('id', $request->integer('seat_id'))->firstOrFail();
-        $this->assertCanAccessBranch($request, $seat->hall?->branch_id);
-        abort_unless($request->integer('hall_id') === $seat->hall_id, 422, 'Seat does not belong to selected hall.');
-
-        $student = Student::query()
-            ->where('id', $request->integer('student_id'))
-            ->where('branch_id', $seat->hall->branch_id)
-            ->firstOrFail();
-
-        if ($student->student_type !== Student::TYPE_REGULAR) {
-            $student->update(['student_type' => Student::TYPE_REGULAR]);
-        }
+        $student = Student::query()->findOrFail($request->integer('student_id'));
+        $this->assertCanAccessBranch($request, $student->branch_id);
 
         $existing = SeatBooking::query()
             ->with(['seat.hall.branch', 'installments'])
@@ -87,88 +62,43 @@ class FeeController extends Controller
             ->latest('id')
             ->first();
 
-        if ($existing) {
-            $joining = Carbon::parse($request->input('joining_date') ?: $existing->joining_date);
-            $feeType = $feeService->normalizeFeeType((string) $request->input('fee_type', $existing->fee_type));
-            $expiry = $feeService->resolveExpiry(
-                $feeType,
-                $joining,
-                $request->filled('plan_expiry_date') ? Carbon::parse($request->input('plan_expiry_date')) : $existing->plan_expiry_date,
-            );
-            $branch = $existing->seat?->hall?->branch ?? $seat->hall->branch;
+        abort_unless($existing, 422, 'Assign a seat first from Seat Assignments before setting up a fee.');
 
-            if ($branch && SeatConflictService::forBranch($branch)->hasConflict(
-                $existing->seat_id,
-                $existing->time_slot,
-                $joining,
-                $expiry,
-                $existing->custom_start_time ? substr((string) $existing->custom_start_time, 0, 5) : null,
-                $existing->custom_end_time ? substr((string) $existing->custom_end_time, 0, 5) : null,
-                $existing->id,
-            )) {
-                return response()->json(['message' => 'Those dates overlap another booking on this seat.'], 422);
-            }
-
-            $booking = $this->applyFeeDetails($request, $existing, $feeService);
-
-            if ($branch) {
-                $seatMapService->broadcastForBranch((int) $branch->id);
-            }
-
-            return response()->json([
-                'message' => 'Fee saved for the assigned seat.',
-                'row' => $feeService->serializeRow($booking->fresh(['student', 'seat.hall.branch', 'installments'])),
-            ]);
+        if ($student->student_type !== Student::TYPE_REGULAR) {
+            $student->update(['student_type' => Student::TYPE_REGULAR]);
         }
 
-        abort_unless((float) $request->input('fee_amount') > 0, 422, 'Amount must be greater than 0.');
-
-        $joining = Carbon::parse($request->input('joining_date'));
-        $feeType = $feeService->normalizeFeeType((string) $request->input('fee_type'));
+        $joining = Carbon::parse($request->input('joining_date') ?: $existing->joining_date);
+        $feeType = $feeService->normalizeFeeType((string) $request->input('fee_type', $existing->fee_type));
         $expiry = $feeService->resolveExpiry(
             $feeType,
             $joining,
-            $request->filled('plan_expiry_date') ? Carbon::parse($request->input('plan_expiry_date')) : null,
+            $request->filled('plan_expiry_date') ? Carbon::parse($request->input('plan_expiry_date')) : $existing->plan_expiry_date,
         );
+        $branch = $existing->seat?->hall?->branch;
 
-        $conflictService = SeatConflictService::forBranch($seat->hall->branch);
-
-        if ($conflictService->hasConflict(
-            $seat->id,
-            $request->input('time_slot'),
+        if ($branch && SeatConflictService::forBranch($branch)->hasConflict(
+            $existing->seat_id,
+            $existing->time_slot,
             $joining,
             $expiry,
-            $request->input('custom_start_time'),
-            $request->input('custom_end_time'),
+            $existing->custom_start_time ? substr((string) $existing->custom_start_time, 0, 5) : null,
+            $existing->custom_end_time ? substr((string) $existing->custom_end_time, 0, 5) : null,
+            $existing->id,
         )) {
-            return response()->json(['message' => 'This seat is already taken for those dates and hours.'], 422);
+            return response()->json(['message' => 'Those dates overlap another booking on this seat.'], 422);
         }
 
-        $booking = SeatBooking::query()->create([
-            'seat_id' => $seat->id,
-            'student_id' => $student->id,
-            'time_slot' => $request->input('time_slot'),
-            'custom_start_time' => $request->input('custom_start_time'),
-            'custom_end_time' => $request->input('custom_end_time'),
-            'fee_type' => $feeType,
-            'payment_plan' => $feeService->normalizePaymentPlan($request->input('payment_plan'), (string) $request->input('fee_type')),
-            'installment_frequency' => $request->input('installment_frequency'),
-            'fee_amount' => round((float) ($request->input('fee_amount') ?? 0), 2),
-            'amount_paid' => 0,
-            'membership_mode' => $request->input('membership_mode'),
-            'joining_date' => $joining,
-            'plan_expiry_date' => $expiry,
-            'status' => 'occupied',
-        ]);
+        $booking = $this->applyFeeDetails($request, $existing, $feeService);
 
-        $this->logActivity($request, 'fees.created', "Added a fee for {$student->name}.", $booking, $seat->hall->branch_id);
+        if ($branch) {
+            $seatMapService->broadcastForBranch((int) $branch->id);
+        }
 
-        $booking = $this->applyFeeDetails($request, $booking, $feeService);
-
-        $seatMapService->broadcastForBranch((int) $seat->hall->branch_id);
+        $this->logActivity($request, 'fees.created', "Set up a fee for {$student->name}.", $booking, $branch?->id);
 
         return response()->json([
-            'message' => 'Fee added.',
+            'message' => 'Fee saved for the assigned seat.',
             'row' => $feeService->serializeRow($booking->fresh(['student', 'seat.hall.branch', 'installments'])),
         ], 201);
     }

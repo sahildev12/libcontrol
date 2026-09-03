@@ -9,6 +9,7 @@ return [
         ['label' => 'Trial Seats', 'route' => 'trial-seats.index', 'icon' => 'clock'],
         ['label' => 'Students', 'route' => 'students.index', 'icon' => 'users'],
         ['label' => 'Fee Management', 'route' => 'fees.index', 'icon' => 'currency'],
+        ['label' => 'Profit-Loss Management', 'route' => 'profit-loss.index', 'icon' => 'chart'],
         ['label' => 'Notifications', 'route' => 'notifications.index', 'icon' => 'bell'],
         ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart'],
         ['label' => 'Settings', 'route' => 'settings.index', 'icon' => 'settings'],

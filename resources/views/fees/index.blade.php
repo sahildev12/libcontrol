@@ -3,11 +3,9 @@
         x-data="feeTable({
             rows: @js($rows),
             students: @js($students ?? []),
-            halls: @js($halls ?? []),
-            timeSlotOptions: @js($timeSlotOptions ?? []),
             storeUrl: @js(route('fees.store')),
-            availableSeatsUrl: @js(route('seat-assignments.available-seats')),
             bulkDeleteUrl: @js(route('fees.bulk-destroy')),
+            seatAssignmentsUrl: @js(route('seat-assignments.index')),
         })"
         x-init="init()"
     >
@@ -16,6 +14,9 @@
                 <h1 class="text-2xl font-bold text-gray-900">Fee Management</h1>
                 <p class="mt-1 text-sm text-gray-600">Student fees{{ isset($scopeLabel) && $scopeLabel !== '' ? ' for '.$scopeLabel : '' }}.</p>
             </div>
+            <button type="button" @click="openCreate()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
+                Set Up Fee
+            </button>
         </header>
 
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -122,6 +123,7 @@
                                         >
                                             Add fee
                                         </button>
+                                        <button type="button" @click="openEdit(row)" class="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Edit</button>
                                         <x-admin.icon-button tone="gray" @click="openView(row)">View</x-admin.icon-button>
                                     </div>
                                 </td>
@@ -342,6 +344,120 @@
                     <div class="flex justify-end gap-2 border-t border-gray-200 pt-4">
                         <button type="button" @click="closeReceivePayment()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
                         <button type="submit" :disabled="receiveSaving || ! receiveForm.amount" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50" x-text="receiveSaving ? 'Saving...' : 'Record payment'"></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div x-show="formOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-gray-900/50" @click="formOpen = false"></div>
+            <div class="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-xl">
+                <div class="border-b border-gray-200 px-5 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900" x-text="formMode === 'create' ? 'Set Up Fee' : 'Edit Fee'"></h3>
+                    <p class="mt-1 text-xs text-gray-500" x-show="formMode === 'create'">Fees are linked to an existing seat assignment. Assign a seat first if needed.</p>
+                </div>
+                <form @submit.prevent="submitForm()" class="space-y-4 p-5">
+                    <div x-show="formMode === 'create'">
+                        <x-admin.student-search-select required />
+                    </div>
+                    <div x-show="formMode === 'edit'" class="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
+                        <p class="font-medium text-gray-900" x-text="editSummary()"></p>
+                    </div>
+                    <div x-show="formMode === 'create' && form.student_id && ! assignmentLocked" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                        <p>This student has no active seat assignment.</p>
+                        <a :href="seatAssignmentsUrl" class="mt-1 inline-flex font-semibold text-amber-800 underline">Go to Seat Assignments</a>
+                    </div>
+                    <div x-show="assignmentSummary" class="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Seat assignment</p>
+                        <p class="mt-0.5 font-medium" x-text="assignmentSummary"></p>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Fee Type</label>
+                            <select x-model="form.fee_type" @change="onFeeOptionsChanged()" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                                <option value="custom">Custom</option>
+                                <option value="membership">Membership</option>
+                                <option value="one_time">One-time</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Fee Amount</label>
+                            <input type="number" min="0.01" step="0.01" x-model.number="form.fee_amount" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Joining Date</label>
+                            <input type="date" x-model="form.joining_date" @change="onFeeOptionsChanged()" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                        <div x-show="showsEndDate()">
+                            <label class="block text-sm font-medium text-gray-700">
+                                Plan End Date
+                                <span class="text-red-500" x-show="endDateRequired()">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                x-model="form.plan_expiry_date"
+                                @change="onFeeOptionsChanged()"
+                                :readonly="! endDateEditable()"
+                                :required="endDateRequired()"
+                                :class="endDateEditable() ? 'mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm' : lockedFieldClass()"
+                            >
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Payment plan</label>
+                        <select x-model="form.payment_plan" @change="onFeeOptionsChanged()" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                            <option value="full">Full payment</option>
+                            <option value="installments" :disabled="form.fee_type === 'one_time'">Installments</option>
+                        </select>
+                    </div>
+                    <div x-show="form.fee_type === 'membership'">
+                        <label class="block text-sm font-medium text-gray-700">Membership Mode</label>
+                        <select x-model="form.membership_mode" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                            <option value="assigned_seat">Assigned Seat</option>
+                            <option value="any_seat">Any Available Seat</option>
+                        </select>
+                    </div>
+                    <div x-show="form.payment_plan === 'installments'" class="space-y-4 rounded-lg border border-gray-100 p-3">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Installment frequency</label>
+                                <select x-model="form.installment_frequency" @change="onFeeOptionsChanged()" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" :disabled="isFrequencyDisabled('monthly')">Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="half_yearly">Half-yearly</option>
+                                    <option value="yearly">Yearly</option>
+                                    <option value="custom">Flexible (custom dates)</option>
+                                </select>
+                            </div>
+                            <div x-show="form.installment_frequency !== 'custom'">
+                                <label class="block text-sm font-medium text-gray-700">Installment count</label>
+                                <input type="number" min="2" max="12" x-model.number="form.installment_count" @change="onFeeOptionsChanged()" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">First due date</label>
+                            <input type="date" x-model="form.first_due_date" @change="onFeeOptionsChanged()" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                        <div x-show="form.installment_frequency !== 'custom' && installmentPreview().length > 0">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Installment preview</p>
+                            <div class="mt-2 space-y-1 text-xs text-gray-600">
+                                <template x-for="item in installmentPreview()" :key="item.number">
+                                    <div class="flex justify-between rounded border border-gray-100 px-2 py-1">
+                                        <span x-text="`#${item.number} — ${item.label}`"></span>
+                                        <span class="font-medium" x-text="`₹${item.amount}`"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 border-t border-gray-200 pt-4">
+                        <button type="button" @click="formOpen = false" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" :disabled="saving || ! feeFormReady()" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" x-text="saving ? 'Saving...' : 'Save'"></button>
                     </div>
                 </form>
             </div>

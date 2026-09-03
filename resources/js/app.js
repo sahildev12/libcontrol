@@ -3741,11 +3741,8 @@ function suggestedInstallmentCount(firstDueIso, planEndIso, frequency) {
 Alpine.data('feeTable', (config) => ({
     rows: config.rows || [],
     students: config.students || [],
-    halls: config.halls || [],
-    timeSlotOptions: config.timeSlotOptions || [],
-    availableSeats: [],
     storeUrl: config.storeUrl,
-    availableSeatsUrl: config.availableSeatsUrl,
+    seatAssignmentsUrl: config.seatAssignmentsUrl,
     formOpen: false,
     formMode: 'create',
     editingId: null,
@@ -3790,11 +3787,6 @@ Alpine.data('feeTable', (config) => ({
     assignmentSummary: '',
     form: {
         student_id: '',
-        hall_id: '',
-        seat_id: '',
-        time_slot: 'full_day',
-        custom_start_time: '09:00',
-        custom_end_time: '18:00',
         fee_type: 'monthly',
         fee_amount: '',
         joining_date: new Date().toISOString().slice(0, 10),
@@ -3805,9 +3797,6 @@ Alpine.data('feeTable', (config) => ({
         installment_frequency: 'quarterly',
         first_due_date: new Date().toISOString().slice(0, 10),
         existing_booking_id: null,
-        time_slot_label: '',
-        hall_name: '',
-        seat_number: '',
     },
 
     extraFilter(row) {
@@ -3850,11 +3839,6 @@ Alpine.data('feeTable', (config) => ({
 
         return {
             student_id: '',
-            hall_id: '',
-            seat_id: '',
-            time_slot: 'full_day',
-            custom_start_time: '09:00',
-            custom_end_time: '18:00',
             fee_type: 'monthly',
             fee_amount: '',
             joining_date: today,
@@ -3865,10 +3849,15 @@ Alpine.data('feeTable', (config) => ({
             installment_frequency: 'quarterly',
             first_due_date: today,
             existing_booking_id: null,
-            time_slot_label: '',
-            hall_name: '',
-            seat_number: '',
         };
+    },
+
+    feeFormReady() {
+        if (this.formMode === 'edit') {
+            return true;
+        }
+
+        return Boolean(this.form.student_id && this.form.existing_booking_id);
     },
 
     lockedFieldClass() {
@@ -3940,7 +3929,6 @@ Alpine.data('feeTable', (config) => ({
             this.form = { ...this.emptyForm(), student_id: studentId };
             this.assignmentLocked = false;
             this.assignmentSummary = '';
-            this.availableSeats = [];
             return;
         }
 
@@ -3964,11 +3952,6 @@ Alpine.data('feeTable', (config) => ({
         this.form = {
             ...this.emptyForm(),
             student_id: student.id,
-            hall_id: assignment.hall_id,
-            seat_id: assignment.seat_id,
-            time_slot: assignment.time_slot || 'full_day',
-            custom_start_time: assignment.custom_start_time || '09:00',
-            custom_end_time: assignment.custom_end_time || '18:00',
             fee_type: feeType,
             fee_amount: Number(assignment.fee_amount || 0) || '',
             joining_date: assignment.joining_date || this.form.joining_date,
@@ -3979,14 +3962,8 @@ Alpine.data('feeTable', (config) => ({
             installment_frequency: frequency,
             first_due_date: assignment.first_due_date || assignment.joining_date || '',
             existing_booking_id: assignment.id,
-            time_slot_label: assignment.time_slot_label || '',
-            hall_name: assignment.hall_name || '',
-            seat_number: assignment.seat_number || '',
         };
         this.onFeeOptionsChanged();
-        this.availableSeats = assignment.seat_id
-            ? [{ id: assignment.seat_id, seat_number: assignment.seat_number }]
-            : [];
     },
 
     openCreate() {
@@ -3995,7 +3972,6 @@ Alpine.data('feeTable', (config) => ({
         this.form = this.emptyForm();
         this.assignmentLocked = false;
         this.assignmentSummary = '';
-        this.availableSeats = [];
         this.formOpen = true;
         this.onFeeOptionsChanged();
     },
@@ -4058,39 +4034,14 @@ Alpine.data('feeTable', (config) => ({
         this.viewOpen = false;
     },
 
-    async loadSeats() {
-        if (this.assignmentLocked || this.formMode !== 'create' || ! this.form.hall_id || ! this.form.joining_date) {
-            return;
-        }
-
-        const expiry = this.computedExpiry() || this.form.joining_date;
-
-        try {
-            const response = await window.axios.get(this.availableSeatsUrl, {
-                params: {
-                    hall_id: this.form.hall_id,
-                    time_slot: this.form.time_slot,
-                    joining_date: this.form.joining_date,
-                    plan_expiry_date: expiry,
-                    custom_start_time: this.form.time_slot === 'custom_hours' ? this.form.custom_start_time : null,
-                    custom_end_time: this.form.time_slot === 'custom_hours' ? this.form.custom_end_time : null,
-                },
-            });
-            this.availableSeats = response.data.seats || [];
-            if (! this.availableSeats.find((seat) => seat.id === this.form.seat_id)) {
-                this.form.seat_id = '';
-            }
-        } catch (e) {
-            this.availableSeats = [];
-        }
-    },
+    async loadSeats() {},
 
     selectedAvailableSeat() {
-        return this.availableSeats.find((item) => String(item.id) === String(this.form.seat_id)) || null;
+        return null;
     },
 
     assignableSlotOptions() {
-        return assignableTimeSlotOptions(this.timeSlotOptions, this.selectedAvailableSeat());
+        return [];
     },
 
     computedExpiry() {
@@ -4175,18 +4126,19 @@ Alpine.data('feeTable', (config) => ({
                 const updated = response.data.row;
                 const exists = this.rows.some((row) => row.id === updated.id);
                 this.rows = exists
-                    ? this.rows.map((row) => row.id === updated.id ? updated : row)
+                    ? this.rows.map((row) => (row.id === updated.id ? updated : row))
                     : [updated, ...this.rows];
                 showToast(response.data.message);
             } else {
-                const payload = { ...this.form, ...this.feePayload() };
-                delete payload.existing_booking_id;
-                delete payload.time_slot_label;
-                delete payload.hall_name;
-                delete payload.seat_number;
-                if (! payload.plan_expiry_date) delete payload.plan_expiry_date;
-                const response = await window.axios.post(this.storeUrl, payload);
-                this.rows.unshift(response.data.row);
+                const response = await window.axios.post(this.storeUrl, {
+                    student_id: this.form.student_id,
+                    ...this.feePayload(),
+                });
+                const updated = response.data.row;
+                const exists = this.rows.some((row) => row.id === updated.id);
+                this.rows = exists
+                    ? this.rows.map((row) => (row.id === updated.id ? updated : row))
+                    : [updated, ...this.rows];
                 showToast(response.data.message);
             }
             this.formOpen = false;
@@ -4322,6 +4274,132 @@ Alpine.data('feeTable', (config) => ({
             showToast(response.data.message);
         } catch (e) {
             showToast(e.response?.data?.message || 'Could not mark this fee as paid.', 'error');
+        }
+    },
+}));
+
+Alpine.data('profitLossPanel', (config) => ({
+    rows: config.rows || [],
+    summary: config.summary || {},
+    categories: config.categories || {},
+    branches: config.branches || [],
+    viewingAll: config.viewingAll || false,
+    defaultBranchId: config.defaultBranchId || null,
+    storeUrl: config.storeUrl,
+    bulkDeleteUrl: config.bulkDeleteUrl,
+    dateFrom: config.dateFrom || '',
+    dateTo: config.dateTo || '',
+    formOpen: false,
+    formMode: 'create',
+    editingId: null,
+    saving: false,
+    categoryFilter: '',
+    searchKeys: ['title', 'category_label', 'amount', 'expense_date', 'payment_method_label', 'branch_name', 'notes', 'recorded_by_name'],
+    exportFileName: 'expenses',
+    exportColumns: [
+        { label: 'Date', key: 'expense_date' },
+        { label: 'Branch', key: 'branch_name' },
+        { label: 'Category', key: 'category_label' },
+        { label: 'Title', key: 'title' },
+        { label: 'Amount', key: 'amount' },
+        { label: 'Payment Method', key: 'payment_method_label' },
+        { label: 'Notes', key: 'notes' },
+        { label: 'Recorded By', key: 'recorded_by_name' },
+    ],
+    ...createDataTableMixin(),
+    form: {
+        branch_id: '',
+        category: '',
+        title: '',
+        amount: '',
+        expense_date: new Date().toISOString().slice(0, 10),
+        payment_method: 'cash',
+        notes: '',
+    },
+
+    init() {
+        this.initDataTable();
+        this.$watch('categoryFilter', () => { this.page = 1; });
+    },
+
+    extraFilter(row) {
+        if (this.categoryFilter && row.category !== this.categoryFilter) {
+            return false;
+        }
+
+        return true;
+    },
+
+    emptyForm() {
+        return {
+            branch_id: this.viewingAll ? '' : String(this.defaultBranchId || ''),
+            category: '',
+            title: '',
+            amount: '',
+            expense_date: new Date().toISOString().slice(0, 10),
+            payment_method: 'cash',
+            notes: '',
+        };
+    },
+
+    openCreate() {
+        this.formMode = 'create';
+        this.editingId = null;
+        this.form = this.emptyForm();
+        this.formOpen = true;
+    },
+
+    openEdit(row) {
+        if (! row) {
+            return;
+        }
+
+        this.formMode = 'edit';
+        this.editingId = row.id;
+        this.form = {
+            branch_id: row.branch_id ? String(row.branch_id) : '',
+            category: row.category || '',
+            title: row.title || '',
+            amount: Number(row.amount || 0),
+            expense_date: row.expense_date_iso || '',
+            payment_method: row.payment_method || 'cash',
+            notes: row.notes || '',
+        };
+        this.formOpen = true;
+    },
+
+    async submitForm() {
+        this.saving = true;
+        try {
+            if (this.formMode === 'edit') {
+                const response = await window.axios.patch(`/profit-loss/expenses/${this.editingId}`, this.form);
+                this.rows = this.rows.map((row) => row.id === this.editingId ? response.data.row : row);
+                showToast(response.data.message);
+            } else {
+                const response = await window.axios.post(this.storeUrl, this.form);
+                this.rows.unshift(response.data.row);
+                showToast(response.data.message);
+            }
+            this.formOpen = false;
+        } catch (e) {
+            showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not save expense.', 'error');
+        } finally {
+            this.saving = false;
+        }
+    },
+
+    async deleteOne(row) {
+        if (! confirm(`Delete expense "${row.title}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await window.axios.delete(`/profit-loss/expenses/${row.id}`);
+            this.rows = this.rows.filter((item) => item.id !== row.id);
+            this.selectedIds = this.selectedIds.filter((id) => id !== row.id);
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(e.response?.data?.message || 'Could not delete expense.', 'error');
         }
     },
 }));
