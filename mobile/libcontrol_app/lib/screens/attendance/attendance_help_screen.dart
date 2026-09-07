@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
-import 'package:libcontrol_app/widgets/app_header.dart';
+import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AttendanceHelpScreen extends StatelessWidget {
@@ -42,9 +43,13 @@ class AttendanceHelpScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: AppHeader(title: 'Need Help?', showBack: true),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: CenteredPageHeader(
+                title: 'Need Help?',
+                subtitle: 'Contact library staff',
+                onBack: () => Navigator.of(context).pop(),
+              ),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -83,7 +88,7 @@ class AttendanceHelpScreen extends StatelessWidget {
                     _ContactTile(
                       icon: Icons.location_on_outlined,
                       title: 'Branch',
-                      value: DummyData.student.homeBranch,
+                      value: AuthService.instance.student?.homeBranch ?? DummyData.fallbackStudent.homeBranch,
                       onTap: null,
                     ),
                     const SizedBox(height: 12),
@@ -117,7 +122,7 @@ class AttendanceHelpScreen extends StatelessWidget {
                         border: Border.all(color: AppColors.border),
                       ),
                       child: Text(
-                        'Tip: Mention your student ID (${DummyData.student.id}) and the date of attendance when contacting staff.',
+                        'Tip: Mention your student ID (${AuthService.instance.student?.id ?? ''}) and the date of attendance when contacting staff.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),

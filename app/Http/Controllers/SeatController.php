@@ -48,6 +48,7 @@ class SeatController extends Controller
             'branchName' => $this->viewingAllBranches($request)
                 ? 'All branches'
                 : ($this->optionalActiveBranch($request)?->name ?? ''),
+            'requireStudentContact' => (bool) ($this->optionalActiveBranch($request)?->require_student_contact ?? false),
         ]);
     }
 

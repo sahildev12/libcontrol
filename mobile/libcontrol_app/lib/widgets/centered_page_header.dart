@@ -7,11 +7,13 @@ class CenteredPageHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onBack,
+    this.trailing,
   });
 
   final String title;
   final String? subtitle;
   final VoidCallback? onBack;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +27,15 @@ class CenteredPageHeader extends StatelessWidget {
             if (onBack != null)
               Align(
                 alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.chevron_left_rounded, size: 30),
-                  color: AppColors.textDark,
-                  visualDensity: VisualDensity.compact,
+                child: HeaderIconButton(
+                  icon: Icons.chevron_left_rounded,
+                  onPressed: onBack!,
                 ),
+              ),
+            if (trailing != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: trailing!,
               ),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -45,6 +50,27 @@ class CenteredPageHeader extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class HeaderIconButton extends StatelessWidget {
+  const HeaderIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 30),
+      color: AppColors.textDark,
+      visualDensity: VisualDensity.compact,
     );
   }
 }

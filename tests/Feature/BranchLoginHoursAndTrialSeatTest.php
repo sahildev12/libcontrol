@@ -261,7 +261,7 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         Carbon::setTestNow();
     }
 
-    public function test_expired_seats_become_vacant_after_one_day(): void
+    public function test_expired_seats_stay_expired_after_grace_period(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-19 11:00:00', 'Asia/Kolkata'));
 
@@ -284,10 +284,57 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-08-20 11:00:00', 'Asia/Kolkata'));
         $seat->unsetRelation('bookings');
         $seat->load('bookings.student');
-        $this->assertSame('available', app(SeatStatusService::class)->resolveForSeat($seat, $branch));
+        $this->assertSame('expired', app(SeatStatusService::class)->resolveForSeat($seat, $branch));
 
         $response = $this->actingAs($user)->getJson(route('seats.data'));
-        $this->assertSame('available', collect($response->json('seats'))->firstWhere('id', $seat->id)['status']);
+        $payload = collect($response->json('seats'))->firstWhere('id', $seat->id);
+        $this->assertSame('expired', $payload['status']);
+        $this->assertSame($student->student_code, $payload['student_code']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_assigning_new_student_on_expired_seat_closes_old_booking(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-20 11:00:00', 'Asia/Kolkata'));
+
+        [$branch, $user, $seat, $oldStudent] = $this->branchWithSeat();
+        $newStudent = Student::factory()->create(['branch_id' => $branch->id]);
+
+        $expiredBooking = SeatBooking::query()->create([
+            'seat_id' => $seat->id,
+            'student_id' => $oldStudent->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'monthly',
+            'fee_amount' => 500,
+            'joining_date' => '2026-07-01',
+            'plan_expiry_date' => '2026-08-18',
+            'status' => 'occupied',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('seat-assignments.store'), [
+            'student_id' => $newStudent->id,
+            'hall_id' => $seat->hall_id,
+            'seat_id' => $seat->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'monthly',
+            'payment_plan' => 'full',
+            'fee_amount' => 600,
+            'joining_date' => '2026-08-20',
+            'plan_expiry_date' => '2026-09-20',
+            'membership_mode' => 'assigned_seat',
+        ]);
+
+        $response->assertCreated();
+
+        $expiredBooking->refresh();
+        $this->assertNotNull($expiredBooking->cancelled_at);
+        $this->assertSame('cancelled', $expiredBooking->status);
+        $this->assertSame('Replaced by new assignment', $expiredBooking->cancellation_reason);
+
+        $seat->unsetRelation('bookings');
+        $seat->load('bookings.student');
+        $this->assertSame('occupied', app(SeatStatusService::class)->resolveForSeat($seat, $branch));
 
         Carbon::setTestNow();
     }

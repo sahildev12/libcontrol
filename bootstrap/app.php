@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'license_server' => \App\Http\Middleware\EnsureLicenseServer::class,
             'landlord_host' => \App\Http\Middleware\EnsureLandlordHost::class,
             'addon' => \App\Http\Middleware\EnsureAddonEnabled::class,
+            'student.api' => \App\Http\Middleware\EnsureStudentApiUser::class,
         ]);
 
         $middleware->web(prepend: [

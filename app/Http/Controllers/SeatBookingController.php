@@ -12,6 +12,7 @@ use App\Services\FeeService;
 use App\Services\PlanExpiryService;
 use App\Services\SeatConflictService;
 use App\Services\SeatMapService;
+use App\Services\SeatStatusService;
 use App\Services\LibraryScheduleService;
 use App\Services\SeatAvailabilityService;
 use Illuminate\Http\JsonResponse;
@@ -326,6 +327,21 @@ class SeatBookingController extends Controller
         )) {
             return response()->json(['message' => 'This seat has a conflicting assignment for the selected time slot and dates.'], 422);
         }
+
+        $statusService = app(SeatStatusService::class);
+        SeatBooking::query()
+            ->where('seat_id', $seat->id)
+            ->whereNull('cancelled_at')
+            ->where('status', '!=', 'cancelled')
+            ->get()
+            ->filter(fn (SeatBooking $existing) => ! $statusService->bookingIsActive($existing))
+            ->each(function (SeatBooking $existing): void {
+                $existing->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'Replaced by new assignment',
+                ]);
+            });
 
         $paymentPlan = $feeService->normalizePaymentPlan($request->input('payment_plan'), (string) $request->input('fee_type'));
         $isTrialStudent = $student->student_type === Student::TYPE_TRIAL;

@@ -8,26 +8,20 @@ class AppHeader extends StatelessWidget {
     this.showBack = false,
     this.showDrawer = false,
     this.showSettings = false,
-    this.showNotification = false,
-    this.onNotificationTap,
     this.onSettingsTap,
     this.onDrawerTap,
     this.greeting,
     this.subtitle,
-    this.trailingBadge,
   });
 
   final String? title;
   final bool showBack;
   final bool showDrawer;
   final bool showSettings;
-  final bool showNotification;
-  final VoidCallback? onNotificationTap;
   final VoidCallback? onSettingsTap;
   final VoidCallback? onDrawerTap;
   final String? greeting;
   final String? subtitle;
-  final int? trailingBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +31,6 @@ class AppHeader extends StatelessWidget {
         subtitle: subtitle ?? '',
         showDrawer: showDrawer,
         onDrawerTap: onDrawerTap,
-        onNotificationTap: onNotificationTap,
-        trailingBadge: trailingBadge,
       );
     }
 
@@ -57,10 +49,7 @@ class AppHeader extends StatelessWidget {
           IconButton(
             onPressed: onDrawerTap,
             icon: const Icon(Icons.menu_rounded),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.white,
-              side: const BorderSide(color: AppColors.border),
-            ),
+            color: AppColors.textDark,
           ),
         Expanded(
           child: Text(
@@ -77,33 +66,6 @@ class AppHeader extends StatelessWidget {
               side: const BorderSide(color: AppColors.border),
             ),
           ),
-        if (showNotification)
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                onPressed: onNotificationTap,
-                icon: const Icon(Icons.notifications_none_rounded),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.white,
-                  side: const BorderSide(color: AppColors.border),
-                ),
-              ),
-              if ((trailingBadge ?? 0) > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.danger,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
       ],
     );
   }
@@ -115,33 +77,24 @@ class _DashboardHeader extends StatelessWidget {
     required this.subtitle,
     required this.showDrawer,
     this.onDrawerTap,
-    this.onNotificationTap,
-    this.trailingBadge,
   });
 
   final String greeting;
   final String subtitle;
   final bool showDrawer;
   final VoidCallback? onDrawerTap;
-  final VoidCallback? onNotificationTap;
-  final int? trailingBadge;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (showDrawer)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              onPressed: onDrawerTap,
-              icon: const Icon(Icons.menu_rounded),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.white,
-                side: const BorderSide(color: AppColors.border),
-              ),
-            ),
+          IconButton(
+            onPressed: onDrawerTap,
+            icon: const Icon(Icons.menu_rounded),
+            color: AppColors.textDark,
+            visualDensity: VisualDensity.compact,
           ),
         CircleAvatar(
           radius: 22,
@@ -168,32 +121,6 @@ class _DashboardHeader extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            IconButton(
-              onPressed: onNotificationTap,
-              icon: const Icon(Icons.notifications_none_rounded),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.white,
-                side: const BorderSide(color: AppColors.border),
-              ),
-            ),
-            if ((trailingBadge ?? 0) > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.danger,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
         ),
       ],
     );

@@ -34,9 +34,16 @@ class _MainShellState extends State<MainShell> {
       AttendanceScreen(
         onBack: () => setState(() => _currentIndex = 0),
       ),
-      const ScanScreen(),
-      const SeatsScreen(),
-      const ProfileScreen(),
+      ScanScreen(
+        onBack: () => setState(() => _currentIndex = 0),
+      ),
+      SeatsScreen(
+        onViewQr: () => setState(() => _currentIndex = 2),
+        onBack: () => setState(() => _currentIndex = 0),
+      ),
+      ProfileScreen(
+        onBack: () => setState(() => _currentIndex = 0),
+      ),
     ];
 
     return Scaffold(

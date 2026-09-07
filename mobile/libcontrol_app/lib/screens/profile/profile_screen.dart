@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/routes/app_routes.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
-import 'package:libcontrol_app/widgets/app_header.dart';
+import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:libcontrol_app/widgets/profile_info_tile.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.onBack});
+
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    final student = DummyData.student;
+    final student = AuthService.instance.student ?? DummyData.fallbackStudent;
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppHeader(
+            CenteredPageHeader(
               title: 'My Profile',
-              showSettings: true,
-              onSettingsTap: () {},
+              subtitle: 'Your student account',
+              onBack: onBack,
+              trailing: HeaderIconButton(
+                icon: Icons.settings_outlined,
+                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.profileSettings),
+              ),
             ),
             const SizedBox(height: 24),
             Center(
@@ -42,15 +49,18 @@ class ProfileScreen extends StatelessWidget {
                   Positioned(
                     right: 0,
                     bottom: 0,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: AppColors.border),
+                    child: Material(
+                      color: AppColors.white,
+                      shape: const CircleBorder(side: BorderSide(color: AppColors.border)),
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.editProfile),
+                        customBorder: const CircleBorder(),
+                        child: const SizedBox(
+                          width: 34,
+                          height: 34,
+                          child: Icon(Icons.edit_outlined, size: 18),
+                        ),
                       ),
-                      child: const Icon(Icons.edit_outlined, size: 18),
                     ),
                   ),
                 ],
@@ -92,7 +102,11 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             OutlinedButton(
-              onPressed: () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
+              onPressed: () async {
+                await AuthService.instance.logout();
+                if (!context.mounted) return;
+                Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
+              },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
                 foregroundColor: AppColors.danger,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
 import 'package:libcontrol_app/models/notification_item.dart';
-import 'package:libcontrol_app/widgets/app_header.dart';
+import 'package:libcontrol_app/widgets/centered_page_header.dart';
+import 'package:libcontrol_app/widgets/notifications/notification_filter_tabs.dart';
 import 'package:libcontrol_app/widgets/notification_card.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -33,20 +34,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: AppHeader(title: 'Notifications', showBack: true),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: CenteredPageHeader(
+                title: 'Notifications',
+                subtitle: 'Stay updated with library news',
+                onBack: () => Navigator.of(context).pop(),
+              ),
             ),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 0, label: Text('All')),
-                  ButtonSegment(value: 1, label: Text('Announcements')),
-                  ButtonSegment(value: 2, label: Text('Reminders')),
-                ],
-                selected: {_tabIndex},
-                onSelectionChanged: (value) => setState(() => _tabIndex = value.first),
+              child: NotificationFilterTabs(
+                selectedIndex: _tabIndex,
+                onChanged: (index) => setState(() => _tabIndex = index),
               ),
             ),
             const SizedBox(height: 16),
@@ -54,7 +54,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 itemCount: _filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) => NotificationCard(item: _filtered[index]),
               ),
             ),

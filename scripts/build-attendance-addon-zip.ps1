@@ -6,8 +6,9 @@ $ErrorActionPreference = "Stop"
 $Version = "1.0.0"
 $Root = Split-Path -Parent $PSScriptRoot
 $Slug = "attendance"
+$AddonDir = Join-Path $Root "releases\library\addon"
 $BuildDir = Join-Path $Root "addons\$Slug\build"
-$ZipPath = Join-Path $Root "addons\$Slug\LibControl-addon-$Slug-v$Version.zip"
+$ZipPath = Join-Path $AddonDir "LibControl-addon-$Slug-v$Version.zip"
 
 Write-Host "Building Attendance addon ZIP v$Version..."
 
@@ -31,8 +32,12 @@ foreach ($relativePath in $paths) {
     }
 
     $destination = Join-Path $BuildDir $relativePath
-  New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force | Out-Null
+    New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force | Out-Null
     Copy-Item -Path $source -Destination $destination -Recurse -Force
+}
+
+if (-not (Test-Path $AddonDir)) {
+    New-Item -ItemType Directory -Path $AddonDir -Force | Out-Null
 }
 
 if (Test-Path $ZipPath) {

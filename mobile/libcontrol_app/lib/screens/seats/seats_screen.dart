@@ -1,159 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
-import 'package:libcontrol_app/models/seat.dart';
-import 'package:libcontrol_app/widgets/app_header.dart';
-import 'package:libcontrol_app/widgets/primary_button.dart';
-import 'package:libcontrol_app/widgets/seat_tile.dart';
+import 'package:libcontrol_app/widgets/centered_page_header.dart';
+import 'package:libcontrol_app/widgets/seats/my_seat_card.dart';
+import 'package:libcontrol_app/widgets/seats/sibling_seat_card.dart';
 
-class SeatsScreen extends StatefulWidget {
-  const SeatsScreen({super.key});
+class SeatsScreen extends StatelessWidget {
+  const SeatsScreen({super.key, this.onViewQr, this.onBack});
 
-  @override
-  State<SeatsScreen> createState() => _SeatsScreenState();
-}
-
-class _SeatsScreenState extends State<SeatsScreen> {
-  int _tabIndex = 0;
-  String _selectedHall = DummyData.halls.first;
-  String? _selectedSeatCode;
-
-  List<SeatItem> get _seats {
-    return DummyData.seatsForHall(_selectedHall).map((seat) {
-      if (seat.code == _selectedSeatCode) {
-        return SeatItem(code: seat.code, status: SeatStatus.selected);
-      }
-      return seat;
-    }).toList();
-  }
+  final VoidCallback? onViewQr;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AppHeader(title: 'Book a Seat'),
-                  const SizedBox(height: 20),
-                  SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(value: 0, label: Text('Available')),
-                      ButtonSegment(value: 1, label: Text('My Bookings')),
-                    ],
-                    selected: {_tabIndex},
-                    onSelectionChanged: (value) => setState(() => _tabIndex = value.first),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _selectedHall,
-                    decoration: const InputDecoration(labelText: 'Select hall'),
-                    items: DummyData.halls
-                        .map((hall) => DropdownMenuItem(value: hall, child: Text(hall)))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _selectedHall = value;
-                        _selectedSeatCode = null;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Wrap(
-                    spacing: 16,
-                    runSpacing: 8,
-                    children: [
-                      _LegendItem(color: AppColors.successBg, label: 'Available'),
-                      _LegendItem(color: AppColors.dangerBg, label: 'Occupied'),
-                      _LegendItem(color: AppColors.primary, label: 'Selected'),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final crossAxisCount = constraints.maxWidth > 360 ? 5 : 4;
+    final allottedSeat = DummyData.myAllottedSeat;
+    final siblings = DummyData.siblingSeats;
 
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 1,
-                        ),
-                        itemCount: _seats.length,
-                        itemBuilder: (context, index) {
-                          final seat = _seats[index];
-                          return SeatTile(
-                            seat: seat,
-                            onTap: () => setState(() => _selectedSeatCode = seat.code),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: CenteredPageHeader(
+              title: 'My Seat',
+              subtitle: 'View your allotted seat',
+              onBack: onBack,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (allottedSeat == null)
+            Expanded(child: _EmptyState())
+          else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: MySeatCard(
+                seat: allottedSeat,
+                onViewQr: onViewQr ?? () {},
               ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _selectedSeatCode != null ? 'Seat $_selectedSeatCode' : 'Select a seat',
-                  style: Theme.of(context).textTheme.titleMedium,
+            if (siblings.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Sibling's Seat",
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Seats allotted to your siblings',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(_selectedHall, style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 12),
-                PrimaryButton(
-                  label: 'Confirm Booking',
-                  onPressed: _selectedSeatCode == null ? null : () {},
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  itemCount: siblings.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) => SiblingSeatCard(sibling: siblings[index]),
                 ),
-              ],
-            ),
-          ),
+              ),
+            ],
+          ],
         ],
       ),
     );
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
+class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: AppColors.border),
-          ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.event_seat_outlined, color: AppColors.primary, size: 32),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No Seat Allotted',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your seat details will appear here once a seat is assigned to you.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+      ),
     );
   }
 }

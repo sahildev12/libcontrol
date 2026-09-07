@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/models/attendance_record.dart';
-import 'package:libcontrol_app/widgets/app_header.dart';
+import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:libcontrol_app/widgets/attendance/attendance_status_badge.dart';
 
 class AttendanceDetailScreen extends StatelessWidget {
@@ -29,9 +29,12 @@ class AttendanceDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: AppHeader(title: 'Attendance Details', showBack: true),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: CenteredPageHeader(
+                title: 'Attendance Details',
+                onBack: () => Navigator.of(context).pop(),
+              ),
             ),
             Expanded(
               child: SingleChildScrollView(

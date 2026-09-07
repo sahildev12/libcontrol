@@ -65,6 +65,7 @@
                                 <input type="checkbox" @change="toggleSelectAll($event)" :checked="allPageSelected()" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             </th>
                             <th class="px-4 py-3">Student</th>
+                            <th class="px-4 py-3">Seat</th>
                             <th class="px-4 py-3">Time Slot</th>
                             <th class="px-4 py-3">Fee Type</th>
                             <th class="px-4 py-3">Amount</th>
@@ -85,6 +86,7 @@
                                     <div class="font-medium text-gray-900" x-text="row.student_name"></div>
                                     <div class="text-xs text-gray-500" x-text="row.student_code"></div>
                                 </td>
+                                <td class="px-4 py-3 font-medium text-gray-900" x-text="row.seat_number || '—'"></td>
                                 <td class="px-4 py-3 capitalize" x-text="row.time_slot_label || row.time_slot?.replaceAll('_', ' ')"></td>
                                 <td class="px-4 py-3" x-text="row.fee_type_label || row.fee_type"></td>
                                 <td class="px-4 py-3">
@@ -134,7 +136,7 @@
                             </tr>
                         </template>
                         <tr x-show="paginatedRows().length === 0">
-                            <td colspan="10" class="px-4 py-10 text-center text-gray-500">No fee records found.</td>
+                            <td colspan="11" class="px-4 py-10 text-center text-gray-500">No fee records found.</td>
                         </tr>
                     </tbody>
                 </table>

@@ -2,24 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/models/attendance_record.dart';
 import 'package:libcontrol_app/models/notification_item.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
+import 'package:libcontrol_app/models/allotted_seat.dart';
 import 'package:libcontrol_app/models/seat.dart';
 import 'package:libcontrol_app/models/student.dart';
 
 abstract final class DummyData {
-  static const student = Student(
-    name: 'Aarav Sharma',
-    id: 'MLC-001',
+  static const fallbackStudent = Student(
+    name: 'Student',
+    id: '',
     type: 'Student',
-    email: 'aarav.sharma@example.com',
-    phone: '98765 43210',
-    homeBranch: 'Main Library Center',
-    currentSeat: 'A7',
-    currentHall: 'Reading Hall — Ground Floor',
-    planValidTill: '23 Sep 2026',
-    isCheckedIn: true,
-    checkedInAt: '09:14 AM',
+    email: '',
+    phone: '',
+    homeBranch: '',
+    currentSeat: '',
+    currentHall: '',
+    planValidTill: '',
+    isCheckedIn: false,
+    checkedInAt: '',
     avatarUrl: '',
   );
+
+  static Student get student => fallbackStudent;
 
   static const libraryHours = '6:00 AM – 10:00 PM';
   static const isLibraryOpen = true;
@@ -63,6 +67,36 @@ abstract final class DummyData {
       status: AttendanceStatus.present,
       checkInTime: '09:18 AM',
       method: AttendanceMethod.studentQr,
+    ),
+    AttendanceRecord(
+      date: DateTime(2026, 8, 28),
+      status: AttendanceStatus.present,
+      checkInTime: '09:11 AM',
+      method: AttendanceMethod.biometric,
+    ),
+    AttendanceRecord(
+      date: DateTime(2026, 8, 25),
+      status: AttendanceStatus.late,
+      checkInTime: '10:05 AM',
+      method: AttendanceMethod.studentQr,
+    ),
+    AttendanceRecord(
+      date: DateTime(2026, 8, 22),
+      status: AttendanceStatus.absent,
+      checkInTime: '—',
+      method: AttendanceMethod.none,
+    ),
+    AttendanceRecord(
+      date: DateTime(2026, 8, 20),
+      status: AttendanceStatus.present,
+      checkInTime: '09:09 AM',
+      method: AttendanceMethod.studentQr,
+    ),
+    AttendanceRecord(
+      date: DateTime(2026, 8, 15),
+      status: AttendanceStatus.present,
+      checkInTime: '09:16 AM',
+      method: AttendanceMethod.biometric,
     ),
   ];
 
@@ -152,5 +186,37 @@ abstract final class DummyData {
     'Reading Hall — Ground Floor',
     'Quiet Zone — First Floor',
     'Group Study — Second Floor',
+  ];
+
+  static AllottedSeat? get myAllottedSeat {
+    final currentStudent = AuthService.instance.student;
+    if (currentStudent == null || currentStudent.currentSeat.isEmpty) {
+      return null;
+    }
+
+    final hallParts = currentStudent.currentHall.split(' — ');
+    return AllottedSeat(
+      seatCode: currentStudent.currentSeat,
+      hall: hallParts.first,
+      floor: hallParts.length > 1 ? hallParts[1] : '',
+      status: SeatAllotmentStatus.active,
+      bookedOn: DateTime(2026, 9, 1),
+      amountPaid: 500,
+    );
+  }
+
+  static final siblingSeats = <SiblingSeat>[
+    SiblingSeat(
+      name: 'Simran',
+      relationship: 'Sister',
+      seat: AllottedSeat(
+        seatCode: 'B3',
+        hall: 'Reading Hall',
+        floor: 'Ground Floor',
+        status: SeatAllotmentStatus.active,
+        bookedOn: DateTime(2026, 9, 1),
+        amountPaid: 500,
+      ),
+    ),
   ];
 }

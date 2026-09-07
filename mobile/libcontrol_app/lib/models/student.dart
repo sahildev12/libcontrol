@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Student {
   const Student({
     required this.name,
@@ -26,4 +28,40 @@ class Student {
   final bool isCheckedIn;
   final String checkedInAt;
   final String avatarUrl;
+
+  factory Student.fromJson(Map<String, dynamic> json) {
+    return Student(
+      name: json['name'] as String? ?? '',
+      id: json['student_code'] as String? ?? '',
+      type: json['type'] as String? ?? 'Student',
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      homeBranch: json['home_branch'] as String? ?? '',
+      currentSeat: json['current_seat'] as String? ?? '',
+      currentHall: json['current_hall'] as String? ?? '',
+      planValidTill: json['plan_valid_till'] as String? ?? '',
+      isCheckedIn: json['is_checked_in'] as bool? ?? false,
+      checkedInAt: json['checked_in_at'] as String? ?? '',
+      avatarUrl: json['avatar_url'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'student_code': id,
+      'type': type,
+      'email': email,
+      'phone': phone,
+      'home_branch': homeBranch,
+      'current_seat': currentSeat,
+      'current_hall': currentHall,
+      'plan_valid_till': planValidTill,
+      'is_checked_in': isCheckedIn,
+      'checked_in_at': checkedInAt,
+      'avatar_url': avatarUrl,
+    };
+  }
+
+  String toJsonString() => jsonEncode(toJson());
 }

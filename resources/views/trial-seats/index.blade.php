@@ -108,8 +108,7 @@
                                             </div>
 
                                             <div class="w-full truncate text-[10px] font-semibold">
-                                                <span x-show="seat.student_code && displayStatus(seat) !== 'available'" x-text="seat.student_code"></span>
-                                                <span x-show="!seat.student_code || displayStatus(seat) === 'available'" x-text="statusLabel(displayStatus(seat))"></span>
+                                                <span x-text="seatStudentLabel(seat)"></span>
                                             </div>
                                         </button>
                                     </div>

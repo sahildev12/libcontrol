@@ -11,7 +11,7 @@ class LibControlApp extends StatelessWidget {
       title: 'LibControl',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.home,
       routes: AppRoutes.routes,
     );
   }

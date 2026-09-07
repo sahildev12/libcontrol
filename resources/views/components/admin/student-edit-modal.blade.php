@@ -130,6 +130,20 @@
                     </div>
                 </div>
 
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700">
+                    <p class="font-medium text-gray-900">Mobile app login</p>
+                    <p class="mt-1 text-xs text-gray-600" x-show="editForm.has_app_pin">This student has set up app login. Reset only if they forgot their PIN.</p>
+                    <p class="mt-1 text-xs text-amber-700" x-show="! editForm.has_app_pin">This student has not set up app login yet. They will create a PIN on first mobile sign-in.</p>
+                    <button
+                        type="button"
+                        x-show="editForm.has_app_pin"
+                        @click="resetStudentAppLogin()"
+                        class="mt-2 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                    >
+                        Reset App Login
+                    </button>
+                </div>
+
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Student Photo (optional)</label>

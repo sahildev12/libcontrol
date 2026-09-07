@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -16,7 +17,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final student = DummyData.student;
+    final student = AuthService.instance.student ?? DummyData.fallbackStudent;
 
     return Drawer(
       backgroundColor: AppColors.white,
@@ -61,7 +62,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _DrawerItem(
                     icon: Icons.event_seat_outlined,
-                    label: 'Book a Seat',
+                    label: 'My Seat',
                     selected: currentIndex == 3,
                     onTap: () => onNavigate(3),
                   ),

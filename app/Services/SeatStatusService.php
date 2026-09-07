@@ -36,7 +36,7 @@ class SeatStatusService
             return 'available';
         }
 
-        if ($this->isRecentlyExpired($booking, $today)) {
+        if (! $this->bookingIsActive($booking, $today)) {
             return 'expired';
         }
 
@@ -78,6 +78,7 @@ class SeatStatusService
             'occupied' => 'Occupied (Full Day)',
             'occupied_custom' => 'Occupied (Custom Hours)',
             'expiring_soon' => 'Expiring Soon',
+            'expired' => 'Expired',
             'on_trial' => 'Trial',
             default => ucwords(str_replace('_', ' ', $status)),
         };
@@ -89,7 +90,6 @@ class SeatStatusService
 
         return $seat->bookings
             ->filter(fn (SeatBooking $booking) => $booking->cancelled_at === null && $booking->status !== 'cancelled')
-            ->filter(fn (SeatBooking $booking) => ! $this->isStaleExpired($booking, $today))
             ->sortByDesc('joining_date')
             ->first();
     }
@@ -105,17 +105,19 @@ class SeatStatusService
 
     public function isRecentlyExpired(SeatBooking $booking, ?Carbon $today = null): bool
     {
-        $today ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
-        $expiry = $this->bookingExpiryDate($booking);
+        return $this->isExpiredBooking($booking, $today);
+    }
 
-        return $expiry->lt($today) && $expiry->gte($today->copy()->subDay());
+    public function isExpiredBooking(SeatBooking $booking, ?Carbon $today = null): bool
+    {
+        $today ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
+
+        return ! $this->bookingIsActive($booking, $today);
     }
 
     public function isStaleExpired(SeatBooking $booking, ?Carbon $today = null): bool
     {
-        $today ??= Carbon::now(config('libcontrol.timezone', 'Asia/Kolkata'))->copy()->startOfDay();
-
-        return $this->bookingExpiryDate($booking)->lt($today->copy()->subDay());
+        return false;
     }
 
     public function visibleOnTrialMap(array $seat): bool
@@ -227,8 +229,9 @@ class SeatStatusService
                 'status' => $status,
                 'status_label' => $this->statusLabel($status),
                 'student_code' => $student?->student_code,
+                'student_id' => $student?->id,
                 'student_name' => $student?->name,
-                'student_initial' => $student ? strtoupper(substr($student->name, 0, 1)) : null,
+                'student_initial' => $student ? $this->studentFirstInitial($student) : null,
                 'booking_id' => $booking?->id,
                 'time_slot' => $booking?->time_slot,
                 'time_slot_label' => $booking && $seatSchedule
@@ -257,5 +260,13 @@ class SeatStatusService
 
             return $payload;
         })->values()->all();
+    }
+
+    private function studentFirstInitial(Student $student): ?string
+    {
+        $parts = preg_split('/\s+/', trim((string) $student->name)) ?: [];
+        $firstName = $parts[0] ?? '';
+
+        return $firstName !== '' ? strtoupper(substr($firstName, 0, 1)) : null;
     }
 }

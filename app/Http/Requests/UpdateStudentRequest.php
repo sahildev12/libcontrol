@@ -33,6 +33,7 @@ class UpdateStudentRequest extends FormRequest
             'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:4096'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'student_type' => ['required', Rule::in(['regular', 'trial'])],
+            'reset_app_login' => ['nullable', 'boolean'],
         ];
     }
 

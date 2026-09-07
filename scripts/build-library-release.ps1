@@ -1,20 +1,25 @@
 # LibControl library (client) release packager
-# Usage: powershell -ExecutionPolicy Bypass -File scripts/build-library-release.ps1
+# Usage:
+#   powershell -ExecutionPolicy Bypass -File scripts/build-library-release.ps1
+#   powershell -ExecutionPolicy Bypass -File scripts/build-library-release.ps1 -Zip
+
+param(
+    [string]$Version = "2.1.2",
+    [switch]$Zip
+)
 
 $ErrorActionPreference = "Stop"
 
-$Version = "2.1.1"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = Join-Path $Root "releases\library\v$Version"
-$StagingDir = Join-Path $ReleaseDir "staging"
 $ZipPath = Join-Path $ReleaseDir "LibControl-library-v$Version.zip"
 
 Write-Host "Building LibControl library release v$Version..."
 
-if (Test-Path $StagingDir) {
-    Remove-Item $StagingDir -Recurse -Force
+if (Test-Path $ReleaseDir) {
+    Get-ChildItem $ReleaseDir -Force | Remove-Item -Recurse -Force
 }
-New-Item -ItemType Directory -Path $StagingDir -Force | Out-Null
+New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
 
 Push-Location $Root
 try {
@@ -95,7 +100,7 @@ LIBCONTROL_ADMIN_NAME=Admin
             continue
         }
 
-        $destination = Join-Path $StagingDir $item.Name
+        $destination = Join-Path $ReleaseDir $item.Name
         if ($item.PSIsContainer) {
             Copy-Item -Path $item.FullName -Destination $destination -Recurse -Force
         } else {
@@ -115,7 +120,7 @@ LIBCONTROL_ADMIN_NAME=Admin
         "tailwind.config.js"
     )
     foreach ($file in $devFiles) {
-        $path = Join-Path $StagingDir $file
+        $path = Join-Path $ReleaseDir $file
         if (Test-Path $path) {
             Remove-Item $path -Force
         }
@@ -137,7 +142,7 @@ LIBCONTROL_ADMIN_NAME=Admin
     )
 
     foreach ($relativePath in $landlordOnlyPaths) {
-        $fullPath = Join-Path $StagingDir $relativePath
+        $fullPath = Join-Path $ReleaseDir $relativePath
         if (Test-Path $fullPath) {
             Remove-Item $fullPath -Recurse -Force
         }
@@ -151,21 +156,21 @@ LIBCONTROL_ADMIN_NAME=Admin
     )
 
     foreach ($relativePath in $addonBundlePaths) {
-        $fullPath = Join-Path $StagingDir $relativePath
+        $fullPath = Join-Path $ReleaseDir $relativePath
         if (Test-Path $fullPath) {
             Remove-Item $fullPath -Recurse -Force
         }
     }
 
-    Set-Content -Path (Join-Path $StagingDir "config\addons.php") -Value @"
+    Set-Content -Path (Join-Path $ReleaseDir "config\addons.php") -Value @"
 <?php
 
 return [];
 "@ -Encoding UTF8
 
-    Copy-Item -Path (Join-Path $Root "config\admin-nav-library.php") -Destination (Join-Path $StagingDir "config\admin-nav.php") -Force
+    Copy-Item -Path (Join-Path $Root "config\admin-nav-library.php") -Destination (Join-Path $ReleaseDir "config\admin-nav.php") -Force
 
-    $webRoutesPath = Join-Path $StagingDir "routes\web.php"
+    $webRoutesPath = Join-Path $ReleaseDir "routes\web.php"
     $webRoutes = Get-Content $webRoutesPath -Raw
     $webRoutes = $webRoutes -replace "require __DIR__\.'\/license-server\.php';\r?\n", ""
     $webRoutes = $webRoutes -replace "require __DIR__\.'\/developer\.php';\r?\n", ""
@@ -179,34 +184,40 @@ return [];
         "storage\framework\views"
     )
     foreach ($runtimePath in $runtimePaths) {
-        $fullPath = Join-Path $StagingDir $runtimePath
+        $fullPath = Join-Path $ReleaseDir $runtimePath
         if (Test-Path $fullPath) {
             Get-ChildItem $fullPath -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 
-    Set-Content -Path (Join-Path $StagingDir ".env") -Value $libraryEnv -Encoding UTF8
-    Set-Content -Path (Join-Path $StagingDir "VERSION") -Value $Version -Encoding UTF8
+    Set-Content -Path (Join-Path $ReleaseDir ".env") -Value $libraryEnv -Encoding UTF8
+    Set-Content -Path (Join-Path $ReleaseDir "VERSION") -Value $Version -Encoding UTF8
 
     $installDoc = @"
 # LibControl Library Release v$Version
 
 ## What this is
 
-This zip is for a **single client library** (e.g. dise.phenomit.com).
+This folder is for a **single client library** (e.g. dise.phenomit.com).
 It does **not** include Dev & Domains or Client Libraries admin tools.
 
 After setup, this domain automatically pings libcontrol.phenomit.com so Phenomit can see the new installation.
 
 ## Upload steps
 
-1. Upload and extract on your hosting (e.g. dise.phenomit.com).
+1. Upload this folder to your hosting (e.g. dise.phenomit.com).
 2. Point the domain to the ``public`` folder.
 3. Open ``https://dise.phenomit.com/setup``.
 4. Set **App name** to your library name (e.g. Dise).
 5. Enter database details and click **Prepare database (auto-migrate)**.
 6. Enter your **admin email and password** and click **Install LibControl**.
 7. Log in at ``/admin/login``.
+
+## Updating an existing client
+
+1. Back up the database and ``.env`` file first.
+2. Upload changed files over the existing install (keep the client's ``.env``).
+3. Run migrations from **Settings → Database** or ``php artisan migrate --force`` on the server.
 
 ## Phenomit visibility
 
@@ -221,22 +232,25 @@ You will see the domain under **Dev & Domains -> Live installations** on libcont
 - Dev & Domains UI
 - Client Libraries (multi-tenant landlord tools)
 - License server API endpoints
+- Addons (install separately from ``releases/library/addon/``)
 "@
 
     Set-Content -Path (Join-Path $ReleaseDir "INSTALL.md") -Value $installDoc -Encoding UTF8
     Set-Content -Path (Join-Path $ReleaseDir "VERSION.txt") -Value $Version -Encoding UTF8
 
-    if (Test-Path $ZipPath) {
-        Remove-Item $ZipPath -Force
-    }
-
-    Write-Host "Creating zip archive..."
-    Compress-Archive -Path (Join-Path $StagingDir "*") -DestinationPath $ZipPath -CompressionLevel Optimal
-    Remove-Item $StagingDir -Recurse -Force
-
     Write-Host ""
     Write-Host "Done."
-    Write-Host "Zip: $ZipPath"
+    Write-Host "Release folder: $ReleaseDir"
+
+    if ($Zip) {
+        if (Test-Path $ZipPath) {
+            Remove-Item $ZipPath -Force
+        }
+
+        Write-Host "Creating zip archive..."
+        Compress-Archive -Path (Join-Path $ReleaseDir "*") -DestinationPath $ZipPath -CompressionLevel Optimal
+        Write-Host "Zip: $ZipPath"
+    }
 }
 finally {
     Pop-Location

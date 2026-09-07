@@ -186,7 +186,7 @@ class StudentController extends Controller
         $this->authorizeStudent($request, $student);
         $student->loadMissing(['familyGroup', 'branch']);
 
-        $data = $request->safe()->except(['id_proof', 'photo']);
+        $data = $request->safe()->except(['id_proof', 'photo', 'reset_app_login']);
 
         if ($request->hasFile('id_proof')) {
             if ($student->id_proof_path) {
@@ -221,6 +221,10 @@ class StudentController extends Controller
         }
 
         $student->update($data);
+
+        if ($request->boolean('reset_app_login')) {
+            $student->clearAppPin();
+        }
 
         return response()->json([
             'message' => "Student \"{$student->name}\" updated.",
@@ -327,6 +331,7 @@ class StudentController extends Controller
             'is_in_family' => $student->isInFamily(),
             'has_id_proof' => (bool) $student->idProofUrl(),
             'has_photo' => (bool) $student->photoUrl(),
+            'has_app_pin' => $student->hasAppPin(),
             'photo_url' => $student->photoUrl(),
             'id_proof_url' => $student->idProofUrl(),
             'initials' => $student->initials(),

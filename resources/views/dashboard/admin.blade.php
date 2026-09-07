@@ -49,40 +49,17 @@
             <p class="mt-1 text-sm text-gray-500">System Overview</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div class="relative" @click.outside="rangeOpen = false">
-                <button
-                    type="button"
-                    @click="rangeOpen = !rangeOpen"
-                    class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-                >
-                    <svg class="size-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 11h14M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span>{{ $admin['range_label'] }}</span>
-                </button>
-                <form
-                    method="get"
-                    action="{{ route('dashboard') }}"
-                    x-show="rangeOpen"
-                    x-cloak
-                    x-transition
-                    class="absolute left-0 right-0 z-20 mt-2 w-full max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-4 shadow-lg sm:left-auto sm:right-0 sm:w-72"
-                >
-                    <input type="hidden" name="revenue_months" value="{{ $revenueMonthsCount }}">
-                    <div class="space-y-3">
-                        <div>
-                            <label class="mb-1 block text-xs font-semibold text-gray-500">From</label>
-                            <input type="date" name="from" value="{{ $admin['from'] }}" class="w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-xs font-semibold text-gray-500">To</label>
-                            <input type="date" name="to" value="{{ $admin['to'] }}" class="w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <button type="submit" class="inline-flex h-9 w-full items-center justify-center rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700">
-                            Apply range
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <x-admin.date-range-picker
+                :action="route('dashboard')"
+                :label="$admin['range_label']"
+                from-name="from"
+                to-name="to"
+                :from-value="$admin['from']"
+                :to-value="$admin['to']"
+            >
+                <input type="hidden" name="revenue_months" value="{{ $revenueMonthsCount }}">
+            </x-admin.date-range-picker>
 
             <a
                 href="{{ route('dashboard', array_merge(request()->only(['from', 'to', 'revenue_months']))) }}"

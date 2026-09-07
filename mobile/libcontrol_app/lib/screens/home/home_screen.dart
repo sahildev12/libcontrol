@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/routes/app_routes.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
 import 'package:libcontrol_app/widgets/action_card.dart';
 import 'package:libcontrol_app/widgets/app_header.dart';
@@ -16,7 +17,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final student = DummyData.student;
+    final student = AuthService.instance.student ?? DummyData.fallbackStudent;
     final unreadCount = DummyData.notifications.where((item) => !item.isRead).length;
 
     return SafeArea(
@@ -30,8 +31,6 @@ class HomeScreen extends StatelessWidget {
               subtitle: student.name,
               showDrawer: true,
               onDrawerTap: onOpenDrawer,
-              onNotificationTap: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
-              trailingBadge: unreadCount,
             ),
             const SizedBox(height: 20),
             GridView.count(
@@ -58,20 +57,10 @@ class HomeScreen extends StatelessWidget {
                   onTap: () => onNavigateTab?.call(3),
                 ),
                 ActionCard(
-                  title: 'Library Rules',
-                  icon: Icons.rule_folder_outlined,
-                  onTap: () {},
-                ),
-                ActionCard(
-                  title: 'Announcements',
-                  icon: Icons.campaign_outlined,
+                  title: 'Notifications',
+                  icon: Icons.notifications_outlined,
                   badge: unreadCount > 0 ? '$unreadCount' : null,
                   onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
-                ),
-                ActionCard(
-                  title: 'Feedback',
-                  icon: Icons.feedback_outlined,
-                  onTap: () {},
                 ),
               ],
             ),

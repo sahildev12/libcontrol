@@ -533,6 +533,252 @@ function createStudentFormMixin({
     };
 }
 
+function seatStudentLabel(seat) {
+    if (! seat || displaySeatStatus(seat) === 'available') {
+        return seatStatusLabel(displaySeatStatus(seat));
+    }
+
+    if (! seat.student_code) {
+        return seatStatusLabel(displaySeatStatus(seat));
+    }
+
+    if (seat.student_initial) {
+        return `${seat.student_code} | ${seat.student_initial}`;
+    }
+
+    return seat.student_code;
+}
+
+function createStudentEditMixin({ requireStudentContact = false, onStudentUpdated = null } = {}) {
+    return {
+        editOpen: false,
+        editFormErrors: {},
+        editSaving: false,
+        requireStudentContact,
+        editForm: {
+            id: null,
+            student_code: '',
+            name: '',
+            gender: 'male',
+            date_of_birth: '',
+            phone: '',
+            email: '',
+            father_name: '',
+            address: '',
+            id_proof_type: '',
+            status: 'active',
+            id_proof: null,
+            photo: null,
+            student_type: 'regular',
+            has_id_proof: false,
+            has_photo: false,
+            has_app_pin: false,
+            reset_app_login: false,
+        },
+
+        async openSelectedStudentEdit() {
+            const studentId = this.selectedSeat?.student_id;
+            if (! studentId) {
+                return;
+            }
+
+            try {
+                const response = await window.axios.get(`/students/${studentId}`);
+                this.openEdit(response.data);
+            } catch (e) {
+                showToast('Could not load student details.', 'error');
+            }
+        },
+
+        canEditStudent() {
+            return Boolean(this.selectedSeat?.student_id && ! this.assignMode);
+        },
+
+        openEdit(row) {
+            this.editFormErrors = {};
+            this.editForm = {
+                ...row,
+                gender: row.gender || 'male',
+                student_type: row.student_type || 'regular',
+                date_of_birth: row.date_of_birth || '',
+                father_name: row.father_name || '',
+                id_proof: null,
+                photo: null,
+                has_id_proof: Boolean(row.has_id_proof),
+                has_photo: Boolean(row.has_photo),
+                has_app_pin: Boolean(row.has_app_pin),
+                reset_app_login: false,
+            };
+            this.editOpen = true;
+            this.error = '';
+        },
+
+        closeEdit() {
+            this.editOpen = false;
+            this.editSaving = false;
+            this.editFormErrors = {};
+        },
+
+        validateEditForm() {
+            const errors = {};
+            const name = String(this.editForm.name || '').trim();
+
+            if (! name) {
+                errors.name = 'Full name is required.';
+            } else if (name.length < 2) {
+                errors.name = 'Name must be at least 2 characters.';
+            } else if (/^\d+$/.test(name)) {
+                errors.name = 'Name cannot contain only numbers.';
+            }
+
+            if (! ['male', 'female'].includes(this.editForm.gender)) {
+                errors.gender = 'Select Male or Female.';
+            }
+
+            if (! ['regular', 'trial'].includes(this.editForm.student_type)) {
+                errors.student_type = 'Select Regular or Trial student.';
+            }
+
+            if (! this.editForm.date_of_birth) {
+                errors.date_of_birth = 'Date of birth is required.';
+            } else if (this.editForm.date_of_birth >= new Date().toISOString().slice(0, 10)) {
+                errors.date_of_birth = 'Date of birth must be in the past.';
+            }
+
+            this.editForm.phone = sanitizeDigits(this.editForm.phone);
+            const contactRequired = this.requireStudentContact
+                && (! this.editForm.is_in_family || this.editForm.is_family_primary);
+
+            Object.assign(
+                errors,
+                validateStudentContactFields(this.editForm.phone, this.editForm.email, {
+                    required: contactRequired,
+                }),
+            );
+
+            if (this.editForm.id_proof && ! this.editForm.id_proof_type) {
+                errors.id_proof_type = 'Select the ID document type when uploading a file.';
+            }
+
+            if (this.editForm.id_proof_type && ! this.editForm.id_proof && ! this.editForm.has_id_proof) {
+                errors.id_proof = 'Upload the ID document file for the selected type.';
+            }
+
+            this.editFormErrors = errors;
+
+            return Object.keys(errors).length === 0;
+        },
+
+        buildEditFormData() {
+            const data = new FormData();
+            ['name', 'gender', 'student_type', 'date_of_birth', 'phone', 'email', 'father_name', 'address', 'id_proof_type', 'status'].forEach((key) => {
+                if (this.editForm[key] !== null && this.editForm[key] !== undefined && this.editForm[key] !== '') {
+                    data.append(key, this.editForm[key]);
+                }
+            });
+            if (this.editForm.reset_app_login) {
+                data.append('reset_app_login', '1');
+            }
+            if (this.editForm.id_proof) {
+                data.append('id_proof', this.editForm.id_proof);
+            }
+            if (this.editForm.photo) {
+                data.append('photo', this.editForm.photo);
+            }
+
+            return data;
+        },
+
+        async submitEditForm() {
+            if (! this.validateEditForm()) {
+                showToast(Object.values(this.editFormErrors)[0], 'error');
+                return;
+            }
+
+            this.editSaving = true;
+            this.error = '';
+
+            try {
+                const response = await window.axios.post(
+                    `/students/${this.editForm.id}?_method=PATCH`,
+                    this.buildEditFormData(),
+                    { headers: { 'Content-Type': 'multipart/form-data' } },
+                );
+
+                const student = response.data.student;
+
+                if (Array.isArray(this.rows)) {
+                    const index = this.rows.findIndex((row) => row.id === student.id);
+                    if (index >= 0) {
+                        this.rows[index] = student;
+                    }
+                    this.students = this.rows;
+                }
+
+                if (typeof onStudentUpdated === 'function') {
+                    onStudentUpdated(student, this);
+                }
+
+                showToast(response.data.message);
+                this.closeEdit();
+            } catch (e) {
+                showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not save student.', 'error');
+            } finally {
+                this.editSaving = false;
+            }
+        },
+
+        resetStudentAppLogin() {
+            if (! confirm('Reset app login for this student? They will need to set up a new PIN on their next mobile sign-in.')) {
+                return;
+            }
+
+            this.editForm.reset_app_login = true;
+            this.submitEditForm();
+        },
+
+        async unlinkStudentFamily() {
+            if (! this.editForm.id || ! this.editForm.is_in_family) {
+                return;
+            }
+
+            if (! confirm('Unlink this student from the shared family contact?')) {
+                return;
+            }
+
+            this.editSaving = true;
+            try {
+                const response = await window.axios.delete(`/students/${this.editForm.id}/family-link`);
+                const student = response.data.student;
+
+                if (Array.isArray(this.rows)) {
+                    const index = this.rows.findIndex((row) => row.id === student.id);
+                    if (index >= 0) {
+                        this.rows[index] = student;
+                    }
+                    this.students = this.rows;
+                }
+
+                if (typeof onStudentUpdated === 'function') {
+                    onStudentUpdated(student, this);
+                }
+
+                this.editForm = {
+                    ...this.editForm,
+                    ...student,
+                    id_proof: null,
+                    photo: null,
+                };
+                showToast(response.data.message);
+            } catch (e) {
+                showToast(extractAxiosError(e), 'error');
+            } finally {
+                this.editSaving = false;
+            }
+        },
+    };
+}
+
 function createStudentPickerMixin({ formKey = 'assignForm', idKey = 'student_id', showAddNew = true } = {}) {
     return {
         studentPickerOpen: false,
@@ -1088,7 +1334,7 @@ function isSeatVacantNow(seat) {
     }
 
     if (seat.status === 'expired') {
-        return true;
+        return false;
     }
 
     // Current clock window can be free even when the seat has custom bookings later today.
@@ -1285,6 +1531,7 @@ Alpine.data('seatMap', (config) => ({
     storeUrl: config.storeUrl,
     transferUrl: config.transferUrl || '/seat-assignments/transfer',
     availableSeatsUrl: config.availableSeatsUrl || '/seat-assignments/available-seats',
+    feesRenewUrl: config.feesRenewUrl || '/fees',
     dataUrl: config.dataUrl || '/seats/data',
     zoom: 100,
     detailOpen: false,
@@ -1342,6 +1589,40 @@ Alpine.data('seatMap', (config) => ({
         },
     }),
     ...createStudentPickerMixin({ formKey: 'assignForm', showAddNew: true }),
+    ...createStudentEditMixin({
+        requireStudentContact: config.requireStudentContact || false,
+        onStudentUpdated(student, ctx) {
+            const firstName = String(student.name || '').trim().split(/\s+/)[0] || '';
+            const initial = firstName ? firstName.charAt(0).toUpperCase() : '';
+
+            ctx.seats = ctx.seats.map((seat) => {
+                if (String(seat.student_id) !== String(student.id)) {
+                    return seat;
+                }
+
+                return {
+                    ...seat,
+                    student_name: student.name,
+                    student_code: student.student_code,
+                    student_initial: initial || seat.student_initial,
+                };
+            });
+
+            if (ctx.selectedSeat && String(ctx.selectedSeat.student_id) === String(student.id)) {
+                ctx.selectedSeat = {
+                    ...ctx.selectedSeat,
+                    student_name: student.name,
+                    student_code: student.student_code,
+                    student_initial: initial || ctx.selectedSeat.student_initial,
+                };
+            }
+
+            const pickerIndex = (ctx.students || []).findIndex((row) => String(row.id) === String(student.id));
+            if (pickerIndex >= 0) {
+                ctx.students[pickerIndex] = { ...ctx.students[pickerIndex], ...student };
+            }
+        },
+    }),
     ...createSeatScheduleMixin(),
 
     init() {
@@ -1459,9 +1740,45 @@ Alpine.data('seatMap', (config) => ({
         this.zoom = Math.max(this.zoom - 10, 70);
     },
 
+    canRenewExpired() {
+        return Boolean(
+            this.selectedSeat
+            && displaySeatStatus(this.selectedSeat) === 'expired'
+            && this.selectedSeat.booking_id,
+        );
+    },
+
+    startAssignNewStudent() {
+        if (! this.selectedSeat || displaySeatStatus(this.selectedSeat) !== 'expired') {
+            return;
+        }
+
+        const times = defaultCustomTimes(this.selectedSeat);
+        this.assignMode = true;
+        this.assignForm.student_id = '';
+        this.assignForm.hall_id = this.selectedSeat.hall_id;
+        this.assignForm.seat_id = this.selectedSeat.id;
+        this.assignForm.time_slot = 'full_day';
+        this.assignForm.custom_start_time = times.start;
+        this.assignForm.custom_end_time = times.end;
+        this.assignForm.joining_date = new Date().toISOString().slice(0, 10);
+        if (typeof this.syncAssignPlanExpiry === 'function') {
+            this.syncAssignPlanExpiry();
+        }
+    },
+
+    openRenewExpired() {
+        const bookingId = this.selectedSeat?.booking_id;
+        if (! bookingId) {
+            return;
+        }
+
+        window.location.href = `${this.feesRenewUrl}?renew=${bookingId}`;
+    },
+
     openSeat(seat) {
         this.selectedSeat = seat;
-        this.assignMode = isSeatVacantNow(seat);
+        this.assignMode = displaySeatStatus(seat) === 'available';
         const times = defaultCustomTimes(seat);
         const hasOccupied = seatHasOccupiedHours(seat);
         this.assignForm = {
@@ -2266,9 +2583,45 @@ Alpine.data('trialSeatMap', (config) => ({
         this.zoom = Math.max(this.zoom - 10, 70);
     },
 
+    canRenewExpired() {
+        return Boolean(
+            this.selectedSeat
+            && displaySeatStatus(this.selectedSeat) === 'expired'
+            && this.selectedSeat.booking_id,
+        );
+    },
+
+    startAssignNewStudent() {
+        if (! this.selectedSeat || displaySeatStatus(this.selectedSeat) !== 'expired') {
+            return;
+        }
+
+        const times = defaultCustomTimes(this.selectedSeat);
+        this.assignMode = true;
+        this.assignForm.student_id = '';
+        this.assignForm.hall_id = this.selectedSeat.hall_id;
+        this.assignForm.seat_id = this.selectedSeat.id;
+        this.assignForm.time_slot = 'full_day';
+        this.assignForm.custom_start_time = times.start;
+        this.assignForm.custom_end_time = times.end;
+        this.assignForm.joining_date = new Date().toISOString().slice(0, 10);
+        if (typeof this.syncAssignPlanExpiry === 'function') {
+            this.syncAssignPlanExpiry();
+        }
+    },
+
+    openRenewExpired() {
+        const bookingId = this.selectedSeat?.booking_id;
+        if (! bookingId) {
+            return;
+        }
+
+        window.location.href = `${this.feesRenewUrl}?renew=${bookingId}`;
+    },
+
     openSeat(seat) {
         this.selectedSeat = seat;
-        this.assignMode = isSeatVacantNow(seat);
+        this.assignMode = displaySeatStatus(seat) === 'available';
         const times = defaultCustomTimes(seat);
         const hasOccupied = seatHasOccupiedHours(seat);
         this.assignForm = {
@@ -3202,27 +3555,6 @@ Alpine.data('studentTable', (config) => ({
     viewOpen: false,
     viewLoading: false,
     viewStudent: null,
-    editOpen: false,
-    editSaving: false,
-    editFormErrors: {},
-    editForm: {
-        id: null,
-        student_code: '',
-        name: '',
-        gender: 'male',
-        date_of_birth: '',
-        phone: '',
-        email: '',
-        father_name: '',
-        address: '',
-        id_proof_type: '',
-        status: 'active',
-        id_proof: null,
-        photo: null,
-        student_type: 'regular',
-        has_id_proof: false,
-        has_photo: false,
-    },
     storeUrl: config.storeUrl,
     branches: config.branches || [],
     defaultBranchId: config.defaultBranchId || null,
@@ -3247,6 +3579,16 @@ Alpine.data('studentTable', (config) => ({
         studentSearchUrl: config.studentSearchUrl || '/students/search',
         onStudentCreated(student, ctx) {
             ctx.rows.unshift(student);
+            ctx.students = ctx.rows;
+        },
+    }),
+    ...createStudentEditMixin({
+        requireStudentContact: config.requireStudentContact || false,
+        onStudentUpdated(student, ctx) {
+            const index = ctx.rows.findIndex((row) => row.id === student.id);
+            if (index >= 0) {
+                ctx.rows[index] = student;
+            }
             ctx.students = ctx.rows;
         },
     }),
@@ -3287,159 +3629,6 @@ Alpine.data('studentTable', (config) => ({
 
         if (student) {
             this.openEdit(student);
-        }
-    },
-
-    openEdit(row) {
-        this.editFormErrors = {};
-        this.editForm = {
-            ...row,
-            gender: row.gender || 'male',
-            student_type: row.student_type || 'regular',
-            date_of_birth: row.date_of_birth || '',
-            father_name: row.father_name || '',
-            id_proof: null,
-            photo: null,
-            has_id_proof: Boolean(row.has_id_proof),
-            has_photo: Boolean(row.has_photo),
-        };
-        this.editOpen = true;
-        this.error = '';
-    },
-
-    closeEdit() {
-        this.editOpen = false;
-        this.editSaving = false;
-        this.editFormErrors = {};
-    },
-
-    validateEditForm() {
-        const errors = {};
-        const name = String(this.editForm.name || '').trim();
-
-        if (! name) {
-            errors.name = 'Full name is required.';
-        } else if (name.length < 2) {
-            errors.name = 'Name must be at least 2 characters.';
-        } else if (/^\d+$/.test(name)) {
-            errors.name = 'Name cannot contain only numbers.';
-        }
-
-        if (! ['male', 'female'].includes(this.editForm.gender)) {
-            errors.gender = 'Select Male or Female.';
-        }
-
-        if (! ['regular', 'trial'].includes(this.editForm.student_type)) {
-            errors.student_type = 'Select Regular or Trial student.';
-        }
-
-        if (! this.editForm.date_of_birth) {
-            errors.date_of_birth = 'Date of birth is required.';
-        } else if (this.editForm.date_of_birth >= new Date().toISOString().slice(0, 10)) {
-            errors.date_of_birth = 'Date of birth must be in the past.';
-        }
-
-        this.editForm.phone = sanitizeDigits(this.editForm.phone);
-        const contactRequired = this.requireStudentContact
-            && (! this.editForm.is_in_family || this.editForm.is_family_primary);
-
-        Object.assign(
-            errors,
-            validateStudentContactFields(this.editForm.phone, this.editForm.email, {
-                required: contactRequired,
-            }),
-        );
-
-        if (this.editForm.id_proof && ! this.editForm.id_proof_type) {
-            errors.id_proof_type = 'Select the ID document type when uploading a file.';
-        }
-
-        if (this.editForm.id_proof_type && ! this.editForm.id_proof && ! this.editForm.has_id_proof) {
-            errors.id_proof = 'Upload the ID document file for the selected type.';
-        }
-
-        this.editFormErrors = errors;
-
-        return Object.keys(errors).length === 0;
-    },
-
-    buildEditFormData() {
-        const data = new FormData();
-        ['name', 'gender', 'student_type', 'date_of_birth', 'phone', 'email', 'father_name', 'address', 'id_proof_type', 'status'].forEach((key) => {
-            if (this.editForm[key] !== null && this.editForm[key] !== undefined && this.editForm[key] !== '') {
-                data.append(key, this.editForm[key]);
-            }
-        });
-        if (this.editForm.id_proof) {
-            data.append('id_proof', this.editForm.id_proof);
-        }
-        if (this.editForm.photo) {
-            data.append('photo', this.editForm.photo);
-        }
-
-        return data;
-    },
-
-    async submitEditForm() {
-        if (! this.validateEditForm()) {
-            showToast(Object.values(this.editFormErrors)[0], 'error');
-            return;
-        }
-
-        this.editSaving = true;
-        this.error = '';
-
-        try {
-            const response = await window.axios.post(
-                `/students/${this.editForm.id}?_method=PATCH`,
-                this.buildEditFormData(),
-                { headers: { 'Content-Type': 'multipart/form-data' } },
-            );
-
-            const student = response.data.student;
-            const index = this.rows.findIndex((row) => row.id === student.id);
-            if (index >= 0) {
-                this.rows[index] = student;
-            }
-            this.students = this.rows;
-            showToast(response.data.message);
-            this.closeEdit();
-        } catch (e) {
-            showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not save student.', 'error');
-        } finally {
-            this.editSaving = false;
-        }
-    },
-
-    async unlinkStudentFamily() {
-        if (! this.editForm.id || ! this.editForm.is_in_family) {
-            return;
-        }
-
-        if (! confirm('Unlink this student from the shared family contact?')) {
-            return;
-        }
-
-        this.editSaving = true;
-        try {
-            const response = await window.axios.delete(`/students/${this.editForm.id}/family-link`);
-            const student = response.data.student;
-            const index = this.rows.findIndex((row) => row.id === student.id);
-            if (index >= 0) {
-                this.rows[index] = student;
-            }
-            this.students = this.rows;
-            this.editForm = {
-                ...this.editForm,
-                ...student,
-                id_proof: null,
-                photo: null,
-            };
-            showToast(response.data.message);
-        } catch (e) {
-            showToast(extractAxiosError(e), 'error');
-        } finally {
-            this.editSaving = false;
         }
     },
 

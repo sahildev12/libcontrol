@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\HasApiTokens;
 
 class Student extends Model
 {
@@ -15,7 +17,7 @@ class Student extends Model
     public const TYPE_TRIAL = 'trial';
 
     /** @use HasFactory<\Database\Factories\StudentFactory> */
-    use HasFactory;
+    use HasApiTokens, HasFactory;
 
     /**
      * @var list<string>
@@ -38,6 +40,15 @@ class Student extends Model
         'student_type',
         'family_group_id',
         'is_family_primary',
+        'app_pin_hash',
+        'app_pin_set_at',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'app_pin_hash',
     ];
 
     /**
@@ -48,6 +59,7 @@ class Student extends Model
         return [
             'date_of_birth' => 'date',
             'is_family_primary' => 'boolean',
+            'app_pin_set_at' => 'datetime',
         ];
     }
 
@@ -160,5 +172,40 @@ class Student extends Model
             ->where('id', '!=', $this->id)
             ->orderBy('name')
             ->get();
+    }
+
+    public function hasAppPin(): bool
+    {
+        return filled($this->app_pin_hash);
+    }
+
+    public function setAppPin(string $pin): void
+    {
+        $this->forceFill([
+            'app_pin_hash' => Hash::make($pin),
+            'app_pin_set_at' => now(),
+        ])->save();
+    }
+
+    public function verifyAppPin(string $pin): bool
+    {
+        if (! $this->app_pin_hash) {
+            return false;
+        }
+
+        return Hash::check($pin, $this->app_pin_hash);
+    }
+
+    public function clearAppPin(): void
+    {
+        $this->forceFill([
+            'app_pin_hash' => null,
+            'app_pin_set_at' => null,
+        ])->save();
+    }
+
+    public static function generateRandomPin(): string
+    {
+        return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     }
 }

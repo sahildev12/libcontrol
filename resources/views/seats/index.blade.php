@@ -10,12 +10,14 @@
             transferUrl: @js(route('seat-assignments.transfer')),
             availableSeatsUrl: @js(route('seat-assignments.available-seats')),
             dataUrl: @js(route('seats.data')),
+            feesRenewUrl: @js(route('fees.index')),
             storeStudentUrl: @js(route('students.store')),
             inviteStoreUrl: @js(route('students.registration-invites.store')),
             selectedHallId: 'all',
             branches: @js($branches ?? []),
             defaultBranchId: @js($defaultBranchId ?? null),
             viewingAll: @js($viewingAll ?? false),
+            requireStudentContact: @js($requireStudentContact ?? false),
         })"
     >
         <header class="flex flex-wrap items-start justify-between gap-4 p-4">
@@ -121,10 +123,7 @@
                                                 <span class="text-lg font-bold leading-none" x-text="seat.seat_number"></span>
                                             </div>
 
-                                            <div class="w-full truncate text-[10px] font-semibold">
-                                                <span x-show="seat.student_code && displayStatus(seat) !== 'available'" x-text="seat.student_code"></span>
-                                                <span x-show="!seat.student_code || displayStatus(seat) === 'available'" x-text="statusLabel(displayStatus(seat))"></span>
-                                            </div>
+                                            <div class="w-full truncate text-[10px] font-semibold" x-text="seatStudentLabel(seat)"></div>
                                         </button>
                                     </div>
                                 </template>
@@ -482,6 +481,30 @@
                     <button type="button" @click="closeDetail()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
                     <button
                         type="button"
+                        x-show="canEditStudent()"
+                        @click="openSelectedStudentEdit()"
+                        class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                    >
+                        Edit Student
+                    </button>
+                    <button
+                        type="button"
+                        x-show="canRenewExpired() && ! assignMode"
+                        @click="openRenewExpired()"
+                        class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                    >
+                        Renew Plan
+                    </button>
+                    <button
+                        type="button"
+                        x-show="canRenewExpired() && ! assignMode"
+                        @click="startAssignNewStudent()"
+                        class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                    >
+                        Assign New Student
+                    </button>
+                    <button
+                        type="button"
                         x-show="canAddAnotherStudent()"
                         @click="startAddStudent()"
                         :disabled="saving"
@@ -514,6 +537,7 @@
         </div>
 
         <x-admin.student-create-modal />
+        <x-admin.student-edit-modal />
         <x-admin.seat-schedule-modal />
 
         {{-- Transfer Seat modal --}}
