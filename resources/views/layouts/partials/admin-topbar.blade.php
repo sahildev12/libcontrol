@@ -11,7 +11,6 @@
     <div class="flex min-w-0 items-center gap-2 sm:gap-3 lg:hidden">
         <button
             type="button"
-            x-data
             @click="$dispatch('toggle-mobile-nav')"
             class="inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 hover:bg-white"
             aria-label="Open navigation"
@@ -137,46 +136,3 @@
         </x-dropdown>
     </div>
 </header>
-
-<nav
-    x-data="{ open: false }"
-    x-on:toggle-mobile-nav.window="open = !open"
-    x-show="open"
-    x-cloak
-    class="flex shrink-0 gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-2 lg:hidden"
->
-    @foreach ($navItems as $item)
-        @php
-            if (($item['platform_admin_only'] ?? false) && ! ($isPlatformAdmin ?? false)) {
-                continue;
-            }
-            if (($item['developer_admin_only'] ?? false) && ! ($isDeveloperAdmin ?? false)) {
-                continue;
-            }
-            if (($item['license_server_only'] ?? false) && ! ($licenseServerEnabled ?? false)) {
-                continue;
-            }
-            if (($item['tenancy_only'] ?? false) && ! ($tenancyEnabled ?? false)) {
-                continue;
-            }
-            if (! empty($item['addon']) && ! $addonRegistry->isEnabled((string) $item['addon'])) {
-                continue;
-            }
-            if (! empty($item['route']) && ! \Illuminate\Support\Facades\Route::has($item['route'])) {
-                continue;
-            }
-            $disabled = ($item['disabled'] ?? false) || empty($item['route']);
-            $isActive = ! $disabled && AdminNav::isActive($currentRoute, $item);
-        @endphp
-        @if ($disabled)
-            <span class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-gray-400">{{ $item['label'] }}</span>
-        @else
-            <a
-                href="{{ route($item['route']) }}"
-                class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium {{ $isActive ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700' }}"
-            >
-                {{ $item['label'] }}
-            </a>
-        @endif
-    @endforeach
-</nav>

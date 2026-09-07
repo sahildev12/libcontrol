@@ -38,6 +38,7 @@
         <div
             x-data="adminShell()"
             x-init="init()"
+            @toggle-mobile-nav.window="toggleMobileNav()"
             class="h-svh overflow-hidden bg-gray-100"
         >
             @include('layouts.partials.admin-sidebar')

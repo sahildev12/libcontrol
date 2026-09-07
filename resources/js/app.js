@@ -701,11 +701,18 @@ Alpine.data('toastHost', () => ({
 
 Alpine.data('adminShell', () => ({
     collapsed: false,
+    mobileNavOpen: false,
     init() {
         const stored = localStorage.getItem('LibControl-admin-sidebar-collapsed');
         if (stored === '1') {
             this.collapsed = true;
         }
+    },
+    toggleMobileNav() {
+        this.mobileNavOpen = ! this.mobileNavOpen;
+    },
+    closeMobileNav() {
+        this.mobileNavOpen = false;
     },
     toggleCollapsed() {
         this.collapsed = ! this.collapsed;
@@ -3789,32 +3796,66 @@ function addMonthsKeepDay(iso, months) {
     return toIsoLocal(date);
 }
 
-function planEndFromStart(feeType, startIso) {
-    if (! startIso) {
+function normalizeFeeTypeForPlan(feeType) {
+    const type = String(feeType || '').trim().toLowerCase();
+
+    if (type === 'installment' || type === 'one-time' || type === 'onetime') {
+        return 'monthly';
+    }
+
+    if (['monthly', 'yearly', 'custom', 'membership', 'quarterly', 'half_yearly', 'one_time'].includes(type)) {
+        return type;
+    }
+
+    return 'monthly';
+}
+
+function normalizeFeeTypeForRenew(feeType) {
+    const type = normalizeFeeTypeForPlan(feeType);
+
+    if (['monthly', 'yearly', 'custom', 'membership'].includes(type)) {
+        return type;
+    }
+
+    return 'monthly';
+}
+
+function planPeriodEndFromStart(feeType, startIso) {
+    const start = String(startIso || '').slice(0, 10);
+
+    if (! start) {
         return '';
     }
 
-    if (feeType === 'one_time') {
-        return startIso;
+    const type = normalizeFeeTypeForPlan(feeType);
+
+    if (type === 'one_time') {
+        return start;
     }
 
-    if (feeType === 'yearly' || feeType === 'membership') {
-        const next = addMonthsKeepDay(startIso, 12);
-        const date = new Date(`${next}T00:00:00`);
-        date.setDate(date.getDate() - 1);
+    const months = type === 'yearly' || type === 'membership'
+        ? 12
+        : type === 'quarterly'
+            ? 3
+            : type === 'half_yearly'
+                ? 6
+                : 1;
 
-        return toIsoLocal(date);
+    const next = addMonthsKeepDay(start, months);
+    const date = new Date(`${next}T00:00:00`);
+    date.setDate(date.getDate() - 1);
+
+    return toIsoLocal(date);
+}
+
+function planEndFromStart(feeType, startIso) {
+    const type = normalizeFeeTypeForPlan(feeType);
+
+    if (type === 'custom') {
+        return '';
     }
 
-    if (feeType === 'monthly') {
-        const next = addMonthsKeepDay(startIso, 1);
-        const date = new Date(`${next}T00:00:00`);
-        date.setDate(date.getDate() - 1);
-
-        return toIsoLocal(date);
-    }
-
-    return '';
+    return planPeriodEndFromStart(type, startIso);
 }
 
 function suggestedRenewalStart(planExpiryIso) {
@@ -3915,17 +3956,19 @@ function createFeeRenewMixin(options = {}) {
 
         emptyRenewForm(row) {
             const start = suggestedRenewalStart(row?.plan_expiry_date_iso || '');
-            const feeType = row?.fee_type && row.fee_type !== 'one_time' ? row.fee_type : 'monthly';
+            const feeType = normalizeFeeTypeForRenew(row?.fee_type && row.fee_type !== 'one_time' ? row.fee_type : 'monthly');
             let frequency = row?.installment_frequency || this.defaultFrequencyForFeeType(feeType);
             if (feeType === 'monthly' && frequency === 'monthly') {
                 frequency = 'quarterly';
             }
 
+            const planExpiry = planEndFromStart(feeType, start) || planPeriodEndFromStart('monthly', start);
+
             return {
                 fee_type: feeType,
                 fee_amount: Number(row?.fee_amount || 0) || '',
                 joining_date: start,
-                plan_expiry_date: planEndFromStart(feeType, start),
+                plan_expiry_date: planExpiry,
                 payment_plan: row?.fee_type === 'one_time' ? 'full' : (row?.payment_plan || (row?.is_installment ? 'installments' : 'full')),
                 installment_count: row?.installment_count || 4,
                 installment_frequency: frequency,
@@ -3946,7 +3989,7 @@ function createFeeRenewMixin(options = {}) {
             this.renewRow = row;
             this.renewForm = this.emptyRenewForm(row);
             this.renewOpen = true;
-            this.onRenewOptionsChanged();
+            this.$nextTick(() => this.onRenewOptionsChanged());
         },
 
         async openRenewById(bookingId) {
@@ -4007,10 +4050,16 @@ function createFeeRenewMixin(options = {}) {
                 return this.renewForm.plan_expiry_date;
             }
 
-            return planEndFromStart(this.renewForm.fee_type, this.renewForm.joining_date);
+            const feeType = normalizeFeeTypeForPlan(this.renewForm.fee_type);
+            const computed = planEndFromStart(feeType, this.renewForm.joining_date)
+                || planPeriodEndFromStart('monthly', this.renewForm.joining_date);
+
+            return computed || this.renewForm.plan_expiry_date;
         },
 
         onRenewOptionsChanged() {
+            this.renewForm.fee_type = normalizeFeeTypeForRenew(this.renewForm.fee_type);
+
             if (this.renewForm.payment_plan !== 'installments') {
                 this.renewForm.installment_frequency = this.defaultFrequencyForFeeType(this.renewForm.fee_type);
             } else if (this.isFrequencyDisabled(this.renewForm.installment_frequency)) {
@@ -4018,7 +4067,10 @@ function createFeeRenewMixin(options = {}) {
             }
 
             if (this.renewShowsEndDate()) {
-                this.renewForm.plan_expiry_date = this.renewComputedExpiry();
+                const computed = this.renewComputedExpiry();
+                if (computed) {
+                    this.renewForm.plan_expiry_date = computed;
+                }
             }
 
             if (! this.renewForm.first_due_date) {

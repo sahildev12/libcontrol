@@ -65,7 +65,7 @@
                     x-show="rangeOpen"
                     x-cloak
                     x-transition
-                    class="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
+                    class="absolute left-0 right-0 z-20 mt-2 w-full max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-4 shadow-lg sm:left-auto sm:right-0 sm:w-72"
                 >
                     <input type="hidden" name="revenue_months" value="{{ $revenueMonthsCount }}">
                     <div class="space-y-3">
