@@ -704,4 +704,50 @@ class ModulesTest extends TestCase
             'alert_key' => 'new_enquiry:'.\App\Models\Enquiry::query()->value('id'),
         ]);
     }
+
+    public function test_fee_plan_can_be_renewed_with_fresh_billing_period(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $hall = Hall::factory()->create(['branch_id' => $branch->id]);
+        $seat = Seat::factory()->create(['hall_id' => $hall->id, 'seat_number' => 8]);
+        $student = Student::factory()->create(['branch_id' => $branch->id, 'name' => 'Renew Student']);
+
+        $this->actingAs($user)->postJson(route('seat-assignments.store'), [
+            'student_id' => $student->id,
+            'hall_id' => $hall->id,
+            'seat_id' => $seat->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'monthly',
+            'fee_amount' => 1500,
+            'joining_date' => now()->subMonths(2)->toDateString(),
+            'plan_expiry_date' => now()->subDay()->toDateString(),
+        ])->assertCreated();
+
+        $booking = \App\Models\SeatBooking::query()->where('student_id', $student->id)->firstOrFail();
+        $booking->update(['amount_paid' => 1500, 'fee_paid_at' => now()]);
+
+        $newStart = now()->toDateString();
+        $newEnd = now()->addMonth()->subDay()->toDateString();
+
+        $response = $this->actingAs($user)->postJson(route('fees.renew', $booking), [
+            'fee_type' => 'monthly',
+            'fee_amount' => 1800,
+            'joining_date' => $newStart,
+            'plan_expiry_date' => $newEnd,
+            'payment_plan' => 'full',
+            'payment_amount' => 1800,
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('row.fee_amount', '1800.00')
+            ->assertJsonPath('row.plan_status', 'active');
+
+        $booking->refresh();
+        $this->assertSame($newStart, $booking->joining_date->toDateString());
+        $this->assertSame($newEnd, $booking->plan_expiry_date->toDateString());
+        $this->assertSame('1800.00', (string) $booking->amount_paid);
+        $this->assertNotNull($booking->fee_paid_at);
+    }
 }

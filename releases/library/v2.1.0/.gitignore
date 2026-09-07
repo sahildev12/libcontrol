@@ -1,0 +1,108 @@
+# ------------------------------------------------------------------------------
+# Environment & secrets
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+auth.json
+
+# Local SMTP config for the marketing site (use mail-config.example.php as a template)
+/libcontrol-website/mail-config.php
+
+# ------------------------------------------------------------------------------
+# PHP / Composer
+# ------------------------------------------------------------------------------
+/vendor
+composer.phar
+
+# ------------------------------------------------------------------------------
+# Node / frontend build
+# ------------------------------------------------------------------------------
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/.vite
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------------------------------------------
+# Laravel runtime & generated files
+# ------------------------------------------------------------------------------
+/bootstrap/cache/*.php
+/bootstrap/cache/*.ser
+/storage/*.key
+/storage/pail
+/storage/app/install.lock
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/private/
+!/storage/app/public/
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+!/storage/framework/cache/data/
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Local SQLite databases (tests / quick dev)
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# ------------------------------------------------------------------------------
+# Logs & test artifacts
+# ------------------------------------------------------------------------------
+*.log
+.phpunit.result.cache
+/.phpunit.cache
+/coverage/
+coverage.xml
+clover.xml
+.phpstan-cache/
+.pest/
+
+# ------------------------------------------------------------------------------
+# IDE / editor / OS
+# ------------------------------------------------------------------------------
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.phpactor.json
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+.c9/
+.theia/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ------------------------------------------------------------------------------
+# Local dev tooling
+# ------------------------------------------------------------------------------
+Homestead.json
+Homestead.yaml
+/temp/
+project.txt
+
+# ------------------------------------------------------------------------------
+# Release build artifacts
+# Keep README.md, INSTALL.md, and VERSION.txt in git; ignore generated payloads.
+# ------------------------------------------------------------------------------
+/releases/**/staging/
+/releases/**/*.zip
+/releases/**/*.sql
+/releases/**/SETUP-TOKEN.txt

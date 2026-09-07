@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$Version = "2.0.2"
+$Version = "2.1.0"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = Join-Path $Root "releases\library\v$Version"
 $StagingDir = Join-Path $ReleaseDir "staging"
@@ -70,12 +70,16 @@ LIBCONTROL_SYNC_ENDPOINT=https://libcontrol.phenomit.com/api/runtime/sync
 LIBCONTROL_ADMIN_EMAIL=admin@your-domain.com
 LIBCONTROL_ADMIN_PASSWORD=ChangeMeAfterLogin123!
 LIBCONTROL_ADMIN_NAME=Admin
+
+# Optional: path to MySQL bin folder for database backups on Windows/XAMPP (e.g. C:\xampp\mysql\bin)
+# MYSQL_BIN_PATH=
 "@
 
     $excludeDirs = @(
         ".git",
         "node_modules",
         "libcontrol-website",
+        "mobile",
         "tests",
         "releases",
         ".cursor"
@@ -138,6 +142,26 @@ LIBCONTROL_ADMIN_NAME=Admin
             Remove-Item $fullPath -Recurse -Force
         }
     }
+
+    $addonBundlePaths = @(
+        "app\Addons",
+        "database\migrations\addons",
+        "resources\views\attendance",
+        "addons"
+    )
+
+    foreach ($relativePath in $addonBundlePaths) {
+        $fullPath = Join-Path $StagingDir $relativePath
+        if (Test-Path $fullPath) {
+            Remove-Item $fullPath -Recurse -Force
+        }
+    }
+
+    Set-Content -Path (Join-Path $StagingDir "config\addons.php") -Value @"
+<?php
+
+return [];
+"@ -Encoding UTF8
 
     Copy-Item -Path (Join-Path $Root "config\admin-nav-library.php") -Destination (Join-Path $StagingDir "config\admin-nav.php") -Force
 

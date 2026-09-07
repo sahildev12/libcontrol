@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeatBookingController;
 use App\Http\Controllers\SeatController;
+use App\Http\Controllers\DatabaseMaintenanceController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\PublicStudentRegistrationController;
@@ -71,6 +72,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/trial-seats', [TrialSeatController::class, 'store'])->name('trial-seats.store');
 
     Route::post('/students/bulk-delete', [StudentController::class, 'bulkDestroy'])->name('students.bulk-destroy');
+    Route::get('/students/search', [StudentController::class, 'search'])->name('students.search');
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
     Route::post('/students/registration-invites', [StudentRegistrationInviteController::class, 'store'])->name('students.registration-invites.store');
@@ -79,6 +81,8 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/students/{student}/id-card', [StudentController::class, 'idCard'])->name('students.id-card');
     Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
     Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');
+    Route::post('/students/{student}/link-family', [StudentController::class, 'linkFamily'])->name('students.link-family');
+    Route::delete('/students/{student}/family-link', [StudentController::class, 'unlinkFamily'])->name('students.unlink-family');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
 
     Route::get('/seat-assignments', [SeatBookingController::class, 'index'])->name('seat-assignments.index');
@@ -100,6 +104,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/fees', [FeeController::class, 'index'])->name('fees.index');
     Route::post('/fees', [FeeController::class, 'store'])->name('fees.store');
     Route::post('/fees/bulk-delete', [FeeController::class, 'bulkDestroy'])->name('fees.bulk-destroy');
+    Route::post('/fees/{booking}/renew', [FeeController::class, 'renew'])->name('fees.renew');
     Route::post('/fees/{booking}/pay', [FeeController::class, 'markPaid'])->name('fees.pay');
     Route::post('/fees/{booking}/payments', [FeeController::class, 'recordPayment'])->name('fees.payments.store');
     Route::post('/fees/{booking}/installments/{installment}/pay', [FeeController::class, 'payInstallment'])->name('fees.installments.pay');
@@ -123,6 +128,20 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::patch('/settings/platform', [SettingsController::class, 'updatePlatform'])->name('settings.platform.update')->middleware('platform_admin');
     Route::patch('/settings/platform/plan', [SettingsController::class, 'updatePlatformPlan'])->name('settings.platform.plan.update')->middleware('platform_admin');
     Route::post('/settings/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.clear-cache')->middleware('developer_admin');
+    Route::post('/settings/addons/upload', [\App\Http\Controllers\AddonController::class, 'upload'])->name('settings.addons.upload')->middleware('platform_admin');
+    Route::post('/settings/addons/{slug}/install', [\App\Http\Controllers\AddonController::class, 'install'])->name('settings.addons.install')->middleware('platform_admin');
+    Route::post('/settings/addons/{slug}/enable', [\App\Http\Controllers\AddonController::class, 'enable'])->name('settings.addons.enable')->middleware('platform_admin');
+    Route::post('/settings/addons/{slug}/disable', [\App\Http\Controllers\AddonController::class, 'disable'])->name('settings.addons.disable')->middleware('platform_admin');
+    Route::delete('/settings/addons/{slug}', [\App\Http\Controllers\AddonController::class, 'destroy'])->name('settings.addons.destroy')->middleware('platform_admin');
+
+    Route::middleware('developer_admin')->prefix('settings/database')->name('settings.database.')->group(function (): void {
+        Route::get('/status', [DatabaseMaintenanceController::class, 'status'])->name('status');
+        Route::post('/backup', [DatabaseMaintenanceController::class, 'backup'])->name('backup');
+        Route::post('/migrate', [DatabaseMaintenanceController::class, 'migrate'])->name('migrate');
+        Route::post('/restore', [DatabaseMaintenanceController::class, 'restore'])->name('restore');
+        Route::delete('/backup', [DatabaseMaintenanceController::class, 'destroy'])->name('backup.destroy');
+        Route::get('/download', [DatabaseMaintenanceController::class, 'download'])->name('download');
+    });
 });
 
 Route::post('/webhooks/LibControl/seat-map', [WebhookController::class, 'refreshSeatMap'])

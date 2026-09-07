@@ -197,17 +197,58 @@ function createDataTableMixin() {
     };
 }
 
-function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCreated, qrCanvasSize = 120, defaultStudentType = 'regular' }) {
+function validateStudentContactFields(phone, email, { required = false } = {}) {
+    const errors = {};
+    const normalizedPhone = sanitizeDigits(phone);
+    const normalizedEmail = String(email || '').trim();
+
+    if (normalizedPhone) {
+        const phoneError = validateIndianPhone(normalizedPhone, { required: false });
+        if (phoneError) {
+            errors.phone = phoneError;
+        }
+    }
+
+    if (normalizedEmail) {
+        const emailError = validateEmail(normalizedEmail, { required: false });
+        if (emailError) {
+            errors.email = emailError;
+        }
+    }
+
+    if (required && ! normalizedPhone && ! normalizedEmail) {
+        errors.phone = 'Provide at least a phone number or email address.';
+    }
+
+    return errors;
+}
+
+function createStudentFormMixin({
+    storeStudentUrl,
+    inviteStoreUrl,
+    onStudentCreated,
+    qrCanvasSize = 120,
+    defaultStudentType = 'regular',
+    requireStudentContact = false,
+    studentSearchUrl = '/students/search',
+}) {
     return {
         storeStudentUrl,
         inviteStoreUrl,
         qrCanvasSize,
+        requireStudentContact,
+        studentSearchUrl,
         studentCreateOpen: false,
         studentSaving: false,
         copyingRegistrationLink: false,
         registrationInvite: null,
         registrationQrPreviewOpen: false,
         studentFormErrors: {},
+        studentFamilyMode: 'new',
+        linkedFamilyStudent: null,
+        familySearchQuery: '',
+        familySearchResults: [],
+        familySearching: false,
         studentForm: {
             name: '',
             gender: 'male',
@@ -229,6 +270,10 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
 
         resetStudentForm() {
             this.studentFormErrors = {};
+            this.studentFamilyMode = 'new';
+            this.linkedFamilyStudent = null;
+            this.familySearchQuery = '';
+            this.familySearchResults = [];
             this.studentForm = {
                 name: '',
                 gender: 'male',
@@ -243,6 +288,53 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
                 student_type: defaultStudentType,
                 branch_id: this.defaultBranchId || this.branches?.[0]?.id || '',
             };
+        },
+
+        contactRequiredForCreate() {
+            if (! this.requireStudentContact) {
+                return false;
+            }
+
+            if (this.studentFamilyMode === 'linked' && this.linkedFamilyStudent) {
+                const phone = String(this.linkedFamilyStudent.phone || '').trim();
+                const email = String(this.linkedFamilyStudent.email || '').trim();
+
+                return ! phone && ! email;
+            }
+
+            return true;
+        },
+
+        async searchFamilyStudents() {
+            const query = this.familySearchQuery.trim();
+            if (query.length < 2) {
+                this.familySearchResults = [];
+                return;
+            }
+
+            this.familySearching = true;
+            try {
+                const response = await window.axios.get(this.studentSearchUrl, { params: { q: query } });
+                this.familySearchResults = response.data.results || [];
+            } catch (e) {
+                this.familySearchResults = [];
+            } finally {
+                this.familySearching = false;
+            }
+        },
+
+        selectLinkedFamilyStudent(student) {
+            this.linkedFamilyStudent = student;
+            this.familySearchQuery = `${student.student_code} — ${student.name}`;
+            this.familySearchResults = [];
+            this.studentForm.father_name = student.father_name || this.studentForm.father_name;
+            this.studentForm.address = student.address || this.studentForm.address;
+        },
+
+        clearLinkedFamilyStudent() {
+            this.linkedFamilyStudent = null;
+            this.familySearchQuery = '';
+            this.familySearchResults = [];
         },
 
         validateStudentForm() {
@@ -276,14 +368,15 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
             }
 
             this.studentForm.phone = sanitizeDigits(this.studentForm.phone);
-            const phoneError = validateIndianPhone(this.studentForm.phone, { required: true });
-            if (phoneError) {
-                errors.phone = phoneError;
-            }
+            Object.assign(
+                errors,
+                validateStudentContactFields(this.studentForm.phone, this.studentForm.email, {
+                    required: this.contactRequiredForCreate(),
+                }),
+            );
 
-            const emailError = validateEmail(this.studentForm.email, { required: true });
-            if (emailError) {
-                errors.email = emailError;
+            if (this.studentFamilyMode === 'linked' && ! this.linkedFamilyStudent) {
+                errors.family = 'Select an existing student to link this family contact.';
             }
 
             if (this.studentForm.id_proof && ! this.studentForm.id_proof_type) {
@@ -392,6 +485,9 @@ function createStudentFormMixin({ storeStudentUrl, inviteStoreUrl, onStudentCrea
                     data.append(key, this.studentForm[key]);
                 }
             });
+            if (this.studentFamilyMode === 'linked' && this.linkedFamilyStudent?.id) {
+                data.append('link_to_student_id', this.linkedFamilyStudent.id);
+            }
             data.append('status', 'active');
             if (this.studentForm.photo) {
                 data.append('photo', this.studentForm.photo);
@@ -3094,6 +3190,8 @@ Alpine.data('studentTable', (config) => ({
     flash: '',
     error: '',
     bulkDeleteUrl: config.bulkDeleteUrl,
+    requireStudentContact: config.requireStudentContact || false,
+    studentSearchUrl: config.studentSearchUrl || '/students/search',
     viewOpen: false,
     viewLoading: false,
     viewStudent: null,
@@ -3138,6 +3236,8 @@ Alpine.data('studentTable', (config) => ({
         storeStudentUrl: config.storeUrl,
         inviteStoreUrl: config.inviteStoreUrl,
         qrCanvasSize: 60,
+        requireStudentContact: config.requireStudentContact || false,
+        studentSearchUrl: config.studentSearchUrl || '/students/search',
         onStudentCreated(student, ctx) {
             ctx.rows.unshift(student);
             ctx.students = ctx.rows;
@@ -3233,15 +3333,15 @@ Alpine.data('studentTable', (config) => ({
         }
 
         this.editForm.phone = sanitizeDigits(this.editForm.phone);
-        const phoneError = validateIndianPhone(this.editForm.phone, { required: true });
-        if (phoneError) {
-            errors.phone = phoneError;
-        }
+        const contactRequired = this.requireStudentContact
+            && (! this.editForm.is_in_family || this.editForm.is_family_primary);
 
-        const emailError = validateEmail(this.editForm.email, { required: true });
-        if (emailError) {
-            errors.email = emailError;
-        }
+        Object.assign(
+            errors,
+            validateStudentContactFields(this.editForm.phone, this.editForm.email, {
+                required: contactRequired,
+            }),
+        );
 
         if (this.editForm.id_proof && ! this.editForm.id_proof_type) {
             errors.id_proof_type = 'Select the ID document type when uploading a file.';
@@ -3299,6 +3399,38 @@ Alpine.data('studentTable', (config) => ({
             this.closeEdit();
         } catch (e) {
             showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not save student.', 'error');
+        } finally {
+            this.editSaving = false;
+        }
+    },
+
+    async unlinkStudentFamily() {
+        if (! this.editForm.id || ! this.editForm.is_in_family) {
+            return;
+        }
+
+        if (! confirm('Unlink this student from the shared family contact?')) {
+            return;
+        }
+
+        this.editSaving = true;
+        try {
+            const response = await window.axios.delete(`/students/${this.editForm.id}/family-link`);
+            const student = response.data.student;
+            const index = this.rows.findIndex((row) => row.id === student.id);
+            if (index >= 0) {
+                this.rows[index] = student;
+            }
+            this.students = this.rows;
+            this.editForm = {
+                ...this.editForm,
+                ...student,
+                id_proof: null,
+                photo: null,
+            };
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
         } finally {
             this.editSaving = false;
         }
@@ -3685,6 +3817,20 @@ function planEndFromStart(feeType, startIso) {
     return '';
 }
 
+function suggestedRenewalStart(planExpiryIso) {
+    const today = toIsoLocal(new Date());
+
+    if (! planExpiryIso) {
+        return today;
+    }
+
+    const date = new Date(`${planExpiryIso}T00:00:00`);
+    date.setDate(date.getDate() + 1);
+    const next = toIsoLocal(date);
+
+    return next < today ? today : next;
+}
+
 function frequencyIntervalMonths(frequency) {
     if (frequency === 'quarterly') return 3;
     if (frequency === 'half_yearly') return 6;
@@ -3738,7 +3884,242 @@ function suggestedInstallmentCount(firstDueIso, planEndIso, frequency) {
     return Math.max(2, Math.min(12, Math.ceil(months / interval)));
 }
 
+function createFeeRenewMixin(options = {}) {
+    const { updateRows = false, reloadOnSuccess = false } = options;
+
+    return {
+        renewOpen: false,
+        renewRow: null,
+        renewSaving: false,
+        renewForm: {
+            fee_type: 'monthly',
+            fee_amount: '',
+            joining_date: '',
+            plan_expiry_date: '',
+            payment_plan: 'full',
+            installment_count: 4,
+            installment_frequency: 'quarterly',
+            first_due_date: '',
+            payment_amount: '',
+            payment_method: 'cash',
+            payment_date: '',
+        },
+
+        canRenew(row) {
+            if (! row || row.fee_type === 'one_time' || row.plan_status === 'cancelled') {
+                return false;
+            }
+
+            return ['expiring_soon', 'expired'].includes(row.plan_status);
+        },
+
+        emptyRenewForm(row) {
+            const start = suggestedRenewalStart(row?.plan_expiry_date_iso || '');
+            const feeType = row?.fee_type && row.fee_type !== 'one_time' ? row.fee_type : 'monthly';
+            let frequency = row?.installment_frequency || this.defaultFrequencyForFeeType(feeType);
+            if (feeType === 'monthly' && frequency === 'monthly') {
+                frequency = 'quarterly';
+            }
+
+            return {
+                fee_type: feeType,
+                fee_amount: Number(row?.fee_amount || 0) || '',
+                joining_date: start,
+                plan_expiry_date: planEndFromStart(feeType, start),
+                payment_plan: row?.fee_type === 'one_time' ? 'full' : (row?.payment_plan || (row?.is_installment ? 'installments' : 'full')),
+                installment_count: row?.installment_count || 4,
+                installment_frequency: frequency,
+                first_due_date: start,
+                payment_amount: '',
+                payment_method: 'cash',
+                payment_date: new Date().toISOString().slice(0, 10),
+            };
+        },
+
+        openRenew(row) {
+            if (! this.canRenew(row)) {
+                showToast('This plan cannot be renewed from here.', 'error');
+
+                return;
+            }
+
+            this.renewRow = row;
+            this.renewForm = this.emptyRenewForm(row);
+            this.renewOpen = true;
+            this.onRenewOptionsChanged();
+        },
+
+        async openRenewById(bookingId) {
+            const id = Number(bookingId);
+            if (! id) {
+                return;
+            }
+
+            try {
+                let row = (this.rows || []).find((item) => Number(item.id) === id);
+
+                if (! row) {
+                    const response = await window.axios.get(`/fees/${id}`);
+                    row = response.data;
+                }
+
+                this.openRenew(row);
+            } catch (error) {
+                showToast(error.response?.data?.message || 'Could not load this plan for renewal.', 'error');
+                throw error;
+            }
+        },
+
+        closeRenew() {
+            this.renewOpen = false;
+            this.renewRow = null;
+        },
+
+        renewSummary() {
+            const row = this.renewRow;
+            if (! row) {
+                return '';
+            }
+
+            return [
+                row.hall_name,
+                `Seat ${row.seat_number}`,
+                row.time_slot_label || '',
+            ].filter(Boolean).join(' • ');
+        },
+
+        renewShowsEndDate() {
+            return this.renewForm.fee_type !== 'one_time'
+                && ! (this.renewForm.payment_plan === 'installments' && this.renewForm.installment_frequency === 'custom');
+        },
+
+        renewEndDateEditable() {
+            return this.renewForm.fee_type === 'custom';
+        },
+
+        renewEndDateRequired() {
+            return this.renewForm.fee_type === 'custom'
+                || (this.renewForm.payment_plan === 'installments' && this.renewForm.installment_frequency === 'custom');
+        },
+
+        renewComputedExpiry() {
+            if (this.renewForm.fee_type === 'custom' || (this.renewForm.payment_plan === 'installments' && this.renewForm.installment_frequency === 'custom')) {
+                return this.renewForm.plan_expiry_date;
+            }
+
+            return planEndFromStart(this.renewForm.fee_type, this.renewForm.joining_date);
+        },
+
+        onRenewOptionsChanged() {
+            if (this.renewForm.payment_plan !== 'installments') {
+                this.renewForm.installment_frequency = this.defaultFrequencyForFeeType(this.renewForm.fee_type);
+            } else if (this.isFrequencyDisabled(this.renewForm.installment_frequency)) {
+                this.renewForm.installment_frequency = this.defaultFrequencyForFeeType(this.renewForm.fee_type);
+            }
+
+            if (this.renewShowsEndDate()) {
+                this.renewForm.plan_expiry_date = this.renewComputedExpiry();
+            }
+
+            if (! this.renewForm.first_due_date) {
+                this.renewForm.first_due_date = this.renewForm.joining_date;
+            }
+
+            if (this.renewForm.payment_plan === 'installments' && this.renewForm.installment_frequency !== 'custom') {
+                const end = this.renewComputedExpiry() || this.renewForm.plan_expiry_date;
+                this.renewForm.installment_count = Math.max(2, suggestedInstallmentCount(
+                    this.renewForm.first_due_date || this.renewForm.joining_date,
+                    end,
+                    this.renewForm.installment_frequency,
+                ));
+            }
+        },
+
+        renewPayload() {
+            const payload = {
+                fee_type: this.renewForm.fee_type,
+                fee_amount: this.renewForm.fee_amount,
+                joining_date: this.renewForm.joining_date,
+                plan_expiry_date: this.renewComputedExpiry(),
+                payment_plan: this.renewForm.payment_plan,
+            };
+
+            if (payload.payment_plan === 'installments') {
+                payload.installment_frequency = this.renewForm.installment_frequency || this.defaultFrequencyForFeeType(this.renewForm.fee_type);
+                payload.first_due_date = this.renewForm.first_due_date || this.renewForm.joining_date;
+
+                if (payload.installment_frequency !== 'custom') {
+                    payload.installment_count = Math.max(2, this.renewForm.installment_count || suggestedInstallmentCount(
+                        payload.first_due_date,
+                        payload.plan_expiry_date,
+                        payload.installment_frequency,
+                    ));
+                }
+            }
+
+            if (Number(this.renewForm.payment_amount) > 0) {
+                payload.payment_amount = this.renewForm.payment_amount;
+                payload.payment_method = this.renewForm.payment_method || 'cash';
+                payload.payment_date = this.renewForm.payment_date || new Date().toISOString().slice(0, 10);
+            }
+
+            return payload;
+        },
+
+        async submitRenew() {
+            if (! this.renewRow?.id) {
+                return;
+            }
+
+            this.renewSaving = true;
+            try {
+                const response = await window.axios.post(`/fees/${this.renewRow.id}/renew`, this.renewPayload());
+                const updated = response.data.row;
+
+                if (updateRows && Array.isArray(this.rows)) {
+                    const exists = this.rows.some((row) => row.id === updated.id);
+                    this.rows = exists
+                        ? this.rows.map((row) => row.id === updated.id ? updated : row)
+                        : [updated, ...this.rows];
+                }
+
+                showToast(response.data.message);
+                this.closeRenew();
+
+                if (reloadOnSuccess) {
+                    window.setTimeout(() => window.location.reload(), 600);
+                }
+            } catch (e) {
+                showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not renew the plan.', 'error');
+            } finally {
+                this.renewSaving = false;
+            }
+        },
+    };
+}
+
+Alpine.data('feeRenewModal', () => ({
+    ...createFeeRenewMixin({ reloadOnSuccess: true }),
+
+    defaultFrequencyForFeeType(feeType) {
+        if (feeType === 'monthly') {
+            return 'quarterly';
+        }
+
+        return 'monthly';
+    },
+
+    isFrequencyDisabled(frequency) {
+        return this.renewForm.fee_type === 'monthly' && frequency === 'monthly';
+    },
+
+    lockedFieldClass() {
+        return 'mt-1 block w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm';
+    },
+}));
+
 Alpine.data('feeTable', (config) => ({
+    ...createFeeRenewMixin({ updateRows: true }),
     rows: config.rows || [],
     students: config.students || [],
     storeUrl: config.storeUrl,
@@ -3832,6 +4213,20 @@ Alpine.data('feeTable', (config) => ({
         this.$watch('paymentStatusFilter', () => { this.page = 1; });
         this.$watch('dateFrom', () => { this.page = 1; });
         this.$watch('dateTo', () => { this.page = 1; });
+
+        if (config.renewBookingId) {
+            this.$nextTick(() => {
+                this.openRenewById(config.renewBookingId)
+                    .then(() => {
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete('renew');
+                        window.history.replaceState({}, '', url);
+                    })
+                    .catch((error) => {
+                        showToast(error.response?.data?.message || 'Could not open renewal for this plan.', 'error');
+                    });
+            });
+        }
     },
 
     emptyForm() {
@@ -4289,6 +4684,7 @@ Alpine.data('profitLossPanel', (config) => ({
     bulkDeleteUrl: config.bulkDeleteUrl,
     dateFrom: config.dateFrom || '',
     dateTo: config.dateTo || '',
+    rangeOpen: false,
     formOpen: false,
     formMode: 'create',
     editingId: null,
@@ -4371,12 +4767,17 @@ Alpine.data('profitLossPanel', (config) => ({
     async submitForm() {
         this.saving = true;
         try {
+            const payload = { ...this.form };
+            if (! payload.expense_date) {
+                delete payload.expense_date;
+            }
+
             if (this.formMode === 'edit') {
-                const response = await window.axios.patch(`/profit-loss/expenses/${this.editingId}`, this.form);
+                const response = await window.axios.patch(`/profit-loss/expenses/${this.editingId}`, payload);
                 this.rows = this.rows.map((row) => row.id === this.editingId ? response.data.row : row);
                 showToast(response.data.message);
             } else {
-                const response = await window.axios.post(this.storeUrl, this.form);
+                const response = await window.axios.post(this.storeUrl, payload);
                 this.rows.unshift(response.data.row);
                 showToast(response.data.message);
             }
@@ -4618,6 +5019,7 @@ Alpine.data('settingsPage', (config) => ({
         library_open_time: config.settings?.library_open_time || '09:00',
         library_close_time: config.settings?.library_close_time || '18:00',
         is_open_24_hours: config.settings?.is_open_24_hours || false,
+        require_student_contact: config.settings?.require_student_contact || false,
     },
     platformForm: {
         student_code_prefix: config.platformSettings?.student_code_prefix || '',
@@ -4639,6 +5041,24 @@ Alpine.data('settingsPage', (config) => ({
     licenseServerEnabled: config.licenseServerEnabled || false,
     deploymentsUrl: config.deploymentsUrl,
     timezone: config.timezone,
+    installedAddons: config.installedAddons || [],
+    addonInstallUrl: config.addonInstallUrl || '/settings/addons',
+    addonUploadUrl: config.addonUploadUrl || '',
+    settingsTab: 'general',
+    databaseStatus: config.databaseStatus || null,
+    databaseBackups: config.databaseBackups || [],
+    databaseStatusUrl: config.databaseStatusUrl || '',
+    databaseBackupUrl: config.databaseBackupUrl || '',
+    databaseMigrateUrl: config.databaseMigrateUrl || '',
+    databaseRestoreUrl: config.databaseRestoreUrl || '',
+    databaseDeleteUrl: config.databaseDeleteUrl || '',
+    databaseDownloadUrl: config.databaseDownloadUrl || '',
+    databaseBusy: false,
+    lastBackupMessage: '',
+    migrationOutput: '',
+    restoreFilename: '',
+    restoreConfirmation: '',
+    addonBusy: false,
 
     init() {},
 
@@ -4672,6 +5092,7 @@ Alpine.data('settingsPage', (config) => ({
             }
         });
         data.append('is_open_24_hours', this.form.is_open_24_hours ? '1' : '0');
+        data.append('require_student_contact', this.form.require_student_contact ? '1' : '0');
         return data;
     },
 
@@ -4694,6 +5115,113 @@ Alpine.data('settingsPage', (config) => ({
         }
 
         return null;
+    },
+
+    async refreshDatabaseStatus() {
+        if (! this.databaseStatusUrl) {
+            return;
+        }
+
+        try {
+            const response = await window.axios.get(this.databaseStatusUrl);
+            this.databaseStatus = response.data.status;
+            this.databaseBackups = response.data.backups || [];
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        }
+    },
+
+    async createDatabaseBackup() {
+        if (! this.databaseBackupUrl || this.databaseBusy) {
+            return;
+        }
+
+        this.databaseBusy = true;
+        this.lastBackupMessage = '';
+        try {
+            const response = await window.axios.post(this.databaseBackupUrl);
+            this.databaseBackups = response.data.backups || [];
+            this.lastBackupMessage = `Created ${response.data.backup?.filename || 'backup'}.`;
+            showToast(response.data.message || 'Backup created.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.databaseBusy = false;
+        }
+    },
+
+    async runDatabaseMigrations() {
+        if (! this.databaseMigrateUrl || this.databaseBusy) {
+            return;
+        }
+
+        if (! confirm('Run pending database migrations now? Make sure you already created a backup.')) {
+            return;
+        }
+
+        this.databaseBusy = true;
+        this.migrationOutput = '';
+        try {
+            const response = await window.axios.post(this.databaseMigrateUrl);
+            this.databaseStatus = response.data.status;
+            this.migrationOutput = response.data.output || 'Migrations completed.';
+            showToast(response.data.message || 'Migrations completed.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.databaseBusy = false;
+        }
+    },
+
+    async restoreDatabaseBackup() {
+        if (! this.databaseRestoreUrl || ! this.restoreFilename || this.restoreConfirmation !== 'RESTORE' || this.databaseBusy) {
+            return;
+        }
+
+        if (! confirm('This will replace the current database with the selected backup. Continue?')) {
+            return;
+        }
+
+        this.databaseBusy = true;
+        try {
+            const response = await window.axios.post(this.databaseRestoreUrl, {
+                filename: this.restoreFilename,
+                confirmation: this.restoreConfirmation,
+            });
+            this.databaseStatus = response.data.status;
+            this.restoreConfirmation = '';
+            showToast(response.data.message || 'Database restored.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.databaseBusy = false;
+        }
+    },
+
+    async deleteDatabaseBackup(filename) {
+        if (! this.databaseDeleteUrl || ! filename || this.databaseBusy) {
+            return;
+        }
+
+        if (! confirm('Delete this backup file from the server?')) {
+            return;
+        }
+
+        this.databaseBusy = true;
+        try {
+            const response = await window.axios.delete(this.databaseDeleteUrl, {
+                data: { filename },
+            });
+            this.databaseBackups = response.data.backups || [];
+            if (this.restoreFilename === filename) {
+                this.restoreFilename = '';
+            }
+            showToast(response.data.message || 'Backup deleted.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.databaseBusy = false;
+        }
     },
 
     async clearApplicationCache() {
@@ -4779,6 +5307,7 @@ Alpine.data('settingsPage', (config) => ({
             this.form.library_open_time = this.settings.library_open_time || '09:00';
             this.form.library_close_time = this.settings.library_close_time || '18:00';
             this.form.is_open_24_hours = Boolean(this.settings.is_open_24_hours);
+            this.form.require_student_contact = Boolean(this.settings.require_student_contact);
             }
 
             showToast(this.isPlatformAdmin ? 'Settings saved.' : (this.viewingAll ? 'Global settings saved.' : 'Settings saved.'));
@@ -4786,6 +5315,389 @@ Alpine.data('settingsPage', (config) => ({
             showToast(extractAxiosError(e), 'error');
         } finally {
             this.saving = false;
+        }
+    },
+
+    updateInstalledAddon(addon) {
+        const index = this.installedAddons.findIndex((item) => item.slug === addon.slug);
+
+        if (index >= 0) {
+            this.installedAddons[index] = addon;
+        } else if (addon.installed) {
+            this.installedAddons.push(addon);
+        }
+    },
+
+    async uploadAddonPackage() {
+        const input = this.$refs.addonPackage;
+        const file = input?.files?.[0];
+
+        if (! file) {
+            showToast('Choose an addon ZIP file first.', 'error');
+
+            return;
+        }
+
+        if (! this.addonUploadUrl) {
+            showToast('Addon upload is not available.', 'error');
+
+            return;
+        }
+
+        this.addonBusy = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('package', file);
+
+            const response = await window.axios.post(this.addonUploadUrl, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            this.installedAddons = response.data.installed_addons || [];
+            if (input) {
+                input.value = '';
+            }
+            showToast(response.data.message);
+            window.setTimeout(() => window.location.reload(), 600);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.addonBusy = false;
+        }
+    },
+
+    async installAddon(slug) {
+        this.addonBusy = true;
+        try {
+            const response = await window.axios.post(`${this.addonInstallUrl}/${slug}/install`);
+            this.updateInstalledAddon(response.data.addon);
+            showToast(response.data.message);
+            window.setTimeout(() => window.location.reload(), 600);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.addonBusy = false;
+        }
+    },
+
+    async enableAddon(slug) {
+        this.addonBusy = true;
+        try {
+            const response = await window.axios.post(`${this.addonInstallUrl}/${slug}/enable`);
+            this.updateInstalledAddon(response.data.addon);
+            showToast(response.data.message);
+            window.setTimeout(() => window.location.reload(), 600);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.addonBusy = false;
+        }
+    },
+
+    async disableAddon(slug) {
+        if (! confirm('Disable this addon? Its menu and features will be hidden.')) {
+            return;
+        }
+        this.addonBusy = true;
+        try {
+            const response = await window.axios.post(`${this.addonInstallUrl}/${slug}/disable`);
+            this.updateInstalledAddon(response.data.addon);
+            showToast(response.data.message);
+            window.setTimeout(() => window.location.reload(), 600);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.addonBusy = false;
+        }
+    },
+
+    async uninstallAddon(slug) {
+        if (! confirm('Uninstall this addon? Data may remain in the database.')) {
+            return;
+        }
+        this.addonBusy = true;
+        try {
+            const response = await window.axios.delete(`${this.addonInstallUrl}/${slug}`);
+            this.installedAddons = this.installedAddons.filter((item) => item.slug !== slug);
+            if (response.data.addon) {
+                this.updateInstalledAddon(response.data.addon);
+            }
+            showToast(response.data.message);
+            window.setTimeout(() => window.location.reload(), 600);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.addonBusy = false;
+        }
+    },
+}));
+
+Alpine.data('attendancePanel', (config) => ({
+    rows: config.rows || [],
+    summary: config.summary || {},
+    halls: config.halls || [],
+    date: config.date || '',
+    markPresentUrl: config.markPresentUrl || '',
+    studentProfileUrlTemplate: config.studentProfileUrlTemplate || '',
+    indexUrl: config.indexUrl || '/attendance',
+    reportsUrl: config.reportsUrl || '',
+    settingsUrl: config.settingsUrl || '',
+    search: '',
+    statusFilter: '',
+    hallFilter: '',
+    methodFilter: '',
+    page: 1,
+    perPage: 10,
+    selectedIds: [],
+    selectedStudentId: null,
+    profile: null,
+    viewOpen: false,
+    viewLoading: false,
+    viewStudent: null,
+    busy: false,
+    searchKeys: ['student_name', 'student_code', 'hall_name', 'seat_number', 'method_label'],
+
+    init() {
+        this.$watch('search', () => { this.page = 1; });
+        this.$watch('statusFilter', () => { this.page = 1; });
+        this.$watch('hallFilter', () => { this.page = 1; });
+        this.$watch('methodFilter', () => { this.page = 1; });
+        this.$watch('perPage', () => { this.page = 1; });
+
+        if (this.rows.length > 0) {
+            this.selectStudent(this.rows[0]);
+        }
+    },
+
+    percentOf(value) {
+        const total = Number(this.summary.total_students || 0);
+        if (! total) {
+            return 0;
+        }
+
+        return Math.round((Number(value || 0) / total) * 100);
+    },
+
+    statusClass(status) {
+        return {
+            present: 'bg-emerald-100 text-emerald-700',
+            absent: 'bg-rose-100 text-rose-700',
+            late: 'bg-amber-100 text-amber-700',
+        }[status] || 'bg-gray-100 text-gray-600';
+    },
+
+    get filteredRows() {
+        const term = String(this.search || '').trim().toLowerCase();
+
+        return this.rows.filter((row) => {
+            const matchesSearch = ! term || this.searchKeys.some((key) => String(row[key] ?? '').toLowerCase().includes(term));
+            const matchesStatus = ! this.statusFilter || row.status === this.statusFilter;
+            const matchesHall = ! this.hallFilter || String(row.hall_id) === String(this.hallFilter);
+            const matchesMethod = ! this.methodFilter || row.method === this.methodFilter;
+
+            return matchesSearch && matchesStatus && matchesHall && matchesMethod;
+        });
+    },
+
+    get totalPages() {
+        return Math.max(1, Math.ceil(this.filteredRows.length / this.perPage));
+    },
+
+    get paginatedRows() {
+        const start = (this.page - 1) * this.perPage;
+        return this.filteredRows.slice(start, start + this.perPage);
+    },
+
+    prevPage() {
+        this.page = Math.max(1, this.page - 1);
+    },
+
+    nextPage() {
+        this.page = Math.min(this.totalPages, this.page + 1);
+    },
+
+    allPageSelected() {
+        const pageIds = this.paginatedRows.map((row) => String(row.student_id));
+        return pageIds.length > 0 && pageIds.every((id) => this.selectedIds.map(String).includes(id));
+    },
+
+    toggleSelectAll(event) {
+        const pageIds = this.paginatedRows.map((row) => row.student_id);
+        if (event.target.checked) {
+            this.selectedIds = [...new Set([...this.selectedIds, ...pageIds])];
+            return;
+        }
+
+        this.selectedIds = this.selectedIds.filter((id) => ! pageIds.includes(id));
+    },
+
+    async selectStudent(row) {
+        this.selectedStudentId = row.student_id;
+        await this.loadProfile(row.student_id);
+    },
+
+    closeProfile() {
+        this.selectedStudentId = null;
+        this.profile = null;
+    },
+
+    profileUrl(studentId) {
+        return this.studentProfileUrlTemplate.replace('__ID__', studentId);
+    },
+
+    async loadProfile(studentId) {
+        try {
+            const response = await window.axios.get(this.profileUrl(studentId), {
+                params: { date: this.date },
+            });
+            this.profile = response.data;
+        } catch (error) {
+            showToast(extractAxiosError(error), 'error');
+        }
+    },
+
+    updateRow(updatedRow) {
+        if (! updatedRow) {
+            return;
+        }
+
+        this.rows = this.rows.map((row) => (row.student_id === updatedRow.student_id ? updatedRow : row));
+    },
+
+    async markPresent(row) {
+        if (this.busy || row.status !== 'absent') {
+            return;
+        }
+
+        this.busy = true;
+        try {
+            const response = await window.axios.post(this.markPresentUrl, {
+                student_id: row.student_id,
+                date: this.date,
+            });
+
+            if (response.data.summary) {
+                this.summary = response.data.summary;
+            }
+
+            this.updateRow(response.data.row);
+            if (response.data.profile) {
+                this.profile = response.data.profile;
+            }
+
+            showToast(response.data.message || 'Student marked present.');
+        } catch (error) {
+            showToast(extractAxiosError(error), 'error');
+        } finally {
+            this.busy = false;
+        }
+    },
+
+    markRemainingAbsentInfo() {
+        showToast('Students without a check-in are already counted as absent for today.', 'success');
+    },
+
+    openReports() {
+        window.location.href = this.reportsUrl;
+    },
+
+    changeDate() {
+        if (! this.date) {
+            return;
+        }
+
+        const url = new URL(this.indexUrl, window.location.origin);
+        url.searchParams.set('date', this.date);
+        window.location.href = url.toString();
+    },
+
+    async openViewStudent() {
+        const studentId = this.profile?.student_id;
+        if (! studentId) {
+            return;
+        }
+
+        this.viewOpen = true;
+        this.viewLoading = true;
+        this.viewStudent = null;
+
+        try {
+            const response = await window.axios.get(`/students/${studentId}`);
+            this.viewStudent = response.data;
+        } catch (error) {
+            showToast(extractAxiosError(error), 'error');
+            this.closeView();
+        } finally {
+            this.viewLoading = false;
+        }
+    },
+
+    closeView() {
+        this.viewOpen = false;
+        this.viewLoading = false;
+        this.viewStudent = null;
+    },
+}));
+
+Alpine.data('attendanceSettingsPanel', (config) => ({
+    form: {
+        student_qr_enabled: Boolean(config.settings?.student_qr_enabled),
+        staff_gps_enabled: Boolean(config.settings?.staff_gps_enabled),
+        geofence_latitude: config.settings?.geofence_latitude ?? '',
+        geofence_longitude: config.settings?.geofence_longitude ?? '',
+        geofence_radius_meters: config.settings?.geofence_radius_meters ?? 100,
+    },
+    checkInUrl: config.checkInUrl || '',
+    branchId: config.branchId,
+    updateUrl: config.updateUrl,
+    rotateUrl: config.rotateUrl,
+    saving: false,
+
+    init() {},
+
+    get qrImageUrl() {
+        return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(this.checkInUrl)}`;
+    },
+
+    async save() {
+        this.saving = true;
+        try {
+            const response = await window.axios.patch(this.updateUrl, {
+                ...this.form,
+                branch_id: this.branchId,
+            });
+            this.checkInUrl = response.data.check_in_url;
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.saving = false;
+        }
+    },
+
+    async rotateQr() {
+        if (! confirm('Regenerate the QR link? Old posters will stop working.')) {
+            return;
+        }
+        this.saving = true;
+        try {
+            const response = await window.axios.post(this.rotateUrl, { branch_id: this.branchId });
+            this.checkInUrl = response.data.check_in_url;
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.saving = false;
+        }
+    },
+
+    async copyUrl() {
+        try {
+            await navigator.clipboard.writeText(this.checkInUrl);
+            showToast('Check-in link copied.');
+        } catch {
+            showToast('Could not copy link.', 'error');
         }
     },
 }));

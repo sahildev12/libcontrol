@@ -7,7 +7,9 @@ use App\Http\Requests\UpdatePlatformPlanRequest;
 use App\Http\Requests\UpdatePlatformSettingsRequest;
 use App\Models\Branch;
 use App\Models\PlatformSetting;
+use App\Services\Addons\AddonRegistry;
 use App\Services\BranchBrandService;
+use App\Services\DatabaseMaintenanceService;
 use App\Services\LibraryScheduleService;
 use App\Services\PlatformBrandService;
 use App\Services\PlanLimitService;
@@ -25,7 +27,7 @@ class SettingsController extends Controller
         private PlanLimitService $planLimitService,
     ) {}
 
-    public function index(Request $request, BranchBrandService $branchBrandService): View
+    public function index(Request $request, BranchBrandService $branchBrandService, AddonRegistry $addonRegistry, DatabaseMaintenanceService $databaseMaintenance): View
     {
         $branch = $this->optionalActiveBranch($request);
         $viewingAll = $this->viewingAllBranches($request);
@@ -42,7 +44,9 @@ class SettingsController extends Controller
             ? route('developer.deployments.index')
             : null;
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl'));
+        $installedAddons = $addonRegistry->installed()->values()->all();
+
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'installedAddons', 'databaseMaintenance'));
     }
 
     public function clearCache(Request $request): JsonResponse
@@ -125,6 +129,7 @@ class SettingsController extends Controller
             'library_open_time' => $branch->library_open_time ? substr((string) $branch->library_open_time, 0, 5) : '09:00',
             'library_close_time' => $branch->library_close_time ? substr((string) $branch->library_close_time, 0, 5) : '18:00',
             'is_open_24_hours' => (bool) $branch->is_open_24_hours,
+            'require_student_contact' => (bool) $branch->require_student_contact,
             'time_slot_options' => LibraryScheduleService::forBranch($branch)->timeSlotOptions(),
             'logo_with_text_url' => $branchBrandService->logoWithTextUrl($branch),
             'simple_logo_url' => $branchBrandService->simpleLogoUrl($branch),

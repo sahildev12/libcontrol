@@ -8,6 +8,8 @@ These releases **do not** include Dev & Domains or Client Libraries admin tools.
 
 | Version | File | Notes |
 |---------|------|-------|
+| 2.1.0 | `v2.1.0/LibControl-library-v2.1.0.zip` | Attendance addon, shared family contacts, database backup/migrate tools, UI updates |
+| 2.0.2 | `v2.0.2/LibControl-library-v2.0.2.zip` | Previous stable library release |
 | 2.0.0 | `v2.0.0/LibControl-library-v2.0.0.zip` | Setup wizard, auto-migrate, discovery ping to LibControl |
 
 ## Build locally
