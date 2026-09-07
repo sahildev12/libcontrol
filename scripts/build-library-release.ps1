@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$Version = "2.1.0"
+$Version = "2.1.1"
 $Root = Split-Path -Parent $PSScriptRoot
 $ReleaseDir = Join-Path $Root "releases\library\v$Version"
 $StagingDir = Join-Path $ReleaseDir "staging"
