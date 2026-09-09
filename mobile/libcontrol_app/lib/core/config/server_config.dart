@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:libcontrol_app/core/config/student_code_style.dart';
 
 class ServerConfig extends ChangeNotifier {
   ServerConfig._();
@@ -17,11 +20,13 @@ class ServerConfig extends ChangeNotifier {
 
   String? _apiBaseUrl;
   String? _libraryName;
+  StudentCodeStyle? _studentCodeStyle;
   bool _loaded = false;
 
   bool get isLoaded => _loaded;
   bool get isConfigured => _apiBaseUrl != null && _apiBaseUrl!.isNotEmpty;
   String? get libraryName => _libraryName;
+  StudentCodeStyle? get studentCodeStyle => _studentCodeStyle;
 
   String get apiBaseUrl {
     final url = _apiBaseUrl;
@@ -35,6 +40,7 @@ class ServerConfig extends ChangeNotifier {
   Future<void> load() async {
     _apiBaseUrl = await _storage.read(key: _storageKey);
     _libraryName = await _storage.read(key: 'library_name');
+    _studentCodeStyle = await _readStudentCodeStyle();
 
     _loaded = true;
     notifyListeners();
@@ -43,6 +49,7 @@ class ServerConfig extends ChangeNotifier {
   Future<void> setLibrary({
     required String apiBaseUrl,
     String? libraryName,
+    StudentCodeStyle? studentCodeStyle,
   }) async {
     final normalized = normalizeBaseUrl(apiBaseUrl);
     await _storage.write(key: _storageKey, value: normalized);
@@ -56,15 +63,47 @@ class ServerConfig extends ChangeNotifier {
       _libraryName = null;
     }
 
+    if (studentCodeStyle != null && studentCodeStyle.isConfigured) {
+      await _storage.write(
+        key: 'student_code_style',
+        value: jsonEncode(studentCodeStyle.toJson()),
+      );
+      _studentCodeStyle = studentCodeStyle;
+    } else {
+      await _storage.delete(key: 'student_code_style');
+      _studentCodeStyle = null;
+    }
+
     notifyListeners();
   }
 
   Future<void> clear() async {
     await _storage.delete(key: _storageKey);
     await _storage.delete(key: 'library_name');
+    await _storage.delete(key: 'student_code_style');
     _apiBaseUrl = null;
     _libraryName = null;
+    _studentCodeStyle = null;
     notifyListeners();
+  }
+
+  Future<StudentCodeStyle?> _readStudentCodeStyle() async {
+    final raw = await _storage.read(key: 'student_code_style');
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        final style = StudentCodeStyle.fromJson(decoded);
+        return style.isConfigured ? style : null;
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
   }
 
   static String normalizeBaseUrl(String raw) {

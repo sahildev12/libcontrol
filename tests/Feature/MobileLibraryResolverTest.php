@@ -25,6 +25,8 @@ class MobileLibraryResolverTest extends TestCase
             'domain' => 'library.dise.org.in',
             'app_url' => 'https://library.dise.org.in',
             'client_name' => 'Dise Library',
+            'student_code_prefix' => 'DISE',
+            'student_code_padding' => 3,
             'last_seen_at' => now(),
         ]);
 
@@ -35,6 +37,9 @@ class MobileLibraryResolverTest extends TestCase
                 'code' => '482913',
                 'api_base_url' => 'https://library.dise.org.in',
                 'name' => 'Dise Library',
+                'student_code_prefix' => 'DISE',
+                'student_code_padding' => 3,
+                'sample_student_code' => 'DISE-001',
             ]);
     }
 
@@ -66,11 +71,17 @@ class MobileLibraryResolverTest extends TestCase
     {
         Config::set('libcontrol.license_server.enabled', false);
 
-        \App\Models\PlatformSetting::current()->update(['library_code' => '919832']);
+        \App\Models\PlatformSetting::current()->update([
+            'library_code' => '919832',
+            'student_code_prefix' => 'NBR',
+            'student_code_padding' => 3,
+        ]);
 
         $this->getJson('/api/v1/mobile/libraries/919832')
             ->assertOk()
-            ->assertJsonPath('code', '919832');
+            ->assertJsonPath('code', '919832')
+            ->assertJsonPath('student_code_prefix', 'NBR')
+            ->assertJsonPath('sample_student_code', 'NBR-001');
     }
 
     public function test_runtime_sync_updates_library_registry(): void
@@ -86,6 +97,8 @@ class MobileLibraryResolverTest extends TestCase
                 'app' => '2.1.3',
                 'library_code' => '482913',
                 'client_name' => 'Dise Library',
+                'student_code_prefix' => 'DISE',
+                'student_code_padding' => 3,
             ],
         ];
 
@@ -110,6 +123,8 @@ class MobileLibraryResolverTest extends TestCase
             'domain' => 'library.dise.org.in',
             'app_url' => 'https://library.dise.org.in',
             'client_name' => 'Dise Library',
+            'student_code_prefix' => 'DISE',
+            'student_code_padding' => 3,
         ]);
     }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/library_resolver_service.dart';
 import 'package:libcontrol_app/core/config/server_config.dart';
+import 'package:libcontrol_app/core/config/student_code_style.dart';
 import 'package:libcontrol_app/widgets/libcontrol_logo.dart';
 import 'package:libcontrol_app/widgets/primary_button.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -39,6 +40,7 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
     required String apiBaseUrl,
     String? libraryName,
     String? libraryCode,
+    StudentCodeStyle? studentCodeStyle,
   }) async {
     setState(() => _loading = true);
 
@@ -47,6 +49,7 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
       await ServerConfig.instance.setLibrary(
         apiBaseUrl: apiBaseUrl,
         libraryName: libraryName ?? libraryCode,
+        studentCodeStyle: studentCodeStyle,
       );
       widget.onConnected();
     } on LibraryResolverException catch (e) {
@@ -73,6 +76,7 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
         apiBaseUrl: connection.apiBaseUrl,
         libraryName: connection.name,
         libraryCode: connection.code,
+        studentCodeStyle: connection.studentCodeStyle,
       );
     } on LibraryResolverException catch (e) {
       _showMessage(e.message);

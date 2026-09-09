@@ -16,6 +16,8 @@ class LibraryRegistry extends Model
         'domain',
         'app_url',
         'client_name',
+        'student_code_prefix',
+        'student_code_padding',
         'last_seen_at',
     ];
 
@@ -25,6 +27,7 @@ class LibraryRegistry extends Model
     protected function casts(): array
     {
         return [
+            'student_code_padding' => 'integer',
             'last_seen_at' => 'datetime',
         ];
     }
@@ -48,6 +51,8 @@ class LibraryRegistry extends Model
 
         $appUrl = trim((string) ($payload['app_url'] ?? ''));
         $clientName = trim((string) ($meta['client_name'] ?? ''));
+        $prefix = strtoupper(trim((string) ($meta['student_code_prefix'] ?? '')));
+        $padding = max(1, min(6, (int) ($meta['student_code_padding'] ?? 3)));
         $now = now();
 
         static::query()->updateOrCreate(
@@ -56,9 +61,31 @@ class LibraryRegistry extends Model
                 'domain' => $domain,
                 'app_url' => $appUrl !== '' ? rtrim($appUrl, '/') : null,
                 'client_name' => $clientName !== '' ? $clientName : null,
+                'student_code_prefix' => $prefix !== '' ? $prefix : null,
+                'student_code_padding' => $padding,
                 'last_seen_at' => $now,
             ],
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function mobileResolverPayload(): array
+    {
+        $prefix = strtoupper(trim((string) $this->student_code_prefix));
+        $padding = max(1, min(6, (int) ($this->student_code_padding ?: 3)));
+
+        return [
+            'code' => $this->library_code,
+            'api_base_url' => $this->apiBaseUrl(),
+            'name' => $this->client_name,
+            'student_code_prefix' => $prefix !== '' ? $prefix : null,
+            'student_code_padding' => $padding,
+            'sample_student_code' => $prefix !== ''
+                ? sprintf('%s-%0'.$padding.'d', $prefix, 1)
+                : null,
+        ];
     }
 
     public function apiBaseUrl(): string

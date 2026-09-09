@@ -52,6 +52,16 @@
                     class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >Copy code</button>
             </div>
+            @if ($libraryUrlIsLocalhost)
+                <div class="border-t border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
+                    <p class="font-semibold">Mobile app cannot use localhost</p>
+                    <p class="mt-1">Phenomit currently has <code class="rounded bg-white px-1">{{ $libraryPublicUrl }}</code> — phones cannot reach that. Set <code class="rounded bg-white px-1">LIBCONTROL_PUBLIC_URL=http://YOUR_PC_IP:8000</code> in <code class="rounded bg-white px-1">.env</code>, then run <code class="rounded bg-white px-1">php artisan app:sync-runtime-metrics</code>.</p>
+                </div>
+            @else
+                <div class="border-t border-emerald-100 px-5 py-3 text-xs text-gray-600">
+                    Student app server URL on Phenomit: <code class="rounded bg-gray-50 px-1">{{ $libraryPublicUrl }}</code>
+                </div>
+            @endif
         </section>
 
         <section

@@ -15,6 +15,19 @@ class SyncRuntimeMetrics extends Command
     {
         $coordinator->sync();
 
+        $publicUrl = trim((string) config('libcontrol.deployment.public_url', ''));
+        $appUrl = $publicUrl !== '' ? $publicUrl : rtrim((string) config('app.url'), '/');
+        $code = \App\Models\PlatformSetting::current()->library_code;
+
+        $this->info('Synced library to Phenomit.');
+        $this->line("  Library code: {$code}");
+        $this->line("  Student app URL: {$appUrl}");
+
+        $host = strtolower((string) parse_url($appUrl, PHP_URL_HOST));
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            $this->warn('  Phones cannot reach localhost. Set LIBCONTROL_PUBLIC_URL=http://YOUR_PC_IP:8000 in .env and run this again.');
+        }
+
         return self::SUCCESS;
     }
 }

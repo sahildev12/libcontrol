@@ -52,7 +52,7 @@ class SyncCoordinator
 
         $payload = [
             'domain' => $this->currentDomain(),
-            'app_url' => (string) config('app.url'),
+            'app_url' => $this->syncAppUrl(),
             'fingerprint' => $this->fingerprint(),
             'meta' => [
                 'php' => PHP_VERSION,
@@ -60,6 +60,9 @@ class SyncCoordinator
                 'event' => $setupComplete ? 'setup_complete' : 'heartbeat',
                 'library_code' => $settings->library_code,
                 'client_name' => $settings->displayName(),
+                'student_code_prefix' => $settings->student_code_prefix,
+                'student_code_padding' => $settings->student_code_padding
+                    ?: config('libcontrol.defaults.student_code_padding', 3),
             ],
         ];
 
@@ -127,6 +130,17 @@ class SyncCoordinator
         }
 
         return LicensedDeployment::normalizeDomain((string) config('app.url'));
+    }
+
+    private function syncAppUrl(): string
+    {
+        $public = trim((string) config('libcontrol.deployment.public_url', ''));
+
+        if ($public !== '') {
+            return rtrim($public, '/');
+        }
+
+        return rtrim((string) config('app.url'), '/');
     }
 
     private function endpoint(): string

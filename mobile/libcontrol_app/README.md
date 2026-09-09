@@ -31,8 +31,15 @@ flutter build apk --dart-define=RESOLVER_BASE_URL=https://libcontrol.phenomit.co
 
 Before students can enter a library code, your **local admin** must sync once with Phenomit:
 
-1. In `.env`, set `APP_URL` to the URL your phone can reach (same network), e.g. `http://192.168.1.50:8000`
-2. Start Laravel: `php artisan serve --host=0.0.0.0 --port=8000`
+1. Start Laravel: `php artisan serve --host=0.0.0.0 --port=8000`
+2. In `.env`, set the URL your **phone** can reach (from `ipconfig`):
+
+```env
+LIBCONTROL_PUBLIC_URL=http://192.168.1.50:8000
+```
+
+Do **not** use `127.0.0.1` — Phenomit will return that to the app and the phone cannot connect.
+
 3. Sync to Phenomit:
 
 ```bash

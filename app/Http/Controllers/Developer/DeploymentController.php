@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLicensedDeploymentRequest;
 use App\Http\Requests\UpdateLicensedDeploymentRequest;
 use App\Models\InstallationEvent;
+use App\Models\LibraryRegistry;
 use App\Models\LicensedDeployment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,11 @@ class DeploymentController extends Controller
             ->limit(10)
             ->get();
 
-        return view('developer.deployments.index', compact('deployments', 'recentInstallations'));
+        $libraryRegistry = LibraryRegistry::query()
+            ->orderByDesc('last_seen_at')
+            ->get();
+
+        return view('developer.deployments.index', compact('deployments', 'recentInstallations', 'libraryRegistry'));
     }
 
     public function create(): View

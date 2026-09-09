@@ -53,6 +53,49 @@
             </table>
         </div>
 
+        <div class="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+            <div class="border-b border-emerald-100 bg-emerald-50 px-4 py-3">
+                <h2 class="text-sm font-semibold text-gray-900">Mobile library codes</h2>
+                <p class="text-xs text-gray-600">Codes students enter in the app. Looked up at <code class="rounded bg-white px-1">libcontrol.phenomit.com/api/v1/mobile/libraries/{code}</code></p>
+            </div>
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Code</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Library</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Domain</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">App URL</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Student ID style</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Last sync</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($libraryRegistry as $entry)
+                        <tr>
+                            <td class="px-4 py-3">
+                                <code class="rounded bg-emerald-50 px-2 py-0.5 font-bold text-emerald-900">{{ $entry->library_code }}</code>
+                            </td>
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ $entry->client_name ?: '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $entry->domain }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $entry->app_url ?: '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">
+                                @if ($entry->student_code_prefix)
+                                    <code>{{ $entry->student_code_prefix }}-{{ str_pad('1', $entry->student_code_padding ?: 3, '0', STR_PAD_LEFT) }}</code>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">{{ $entry->last_seen_at?->format('d M Y H:i') ?: '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">No library codes synced yet. Client libraries register when they ping Phenomit.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">

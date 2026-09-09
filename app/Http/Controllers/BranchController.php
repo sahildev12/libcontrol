@@ -20,6 +20,8 @@ class BranchController extends Controller
         abort_unless($request->user()?->isPlatformAdmin(), 403);
 
         $libraryCode = PlatformSetting::current()->library_code;
+        $libraryPublicUrl = $this->libraryPublicUrl();
+        $libraryUrlIsLocalhost = $this->isLocalhostUrl($libraryPublicUrl);
 
         $branches = Branch::query()
             ->with('users:id,branch_id,email')
@@ -30,7 +32,7 @@ class BranchController extends Controller
 
         $planSnapshot = app(PlanLimitService::class)->snapshot();
 
-        return view('branch.index', compact('branches', 'planSnapshot', 'libraryCode'));
+        return view('branch.index', compact('branches', 'planSnapshot', 'libraryCode', 'libraryPublicUrl', 'libraryUrlIsLocalhost'));
     }
 
     public function show(Request $request, Branch $branch): JsonResponse
@@ -210,6 +212,24 @@ class BranchController extends Controller
             'message' => "Active branch switched to {$branch->name}.",
             'branch' => ['id' => $branch->id, 'name' => $branch->name],
         ]);
+    }
+
+    private function libraryPublicUrl(): string
+    {
+        $public = trim((string) config('libcontrol.deployment.public_url', ''));
+
+        if ($public !== '') {
+            return rtrim($public, '/');
+        }
+
+        return rtrim((string) config('app.url'), '/');
+    }
+
+    private function isLocalhostUrl(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return in_array($host, ['localhost', '127.0.0.1', '::1'], true);
     }
 
     /**
