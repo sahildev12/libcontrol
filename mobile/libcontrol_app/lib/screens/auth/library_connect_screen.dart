@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/library_resolver_service.dart';
 import 'package:libcontrol_app/core/config/server_config.dart';
+import 'package:libcontrol_app/core/config/library_student_styles.dart';
 import 'package:libcontrol_app/core/config/student_code_style.dart';
 import 'package:libcontrol_app/widgets/libcontrol_logo.dart';
 import 'package:libcontrol_app/widgets/primary_button.dart';
@@ -40,15 +41,30 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
     required String apiBaseUrl,
     String? libraryName,
     String? libraryCode,
+    LibraryStudentStyles? libraryStudentStyles,
     StudentCodeStyle? studentCodeStyle,
   }) async {
     setState(() => _loading = true);
 
     try {
       await _resolver.validateLibraryServer(apiBaseUrl);
+
+      LibraryStudentStyles? styles = libraryStudentStyles;
+      try {
+        styles = await _resolver.fetchBranchStyles(apiBaseUrl);
+      } on LibraryResolverException {
+        if (styles == null && studentCodeStyle != null && studentCodeStyle.isConfigured) {
+          styles = LibraryStudentStyles(
+            multiBranchPrefixes: false,
+            branchStyles: [studentCodeStyle],
+          );
+        }
+      }
+
       await ServerConfig.instance.setLibrary(
         apiBaseUrl: apiBaseUrl,
         libraryName: libraryName ?? libraryCode,
+        libraryStudentStyles: styles,
         studentCodeStyle: studentCodeStyle,
       );
       widget.onConnected();

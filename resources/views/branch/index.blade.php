@@ -78,6 +78,7 @@
                         <tr>
                             <th class="px-4 py-3">Branch</th>
                             <th class="px-4 py-3">Library code</th>
+                            <th class="px-4 py-3">Student ID</th>
                             <th class="px-4 py-3">Contact</th>
                             <th class="px-4 py-3">Halls</th>
                             <th class="px-4 py-3">Students</th>
@@ -90,6 +91,9 @@
                                 <td class="px-4 py-3 font-medium text-gray-900" x-text="branch.name"></td>
                                 <td class="px-4 py-3">
                                     <code class="rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-900" x-text="branch.library_code || libraryCode || '—'"></code>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <code class="rounded bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-900" x-text="branch.sample_student_code || (branch.student_code_prefix ? branch.student_code_prefix + '-001' : '—')"></code>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div x-text="branch.contact_person || '—'"></div>
@@ -107,7 +111,7 @@
                             </tr>
                         </template>
                         <tr x-show="filteredBranches(search).length === 0">
-                            <td colspan="6" class="px-4 py-10 text-center text-gray-500">No branches found.</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-gray-500">No branches found.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -158,6 +162,10 @@
                 </div>
                 <div class="space-y-4 p-5">
                     <div class="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-2">
+                        <div>
+                            <span class="font-medium text-gray-500">Student ID style:</span>
+                            <code class="ml-1 rounded bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-900" x-text="viewBranch?.sample_student_code || '—'"></code>
+                        </div>
                         <div class="sm:col-span-2">
                             <span class="font-medium text-gray-500">Library code:</span>
                             <code class="ml-1 rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-900" x-text="viewBranch?.library_code || libraryCode || '—'"></code>

@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Models\PlatformSetting;
 use App\Models\User;
+use App\Services\BranchStudentCodePrefixService;
 use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,12 +81,17 @@ class BranchController extends Controller
 
         $validated = $request->validated();
 
+        $prefixService = app(BranchStudentCodePrefixService::class);
+        $prefix = $prefixService->generateForBranchName($validated['name']);
+
         $branch = Branch::create([
             'name' => $validated['name'],
             'contact_person' => $validated['contact_person'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? null,
             'address' => $validated['address'] ?? null,
+            'student_code_prefix' => $prefix,
+            'student_code_padding' => $prefixService->defaultPadding(),
         ]);
 
         $this->syncBranchLogin($branch, $validated, true);
@@ -237,10 +243,16 @@ class BranchController extends Controller
      */
     private function serializeBranchRow(Branch $branch, ?string $libraryCode = null): array
     {
+        $prefixService = app(BranchStudentCodePrefixService::class);
+
         return [
             'id' => $branch->id,
             'name' => $branch->name,
             'library_code' => $libraryCode ?? PlatformSetting::current()->library_code,
+            'student_code_prefix' => $branch->student_code_prefix,
+            'sample_student_code' => filled($branch->student_code_prefix)
+                ? $prefixService->sampleCode($branch)
+                : null,
             'contact_person' => $branch->contact_person,
             'phone' => $branch->phone,
             'email' => $branch->email ?: $branch->users->sortBy('id')->first()?->email,

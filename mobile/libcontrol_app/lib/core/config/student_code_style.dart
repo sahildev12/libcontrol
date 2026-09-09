@@ -39,14 +39,24 @@ class StudentCodeStyle {
       return const StudentCodeStyle(prefix: '');
     }
 
+    final prefix = (json['student_code_prefix'] as String? ??
+            json['prefix'] as String? ??
+            '')
+        .trim()
+        .toUpperCase();
+
     return StudentCodeStyle(
-      prefix: (json['student_code_prefix'] as String? ?? '').trim().toUpperCase(),
-      padding: (json['student_code_padding'] as num?)?.toInt() ?? 3,
+      prefix: prefix,
+      padding: (json['student_code_padding'] as num? ?? json['padding'] as num?)
+              ?.toInt() ??
+          3,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'student_code_prefix': prefix,
     'student_code_padding': padding,
+    'prefix': prefix,
+    'padding': padding,
   };
 }

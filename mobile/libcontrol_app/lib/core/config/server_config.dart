@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:libcontrol_app/core/config/library_student_styles.dart';
 import 'package:libcontrol_app/core/config/student_code_style.dart';
 
 class ServerConfig extends ChangeNotifier {
@@ -20,13 +21,14 @@ class ServerConfig extends ChangeNotifier {
 
   String? _apiBaseUrl;
   String? _libraryName;
-  StudentCodeStyle? _studentCodeStyle;
+  LibraryStudentStyles? _libraryStudentStyles;
   bool _loaded = false;
 
   bool get isLoaded => _loaded;
   bool get isConfigured => _apiBaseUrl != null && _apiBaseUrl!.isNotEmpty;
   String? get libraryName => _libraryName;
-  StudentCodeStyle? get studentCodeStyle => _studentCodeStyle;
+  LibraryStudentStyles? get libraryStudentStyles => _libraryStudentStyles;
+  StudentCodeStyle? get studentCodeStyle => _libraryStudentStyles?.singleStyle;
 
   String get apiBaseUrl {
     final url = _apiBaseUrl;
@@ -40,7 +42,7 @@ class ServerConfig extends ChangeNotifier {
   Future<void> load() async {
     _apiBaseUrl = await _storage.read(key: _storageKey);
     _libraryName = await _storage.read(key: 'library_name');
-    _studentCodeStyle = await _readStudentCodeStyle();
+    _libraryStudentStyles = await _readLibraryStudentStyles();
 
     _loaded = true;
     notifyListeners();
@@ -49,6 +51,7 @@ class ServerConfig extends ChangeNotifier {
   Future<void> setLibrary({
     required String apiBaseUrl,
     String? libraryName,
+    LibraryStudentStyles? libraryStudentStyles,
     StudentCodeStyle? studentCodeStyle,
   }) async {
     final normalized = normalizeBaseUrl(apiBaseUrl);
@@ -63,16 +66,26 @@ class ServerConfig extends ChangeNotifier {
       _libraryName = null;
     }
 
-    if (studentCodeStyle != null && studentCodeStyle.isConfigured) {
+    final resolvedStyles = libraryStudentStyles ??
+        (studentCodeStyle != null && studentCodeStyle.isConfigured
+            ? LibraryStudentStyles(
+                multiBranchPrefixes: false,
+                branchStyles: [studentCodeStyle],
+              )
+            : null);
+
+    if (resolvedStyles != null && resolvedStyles.hasConfiguredStyles) {
       await _storage.write(
-        key: 'student_code_style',
-        value: jsonEncode(studentCodeStyle.toJson()),
+        key: 'library_student_styles',
+        value: jsonEncode(resolvedStyles.toJson()),
       );
-      _studentCodeStyle = studentCodeStyle;
+      _libraryStudentStyles = resolvedStyles;
     } else {
-      await _storage.delete(key: 'student_code_style');
-      _studentCodeStyle = null;
+      await _storage.delete(key: 'library_student_styles');
+      _libraryStudentStyles = null;
     }
+
+    await _storage.delete(key: 'student_code_style');
 
     notifyListeners();
   }
@@ -80,24 +93,45 @@ class ServerConfig extends ChangeNotifier {
   Future<void> clear() async {
     await _storage.delete(key: _storageKey);
     await _storage.delete(key: 'library_name');
+    await _storage.delete(key: 'library_student_styles');
     await _storage.delete(key: 'student_code_style');
     _apiBaseUrl = null;
     _libraryName = null;
-    _studentCodeStyle = null;
+    _libraryStudentStyles = null;
     notifyListeners();
   }
 
-  Future<StudentCodeStyle?> _readStudentCodeStyle() async {
-    final raw = await _storage.read(key: 'student_code_style');
-    if (raw == null || raw.isEmpty) {
+  Future<LibraryStudentStyles?> _readLibraryStudentStyles() async {
+    final raw = await _storage.read(key: 'library_student_styles');
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          final styles = LibraryStudentStyles.fromJson(decoded);
+          if (styles.hasConfiguredStyles) {
+            return styles;
+          }
+        }
+      } catch (_) {
+        // Fall through to legacy storage.
+      }
+    }
+
+    final legacyRaw = await _storage.read(key: 'student_code_style');
+    if (legacyRaw == null || legacyRaw.isEmpty) {
       return null;
     }
 
     try {
-      final decoded = jsonDecode(raw);
+      final decoded = jsonDecode(legacyRaw);
       if (decoded is Map<String, dynamic>) {
         final style = StudentCodeStyle.fromJson(decoded);
-        return style.isConfigured ? style : null;
+        if (style.isConfigured) {
+          return LibraryStudentStyles(
+            multiBranchPrefixes: false,
+            branchStyles: [style],
+          );
+        }
       }
     } catch (_) {
       return null;

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:libcontrol_app/core/config/server_config.dart';
+import 'package:libcontrol_app/core/config/library_student_styles.dart';
 import 'package:libcontrol_app/core/config/student_code_style.dart';
 
 class LibraryConnection {
@@ -115,6 +116,39 @@ class LibraryResolverService {
     }
 
     return {};
+  }
+
+  Future<LibraryStudentStyles> fetchBranchStyles(String apiBaseUrl) async {
+    final base = ServerConfig.normalizeBaseUrl(apiBaseUrl);
+    final url = Uri.parse('$base/api/v1/mobile/library/styles');
+
+    try {
+      final response = await _client.get(
+        url,
+        headers: const {'Accept': 'application/json'},
+      );
+
+      final data = _decodeJsonBody(response.body);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw LibraryResolverException(
+          data['message'] as String? ??
+              'Could not load student ID styles from your library.',
+        );
+      }
+
+      return LibraryStudentStyles.fromJson(data);
+    } on LibraryResolverException {
+      rethrow;
+    } on SocketException {
+      throw LibraryResolverException(
+        'Could not reach your library server. Check your internet connection.',
+      );
+    } on http.ClientException {
+      throw LibraryResolverException(
+        'Could not reach your library server. Check your internet connection.',
+      );
+    }
   }
 
   Future<void> validateLibraryServer(String apiBaseUrl) async {

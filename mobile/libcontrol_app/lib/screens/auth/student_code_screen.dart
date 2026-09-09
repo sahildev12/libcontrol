@@ -4,6 +4,7 @@ import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/core/config/server_config.dart';
+import 'package:libcontrol_app/core/config/library_student_styles.dart';
 import 'package:libcontrol_app/core/config/student_code_style.dart';
 import 'package:libcontrol_app/screens/auth/create_pin_screen.dart';
 import 'package:libcontrol_app/screens/auth/login_screen.dart';
@@ -23,7 +24,9 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
   final _studentCodeController = TextEditingController();
   bool _loading = false;
 
-  StudentCodeStyle? get _style => ServerConfig.instance.studentCodeStyle;
+  LibraryStudentStyles? get _styles => ServerConfig.instance.libraryStudentStyles;
+
+  StudentCodeStyle? get _singleStyle => _styles?.singleStyle;
 
   @override
   void dispose() {
@@ -38,11 +41,11 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
   }
 
   String _resolvedStudentCode() {
-    final style = _style;
+    final styles = _styles;
     final input = _studentCodeController.text.trim();
 
-    if (style != null && style.isConfigured) {
-      return style.format(input);
+    if (styles != null && styles.hasConfiguredStyles) {
+      return styles.format(input);
     }
 
     return input.toUpperCase();
@@ -87,8 +90,13 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final style = _style;
-    final usesPrefix = style != null && style.isConfigured;
+    final styles = _styles;
+    final style = _singleStyle;
+    final usesSinglePrefix = style != null && style.isConfigured;
+    final usesMultiPrefix = styles != null &&
+        styles.multiBranchPrefixes &&
+        styles.hasConfiguredStyles;
+    final sampleCodes = styles?.sampleCodes ?? const <String>[];
 
     return Scaffold(
       body: SafeArea(
@@ -120,16 +128,29 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
                     Text('Welcome', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 6),
                     Text(
-                      usesPrefix
-                          ? 'Enter your student number — we add ${style!.displayPrefix} for you'
-                          : 'Enter the student code provided by your library',
+                      usesMultiPrefix
+                          ? 'Enter your full student ID (e.g. ${sampleCodes.take(2).join(' or ')})'
+                          : usesSinglePrefix
+                              ? 'Enter your student number — we add ${style!.displayPrefix} for you'
+                              : 'Enter the student code provided by your library',
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              if (usesPrefix)
+              if (usesMultiPrefix)
+                TextField(
+                  controller: _studentCodeController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    labelText: 'Student ID',
+                    hintText: sampleCodes.isNotEmpty ? sampleCodes.first : 'ABC-001',
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                  ),
+                  onSubmitted: (_) => _loading ? null : _continue(),
+                )
+              else if (usesSinglePrefix)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
