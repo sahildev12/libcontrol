@@ -8,6 +8,7 @@ These releases **do not** include Dev & Domains or Client Libraries admin tools.
 
 | Version | Folder | Notes |
 |---------|--------|-------|
+| 2.1.3 | `v2.1.3/` | Fix UTF-8 BOM in release PHP files (fixes client AJAX/HTML errors) |
 | 2.1.2 | `v2.1.2/` | Student app PIN setup API, persistent expired seat status, seat map edit student, fee list seat column |
 | 2.1.1 | `v2.1.1/` | Fee renew deployment packager bump |
 | 2.1.0 | `v2.1.0/` | Attendance addon, shared family contacts, database backup/migrate tools |

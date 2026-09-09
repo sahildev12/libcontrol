@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
+import 'package:libcontrol_app/core/config/server_config.dart';
 import 'package:libcontrol_app/widgets/centered_page_header.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -50,6 +52,31 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         value: _emailUpdates,
                         activeThumbColor: AppColors.primary,
                         onChanged: (value) => setState(() => _emailUpdates = value),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsCard(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.domain_rounded, color: AppColors.primary),
+                        title: const Text('Connected library'),
+                        subtitle: Text(
+                          ServerConfig.instance.libraryName ??
+                              ServerConfig.instance.apiBaseUrl,
+                        ),
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      ListTile(
+                        leading: const Icon(Icons.swap_horiz_rounded, color: AppColors.primary),
+                        title: const Text('Change library'),
+                        subtitle: const Text('Switch to another library server'),
+                        onTap: () async {
+                          await AuthService.instance.logout();
+                          await ServerConfig.instance.clear();
+                          if (!context.mounted) return;
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                        },
                       ),
                     ],
                   ),

@@ -48,6 +48,8 @@ class SyncCoordinator
             return;
         }
 
+        $settings = \App\Models\PlatformSetting::current();
+
         $payload = [
             'domain' => $this->currentDomain(),
             'app_url' => (string) config('app.url'),
@@ -56,6 +58,8 @@ class SyncCoordinator
                 'php' => PHP_VERSION,
                 'app' => (string) config('app.version', '1.0'),
                 'event' => $setupComplete ? 'setup_complete' : 'heartbeat',
+                'student_code_prefix' => $settings->student_code_prefix,
+                'client_name' => $settings->displayName(),
             ],
         ];
 

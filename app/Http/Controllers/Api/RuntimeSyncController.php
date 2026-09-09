@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\InstallationEvent;
+use App\Models\LibraryRegistry;
 use App\Models\LicensedDeployment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,8 @@ class RuntimeSyncController extends Controller
         if ($domain === '' || $fingerprint === '') {
             return $this->unauthorizedResponse();
         }
+
+        LibraryRegistry::upsertFromSyncPayload($payload);
 
         $eventPayload = [
             'domain' => $domain,

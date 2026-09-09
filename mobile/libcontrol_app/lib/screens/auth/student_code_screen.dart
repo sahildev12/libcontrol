@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
+import 'package:libcontrol_app/core/config/server_config.dart';
 import 'package:libcontrol_app/screens/auth/create_pin_screen.dart';
 import 'package:libcontrol_app/screens/auth/login_screen.dart';
 import 'package:libcontrol_app/widgets/libcontrol_logo.dart';
@@ -33,6 +34,11 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
   }
 
   Future<void> _continue() async {
+    if (!ServerConfig.instance.isConfigured) {
+      _showMessage('Connect to your library first.');
+      return;
+    }
+
     final studentCode = _studentCodeController.text.trim();
 
     if (studentCode.isEmpty) {
@@ -55,6 +61,8 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
       );
     } on ApiException catch (e) {
       _showMessage(e.message);
+    } on StateError {
+      _showMessage('Connect to your library first.');
     } catch (_) {
       _showMessage('Could not verify your student code. Check your connection and try again.');
     } finally {
