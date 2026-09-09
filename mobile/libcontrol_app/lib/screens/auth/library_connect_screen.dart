@@ -64,6 +64,7 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
       await ServerConfig.instance.setLibrary(
         apiBaseUrl: apiBaseUrl,
         libraryName: libraryName ?? libraryCode,
+        libraryCode: libraryCode,
         libraryStudentStyles: styles,
         studentCodeStyle: studentCodeStyle,
       );

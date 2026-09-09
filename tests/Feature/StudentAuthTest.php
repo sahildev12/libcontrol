@@ -88,6 +88,27 @@ class StudentAuthTest extends TestCase
             ->assertJsonMissing(['setup_token']);
     }
 
+    public function test_forgot_pin_issues_setup_token_for_existing_pin(): void
+    {
+        $student = Student::factory()->create([
+            'student_code' => 'LIB-109',
+            'status' => 'active',
+        ]);
+        $student->setAppPin('123456');
+
+        $response = $this->postJson('/api/v1/student/auth/check-code', [
+            'student_code' => 'LIB-109',
+            'forgot_pin' => true,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('needs_pin_setup', true)
+            ->assertJsonPath('pin_reset', true)
+            ->assertJsonStructure(['setup_token']);
+
+        $this->assertSame(64, strlen((string) $response->json('setup_token')));
+    }
+
     public function test_setup_pin_creates_pin_and_returns_token(): void
     {
         $student = Student::factory()->create([

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
+import 'package:libcontrol_app/core/auth/auth_navigation.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/models/student_lookup.dart';
+import 'package:libcontrol_app/screens/auth/create_pin_screen.dart';
 import 'package:libcontrol_app/widgets/primary_button.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -12,10 +14,12 @@ class PinLoginScreen extends StatefulWidget {
     super.key,
     required this.lookup,
     this.onLoginSuccess,
+    this.showBackButton = true,
   });
 
   final StudentLookup lookup;
   final VoidCallback? onLoginSuccess;
+  final bool showBackButton;
 
   @override
   State<PinLoginScreen> createState() => _PinLoginScreenState();
@@ -55,17 +59,46 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
       await AuthService.instance.login(
         studentCode: widget.lookup.studentCode,
         pin: pin,
+        enableBiometric: _rememberMe,
       );
 
-      if (_rememberMe) {
-        await AuthService.instance.setBiometricEnabled(true);
+      if (!mounted) return;
+      if (widget.showBackButton) {
+        completeStudentAuthFlow(context);
       }
-
       widget.onLoginSuccess?.call();
     } on ApiException catch (e) {
       _showMessage(e.message);
     } catch (_) {
       _showMessage('Could not sign in. Check your connection and try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _forgotPin() async {
+    setState(() => _loading = true);
+
+    try {
+      final lookup = await AuthService.instance.requestPinReset(
+        widget.lookup.studentCode,
+      );
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CreatePinScreen(
+            lookup: lookup,
+            isReset: true,
+            onAuthSuccess: widget.onLoginSuccess,
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      _showMessage(e.message);
+    } catch (_) {
+      _showMessage('Could not start PIN reset. Check your connection and try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -105,9 +138,13 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
 
       final unlocked = await AuthService.instance.unlockWithStoredSession();
       if (unlocked) {
+        if (!mounted) return;
+        if (widget.showBackButton) {
+          completeStudentAuthFlow(context);
+        }
         widget.onLoginSuccess?.call();
       } else {
-        _showMessage('Session expired. Sign in with your student code and PIN.');
+        _showMessage('Quick unlock is unavailable. Sign in with your PIN once to restore it.');
       }
     } on PlatformException catch (e) {
       _showMessage(e.message ?? 'Biometric authentication failed.');
@@ -125,6 +162,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: widget.showBackButton,
         title: const Text('Sign In'),
       ),
       body: SafeArea(
@@ -171,39 +209,49 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
                   const Expanded(child: Text('Enable biometric unlock after sign in')),
                 ],
               ),
-              const SizedBox(height: 16),
-              PrimaryButton(
-                label: _loading ? 'Signing In...' : 'Sign In',
-                onPressed: _loading ? null : _signIn,
-              ),
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or', style: TextStyle(color: AppColors.textSecondary)),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _biometricLoading ? null : _biometricLogin,
-                icon: _biometricLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.fingerprint_rounded),
-                label: Text(_biometricLoading ? 'Authenticating...' : 'Use Biometric Login'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _loading || _biometricLoading ? null : _forgotPin,
+                  child: const Text('Forgot PIN?'),
                 ),
               ),
+              const SizedBox(height: 8),
+              PrimaryButton(
+                label: _loading ? 'Signing In...' : 'Sign In',
+                isLoading: _loading,
+                onPressed: _loading ? null : _signIn,
+              ),
+              if (!widget.showBackButton) ...[
+                const SizedBox(height: 24),
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('or', style: TextStyle(color: AppColors.textSecondary)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _biometricLoading ? null : _biometricLogin,
+                  icon: _biometricLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.fingerprint_rounded),
+                  label: Text(_biometricLoading ? 'Authenticating...' : 'Use Biometric Login'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

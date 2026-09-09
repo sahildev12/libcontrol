@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/core/config/server_config.dart';
+import 'package:libcontrol_app/models/student_lookup.dart';
+import 'package:libcontrol_app/screens/auth/biometric_unlock_screen.dart';
 import 'package:libcontrol_app/screens/auth/library_connect_screen.dart';
+import 'package:libcontrol_app/screens/auth/login_screen.dart';
 import 'package:libcontrol_app/screens/auth/student_code_screen.dart';
 import 'package:libcontrol_app/screens/main_shell.dart';
 
@@ -15,6 +18,9 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _initializing = true;
+  bool _preferPinLogin = false;
+  bool _biometricEnabled = false;
+  StudentLookup? _rememberedStudent;
 
   @override
   void initState() {
@@ -31,11 +37,18 @@ class _AuthGateState extends State<AuthGate> {
     super.dispose();
   }
 
+  Future<void> _loadSavedStudentState() async {
+    await AuthService.instance.migrateRememberedStudentFromSession();
+    _biometricEnabled = await AuthService.instance.isBiometricEnabled();
+    _rememberedStudent = await AuthService.instance.getRememberedStudentLookup();
+  }
+
   Future<void> _initialize() async {
     await ServerConfig.instance.load();
+    await _loadSavedStudentState();
 
     if (ServerConfig.instance.isConfigured && !AuthService.instance.isBootstrapped) {
-      await AuthService.instance.bootstrap();
+      AuthService.instance.markBootstrapped();
     }
 
     if (mounted) {
@@ -43,16 +56,27 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  void _onStateChanged() {
+  Future<void> _onStateChanged() async {
+    await _loadSavedStudentState();
     if (mounted) setState(() {});
   }
 
   Future<void> _onLibraryConnected() async {
-    setState(() => _initializing = true);
-    await AuthService.instance.bootstrap();
+    setState(() {
+      _initializing = true;
+      _preferPinLogin = false;
+    });
+
+    await _loadSavedStudentState();
+    AuthService.instance.markBootstrapped();
+
     if (mounted) {
       setState(() => _initializing = false);
     }
+  }
+
+  void _usePinInstead() {
+    setState(() => _preferPinLogin = true);
   }
 
   @override
@@ -83,8 +107,25 @@ class _AuthGateState extends State<AuthGate> {
       return const MainShell();
     }
 
+    final rememberedStudent = _rememberedStudent;
+
+    if (rememberedStudent != null) {
+      if (_preferPinLogin || !_biometricEnabled) {
+        return PinLoginScreen(
+          lookup: rememberedStudent,
+          onLoginSuccess: _onStateChanged,
+          showBackButton: false,
+        );
+      }
+
+      return BiometricUnlockScreen(
+        onUnlocked: _onStateChanged,
+        onUseStudentCode: _usePinInstead,
+      );
+    }
+
     return StudentCodeScreen(
-      onAuthSuccess: () {},
+      onAuthSuccess: _onStateChanged,
     );
   }
 }

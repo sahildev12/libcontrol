@@ -62,8 +62,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         leading: const Icon(Icons.domain_rounded, color: AppColors.primary),
                         title: const Text('Connected library'),
                         subtitle: Text(
-                          ServerConfig.instance.libraryName ??
-                              ServerConfig.instance.apiBaseUrl,
+                          [
+                            if (ServerConfig.instance.libraryCode != null)
+                              'Code ${ServerConfig.instance.libraryCode}',
+                            ServerConfig.instance.libraryName ??
+                                ServerConfig.instance.apiBaseUrl,
+                          ].join(' · '),
                         ),
                       ),
                       const Divider(height: 1, color: AppColors.border),

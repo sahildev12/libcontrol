@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
+import 'package:libcontrol_app/core/auth/auth_navigation.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/models/student_lookup.dart';
 import 'package:libcontrol_app/widgets/primary_button.dart';
@@ -11,10 +12,14 @@ class CreatePinScreen extends StatefulWidget {
     super.key,
     required this.lookup,
     this.onAuthSuccess,
+    this.isReset = false,
+    this.showBackButton = true,
   });
 
   final StudentLookup lookup;
   final VoidCallback? onAuthSuccess;
+  final bool isReset;
+  final bool showBackButton;
 
   @override
   State<CreatePinScreen> createState() => _CreatePinScreenState();
@@ -60,14 +65,18 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       await AuthService.instance.setupPin(
         pin: pin,
         pinConfirmation: confirmation,
+        setupToken: widget.lookup.setupToken,
       );
 
       if (!mounted) return;
+      if (widget.showBackButton) {
+        completeStudentAuthFlow(context);
+      }
       widget.onAuthSuccess?.call();
     } on ApiException catch (e) {
       _showMessage(e.message);
     } catch (_) {
-      _showMessage('Could not create your PIN. Please try again.');
+      _showMessage('Could not save your PIN. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -75,15 +84,15 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.isReset ? 'Reset PIN' : 'Create PIN';
+    final subtitle = widget.isReset
+        ? 'Choose a new 4–6 digit PIN for signing in to the app.'
+        : 'Create a 4–6 digit PIN for signing in to the app.';
+
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            AuthService.instance.clearPinSetup();
-            Navigator.of(context).pop();
-          },
-        ),
-        title: const Text('Create PIN'),
+        automaticallyImplyLeading: widget.showBackButton,
+        title: Text(title),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -101,9 +110,9 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Create a 4–6 digit PIN for signing in to the app.',
-                style: TextStyle(color: AppColors.textSecondary),
+              Text(
+                subtitle,
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 28),
               TextField(
@@ -115,7 +124,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                   LengthLimitingTextInputFormatter(6),
                 ],
                 decoration: InputDecoration(
-                  labelText: 'PIN',
+                  labelText: widget.isReset ? 'New PIN' : 'PIN',
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscurePin = !_obscurePin),
@@ -144,7 +153,10 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
               ),
               const SizedBox(height: 24),
               PrimaryButton(
-                label: _loading ? 'Creating PIN...' : 'Create PIN',
+                label: _loading
+                    ? (widget.isReset ? 'Saving PIN...' : 'Creating PIN...')
+                    : (widget.isReset ? 'Save new PIN' : 'Create PIN'),
+                isLoading: _loading,
                 onPressed: _loading ? null : _createPin,
               ),
             ],

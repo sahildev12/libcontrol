@@ -18,13 +18,16 @@ class StudentAuthApiController extends Controller
     {
         $validated = $request->validate([
             'student_code' => ['required', 'string', 'max:50'],
+            'forgot_pin' => ['sometimes', 'boolean'],
         ]);
 
         $student = $this->studentAuth->findActiveStudentByCode($validated['student_code']);
-        $needsPinSetup = ! $student->hasAppPin();
+        $forgotPin = (bool) ($validated['forgot_pin'] ?? false);
+        $needsPinSetup = ! $student->hasAppPin() || $forgotPin;
 
         $payload = [
             'needs_pin_setup' => $needsPinSetup,
+            'pin_reset' => $forgotPin,
             'student' => $this->studentAuth->serializeLookup($student),
         ];
 
