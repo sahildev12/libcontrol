@@ -28,41 +28,73 @@ class LibraryResolverService {
 
   final http.Client _client;
 
+  /// Accepts a numeric library code; non-digits are stripped.
+  static String normalizeLibraryCode(String input) {
+    return input.replaceAll(RegExp(r'\D'), '');
+  }
+
   Future<LibraryConnection> resolveCode(String code) async {
-    final normalizedCode = code.trim().toUpperCase();
+    final normalizedCode = normalizeLibraryCode(code);
     if (normalizedCode.isEmpty) {
       throw LibraryResolverException('Enter your library code.');
     }
 
     final resolverBase = ServerConfig.resolverBaseUrl.replaceAll(RegExp(r'/+$'), '');
-    final url = '$resolverBase/api/v1/mobile/libraries/$normalizedCode';
+    final url = Uri.parse(resolverBase).replace(
+      path: '/api/v1/mobile/libraries/${Uri.encodeComponent(normalizedCode)}',
+    );
 
     final response = await _client.get(
-      Uri.parse(url),
+      url,
       headers: const {'Accept': 'application/json'},
     );
 
-    Map<String, dynamic> data = {};
-    if (response.body.isNotEmpty) {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
-        data = decoded;
-      }
-    }
+    final data = _decodeJsonBody(response.body);
 
     if (response.statusCode == 404) {
       throw LibraryResolverException(
-        data['message'] as String? ?? 'Library not found. Check the code with your library staff.',
+        data['message'] as String? ??
+            'Library not found. Check the code with your library staff.',
+      );
+    }
+
+    if (response.statusCode >= 500) {
+      throw LibraryResolverException(
+        'Library lookup is temporarily unavailable. Scan the attendance QR code from your branch instead.',
       );
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = data['message'] as String?;
+      if (message != null && message.isNotEmpty && message.toLowerCase() != 'server error') {
+        throw LibraryResolverException(message);
+      }
+
       throw LibraryResolverException(
-        data['message'] as String? ?? 'Could not look up your library. Try again later.',
+        'Could not look up your library. Scan the attendance QR code or try again later.',
       );
     }
 
     return LibraryConnection.fromJson(data);
+  }
+
+  Map<String, dynamic> _decodeJsonBody(String body) {
+    if (body.isEmpty) {
+      return {};
+    }
+
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {
+      throw LibraryResolverException(
+        'Could not reach the library lookup service. Scan the attendance QR code from your branch instead.',
+      );
+    }
+
+    return {};
   }
 
   Future<void> validateLibraryServer(String apiBaseUrl) async {

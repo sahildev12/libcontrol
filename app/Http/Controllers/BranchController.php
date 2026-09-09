@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePlatformBranchRequest;
 use App\Http\Requests\UpdateBranchRequest;
 use App\Models\Branch;
+use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
@@ -18,16 +19,18 @@ class BranchController extends Controller
     {
         abort_unless($request->user()?->isPlatformAdmin(), 403);
 
+        $libraryCode = PlatformSetting::current()->library_code;
+
         $branches = Branch::query()
             ->with('users:id,branch_id,email')
             ->withCount(['users', 'halls', 'students'])
             ->orderBy('name')
             ->get()
-            ->map(fn (Branch $branch) => $this->serializeBranchRow($branch));
+            ->map(fn (Branch $branch) => $this->serializeBranchRow($branch, $libraryCode));
 
         $planSnapshot = app(PlanLimitService::class)->snapshot();
 
-        return view('branch.index', compact('branches', 'planSnapshot'));
+        return view('branch.index', compact('branches', 'planSnapshot', 'libraryCode'));
     }
 
     public function show(Request $request, Branch $branch): JsonResponse
@@ -61,8 +64,10 @@ class BranchController extends Controller
                 'created_at' => $hall->created_at?->format('M d, Y'),
             ]);
 
+        $libraryCode = PlatformSetting::current()->library_code;
+
         return response()->json([
-            ...$this->serializeBranchRow($branch),
+            ...$this->serializeBranchRow($branch, $libraryCode),
             'halls' => $halls,
         ]);
     }
@@ -210,11 +215,12 @@ class BranchController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function serializeBranchRow(Branch $branch): array
+    private function serializeBranchRow(Branch $branch, ?string $libraryCode = null): array
     {
         return [
             'id' => $branch->id,
             'name' => $branch->name,
+            'library_code' => $libraryCode ?? PlatformSetting::current()->library_code,
             'contact_person' => $branch->contact_person,
             'phone' => $branch->phone,
             'email' => $branch->email ?: $branch->users->sortBy('id')->first()?->email,

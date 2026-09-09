@@ -10,14 +10,14 @@ class MobileLibraryResolverController extends Controller
 {
     public function show(string $code): JsonResponse
     {
-        $prefix = strtoupper(trim($code));
+        $libraryCode = preg_replace('/\D+/', '', trim($code)) ?? '';
 
-        if ($prefix === '' || strlen($prefix) > 20) {
+        if ($libraryCode === '' || strlen($libraryCode) > 12) {
             abort(404, 'Library not found.');
         }
 
         $entry = LibraryRegistry::query()
-            ->where('student_code_prefix', $prefix)
+            ->where('library_code', $libraryCode)
             ->first();
 
         if (! $entry) {
@@ -25,7 +25,7 @@ class MobileLibraryResolverController extends Controller
         }
 
         return response()->json([
-            'code' => $entry->student_code_prefix,
+            'code' => $entry->library_code,
             'api_base_url' => $entry->apiBaseUrl(),
             'name' => $entry->client_name,
         ]);

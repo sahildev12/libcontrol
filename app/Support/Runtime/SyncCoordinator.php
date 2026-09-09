@@ -58,7 +58,7 @@ class SyncCoordinator
                 'php' => PHP_VERSION,
                 'app' => (string) config('app.version', '1.0'),
                 'event' => $setupComplete ? 'setup_complete' : 'heartbeat',
-                'student_code_prefix' => $settings->student_code_prefix,
+                'library_code' => $settings->library_code,
                 'client_name' => $settings->displayName(),
             ],
         ];

@@ -3191,6 +3191,8 @@ Alpine.data('platformBranchesPage', (config) => ({
     branches: config.branches || [],
     planSnapshot: config.planSnapshot || null,
     storeUrl: config.storeUrl,
+    libraryCode: config.libraryCode || '',
+    pageTab: 'branches',
     createOpen: false,
     editOpen: false,
     viewOpen: false,
@@ -3446,6 +3448,20 @@ Alpine.data('platformBranchesPage', (config) => ({
             showToast('Password copied.');
         } catch (e) {
             showToast('Could not copy password.', 'error');
+        }
+    },
+
+    async copyLibraryCode(code = null) {
+        const value = String(code || this.libraryCode || '').trim();
+        if (! value) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(value);
+            showToast('Library code copied.');
+        } catch (e) {
+            showToast('Could not copy library code.', 'error');
         }
     },
 

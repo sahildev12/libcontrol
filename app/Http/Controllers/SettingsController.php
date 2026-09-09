@@ -143,6 +143,7 @@ class SettingsController extends Controller
     private function serializePlatformSettings(PlatformSetting $settings): array
     {
         return [
+            'library_code' => $settings->library_code,
             'student_code_prefix' => $settings->student_code_prefix,
             'student_code_padding' => $settings->student_code_padding ?: config('libcontrol.defaults.student_code_padding'),
             'sample_student_code' => $this->studentCodeService->preview(),

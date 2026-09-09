@@ -4,6 +4,7 @@
             branches: @js($branches),
             planSnapshot: @js($planSnapshot),
             storeUrl: @js(route('branch.store')),
+            libraryCode: @js($libraryCode),
         })"
         x-init="init()"
     >
@@ -22,7 +23,39 @@
             · Branches <span x-text="planSnapshot.usage.branches"></span>/<span x-text="planSnapshot.limits.max_branches ?? '∞'"></span>
         </div>
 
+        <div class="mt-4 flex gap-1 border-b border-gray-200">
+            <button
+                type="button"
+                @click="pageTab = 'branches'"
+                class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                :class="pageTab === 'branches' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            >Branches</button>
+            <button
+                type="button"
+                @click="pageTab = 'library-code'"
+                class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                :class="pageTab === 'library-code' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            >Library code</button>
+        </div>
+
+        <section x-show="pageTab === 'library-code'" x-cloak class="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+            <div class="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+                <h2 class="text-sm font-semibold text-gray-900">Library code</h2>
+                <p class="mt-1 text-xs text-gray-600">Auto-generated code for the student mobile app. Share this with students who connect manually.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 p-5">
+                <code class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-2xl font-bold tracking-widest text-emerald-900" x-text="libraryCode || '—'"></code>
+                <button
+                    type="button"
+                    @click="copyLibraryCode()"
+                    :disabled="!libraryCode"
+                    class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >Copy code</button>
+            </div>
+        </section>
+
         <section
+            x-show="pageTab === 'branches'"
             class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
             x-data="{ search: '' }"
         >
@@ -34,6 +67,7 @@
                     <thead class="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         <tr>
                             <th class="px-4 py-3">Branch</th>
+                            <th class="px-4 py-3">Library code</th>
                             <th class="px-4 py-3">Contact</th>
                             <th class="px-4 py-3">Halls</th>
                             <th class="px-4 py-3">Students</th>
@@ -44,6 +78,9 @@
                         <template x-for="branch in filteredBranches(search)" :key="branch.id">
                             <tr class="hover:bg-indigo-50/40">
                                 <td class="px-4 py-3 font-medium text-gray-900" x-text="branch.name"></td>
+                                <td class="px-4 py-3">
+                                    <code class="rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-900" x-text="branch.library_code || libraryCode || '—'"></code>
+                                </td>
                                 <td class="px-4 py-3">
                                     <div x-text="branch.contact_person || '—'"></div>
                                     <div class="text-xs text-gray-500" x-text="branch.phone || ''"></div>
@@ -60,7 +97,7 @@
                             </tr>
                         </template>
                         <tr x-show="filteredBranches(search).length === 0">
-                            <td colspan="5" class="px-4 py-10 text-center text-gray-500">No branches found.</td>
+                            <td colspan="6" class="px-4 py-10 text-center text-gray-500">No branches found.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -111,6 +148,15 @@
                 </div>
                 <div class="space-y-4 p-5">
                     <div class="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-2">
+                        <div class="sm:col-span-2">
+                            <span class="font-medium text-gray-500">Library code:</span>
+                            <code class="ml-1 rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-900" x-text="viewBranch?.library_code || libraryCode || '—'"></code>
+                            <button
+                                type="button"
+                                @click="copyLibraryCode(viewBranch?.library_code || libraryCode)"
+                                class="ml-2 rounded border border-emerald-300 bg-white px-2 py-0.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                            >Copy</button>
+                        </div>
                         <div><span class="font-medium text-gray-500">Contact:</span> <span x-text="viewBranch?.contact_person || '—'"></span></div>
                         <div><span class="font-medium text-gray-500">Phone:</span> <span x-text="viewBranch?.phone || '—'"></span></div>
                         <div><span class="font-medium text-gray-500">Email:</span> <span x-text="viewBranch?.email || viewBranch?.login_email || '—'"></span></div>

@@ -21,18 +21,18 @@ class MobileLibraryResolverTest extends TestCase
     public function test_resolver_returns_library_details_by_code(): void
     {
         LibraryRegistry::query()->create([
-            'student_code_prefix' => 'DISE',
+            'library_code' => '482913',
             'domain' => 'library.dise.org.in',
             'app_url' => 'https://library.dise.org.in',
             'client_name' => 'Dise Library',
             'last_seen_at' => now(),
         ]);
 
-        $response = $this->getJson('/api/v1/mobile/libraries/DISE');
+        $response = $this->getJson('/api/v1/mobile/libraries/482913');
 
         $response->assertOk()
             ->assertJson([
-                'code' => 'DISE',
+                'code' => '482913',
                 'api_base_url' => 'https://library.dise.org.in',
                 'name' => 'Dise Library',
             ]);
@@ -40,8 +40,26 @@ class MobileLibraryResolverTest extends TestCase
 
     public function test_resolver_returns_404_for_unknown_code(): void
     {
-        $this->getJson('/api/v1/mobile/libraries/UNKNOWN')
+        $this->getJson('/api/v1/mobile/libraries/999999')
             ->assertNotFound();
+    }
+
+    public function test_resolver_strips_non_digits_from_input(): void
+    {
+        LibraryRegistry::query()->create([
+            'library_code' => '482913',
+            'domain' => 'library.example.com',
+            'app_url' => 'https://library.example.com',
+            'client_name' => 'Example Library',
+            'last_seen_at' => now(),
+        ]);
+
+        $this->getJson('/api/v1/mobile/libraries/482-913')
+            ->assertOk()
+            ->assertJson([
+                'code' => '482913',
+                'api_base_url' => 'https://library.example.com',
+            ]);
     }
 
     public function test_runtime_sync_updates_library_registry(): void
@@ -55,7 +73,7 @@ class MobileLibraryResolverTest extends TestCase
             'meta' => [
                 'php' => PHP_VERSION,
                 'app' => '2.1.3',
-                'student_code_prefix' => 'DISE',
+                'library_code' => '482913',
                 'client_name' => 'Dise Library',
             ],
         ];
@@ -77,7 +95,7 @@ class MobileLibraryResolverTest extends TestCase
         )->assertOk();
 
         $this->assertDatabaseHas('library_registry', [
-            'student_code_prefix' => 'DISE',
+            'library_code' => '482913',
             'domain' => 'library.dise.org.in',
             'app_url' => 'https://library.dise.org.in',
             'client_name' => 'Dise Library',

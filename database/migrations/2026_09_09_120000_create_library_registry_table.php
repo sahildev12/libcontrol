@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('library_registry', function (Blueprint $table) {
             $table->id();
-            $table->string('student_code_prefix', 20)->unique();
+            $table->string('library_code', 12)->unique();
             $table->string('domain');
             $table->string('app_url')->nullable();
             $table->string('client_name')->nullable();

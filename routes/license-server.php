@@ -10,5 +10,6 @@ Route::middleware(['license_server', 'throttle:60,1'])
             ->name('runtime.sync');
 
         Route::get('/api/v1/mobile/libraries/{code}', [MobileLibraryResolverController::class, 'show'])
+            ->where('code', '[A-Za-z0-9\\-]+')
             ->name('mobile.libraries.show');
     });

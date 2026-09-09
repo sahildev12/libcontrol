@@ -3,6 +3,7 @@
         x-data="settingsPage({
             settings: @js($settings),
             platformSettings: @js([
+                'library_code' => $platformSettings->library_code,
                 'student_code_prefix' => $platformSettings->student_code_prefix,
                 'student_code_padding' => $platformSettings->student_code_padding ?: config('libcontrol.defaults.student_code_padding'),
                 'sample_student_code' => app(\App\Services\StudentCodeService::class)->preview(),
@@ -79,10 +80,20 @@
 
         <form x-show="settingsTab === 'general' || ! isDeveloperAdmin" @submit.prevent="saveSettings()" class="mt-4 space-y-6">
             @if ($isPlatformAdmin)
+                <section class="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+                    <div class="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+                        <h2 class="text-sm font-semibold text-gray-900">Library code</h2>
+                        <p class="mt-1 text-xs text-gray-600">Auto-generated code for the student mobile app. Share this with students who connect manually.</p>
+                    </div>
+                    <div class="p-5">
+                        <code class="inline-block rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-lg font-bold tracking-widest text-emerald-900" x-text="platformSettings.library_code || '—'"></code>
+                    </div>
+                </section>
+
                 <section class="overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-sm">
                     <div class="border-b border-indigo-100 bg-indigo-50 px-5 py-4">
                         <h2 class="text-sm font-semibold text-gray-900">Student ID numbers</h2>
-                        <p class="mt-1 text-xs text-gray-600">Every new student gets an ID like this. All libraries share the same series.</p>
+                        <p class="mt-1 text-xs text-gray-600">Every new student gets an ID like this. All branches share the same series.</p>
                     </div>
                     <div class="grid gap-4 p-5 md:grid-cols-2">
                         <div>

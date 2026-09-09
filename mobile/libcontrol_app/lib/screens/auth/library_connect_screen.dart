@@ -126,17 +126,17 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
               Text('Connect to your library', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
               const Text(
-                'Enter your library code or scan the attendance QR code from your branch.',
+                'Enter the 6-digit library code from your branch staff, or scan the attendance QR code.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 32),
               TextField(
                 controller: _codeController,
-                textCapitalization: TextCapitalization.characters,
+                keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Library code',
-                  hintText: 'e.g. DISE',
+                  hintText: 'e.g. 482913',
                   border: OutlineInputBorder(),
                 ),
                 onSubmitted: (_) => _continueWithCode(),

@@ -12,7 +12,7 @@ class LibraryRegistry extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'student_code_prefix',
+        'library_code',
         'domain',
         'app_url',
         'client_name',
@@ -35,9 +35,9 @@ class LibraryRegistry extends Model
     public static function upsertFromSyncPayload(array $payload): void
     {
         $meta = is_array($payload['meta'] ?? null) ? $payload['meta'] : [];
-        $prefix = strtoupper(trim((string) ($meta['student_code_prefix'] ?? '')));
+        $code = preg_replace('/\D+/', '', (string) ($meta['library_code'] ?? '')) ?? '';
 
-        if ($prefix === '') {
+        if ($code === '') {
             return;
         }
 
@@ -51,7 +51,7 @@ class LibraryRegistry extends Model
         $now = now();
 
         static::query()->updateOrCreate(
-            ['student_code_prefix' => $prefix],
+            ['library_code' => $code],
             [
                 'domain' => $domain,
                 'app_url' => $appUrl !== '' ? rtrim($appUrl, '/') : null,

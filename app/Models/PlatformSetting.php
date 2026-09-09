@@ -10,6 +10,7 @@ class PlatformSetting extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'library_code',
         'student_code_prefix',
         'student_code_padding',
         'plan_tier',
@@ -38,10 +39,17 @@ class PlatformSetting extends Model
 
     public static function current(): self
     {
-        return static::query()->firstOrCreate([], [
+        $settings = static::query()->firstOrCreate([], [
             'student_code_padding' => config('libcontrol.defaults.student_code_padding', 3),
             'plan_tier' => config('libcontrol.defaults.plan_tier', 'starter'),
         ]);
+
+        if (blank($settings->library_code)) {
+            app(\App\Services\LibraryCodeService::class)->ensure($settings);
+            $settings = $settings->fresh();
+        }
+
+        return $settings;
     }
 
     public function planTier(): string
