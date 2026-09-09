@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -19,25 +20,47 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = false,
   }) async {
-    final response = await _client.post(
-      Uri.parse(url),
-      headers: _headers(authenticated: authenticated),
-      body: jsonEncode(body ?? {}),
-    );
+    try {
+      final response = await _client.post(
+        Uri.parse(url),
+        headers: _headers(authenticated: authenticated),
+        body: jsonEncode(body ?? {}),
+      );
 
-    return _decodeResponse(response);
+      return _decodeResponse(response);
+    } catch (error) {
+      throw _connectionError(error);
+    }
   }
 
   Future<Map<String, dynamic>> getJson(
     String url, {
     bool authenticated = false,
   }) async {
-    final response = await _client.get(
-      Uri.parse(url),
-      headers: _headers(authenticated: authenticated),
-    );
+    try {
+      final response = await _client.get(
+        Uri.parse(url),
+        headers: _headers(authenticated: authenticated),
+      );
 
-    return _decodeResponse(response);
+      return _decodeResponse(response);
+    } catch (error) {
+      throw _connectionError(error);
+    }
+  }
+
+  ApiException _connectionError(Object error) {
+    if (error is ApiException) {
+      return error;
+    }
+
+    if (error is SocketException || error is http.ClientException) {
+      return ApiException(
+        'Could not reach your library server. Connect to your library first, then check your internet.',
+      );
+    }
+
+    return ApiException('Could not reach your library server. Please try again.');
   }
 
   Map<String, String> _headers({required bool authenticated}) {

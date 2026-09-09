@@ -62,6 +62,17 @@ class MobileLibraryResolverTest extends TestCase
             ]);
     }
 
+    public function test_local_install_resolves_its_own_library_code(): void
+    {
+        Config::set('libcontrol.license_server.enabled', false);
+
+        \App\Models\PlatformSetting::current()->update(['library_code' => '919832']);
+
+        $this->getJson('/api/v1/mobile/libraries/919832')
+            ->assertOk()
+            ->assertJsonPath('code', '919832');
+    }
+
     public function test_runtime_sync_updates_library_registry(): void
     {
         Config::set('libcontrol.discovery.secret', 'test-discovery-secret');

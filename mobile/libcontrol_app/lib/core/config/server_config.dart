@@ -8,11 +8,6 @@ class ServerConfig extends ChangeNotifier {
 
   static const _storageKey = 'library_api_base_url';
 
-  static const String devApiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: '',
-  );
-
   static const String resolverBaseUrl = String.fromEnvironment(
     'RESOLVER_BASE_URL',
     defaultValue: 'https://libcontrol.phenomit.com',
@@ -40,10 +35,6 @@ class ServerConfig extends ChangeNotifier {
   Future<void> load() async {
     _apiBaseUrl = await _storage.read(key: _storageKey);
     _libraryName = await _storage.read(key: 'library_name');
-
-    if ((_apiBaseUrl == null || _apiBaseUrl!.isEmpty) && devApiBaseUrl.isNotEmpty) {
-      _apiBaseUrl = normalizeBaseUrl(devApiBaseUrl);
-    }
 
     _loaded = true;
     notifyListeners();

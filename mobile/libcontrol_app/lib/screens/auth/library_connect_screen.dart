@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/library_resolver_service.dart';
 import 'package:libcontrol_app/core/config/server_config.dart';
@@ -126,17 +127,31 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
               Text('Connect to your library', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
               const Text(
-                'Enter the 6-digit library code from your branch staff, or scan the attendance QR code.',
+                'Enter the 6-digit library code from your branch staff. Codes are looked up via libcontrol.phenomit.com.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 32),
               TextField(
                 controller: _codeController,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: false,
+                  signed: false,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  letterSpacing: 4,
+                  fontWeight: FontWeight.w700,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Library code',
-                  hintText: 'e.g. 482913',
+                  hintText: '6 digits',
+                  counterText: '',
                   border: OutlineInputBorder(),
                 ),
                 onSubmitted: (_) => _continueWithCode(),

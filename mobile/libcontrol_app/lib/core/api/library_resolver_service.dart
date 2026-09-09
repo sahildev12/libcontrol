@@ -60,7 +60,7 @@ class LibraryResolverService {
 
     if (response.statusCode >= 500) {
       throw LibraryResolverException(
-        'Library lookup is temporarily unavailable. Scan the attendance QR code from your branch instead.',
+        'Library lookup is temporarily unavailable. Try again later or scan the attendance QR code.',
       );
     }
 
@@ -71,7 +71,7 @@ class LibraryResolverService {
       }
 
       throw LibraryResolverException(
-        'Could not look up your library. Scan the attendance QR code or try again later.',
+        'Could not look up your library. Try again later or scan the attendance QR code.',
       );
     }
 
@@ -90,7 +90,7 @@ class LibraryResolverService {
       }
     } catch (_) {
       throw LibraryResolverException(
-        'Could not reach the library lookup service. Scan the attendance QR code from your branch instead.',
+        'Could not reach the library lookup service. Check your internet connection.',
       );
     }
 
