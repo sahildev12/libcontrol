@@ -30,6 +30,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
   final _confirmPinController = TextEditingController();
   bool _obscurePin = true;
   bool _obscureConfirmPin = true;
+  bool _enableBiometric = true;
   bool _loading = false;
 
   @override
@@ -66,12 +67,11 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
         pin: pin,
         pinConfirmation: confirmation,
         setupToken: widget.lookup.setupToken,
+        enableBiometric: _enableBiometric,
       );
 
       if (!mounted) return;
-      if (widget.showBackButton) {
-        completeStudentAuthFlow(context);
-      }
+      completeStudentAuthFlow(context);
       widget.onAuthSuccess?.call();
     } on ApiException catch (e) {
       _showMessage(e.message);
@@ -150,6 +150,18 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                   ),
                 ),
                 onSubmitted: (_) => _loading ? null : _createPin(),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _enableBiometric,
+                    onChanged: (value) => setState(() => _enableBiometric = value ?? false),
+                  ),
+                  const Expanded(
+                    child: Text('Enable biometric unlock after creating PIN'),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               PrimaryButton(

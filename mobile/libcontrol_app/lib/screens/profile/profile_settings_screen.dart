@@ -76,7 +76,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         title: const Text('Change library'),
                         subtitle: const Text('Switch to another library server'),
                         onTap: () async {
-                          await AuthService.instance.logout();
+                          await AuthService.instance.clearSession(
+                            clearRememberedStudent: true,
+                          );
                           await ServerConfig.instance.clear();
                           if (!context.mounted) return;
                           Navigator.of(context).popUntil((route) => route.isFirst);

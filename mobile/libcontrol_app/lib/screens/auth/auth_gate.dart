@@ -58,6 +58,9 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _onStateChanged() async {
     await _loadSavedStudentState();
+    if (!AuthService.instance.isAuthenticated) {
+      _preferPinLogin = false;
+    }
     if (mounted) setState(() {});
   }
 
@@ -107,7 +110,8 @@ class _AuthGateState extends State<AuthGate> {
       return const MainShell();
     }
 
-    final rememberedStudent = _rememberedStudent;
+    final rememberedStudent =
+        AuthService.instance.rememberedStudent ?? _rememberedStudent;
 
     if (rememberedStudent != null) {
       if (_preferPinLogin || !_biometricEnabled) {

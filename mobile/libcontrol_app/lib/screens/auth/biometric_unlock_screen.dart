@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
+import 'package:libcontrol_app/core/auth/biometric_auth_helper.dart';
 import 'package:libcontrol_app/models/student.dart';
 import 'package:libcontrol_app/widgets/libcontrol_logo.dart';
 import 'package:libcontrol_app/widgets/primary_button.dart';
@@ -23,6 +24,7 @@ class BiometricUnlockScreen extends StatefulWidget {
 
 class _BiometricUnlockScreenState extends State<BiometricUnlockScreen> {
   final _localAuth = LocalAuthentication();
+  late final _biometricAuth = BiometricAuthHelper(_localAuth);
   Student? _student;
   bool _loading = false;
   bool _autoPrompted = false;
@@ -53,21 +55,13 @@ class _BiometricUnlockScreenState extends State<BiometricUnlockScreen> {
     setState(() => _loading = true);
 
     try {
-      final isSupported = await _localAuth.isDeviceSupported();
-      if (!isSupported) {
-        _showMessage('Biometric login is not supported on this device.');
-        return;
-      }
-
-      final biometrics = await _localAuth.getAvailableBiometrics();
-      if (biometrics.isEmpty) {
+      if (!await _biometricAuth.isAvailable()) {
         _showMessage('No biometrics enrolled. Set up fingerprint or face unlock first.');
         return;
       }
 
-      final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Confirm your identity to open LibControl',
-        biometricOnly: true,
+      final authenticated = await _biometricAuth.authenticate(
+        reason: 'Confirm your identity to open LibControl',
       );
 
       if (!authenticated) {

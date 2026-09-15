@@ -19,7 +19,10 @@ class AuthService extends ChangeNotifier {
   static const _biometricEnabledKey = 'student_biometric_enabled';
   static const _prefsTokenKey = 'student_auth_token_mirror';
   static const _prefsStudentKey = 'student_auth_profile_mirror';
+  static const _biometricVaultTokenKey = 'biometric_vault_token';
+  static const _biometricVaultStudentKey = 'biometric_vault_student';
   static const _rememberedStudentKey = 'remembered_student_lookup';
+  static const _rememberedStudentSecureKey = 'remembered_student_lookup_secure';
 
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -30,12 +33,14 @@ class AuthService extends ChangeNotifier {
   String? _token;
   String? _setupToken;
   bool _bootstrapped = false;
+  StudentLookup? _rememberedStudentCache;
 
   Student? get student => _student;
   String? get token => _token;
   String? get setupToken => _setupToken;
   bool get isAuthenticated => _token != null && _student != null;
   bool get isBootstrapped => _bootstrapped;
+  StudentLookup? get rememberedStudent => _rememberedStudentCache;
 
   Future<bool> bootstrap({bool validateOnline = true}) async {
     if (!await _loadStoredSession()) {
@@ -60,7 +65,8 @@ class AuthService extends ChangeNotifier {
       return true;
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        await clearSession();
+        await clearAuthSession(forceClearStoredCredentials: true);
+        await setBiometricEnabled(false);
         notifyListeners();
         return false;
       }
@@ -97,32 +103,12 @@ class AuthService extends ChangeNotifier {
 
   Future<StudentLookup?> getRememberedStudentLookup() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_rememberedStudentKey);
-    if (raw == null || raw.isEmpty) {
-      return null;
-    }
+    final raw = prefs.getString(_rememberedStudentKey) ??
+        await _storage.read(key: _rememberedStudentSecureKey);
 
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! Map<String, dynamic>) {
-        return null;
-      }
-
-      final lookup = StudentLookup(
-        studentCode: decoded['student_code'] as String? ?? '',
-        name: decoded['name'] as String? ?? '',
-        homeBranch: decoded['home_branch'] as String? ?? '',
-        needsPinSetup: decoded['needs_pin_setup'] as bool? ?? false,
-      );
-
-      if (lookup.studentCode.isEmpty) {
-        return null;
-      }
-
-      return lookup;
-    } catch (_) {
-      return null;
-    }
+    final lookup = _decodeRememberedStudent(raw);
+    _rememberedStudentCache = lookup;
+    return lookup;
   }
 
   Future<void> rememberStudentProfile(Student student) async {
@@ -137,16 +123,21 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> rememberStudentLookup(StudentLookup lookup) async {
+    if (lookup.studentCode.isEmpty) {
+      return;
+    }
+
+    final encoded = jsonEncode({
+      'student_code': lookup.studentCode,
+      'name': lookup.name,
+      'home_branch': lookup.homeBranch,
+      'needs_pin_setup': lookup.needsPinSetup,
+    });
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _rememberedStudentKey,
-      jsonEncode({
-        'student_code': lookup.studentCode,
-        'name': lookup.name,
-        'home_branch': lookup.homeBranch,
-        'needs_pin_setup': lookup.needsPinSetup,
-      }),
-    );
+    await prefs.setString(_rememberedStudentKey, encoded);
+    await _storage.write(key: _rememberedStudentSecureKey, value: encoded);
+    _rememberedStudentCache = lookup;
   }
 
   Future<void> migrateRememberedStudentFromSession() async {
@@ -197,6 +188,7 @@ class AuthService extends ChangeNotifier {
 
     final lookup = StudentLookup.fromJson(response);
     await _storeSetupToken(lookup.setupToken);
+    await rememberStudentLookup(lookup);
 
     return lookup;
   }
@@ -227,12 +219,12 @@ class AuthService extends ChangeNotifier {
     final student = Student.fromJson(response['student'] as Map<String, dynamic>);
 
     await _clearSetupToken();
-    await setBiometricEnabled(useBiometric);
-    await rememberStudentProfile(student);
-    await _persistSession(authToken, student);
     _token = authToken;
     _student = student;
     _api.setToken(authToken);
+    await setBiometricEnabled(useBiometric);
+    await rememberStudentProfile(student);
+    await _persistSession(authToken, student);
 
     notifyListeners();
 
@@ -260,19 +252,25 @@ class AuthService extends ChangeNotifier {
     final token = response['token'] as String;
     final student = Student.fromJson(response['student'] as Map<String, dynamic>);
 
-    await setBiometricEnabled(enableBiometric);
-    await rememberStudentProfile(student);
-    await _persistSession(token, student);
     _token = token;
     _student = student;
     _api.setToken(token);
+    await setBiometricEnabled(enableBiometric);
+    await rememberStudentProfile(student);
+    await _persistSession(token, student);
     notifyListeners();
 
     return student;
   }
 
   Future<void> logout() async {
-    if (_token != null) {
+    final activeStudent = _student;
+    final activeToken = _token;
+    final biometricEnabled = await isBiometricEnabled();
+
+    if (biometricEnabled && activeToken != null && activeStudent != null) {
+      await _persistBiometricVault(activeToken, activeStudent);
+    } else if (_token != null) {
       try {
         await _api.postJson(AppConfig.studentLogoutUrl, authenticated: true);
       } catch (_) {
@@ -280,21 +278,37 @@ class AuthService extends ChangeNotifier {
       }
     }
 
-    await clearSession(clearPinSetup: true, clearRememberedStudent: true);
-    await setBiometricEnabled(false);
+    if (activeStudent != null && activeStudent.id.isNotEmpty) {
+      await rememberStudentProfile(activeStudent);
+    }
+
+    await clearAuthSession();
     notifyListeners();
+  }
+
+  /// Clears the active sign-in only. Remembered student and biometric stay for quick re-login.
+  Future<void> clearAuthSession({bool forceClearStoredCredentials = false}) async {
+    _token = null;
+    _student = null;
+    _api.setToken(null);
+
+    final keepStoredCredentials =
+        !forceClearStoredCredentials && await isBiometricEnabled();
+    if (keepStoredCredentials) {
+      return;
+    }
+
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _studentKey);
+    await _clearBiometricMirror();
+    await _clearBiometricVault();
   }
 
   Future<void> clearSession({
     bool clearPinSetup = false,
     bool clearRememberedStudent = false,
   }) async {
-    _token = null;
-    _student = null;
-    _api.setToken(null);
-    await _storage.delete(key: _tokenKey);
-    await _storage.delete(key: _studentKey);
-    await _clearBiometricMirror();
+    await clearAuthSession(forceClearStoredCredentials: true);
 
     if (clearPinSetup) {
       await _clearSetupToken();
@@ -302,12 +316,43 @@ class AuthService extends ChangeNotifier {
 
     if (clearRememberedStudent) {
       await _clearRememberedStudent();
+      await setBiometricEnabled(false);
     }
   }
 
   Future<void> _clearRememberedStudent() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_rememberedStudentKey);
+    await _storage.delete(key: _rememberedStudentSecureKey);
+    _rememberedStudentCache = null;
+  }
+
+  StudentLookup? _decodeRememberedStudent(String? raw) {
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+
+      final lookup = StudentLookup(
+        studentCode: decoded['student_code'] as String? ?? '',
+        name: decoded['name'] as String? ?? '',
+        homeBranch: decoded['home_branch'] as String? ?? '',
+        needsPinSetup: decoded['needs_pin_setup'] as bool? ?? false,
+      );
+
+      if (lookup.studentCode.isEmpty) {
+        return null;
+      }
+
+      return lookup;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _persistSession(String token, Student student) async {
@@ -317,9 +362,10 @@ class AuthService extends ChangeNotifier {
     await _storage.write(key: _studentKey, value: studentJson);
 
     if (await isBiometricEnabled()) {
-      await _mirrorSession(token, studentJson);
+      await _persistBiometricVault(token, student);
     } else {
       await _clearBiometricMirror();
+      await _clearBiometricVault();
     }
   }
 
@@ -367,11 +413,12 @@ class AuthService extends ChangeNotifier {
 
     if (!enabled) {
       await _clearBiometricMirror();
+      await _clearBiometricVault();
       return;
     }
 
     if (_token != null && _student != null) {
-      await _mirrorSession(_token!, _student!.toJsonString());
+      await _persistBiometricVault(_token!, _student!);
     }
   }
 
@@ -385,16 +432,14 @@ class AuthService extends ChangeNotifier {
       return false;
     }
 
-    if (!await hasStoredSession()) {
+    if (!await _loadStoredSession()) {
       return false;
     }
 
-    final unlocked = await bootstrap(validateOnline: false);
-    if (unlocked) {
-      _refreshSessionInBackground();
-    }
-
-    return unlocked;
+    _bootstrapped = true;
+    notifyListeners();
+    _refreshSessionInBackground();
+    return true;
   }
 
   Future<bool> _loadStoredSession() async {
@@ -436,6 +481,13 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<_StoredCredentials?> _readStoredCredentials() async {
+    if (await isBiometricEnabled()) {
+      final vault = await _readBiometricVault();
+      if (vault != null) {
+        return vault;
+      }
+    }
+
     final secureToken = await _storage.read(key: _tokenKey);
     final secureStudent = await _storage.read(key: _studentKey);
     if (_credentialsAreValid(secureToken, secureStudent)) {
@@ -465,10 +517,47 @@ class AuthService extends ChangeNotifier {
         studentJson.isNotEmpty;
   }
 
+  Future<void> _persistBiometricVault(String token, Student student) async {
+    final studentJson = student.toJsonString();
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(_biometricVaultTokenKey, token);
+    await prefs.setString(_biometricVaultStudentKey, studentJson);
+    await _mirrorSession(token, studentJson);
+
+    try {
+      await _storage.write(key: _tokenKey, value: token);
+      await _storage.write(key: _studentKey, value: studentJson);
+    } catch (_) {
+      // SharedPreferences vault is the primary store for biometric unlock.
+    }
+  }
+
+  Future<_StoredCredentials?> _readBiometricVault() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_biometricVaultTokenKey);
+    final studentJson = prefs.getString(_biometricVaultStudentKey);
+
+    if (!_credentialsAreValid(token, studentJson)) {
+      return null;
+    }
+
+    return _StoredCredentials(
+      token: token!,
+      studentJson: studentJson!,
+    );
+  }
+
   Future<void> _mirrorSession(String token, String studentJson) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsTokenKey, token);
     await prefs.setString(_prefsStudentKey, studentJson);
+  }
+
+  Future<void> _clearBiometricVault() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_biometricVaultTokenKey);
+    await prefs.remove(_biometricVaultStudentKey);
   }
 
   Future<void> _clearBiometricMirror() async {

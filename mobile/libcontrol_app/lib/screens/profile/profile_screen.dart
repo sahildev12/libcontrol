@@ -104,8 +104,6 @@ class ProfileScreen extends StatelessWidget {
             OutlinedButton(
               onPressed: () async {
                 await AuthService.instance.logout();
-                if (!context.mounted) return;
-                Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
