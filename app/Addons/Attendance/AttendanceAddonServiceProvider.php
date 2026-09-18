@@ -29,6 +29,9 @@ class AttendanceAddonServiceProvider extends ServiceProvider
             Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
             Route::post('/attendance/mark-present', [AttendanceController::class, 'markPresent'])->name('attendance.mark-present');
             Route::get('/attendance/students/{student}/profile', [AttendanceController::class, 'studentProfile'])->name('attendance.student-profile');
+            Route::get('/attendance/students/{student}/report', [AttendanceController::class, 'studentReport'])->name('attendance.student-report');
+            Route::get('/attendance/students/{student}/report/data', [AttendanceController::class, 'studentReportData'])->name('attendance.student-report.data');
+            Route::get('/attendance/students/{student}/report/export', [AttendanceController::class, 'studentReportExport'])->name('attendance.student-report.export');
             Route::get('/attendance/settings', [AttendanceController::class, 'settings'])->name('attendance.settings');
             Route::patch('/attendance/settings', [AttendanceController::class, 'updateSettings'])->name('attendance.settings.update');
             Route::post('/attendance/settings/rotate-qr', [AttendanceController::class, 'rotateQr'])->name('attendance.settings.rotate-qr');

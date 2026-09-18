@@ -38,6 +38,10 @@ class RuntimeProbe
             return true;
         }
 
+        if (app()->environment('local')) {
+            return true;
+        }
+
         if (config('libcontrol.tenancy.enabled') && TenantContext::isTenantRequest()) {
             return true;
         }

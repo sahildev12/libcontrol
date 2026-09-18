@@ -15,12 +15,49 @@ class AddonPackageUploadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_platform_admin_can_install_addon_from_zip_upload(): void
+    public function test_client_admin_cannot_install_addon_from_zip_upload(): void
     {
         $user = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
             'user_id' => $user->id,
             'admin_type' => Admin::TYPE_CLIENT,
+        ]);
+
+        $zipPath = $this->createAttendanceZip();
+
+        $response = $this->actingAs($user)->post(route('settings.addons.upload'), [
+            'package' => new UploadedFile($zipPath, 'attendance.zip', 'application/zip', null, true),
+        ]);
+
+        $response->assertForbidden();
+
+        File::delete($zipPath);
+    }
+
+    public function test_developer_admin_can_install_attendance_addon_from_catalog(): void
+    {
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_DEVELOPER,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('settings.addons.install', 'attendance'));
+
+        $response->assertOk()
+            ->assertJsonPath('addon.slug', 'attendance')
+            ->assertJsonPath('addon.installed', true)
+            ->assertJsonPath('addon.enabled', true);
+
+        $this->assertTrue(app(AddonRegistry::class)->isEnabled('attendance'));
+    }
+
+    public function test_developer_admin_can_install_addon_from_zip_upload(): void
+    {
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_DEVELOPER,
         ]);
 
         $zipPath = $this->createAttendanceZip();

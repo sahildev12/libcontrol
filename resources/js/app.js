@@ -1,6 +1,13 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 import { initRealtime } from './realtime';
+import {
+    destroyFinanceCharts,
+    formatInr,
+    renderFinanceCharts,
+    resizeFinanceCharts,
+    waitForChartCanvases,
+} from './finance-charts';
 
 window.Alpine = Alpine;
 
@@ -72,8 +79,6 @@ function createDataTableMixin() {
         perPage: 10,
         selectedIds: [],
         searchKeys: [],
-        exportFileName: 'export',
-        exportColumns: [],
 
         bulkDeleteUrl: null,
 
@@ -155,23 +160,38 @@ function createDataTableMixin() {
         },
 
         exportRows() {
+            const columns = Array.isArray(this.exportColumns) ? this.exportColumns : [];
+
+            if (columns.length === 0) {
+                showToast('Export is not configured for this table.', 'error');
+                return;
+            }
+
             const rows = this.filteredRows();
-            const columns = this.exportColumns;
-            const lines = [columns.map((column) => column.label).join(',')];
 
-            rows.forEach((row) => {
-                lines.push(columns.map((column) => {
+            if (rows.length === 0) {
+                showToast('No rows to export for the current filter.', 'error');
+                return;
+            }
+
+            const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+            const lines = [
+                columns.map((column) => escapeCsv(column.label)).join(','),
+                ...rows.map((row) => columns.map((column) => {
                     const value = typeof column.value === 'function' ? column.value(row) : (row[column.key] ?? '');
-                    return `"${String(value).replaceAll('"', '""')}"`;
-                }).join(','));
-            });
+                    return escapeCsv(value);
+                }).join(',')),
+            ];
 
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([`\uFEFF${lines.join('\r\n')}`], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${this.exportFileName}-${Date.now()}.csv`;
+            link.download = `${this.exportFileName || 'export'}-${Date.now()}.csv`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
             URL.revokeObjectURL(url);
         },
 
@@ -197,27 +217,28 @@ function createDataTableMixin() {
     };
 }
 
-function validateStudentContactFields(phone, email, { required = false } = {}) {
+function validateStudentContactFields(phone, email, { required = false, requireBoth = false } = {}) {
     const errors = {};
     const normalizedPhone = sanitizeDigits(phone);
     const normalizedEmail = String(email || '').trim();
+    const mustRequireBoth = requireBoth || required;
 
-    if (normalizedPhone) {
+    if (mustRequireBoth && ! normalizedPhone) {
+        errors.phone = 'Phone number is required.';
+    } else if (normalizedPhone) {
         const phoneError = validateIndianPhone(normalizedPhone, { required: false });
         if (phoneError) {
             errors.phone = phoneError;
         }
     }
 
-    if (normalizedEmail) {
+    if (mustRequireBoth && ! normalizedEmail) {
+        errors.email = 'Email address is required.';
+    } else if (normalizedEmail) {
         const emailError = validateEmail(normalizedEmail, { required: false });
         if (emailError) {
             errors.email = emailError;
         }
-    }
-
-    if (required && ! normalizedPhone && ! normalizedEmail) {
-        errors.phone = 'Provide at least a phone number or email address.';
     }
 
     return errors;
@@ -291,15 +312,11 @@ function createStudentFormMixin({
         },
 
         contactRequiredForCreate() {
-            if (! this.requireStudentContact) {
-                return false;
-            }
-
             if (this.studentFamilyMode === 'linked' && this.linkedFamilyStudent) {
                 const phone = String(this.linkedFamilyStudent.phone || '').trim();
                 const email = String(this.linkedFamilyStudent.email || '').trim();
 
-                return ! phone && ! email;
+                return ! phone || ! email;
             }
 
             return true;
@@ -371,7 +388,7 @@ function createStudentFormMixin({
             Object.assign(
                 errors,
                 validateStudentContactFields(this.studentForm.phone, this.studentForm.email, {
-                    required: this.contactRequiredForCreate(),
+                    requireBoth: this.contactRequiredForCreate(),
                 }),
             );
 
@@ -646,13 +663,12 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             }
 
             this.editForm.phone = sanitizeDigits(this.editForm.phone);
-            const contactRequired = this.requireStudentContact
-                && (! this.editForm.is_in_family || this.editForm.is_family_primary);
+            const contactRequired = ! this.editForm.is_in_family || this.editForm.is_family_primary;
 
             Object.assign(
                 errors,
                 validateStudentContactFields(this.editForm.phone, this.editForm.email, {
-                    required: contactRequired,
+                    requireBoth: contactRequired,
                 }),
             );
 
@@ -3466,7 +3482,17 @@ Alpine.data('platformBranchesPage', (config) => ({
     },
 
     async deleteBranch(branch) {
-        if (! confirm(`Delete branch "${branch.name}"? This removes all related halls, students, and data.`)) {
+        if (branch.halls_count > 0) {
+            showToast(`Cannot delete "${branch.name}" — this branch has ${branch.halls_count} hall(s) with seats. Remove all halls first.`, 'error');
+            return;
+        }
+
+        if (branch.students_count > 0) {
+            showToast(`Cannot delete "${branch.name}" — this branch still has ${branch.students_count} student(s). Reassign or remove them first.`, 'error');
+            return;
+        }
+
+        if (! confirm(`Delete branch "${branch.name}"?`)) {
             return;
         }
 
@@ -4386,6 +4412,7 @@ Alpine.data('feeTable', (config) => ({
     editingId: null,
     viewOpen: false,
     viewRow: null,
+    viewTab: 'details',
     receiveOpen: false,
     receiveRow: null,
     receiveSaving: false,
@@ -4435,6 +4462,12 @@ Alpine.data('feeTable', (config) => ({
         installment_frequency: 'quarterly',
         first_due_date: new Date().toISOString().slice(0, 10),
         existing_booking_id: null,
+        receive_payment: false,
+        amount_received: 0,
+        payment_method: 'cash',
+        payment_date: new Date().toISOString().slice(0, 10),
+        payment_reference: '',
+        payment_notes: '',
     },
 
     extraFilter(row) {
@@ -4501,7 +4534,48 @@ Alpine.data('feeTable', (config) => ({
             installment_frequency: 'quarterly',
             first_due_date: today,
             existing_booking_id: null,
+            receive_payment: false,
+            amount_received: 0,
+            payment_method: 'cash',
+            payment_date: today,
+            payment_reference: '',
+            payment_notes: '',
         };
+    },
+
+    toggleFeeReceivePayment() {
+        this.form.receive_payment = ! this.form.receive_payment;
+        if (! this.form.receive_payment) {
+            this.form.amount_received = 0;
+            return;
+        }
+
+        if (! this.form.amount_received) {
+            this.form.amount_received = Number(this.form.fee_amount || 0);
+        }
+
+        if (! this.form.payment_date) {
+            this.form.payment_date = new Date().toISOString().slice(0, 10);
+        }
+    },
+
+    feePaymentError() {
+        if (! this.form.receive_payment) {
+            return '';
+        }
+
+        const amount = Number(this.form.amount_received || 0);
+        const feeAmount = Number(this.form.fee_amount || 0);
+
+        if (amount <= 0) {
+            return 'Enter the amount received.';
+        }
+
+        if (amount > feeAmount) {
+            return 'Amount received cannot exceed the fee amount.';
+        }
+
+        return '';
     },
 
     feeFormReady() {
@@ -4679,11 +4753,17 @@ Alpine.data('feeTable', (config) => ({
 
     openView(row) {
         this.viewRow = row;
+        this.viewTab = 'details';
         this.viewOpen = true;
     },
 
     closeView() {
         this.viewOpen = false;
+        this.viewTab = 'details';
+    },
+
+    paymentHistoryCount() {
+        return (this.viewRow?.payments || []).length;
     },
 
     async loadSeats() {},
@@ -4763,10 +4843,27 @@ Alpine.data('feeTable', (config) => ({
             }
         }
 
+        if (this.formMode === 'create') {
+            if (this.form.receive_payment && Number(this.form.amount_received || 0) > 0) {
+                payload.amount_received = this.form.amount_received;
+                payload.payment_method = this.form.payment_method || 'cash';
+                payload.payment_date = this.form.payment_date || new Date().toISOString().slice(0, 10);
+                payload.payment_reference = this.form.payment_reference || null;
+                payload.payment_notes = this.form.payment_notes || null;
+            } else {
+                payload.amount_received = 0;
+            }
+        }
+
         return payload;
     },
 
     async submitForm() {
+        if (this.formMode === 'create' && this.feePaymentError()) {
+            showToast(this.feePaymentError(), 'error');
+            return;
+        }
+
         this.saving = true;
         try {
             if (this.formMode === 'edit') {
@@ -4932,6 +5029,8 @@ Alpine.data('feeTable', (config) => ({
 
 Alpine.data('profitLossPanel', (config) => ({
     rows: config.rows || [],
+    ledger: config.ledger || [],
+    activeTab: config.activeTab || 'overview',
     summary: config.summary || {},
     categories: config.categories || {},
     branches: config.branches || [],
@@ -4939,14 +5038,37 @@ Alpine.data('profitLossPanel', (config) => ({
     defaultBranchId: config.defaultBranchId || null,
     storeUrl: config.storeUrl,
     bulkDeleteUrl: config.bulkDeleteUrl,
+    chartsUrl: config.chartsUrl || '',
     dateFrom: config.dateFrom || '',
     dateTo: config.dateTo || '',
+    collectionPeriod: 'this_month',
+    trendMonths: 6,
+    chartsLoading: false,
+    chartData: null,
+    chartsRequestId: 0,
+    feeCollectionSummary: {
+        expected: 0,
+        scheduled_due: 0,
+        received: 0,
+        collected_on_due: 0,
+        other_collected: 0,
+        pending: 0,
+        received_percentage: 0,
+        pending_percentage: 0,
+        has_data: false,
+    },
+    chartInstances: {},
+    chartResizeObserver: null,
+    formatInr,
     rangeOpen: false,
     formOpen: false,
     formMode: 'create',
     editingId: null,
     saving: false,
     categoryFilter: '',
+    statementSearch: '',
+    statementTypeFilter: '',
+    statementPaymentFilter: '',
     searchKeys: ['title', 'category_label', 'amount', 'expense_date', 'payment_method_label', 'branch_name', 'notes', 'recorded_by_name'],
     exportFileName: 'expenses',
     exportColumns: [
@@ -4973,6 +5095,164 @@ Alpine.data('profitLossPanel', (config) => ({
     init() {
         this.initDataTable();
         this.$watch('categoryFilter', () => { this.page = 1; });
+
+        if (this.activeTab === 'overview') {
+            this.$nextTick(() => this.loadCharts());
+        }
+
+        this.$watch('activeTab', (tab) => {
+            if (tab === 'overview') {
+                this.$nextTick(() => this.loadCharts());
+            }
+        });
+
+        this.$watch('collectionPeriod', () => this.loadCharts());
+        this.$watch('trendMonths', () => this.loadCharts());
+
+        this.chartResizeObserver = new ResizeObserver(() => {
+            if (this.activeTab === 'overview') {
+                resizeFinanceCharts(this.chartInstances);
+            }
+        });
+    },
+
+    setTab(tab) {
+        this.activeTab = tab;
+        const url = new URL(window.location.href);
+        if (tab === 'overview') {
+            url.searchParams.delete('tab');
+        } else {
+            url.searchParams.set('tab', tab);
+        }
+        window.history.replaceState({}, '', url);
+
+        if (tab === 'overview') {
+            this.$nextTick(() => this.loadCharts());
+        }
+    },
+
+    async loadCharts() {
+        if (! this.chartsUrl || this.activeTab !== 'overview') {
+            return;
+        }
+
+        const requestId = ++this.chartsRequestId;
+        this.chartsLoading = true;
+
+        try {
+            const response = await window.axios.get(this.chartsUrl, {
+                params: {
+                    date_from: this.dateFrom,
+                    date_to: this.dateTo,
+                    collection_period: this.collectionPeriod,
+                    trend_months: this.trendMonths,
+                },
+            });
+
+            if (requestId !== this.chartsRequestId) {
+                return;
+            }
+
+            this.chartData = response.data;
+            this.feeCollectionSummary = response.data.fee_collection || this.feeCollectionSummary;
+
+            await this.$nextTick();
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+
+            if (requestId !== this.chartsRequestId) {
+                return;
+            }
+
+            const canvases = [
+                this.$refs.feeCollectionChart,
+                this.$refs.lineChart,
+                this.$refs.barChart,
+            ].filter(Boolean);
+
+            await waitForChartCanvases(canvases);
+
+            if (requestId !== this.chartsRequestId) {
+                return;
+            }
+
+            destroyFinanceCharts(this.chartInstances);
+            this.chartInstances = renderFinanceCharts({
+                feeCollectionCanvas: this.$refs.feeCollectionChart,
+                lineCanvas: this.$refs.lineChart,
+                barCanvas: this.$refs.barChart,
+            }, response.data, {
+                onSummaryUpdate: (summary) => {
+                    this.feeCollectionSummary = summary;
+                },
+            });
+
+            if (this.chartResizeObserver) {
+                this.chartResizeObserver.disconnect();
+                canvases.forEach((canvas) => {
+                    canvas?.parentElement && this.chartResizeObserver.observe(canvas.parentElement);
+                });
+            }
+
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+            resizeFinanceCharts(this.chartInstances);
+
+            window.setTimeout(() => {
+                if (requestId === this.chartsRequestId) {
+                    resizeFinanceCharts(this.chartInstances);
+                }
+            }, 150);
+        } catch (e) {
+            if (requestId === this.chartsRequestId) {
+                showToast(extractAxiosError(e), 'error');
+            }
+        } finally {
+            if (requestId === this.chartsRequestId) {
+                this.chartsLoading = false;
+            }
+        }
+    },
+
+    feeCollectionHasData() {
+        return Boolean(this.feeCollectionSummary?.has_data)
+            && ((Number(this.feeCollectionSummary?.received) || 0) > 0
+                || (Number(this.feeCollectionSummary?.pending) || 0) > 0);
+    },
+
+    lineChartHasData() {
+        return Boolean(this.chartData?.fee_income_vs_expenses?.has_data);
+    },
+
+    barChartHasData() {
+        return Boolean(this.chartData?.income_expenses_profit?.has_data);
+    },
+
+    filteredLedger() {
+        const query = String(this.statementSearch || '').trim().toLowerCase();
+
+        return (this.ledger || []).filter((entry) => {
+            if (this.statementTypeFilter && entry.entry_type !== this.statementTypeFilter) {
+                return false;
+            }
+
+            if (this.statementPaymentFilter && entry.payment_method !== this.statementPaymentFilter) {
+                return false;
+            }
+
+            if (! query) {
+                return true;
+            }
+
+            const haystack = [
+                entry.title,
+                entry.subtitle,
+                entry.branch_name,
+                entry.entry_label,
+                entry.recorded_by_name,
+                entry.payment_method_label,
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            return haystack.includes(query);
+        });
     },
 
     extraFilter(row) {
@@ -5030,7 +5310,7 @@ Alpine.data('profitLossPanel', (config) => ({
             }
 
             if (this.formMode === 'edit') {
-                const response = await window.axios.patch(`/profit-loss/expenses/${this.editingId}`, payload);
+                const response = await window.axios.patch(`/finance/expenses/${this.editingId}`, payload);
                 this.rows = this.rows.map((row) => row.id === this.editingId ? response.data.row : row);
                 showToast(response.data.message);
             } else {
@@ -5052,7 +5332,7 @@ Alpine.data('profitLossPanel', (config) => ({
         }
 
         try {
-            const response = await window.axios.delete(`/profit-loss/expenses/${row.id}`);
+            const response = await window.axios.delete(`/finance/expenses/${row.id}`);
             this.rows = this.rows.filter((item) => item.id !== row.id);
             this.selectedIds = this.selectedIds.filter((id) => id !== row.id);
             showToast(response.data.message);
@@ -5278,17 +5558,20 @@ Alpine.data('settingsPage', (config) => ({
         is_open_24_hours: config.settings?.is_open_24_hours || false,
         require_student_contact: config.settings?.require_student_contact || false,
     },
+    idCardTemplates: config.idCardTemplates || {},
     platformForm: {
         student_code_prefix: config.platformSettings?.student_code_prefix || '',
         student_code_padding: config.platformSettings?.student_code_padding || 3,
-        display_name: config.platformSettings?.display_name || '',
-        logo_with_text: null,
-        simple_logo: null,
-        favicon: null,
+        id_card_template: config.platformSettings?.id_card_template || 'classic',
+        id_card_logo: null,
     },
     saving: false,
+    savingIdCards: false,
     savingPlan: false,
     clearingCache: false,
+    syncingRuntime: false,
+    deploymentInfo: config.deploymentInfo || {},
+    syncRuntimeUrl: config.syncRuntimeUrl || '',
     flash: '',
     error: '',
     updateUrl: config.updateUrl,
@@ -5298,9 +5581,8 @@ Alpine.data('settingsPage', (config) => ({
     licenseServerEnabled: config.licenseServerEnabled || false,
     deploymentsUrl: config.deploymentsUrl,
     timezone: config.timezone,
-    installedAddons: config.installedAddons || [],
+    availableAddons: config.availableAddons || [],
     addonInstallUrl: config.addonInstallUrl || '/settings/addons',
-    addonUploadUrl: config.addonUploadUrl || '',
     settingsTab: 'general',
     databaseStatus: config.databaseStatus || null,
     databaseBackups: config.databaseBackups || [],
@@ -5316,8 +5598,53 @@ Alpine.data('settingsPage', (config) => ({
     restoreFilename: '',
     restoreConfirmation: '',
     addonBusy: false,
+    websiteUpdateUrl: config.websiteUpdateUrl || '',
+    websiteForm: {
+        website_enabled: Boolean(config.websiteSettings?.website_enabled),
+        website_tagline: config.websiteSettings?.website_tagline || '',
+        website_hero_title: config.websiteSettings?.website_hero_title || '',
+        website_about: config.websiteSettings?.website_about || '',
+        website_amenities: Array.isArray(config.websiteSettings?.website_amenities) ? [...config.websiteSettings.website_amenities] : [],
+        website_social_links: {
+            facebook: config.websiteSettings?.website_social_links?.facebook || '',
+            instagram: config.websiteSettings?.website_social_links?.instagram || '',
+            youtube: config.websiteSettings?.website_social_links?.youtube || '',
+            twitter: config.websiteSettings?.website_social_links?.twitter || '',
+            website: config.websiteSettings?.website_social_links?.website || '',
+        },
+        website_whatsapp: config.websiteSettings?.website_whatsapp || '',
+        website_logo_url: config.websiteSettings?.website_logo_url || '',
+        public_url: config.websiteSettings?.public_url || '',
+    },
+    websiteLogoFile: null,
+    websiteSaving: false,
+    emailNotificationsUpdateUrl: config.emailNotificationsUpdateUrl || '',
+    emailForm: {
+        email_welcome_enabled: Boolean(config.emailNotificationSettings?.email_welcome_enabled ?? true),
+        email_birthday_enabled: Boolean(config.emailNotificationSettings?.email_birthday_enabled ?? true),
+        email_offers_enabled: Boolean(config.emailNotificationSettings?.email_offers_enabled ?? false),
+        email_marketing_enabled: Boolean(config.emailNotificationSettings?.email_marketing_enabled ?? false),
+        email_recovery_enabled: Boolean(config.emailNotificationSettings?.email_recovery_enabled ?? true),
+    },
+    emailSaving: false,
+    contactRulesSaving: false,
 
-    init() {},
+    init() {
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        const allowedTabs = ['general', 'id-cards', 'website', 'emails', 'subscription', 'addons', 'developer'];
+
+        if (tab && allowedTabs.includes(tab)) {
+            this.settingsTab = tab;
+        }
+    },
+
+    showGeneralSettingsForm() {
+        if (! this.isPlatformAdmin && ! this.isDeveloperAdmin) {
+            return true;
+        }
+
+        return this.settingsTab === 'general';
+    },
 
     formatClock(value) {
         const raw = String(value || '').slice(0, 5);
@@ -5497,6 +5824,22 @@ Alpine.data('settingsPage', (config) => ({
         }
     },
 
+    async syncRuntimeMetrics() {
+        if (! this.isDeveloperAdmin || ! this.syncRuntimeUrl) {
+            return;
+        }
+
+        this.syncingRuntime = true;
+        try {
+            const response = await window.axios.post(this.syncRuntimeUrl);
+            showToast(response.data.message || 'Library synced to Phenomit.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.syncingRuntime = false;
+        }
+    },
+
     async savePlanSettings() {
         if (! this.isDeveloperAdmin) {
             return;
@@ -5521,6 +5864,57 @@ Alpine.data('settingsPage', (config) => ({
         }
     },
 
+    async saveIdCardSettings() {
+        this.savingIdCards = true;
+        try {
+            const platformData = new FormData();
+            platformData.append('student_code_prefix', String(this.platformSettings.student_code_prefix || this.platformForm.student_code_prefix || 'LIB').trim().toUpperCase());
+            platformData.append('student_code_padding', String(this.platformSettings.student_code_padding || this.platformForm.student_code_padding || 3));
+            platformData.append('id_card_template', this.platformForm.id_card_template || 'classic');
+            if (this.platformForm.id_card_logo) {
+                platformData.append('id_card_logo', this.platformForm.id_card_logo);
+            }
+
+            const platformResponse = await window.axios.post(`${this.platformUpdateUrl}?_method=PATCH`, platformData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            this.platformSettings = platformResponse.data.platform_settings;
+            this.platformForm.id_card_template = this.platformSettings.id_card_template || 'classic';
+            this.platformForm.id_card_logo = null;
+            showToast('ID card settings saved.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.savingIdCards = false;
+        }
+    },
+
+    async saveStudentContactRules() {
+        if (this.viewingAll) {
+            showToast('Select a specific branch from the top bar first.', 'error');
+            return;
+        }
+
+        this.contactRulesSaving = true;
+
+        try {
+            const data = new FormData();
+            data.append('require_student_contact', this.form.require_student_contact ? '1' : '0');
+
+            const response = await window.axios.post(`${this.updateUrl}?_method=PATCH`, data, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            this.settings = response.data.settings;
+            this.form.require_student_contact = Boolean(this.settings.require_student_contact);
+            showToast('Student contact rules saved.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.contactRulesSaving = false;
+        }
+    },
+
     async saveSettings() {
         const validationError = this.validatePlatformForm();
         if (validationError) {
@@ -5535,12 +5929,6 @@ Alpine.data('settingsPage', (config) => ({
                 const platformData = new FormData();
                 platformData.append('student_code_prefix', String(this.platformForm.student_code_prefix || '').trim().toUpperCase());
                 platformData.append('student_code_padding', String(this.platformForm.student_code_padding || 3));
-                if (this.platformForm.display_name) {
-                    platformData.append('display_name', this.platformForm.display_name);
-                }
-                if (this.platformForm.logo_with_text) platformData.append('logo_with_text', this.platformForm.logo_with_text);
-                if (this.platformForm.simple_logo) platformData.append('simple_logo', this.platformForm.simple_logo);
-                if (this.platformForm.favicon) platformData.append('favicon', this.platformForm.favicon);
 
                 const platformResponse = await window.axios.post(`${this.platformUpdateUrl}?_method=PATCH`, platformData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
@@ -5548,10 +5936,6 @@ Alpine.data('settingsPage', (config) => ({
                 this.platformSettings = platformResponse.data.platform_settings;
                 this.platformForm.student_code_prefix = this.platformSettings.student_code_prefix;
                 this.platformForm.student_code_padding = this.platformSettings.student_code_padding;
-                this.platformForm.display_name = this.platformSettings.display_name || '';
-                this.platformForm.logo_with_text = null;
-                this.platformForm.simple_logo = null;
-                this.platformForm.favicon = null;
             }
 
             if (! this.viewingAll) {
@@ -5575,52 +5959,19 @@ Alpine.data('settingsPage', (config) => ({
         }
     },
 
-    updateInstalledAddon(addon) {
-        const index = this.installedAddons.findIndex((item) => item.slug === addon.slug);
-
-        if (index >= 0) {
-            this.installedAddons[index] = addon;
-        } else if (addon.installed) {
-            this.installedAddons.push(addon);
+    syncAvailableAddons(addons) {
+        if (Array.isArray(addons)) {
+            this.availableAddons = addons;
         }
     },
 
-    async uploadAddonPackage() {
-        const input = this.$refs.addonPackage;
-        const file = input?.files?.[0];
+    updateAvailableAddon(addon) {
+        const index = this.availableAddons.findIndex((item) => item.slug === addon.slug);
 
-        if (! file) {
-            showToast('Choose an addon ZIP file first.', 'error');
-
-            return;
-        }
-
-        if (! this.addonUploadUrl) {
-            showToast('Addon upload is not available.', 'error');
-
-            return;
-        }
-
-        this.addonBusy = true;
-
-        try {
-            const formData = new FormData();
-            formData.append('package', file);
-
-            const response = await window.axios.post(this.addonUploadUrl, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            this.installedAddons = response.data.installed_addons || [];
-            if (input) {
-                input.value = '';
-            }
-            showToast(response.data.message);
-            window.setTimeout(() => window.location.reload(), 600);
-        } catch (e) {
-            showToast(extractAxiosError(e), 'error');
-        } finally {
-            this.addonBusy = false;
+        if (index >= 0) {
+            this.availableAddons[index] = addon;
+        } else {
+            this.availableAddons.push(addon);
         }
     },
 
@@ -5628,9 +5979,10 @@ Alpine.data('settingsPage', (config) => ({
         this.addonBusy = true;
         try {
             const response = await window.axios.post(`${this.addonInstallUrl}/${slug}/install`);
-            this.updateInstalledAddon(response.data.addon);
+            this.syncAvailableAddons(response.data.available_addons);
+            this.updateAvailableAddon(response.data.addon);
             showToast(response.data.message);
-            window.setTimeout(() => window.location.reload(), 600);
+            window.setTimeout(() => window.location.reload(), 400);
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
@@ -5642,9 +5994,10 @@ Alpine.data('settingsPage', (config) => ({
         this.addonBusy = true;
         try {
             const response = await window.axios.post(`${this.addonInstallUrl}/${slug}/enable`);
-            this.updateInstalledAddon(response.data.addon);
+            this.syncAvailableAddons(response.data.available_addons);
+            this.updateAvailableAddon(response.data.addon);
             showToast(response.data.message);
-            window.setTimeout(() => window.location.reload(), 600);
+            window.setTimeout(() => window.location.reload(), 400);
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
@@ -5659,9 +6012,10 @@ Alpine.data('settingsPage', (config) => ({
         this.addonBusy = true;
         try {
             const response = await window.axios.post(`${this.addonInstallUrl}/${slug}/disable`);
-            this.updateInstalledAddon(response.data.addon);
+            this.syncAvailableAddons(response.data.available_addons);
+            this.updateAvailableAddon(response.data.addon);
             showToast(response.data.message);
-            window.setTimeout(() => window.location.reload(), 600);
+            window.setTimeout(() => window.location.reload(), 400);
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
@@ -5676,16 +6030,75 @@ Alpine.data('settingsPage', (config) => ({
         this.addonBusy = true;
         try {
             const response = await window.axios.delete(`${this.addonInstallUrl}/${slug}`);
-            this.installedAddons = this.installedAddons.filter((item) => item.slug !== slug);
+            this.syncAvailableAddons(response.data.available_addons);
             if (response.data.addon) {
-                this.updateInstalledAddon(response.data.addon);
+                this.updateAvailableAddon(response.data.addon);
             }
             showToast(response.data.message);
-            window.setTimeout(() => window.location.reload(), 600);
+            window.setTimeout(() => window.location.reload(), 400);
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
             this.addonBusy = false;
+        }
+    },
+
+    async saveWebsiteSettings() {
+        if (! this.websiteUpdateUrl || this.websiteSaving) {
+            return;
+        }
+
+        this.websiteSaving = true;
+        try {
+            const data = new FormData();
+            data.append('website_enabled', this.websiteForm.website_enabled ? '1' : '0');
+            data.append('website_tagline', this.websiteForm.website_tagline || '');
+            data.append('website_hero_title', this.websiteForm.website_hero_title || '');
+            data.append('website_about', this.websiteForm.website_about || '');
+            data.append('website_whatsapp', this.websiteForm.website_whatsapp || '');
+            (this.websiteForm.website_amenities || []).forEach((amenity, index) => {
+                data.append(`website_amenities[${index}]`, amenity || '');
+            });
+            Object.entries(this.websiteForm.website_social_links || {}).forEach(([key, value]) => {
+                data.append(`website_social_links[${key}]`, value || '');
+            });
+            if (this.websiteLogoFile) {
+                data.append('website_logo', this.websiteLogoFile);
+            }
+
+            const response = await window.axios.post(this.websiteUpdateUrl, data, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            if (response.data.website) {
+                Object.assign(this.websiteForm, response.data.website);
+            }
+
+            this.websiteLogoFile = null;
+            showToast(response.data.message || 'Website settings saved.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.websiteSaving = false;
+        }
+    },
+
+    async saveEmailNotificationSettings() {
+        if (! this.emailNotificationsUpdateUrl || this.emailSaving) {
+            return;
+        }
+
+        this.emailSaving = true;
+        try {
+            const response = await window.axios.patch(this.emailNotificationsUpdateUrl, this.emailForm);
+            if (response.data.email_notifications) {
+                Object.assign(this.emailForm, response.data.email_notifications);
+            }
+            showToast(response.data.message || 'Email settings saved.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.emailSaving = false;
         }
     },
 }));
@@ -5699,6 +6112,7 @@ Alpine.data('attendancePanel', (config) => ({
     studentProfileUrlTemplate: config.studentProfileUrlTemplate || '',
     indexUrl: config.indexUrl || '/attendance',
     reportsUrl: config.reportsUrl || '',
+    studentReportUrlTemplate: config.studentReportUrlTemplate || '',
     settingsUrl: config.settingsUrl || '',
     search: '',
     statusFilter: '',
@@ -5855,8 +6269,29 @@ Alpine.data('attendancePanel', (config) => ({
         showToast('Students without a check-in are already counted as absent for today.', 'success');
     },
 
+    studentReportUrl(studentId) {
+        if (! studentId) {
+            return this.reportsUrl;
+        }
+
+        const template = this.studentReportUrlTemplate || '';
+        if (! template) {
+            return this.reportsUrl;
+        }
+
+        const url = new URL(template.replace('__ID__', studentId), window.location.origin);
+        if (this.date) {
+            url.searchParams.set('date_from', this.date);
+            url.searchParams.set('date_to', this.date);
+            url.searchParams.set('selected_date', this.date);
+        }
+
+        return url.toString();
+    },
+
     openReports() {
-        window.location.href = this.reportsUrl;
+        const studentId = this.profile?.student_id || this.selectedStudentId;
+        window.location.href = this.studentReportUrl(studentId);
     },
 
     changeDate() {
@@ -5871,6 +6306,278 @@ Alpine.data('attendancePanel', (config) => ({
 
     async openViewStudent() {
         const studentId = this.profile?.student_id;
+        if (! studentId) {
+            return;
+        }
+
+        this.viewOpen = true;
+        this.viewLoading = true;
+        this.viewStudent = null;
+
+        try {
+            const response = await window.axios.get(`/students/${studentId}`);
+            this.viewStudent = response.data;
+        } catch (error) {
+            showToast(extractAxiosError(error), 'error');
+            this.closeView();
+        } finally {
+            this.viewLoading = false;
+        }
+    },
+
+    closeView() {
+        this.viewOpen = false;
+        this.viewLoading = false;
+        this.viewStudent = null;
+    },
+}));
+
+Alpine.data('attendanceStudentReport', (config) => ({
+    payload: config.payload || {},
+    reportDataUrl: config.reportDataUrl || '',
+    exportUrl: config.exportUrl || '',
+    studentsUrl: config.studentsUrl || '/students',
+    attendanceUrl: config.attendanceUrl || '/attendance',
+    dateFrom: config.dateFrom || '',
+    dateTo: config.dateTo || '',
+    calendarMonth: config.payload?.calendar_month || '',
+    calendarMonthLabel: config.payload?.calendar_month_label || '',
+    selectedDate: config.payload?.selected_date || '',
+    calendar: config.payload?.calendar || { weeks: [], weekday_labels: [] },
+    summary: config.payload?.summary || {},
+    selectedDay: config.payload?.selected_day || {},
+    recentActivity: config.payload?.recent_activity || [],
+    hasData: Boolean(config.payload?.has_data),
+    loading: false,
+    locationOpen: false,
+    showAllActivity: false,
+    viewOpen: false,
+    viewLoading: false,
+    viewStudent: null,
+
+    get student() {
+        return this.payload.student || {};
+    },
+
+    init() {},
+
+    rangeLabel() {
+        if (! this.dateFrom || ! this.dateTo) {
+            return 'Select range';
+        }
+
+        const format = (value) => {
+            const date = new Date(`${value}T00:00:00`);
+            if (Number.isNaN(date.getTime())) {
+                return value;
+            }
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+
+            return `${day}-${month}-${year}`;
+        };
+
+        return `${format(this.dateFrom)} → ${format(this.dateTo)}`;
+    },
+
+    reportPageUrl() {
+        const url = new URL(window.location.href);
+        return `${url.pathname}`;
+    },
+
+    exportHref() {
+        const url = new URL(this.exportUrl, window.location.origin);
+        url.searchParams.set('date_from', this.dateFrom);
+        url.searchParams.set('date_to', this.dateTo);
+        return url.toString();
+    },
+
+    summaryCards() {
+        const summary = this.summary || {};
+
+        return [
+            {
+                key: 'present',
+                label: 'Present',
+                count: Number(summary.present || 0),
+                percent: Number(summary.present_pct || 0),
+                borderClass: 'border-emerald-200 bg-emerald-50',
+                labelClass: 'text-emerald-700',
+                valueClass: 'text-emerald-900',
+                percentClass: 'text-emerald-700',
+                iconWrapClass: 'bg-emerald-100 text-emerald-600',
+                icon: '<svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+            },
+            {
+                key: 'absent',
+                label: 'Absent',
+                count: Number(summary.absent || 0),
+                percent: Number(summary.absent_pct || 0),
+                borderClass: 'border-orange-200 bg-orange-50',
+                labelClass: 'text-orange-700',
+                valueClass: 'text-orange-900',
+                percentClass: 'text-orange-700',
+                iconWrapClass: 'bg-orange-100 text-orange-600',
+                icon: '<svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+            },
+            {
+                key: 'trial',
+                label: 'On Trial / Half Day',
+                count: Number(summary.trial_half_day || 0),
+                percent: Number(summary.trial_half_day_pct || 0),
+                borderClass: 'border-violet-200 bg-violet-50',
+                labelClass: 'text-violet-700',
+                valueClass: 'text-violet-900',
+                percentClass: 'text-violet-700',
+                iconWrapClass: 'bg-violet-100 text-violet-600',
+                icon: '<svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M12 12v4m0 0h4m-4 0H8m4 0v-4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+            },
+            {
+                key: 'late',
+                label: 'Late',
+                count: Number(summary.late || 0),
+                percent: Number(summary.late_pct || 0),
+                borderClass: 'border-red-200 bg-red-50',
+                labelClass: 'text-red-700',
+                valueClass: 'text-red-900',
+                percentClass: 'text-red-700',
+                iconWrapClass: 'bg-red-100 text-red-600',
+                icon: '<svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+            },
+            {
+                key: 'total',
+                label: 'Total Days',
+                count: Number(summary.total_days || 0),
+                percent: Number(summary.total_days || 0) > 0 ? 100 : 0,
+                borderClass: 'border-sky-200 bg-sky-50',
+                labelClass: 'text-sky-700',
+                valueClass: 'text-sky-900',
+                percentClass: 'text-sky-700',
+                iconWrapClass: 'bg-sky-100 text-sky-600',
+                icon: '<svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>',
+            },
+        ];
+    },
+
+    statusDotClass(status) {
+        return {
+            present: 'bg-emerald-500',
+            absent: 'bg-orange-500',
+            late: 'bg-red-500',
+            trial: 'bg-violet-500',
+        }[status] || 'bg-gray-300';
+    },
+
+    statusBadgeClass(status) {
+        return {
+            present: 'bg-emerald-100 text-emerald-700',
+            absent: 'bg-orange-100 text-orange-700',
+            late: 'bg-red-100 text-red-700',
+            trial: 'bg-violet-100 text-violet-700',
+        }[status] || 'bg-gray-100 text-gray-600';
+    },
+
+    statusTextClass(status) {
+        return {
+            present: 'text-emerald-700',
+            absent: 'text-orange-700',
+            late: 'text-red-700',
+            trial: 'text-violet-700',
+        }[status] || 'text-gray-600';
+    },
+
+    calendarDayClass(day) {
+        if (! day.in_month) {
+            return 'border-transparent text-gray-300';
+        }
+
+        if (! day.in_range) {
+            return 'border-transparent bg-gray-50 text-gray-400';
+        }
+
+        if (day.date === this.selectedDate) {
+            return 'border-indigo-500 bg-indigo-50 text-indigo-900 shadow-sm';
+        }
+
+        return 'border-gray-100 bg-white text-gray-800 hover:bg-gray-50';
+    },
+
+    methodIcon(method) {
+        if (method === 'student_qr') {
+            return '<svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M12 12v4m0 0h4m-4 0H8m4 0v-4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        }
+
+        if (method === 'staff_gps') {
+            return '<svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+        }
+
+        return '<svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>';
+    },
+
+    visibleRecentActivity() {
+        const items = this.recentActivity || [];
+        return this.showAllActivity ? items : items.slice(0, 5);
+    },
+
+    applyPayload(data) {
+        this.payload = data;
+        this.summary = data.summary || {};
+        this.calendar = data.calendar || { weeks: [], weekday_labels: [] };
+        this.selectedDate = data.selected_date || '';
+        this.selectedDay = data.selected_day || {};
+        this.recentActivity = data.recent_activity || [];
+        this.calendarMonth = data.calendar_month || this.calendarMonth;
+        this.calendarMonthLabel = data.calendar_month_label || this.calendarMonthLabel;
+        this.hasData = Boolean(data.has_data);
+        this.dateFrom = data.date_from || this.dateFrom;
+        this.dateTo = data.date_to || this.dateTo;
+    },
+
+    async fetchReport(extraParams = {}) {
+        this.loading = true;
+        try {
+            const response = await window.axios.get(this.reportDataUrl, {
+                params: {
+                    date_from: this.dateFrom,
+                    date_to: this.dateTo,
+                    calendar_month: this.calendarMonth,
+                    selected_date: this.selectedDate,
+                    ...extraParams,
+                },
+            });
+            this.applyPayload(response.data);
+        } catch (error) {
+            showToast(extractAxiosError(error), 'error');
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async selectDate(day) {
+        if (! day?.in_month || ! day?.in_range) {
+            return;
+        }
+
+        this.selectedDate = day.date;
+        await this.fetchReport({ selected_date: day.date });
+    },
+
+    async changeCalendarMonth(direction) {
+        const base = new Date(`${this.calendarMonth || this.dateTo}-01T00:00:00`);
+        if (Number.isNaN(base.getTime())) {
+            return;
+        }
+
+        base.setMonth(base.getMonth() + direction);
+        const month = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}`;
+        this.calendarMonth = month;
+        await this.fetchReport({ calendar_month: month });
+    },
+
+    async openViewStudent() {
+        const studentId = this.student?.id;
         if (! studentId) {
             return;
         }
@@ -5955,6 +6662,171 @@ Alpine.data('attendanceSettingsPanel', (config) => ({
             showToast('Check-in link copied.');
         } catch {
             showToast('Could not copy link.', 'error');
+        }
+    },
+}));
+
+Alpine.data('studentOffersPage', (config) => ({
+    students: config.students || [],
+    sendUrl: config.sendUrl,
+    offersEnabled: Boolean(config.offersEnabled),
+    mailConfigured: Boolean(config.mailConfigured),
+    mailIssue: config.mailIssue || '',
+    viewingAll: Boolean(config.viewingAll),
+    emailSettingsUrl: config.emailSettingsUrl || '',
+    sending: false,
+    search: '',
+    errors: {},
+    form: {
+        subject: '',
+        message: '',
+        action_url: '',
+        audience: 'all',
+        student_ids: [],
+    },
+
+    filteredStudents() {
+        const term = String(this.search || '').trim().toLowerCase();
+
+        if (! term) {
+            return this.students;
+        }
+
+        return this.students.filter((student) => {
+            const haystack = [
+                student.name,
+                student.student_code,
+                student.email,
+                student.branch_name,
+            ].join(' ').toLowerCase();
+
+            return haystack.includes(term);
+        });
+    },
+
+    selectedCount() {
+        return (this.form.student_ids || []).length;
+    },
+
+    allVisibleSelected() {
+        const visibleIds = this.filteredStudents().map((student) => String(student.id));
+
+        return visibleIds.length > 0
+            && visibleIds.every((id) => this.form.student_ids.map(String).includes(id));
+    },
+
+    toggleSelectAllVisible() {
+        const visibleIds = this.filteredStudents().map((student) => student.id);
+
+        if (this.allVisibleSelected()) {
+            this.form.student_ids = this.form.student_ids.filter((id) => ! visibleIds.includes(id));
+            return;
+        }
+
+        this.form.student_ids = [...new Set([...this.form.student_ids, ...visibleIds])];
+    },
+
+    canSend() {
+        if (! this.offersEnabled || ! this.mailConfigured || this.viewingAll) {
+            return false;
+        }
+
+        if (this.form.audience === 'selected') {
+            return this.selectedCount() > 0;
+        }
+
+        return this.students.length > 0;
+    },
+
+    async sendOffers() {
+        this.errors = {};
+
+        if (! String(this.form.subject || '').trim()) {
+            this.errors.subject = 'Subject is required.';
+        }
+
+        if (! String(this.form.message || '').trim()) {
+            this.errors.message = 'Message is required.';
+        }
+
+        if (this.form.audience === 'selected' && this.selectedCount() === 0) {
+            this.errors.student_ids = 'Select at least one student.';
+        }
+
+        if (Object.keys(this.errors).length > 0) {
+            return;
+        }
+
+        this.sending = true;
+
+        try {
+            const response = await window.axios.post(this.sendUrl, {
+                subject: this.form.subject,
+                message: this.form.message,
+                action_url: this.form.action_url || null,
+                audience: this.form.audience,
+                student_ids: this.form.audience === 'selected' ? this.form.student_ids : [],
+            });
+
+            showToast(response.data.message);
+            this.form.subject = '';
+            this.form.message = '';
+            this.form.action_url = '';
+            this.form.student_ids = [];
+            this.form.audience = 'all';
+        } catch (e) {
+            const validationErrors = e.response?.data?.errors;
+
+            if (validationErrors) {
+                this.errors = Object.fromEntries(
+                    Object.entries(validationErrors).map(([key, messages]) => [key, messages[0]]),
+                );
+            }
+
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.sending = false;
+        }
+    },
+}));
+
+Alpine.data('helpSupportPage', (config) => ({
+    storeUrl: config.storeUrl,
+    tickets: config.tickets || [],
+    saving: false,
+    errors: {},
+    form: {
+        subject: '',
+        message: '',
+        category: 'general',
+        priority: 'normal',
+    },
+
+    async submitTicket() {
+        this.errors = {};
+        if (! String(this.form.subject || '').trim()) {
+            this.errors.subject = 'Subject is required.';
+        }
+        if (! String(this.form.message || '').trim()) {
+            this.errors.message = 'Message is required.';
+        }
+        if (Object.keys(this.errors).length > 0) {
+            return;
+        }
+
+        this.saving = true;
+        try {
+            const response = await window.axios.post(this.storeUrl, this.form);
+            this.tickets.unshift(response.data.ticket);
+            this.form.subject = '';
+            this.form.message = '';
+            this.form.category = 'general';
+            this.form.priority = 'normal';
+            showToast(response.data.message);
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.saving = false;
         }
     },
 }));

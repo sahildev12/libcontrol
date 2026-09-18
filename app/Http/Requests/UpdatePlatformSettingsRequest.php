@@ -19,11 +19,8 @@ class UpdatePlatformSettingsRequest extends FormRequest
         return [
             'student_code_prefix' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/'],
             'student_code_padding' => ['required', 'integer', 'min:1', 'max:6'],
-            'display_name' => ['nullable', 'string', 'max:255'],
-            'logo_with_text' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:4096'],
-            'simple_logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:4096'],
-            'favicon' => ['nullable', 'file', 'mimes:ico,png,svg', 'max:1024'],
-            'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:4096'],
+            'id_card_template' => ['nullable', 'string', 'in:'.implode(',', array_keys(config('libcontrol.id_card_templates', [])))],
+            'id_card_logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:4096'],
         ];
     }
 

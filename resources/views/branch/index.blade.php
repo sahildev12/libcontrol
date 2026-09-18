@@ -105,7 +105,11 @@
                                     <div class="inline-flex gap-1.5">
                                         <x-admin.icon-button tone="sky" @click="openView(branch)">View</x-admin.icon-button>
                                         <x-admin.icon-button tone="indigo" @click="openEdit(branch)">Edit</x-admin.icon-button>
-                                        <x-admin.icon-button tone="red" @click="deleteBranch(branch)">Delete</x-admin.icon-button>
+                                        <x-admin.icon-button
+                                            tone="red"
+                                            title="Delete branch"
+                                            @click="deleteBranch(branch)"
+                                        >Delete</x-admin.icon-button>
                                     </div>
                                 </td>
                             </tr>

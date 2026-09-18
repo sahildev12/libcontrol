@@ -13,11 +13,17 @@ use App\Http\Controllers\SeatController;
 use App\Http\Controllers\DatabaseMaintenanceController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentOfferController;
 use App\Http\Controllers\PublicStudentRegistrationController;
 use App\Http\Controllers\StudentRegistrationInviteController;
 use App\Http\Controllers\TrialSeatController;
+use App\Http\Controllers\HelpSupportController;
+use App\Http\Controllers\LibraryWebsiteController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/', [LibraryWebsiteController::class, 'home'])->name('home');
+Route::redirect('/library', '/');
 
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
@@ -28,12 +34,6 @@ Route::post('/setup/install', [\App\Http\Controllers\SetupController::class, 'in
 
 Route::get('/install', [\App\Http\Controllers\InstallController::class, 'show'])->name('install.show');
 Route::post('/install', [\App\Http\Controllers\InstallController::class, 'run'])->name('install.run');
-
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
-});
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'branch', 'page.activity'])->name('dashboard');
 
@@ -48,10 +48,10 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
 
     Route::middleware('platform_admin')->group(function () {
         Route::post('/branch', [BranchController::class, 'store'])->name('branch.store');
-        Route::get('/branch/{branch}', [BranchController::class, 'show'])->name('branch.show');
-        Route::patch('/branch/{branch}', [BranchController::class, 'updateManaged'])->name('branch.manage.update');
-        Route::post('/branch/{branch}/reset-password', [BranchController::class, 'resetPassword'])->name('branch.reset-password');
-        Route::delete('/branch/{branch}', [BranchController::class, 'destroy'])->name('branch.destroy');
+        Route::get('/branch/{branch}', [BranchController::class, 'show'])->whereNumber('branch')->name('branch.show');
+        Route::patch('/branch/{branch}', [BranchController::class, 'updateManaged'])->whereNumber('branch')->name('branch.manage.update');
+        Route::post('/branch/{branch}/reset-password', [BranchController::class, 'resetPassword'])->whereNumber('branch')->name('branch.reset-password');
+        Route::delete('/branch/{branch}', [BranchController::class, 'destroy'])->whereNumber('branch')->name('branch.destroy');
     });
 
     Route::get('/halls', [HallController::class, 'index'])->name('halls.index');
@@ -110,11 +110,21 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/fees/{booking}/installments/{installment}/pay', [FeeController::class, 'payInstallment'])->name('fees.installments.pay');
     Route::get('/fees/{booking}', [FeeController::class, 'show'])->name('fees.show');
     Route::patch('/fees/{booking}', [FeeController::class, 'update'])->name('fees.update');
-    Route::get('/profit-loss', [ProfitLossController::class, 'index'])->name('profit-loss.index');
-    Route::post('/profit-loss/expenses', [ProfitLossController::class, 'store'])->name('profit-loss.expenses.store');
-    Route::patch('/profit-loss/expenses/{expense}', [ProfitLossController::class, 'update'])->name('profit-loss.expenses.update');
-    Route::delete('/profit-loss/expenses/{expense}', [ProfitLossController::class, 'destroy'])->name('profit-loss.expenses.destroy');
-    Route::post('/profit-loss/expenses/bulk-delete', [ProfitLossController::class, 'bulkDestroy'])->name('profit-loss.expenses.bulk-destroy');
+    Route::get('/profit-loss', function () {
+        $query = request()->getQueryString();
+
+        return redirect('/finance'.($query ? '?'.$query : ''));
+    })->name('profit-loss.index');
+    Route::prefix('finance')->name('finance.')->group(function (): void {
+        Route::get('/', [ProfitLossController::class, 'index'])->name('index');
+        Route::get('/charts', [ProfitLossController::class, 'charts'])->name('charts');
+        Route::post('/expenses', [ProfitLossController::class, 'store'])->name('expenses.store');
+        Route::patch('/expenses/{expense}', [ProfitLossController::class, 'update'])->name('expenses.update');
+        Route::delete('/expenses/{expense}', [ProfitLossController::class, 'destroy'])->name('expenses.destroy');
+        Route::post('/expenses/bulk-delete', [ProfitLossController::class, 'bulkDestroy'])->name('expenses.bulk-destroy');
+    });
+    Route::get('/offers', [StudentOfferController::class, 'index'])->name('offers.index');
+    Route::post('/offers/send', [StudentOfferController::class, 'send'])->name('offers.send');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
@@ -123,16 +133,22 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/activity-logs/bulk-delete', [\App\Http\Controllers\ActivityLogController::class, 'bulkDestroy'])->name('activity-logs.bulk-destroy');
     Route::get('/activity-logs/{activityLog}', [\App\Http\Controllers\ActivityLogController::class, 'show'])->name('activity-logs.show');
 
+    Route::get('/help-support', [HelpSupportController::class, 'index'])->name('help-support.index');
+    Route::post('/help-support/tickets', [HelpSupportController::class, 'store'])->name('help-support.store');
+
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::patch('/settings/platform', [SettingsController::class, 'updatePlatform'])->name('settings.platform.update')->middleware('platform_admin');
-    Route::patch('/settings/platform/plan', [SettingsController::class, 'updatePlatformPlan'])->name('settings.platform.plan.update')->middleware('platform_admin');
+    Route::post('/settings/website', [LibraryWebsiteController::class, 'update'])->name('settings.website.update')->middleware('platform_admin');
+    Route::patch('/settings/email-notifications', [SettingsController::class, 'updateEmailNotifications'])->name('settings.email-notifications.update')->middleware('platform_admin');
+    Route::patch('/settings/platform/plan', [SettingsController::class, 'updatePlatformPlan'])->name('settings.platform.plan.update')->middleware('developer_admin');
     Route::post('/settings/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.clear-cache')->middleware('developer_admin');
-    Route::post('/settings/addons/upload', [\App\Http\Controllers\AddonController::class, 'upload'])->name('settings.addons.upload')->middleware('platform_admin');
-    Route::post('/settings/addons/{slug}/install', [\App\Http\Controllers\AddonController::class, 'install'])->name('settings.addons.install')->middleware('platform_admin');
-    Route::post('/settings/addons/{slug}/enable', [\App\Http\Controllers\AddonController::class, 'enable'])->name('settings.addons.enable')->middleware('platform_admin');
-    Route::post('/settings/addons/{slug}/disable', [\App\Http\Controllers\AddonController::class, 'disable'])->name('settings.addons.disable')->middleware('platform_admin');
-    Route::delete('/settings/addons/{slug}', [\App\Http\Controllers\AddonController::class, 'destroy'])->name('settings.addons.destroy')->middleware('platform_admin');
+    Route::post('/settings/sync-runtime', [SettingsController::class, 'syncRuntime'])->name('settings.sync-runtime')->middleware('developer_admin');
+    Route::post('/settings/addons/upload', [\App\Http\Controllers\AddonController::class, 'upload'])->name('settings.addons.upload')->middleware('developer_admin');
+    Route::post('/settings/addons/{slug}/install', [\App\Http\Controllers\AddonController::class, 'install'])->name('settings.addons.install')->middleware('developer_admin');
+    Route::post('/settings/addons/{slug}/enable', [\App\Http\Controllers\AddonController::class, 'enable'])->name('settings.addons.enable')->middleware('developer_admin');
+    Route::post('/settings/addons/{slug}/disable', [\App\Http\Controllers\AddonController::class, 'disable'])->name('settings.addons.disable')->middleware('developer_admin');
+    Route::delete('/settings/addons/{slug}', [\App\Http\Controllers\AddonController::class, 'destroy'])->name('settings.addons.destroy')->middleware('developer_admin');
 
     Route::middleware('developer_admin')->prefix('settings/database')->name('settings.database.')->group(function (): void {
         Route::get('/status', [DatabaseMaintenanceController::class, 'status'])->name('status');

@@ -73,6 +73,10 @@ class AuthenticatedSessionController extends Controller
             return LoginBrandingService::PORTAL_ADMIN;
         }
 
+        if ($request->routeIs('login', 'login.store')) {
+            return LoginBrandingService::PORTAL_BRANCH;
+        }
+
         return LoginBrandingService::PORTAL_BRANCH;
     }
 }

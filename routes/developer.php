@@ -1,7 +1,17 @@
 <?php
 
 use App\Http\Controllers\Developer\DeploymentController;
+use App\Http\Controllers\Developer\SupportTicketController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth', 'platform_admin', 'developer_admin', 'license_server', 'landlord_host'])
+    ->prefix('developer/support-tickets')
+    ->name('developer.support-tickets.')
+    ->group(function () {
+        Route::get('/', [SupportTicketController::class, 'index'])->name('index');
+        Route::get('/{supportTicket}', [SupportTicketController::class, 'show'])->name('show');
+        Route::patch('/{supportTicket}', [SupportTicketController::class, 'update'])->name('update');
+    });
 
 Route::middleware(['auth', 'platform_admin', 'developer_admin', 'license_server', 'landlord_host'])
     ->prefix('developer/deployments')

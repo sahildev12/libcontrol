@@ -43,6 +43,32 @@ class SettingsTest extends TestCase
         ]);
     }
 
+    public function test_platform_admin_can_update_id_card_template_settings(): void
+    {
+        PlatformSetting::query()->create([
+            'student_code_prefix' => 'LIB',
+            'student_code_padding' => 3,
+            'id_card_template' => 'classic',
+        ]);
+
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_DEVELOPER,
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(route('settings.platform.update'), [
+            'student_code_prefix' => 'LIB',
+            'student_code_padding' => 3,
+            'id_card_template' => 'professional',
+        ]);
+
+        $response->assertOk()->assertJsonPath('platform_settings.id_card_template', 'professional');
+        $this->assertDatabaseHas('platform_settings', [
+            'id_card_template' => 'professional',
+        ]);
+    }
+
     public function test_platform_admin_can_update_global_student_code_settings(): void
     {
         PlatformSetting::query()->create([

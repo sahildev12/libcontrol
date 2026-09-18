@@ -167,6 +167,14 @@ class BranchController extends Controller
             ], 422);
         }
 
+        $branch->loadCount(['halls', 'students']);
+
+        if ($branch->halls_count > 0 || $branch->students_count > 0) {
+            return response()->json([
+                'message' => 'Cannot delete a branch that has halls or students. Remove or reassign them first.',
+            ], 422);
+        }
+
         $name = $branch->name;
         $branchId = $branch->id;
         $branch->delete();

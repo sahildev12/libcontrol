@@ -18,11 +18,19 @@ class AddonRegistry
     {
         $catalog = config('addons', []);
 
-        if (! is_dir($this->manifestsDirectory())) {
-            return $catalog;
+        if (is_dir($this->manifestsDirectory())) {
+        foreach (glob($this->manifestsDirectory().'/*.json') ?: [] as $manifestFile) {
+            $manifest = json_decode((string) file_get_contents($manifestFile), true);
+
+            if (! is_array($manifest) || ! is_string($manifest['slug'] ?? null) || $manifest['slug'] === '') {
+                continue;
+            }
+
+            $catalog[$manifest['slug']] = array_merge($catalog[$manifest['slug']] ?? [], $manifest);
+        }
         }
 
-        foreach (glob($this->manifestsDirectory().'/*.json') ?: [] as $manifestFile) {
+        foreach (glob(base_path('addons/*/addon.json')) ?: [] as $manifestFile) {
             $manifest = json_decode((string) file_get_contents($manifestFile), true);
 
             if (! is_array($manifest) || ! is_string($manifest['slug'] ?? null) || $manifest['slug'] === '') {
@@ -33,6 +41,19 @@ class AddonRegistry
         }
 
         return $catalog;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function catalogForSettings(): array
+    {
+        return collect($this->catalog())
+            ->keys()
+            ->sort()
+            ->values()
+            ->map(fn (string $slug) => $this->serializeForSettings($slug))
+            ->all();
     }
 
     private function manifestsDirectory(): string

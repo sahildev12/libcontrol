@@ -11,7 +11,7 @@ class AddonController extends Controller
 {
     public function upload(Request $request, AddonPackageInstaller $installer, AddonRegistry $addons): JsonResponse
     {
-        abort_unless($request->user()?->isPlatformAdmin(), 403);
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
 
         $validated = $request->validate([
             'package' => ['required', 'file', 'mimes:zip', 'max:51200'],
@@ -25,13 +25,13 @@ class AddonController extends Controller
         return response()->json([
             'message' => 'Addon installed.',
             'addon' => $addons->serializeForSettings($slug),
-            'installed_addons' => $addons->installed()->values()->all(),
+            'available_addons' => $addons->catalogForSettings(),
         ]);
     }
 
     public function install(Request $request, string $slug, AddonRegistry $addons): JsonResponse
     {
-        abort_unless($request->user()?->isPlatformAdmin(), 403);
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
 
         $addons->install($slug);
 
@@ -40,12 +40,13 @@ class AddonController extends Controller
         return response()->json([
             'message' => 'Addon installed.',
             'addon' => $addons->serializeForSettings($slug),
+            'available_addons' => $addons->catalogForSettings(),
         ]);
     }
 
     public function enable(Request $request, string $slug, AddonRegistry $addons): JsonResponse
     {
-        abort_unless($request->user()?->isPlatformAdmin(), 403);
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
         abort_unless($addons->isInstalled($slug), 404);
 
         $addons->enable($slug);
@@ -55,12 +56,13 @@ class AddonController extends Controller
         return response()->json([
             'message' => 'Addon enabled.',
             'addon' => $addons->serializeForSettings($slug),
+            'available_addons' => $addons->catalogForSettings(),
         ]);
     }
 
     public function disable(Request $request, string $slug, AddonRegistry $addons): JsonResponse
     {
-        abort_unless($request->user()?->isPlatformAdmin(), 403);
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
         abort_unless($addons->isInstalled($slug), 404);
 
         $addons->disable($slug);
@@ -70,12 +72,13 @@ class AddonController extends Controller
         return response()->json([
             'message' => 'Addon disabled.',
             'addon' => $addons->serializeForSettings($slug),
+            'available_addons' => $addons->catalogForSettings(),
         ]);
     }
 
     public function destroy(Request $request, string $slug, AddonRegistry $addons): JsonResponse
     {
-        abort_unless($request->user()?->isPlatformAdmin(), 403);
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
         abort_unless($addons->isInstalled($slug), 404);
 
         $addons->disable($slug);
@@ -86,6 +89,7 @@ class AddonController extends Controller
         return response()->json([
             'message' => 'Addon uninstalled.',
             'addon' => $addons->serializeForSettings($slug),
+            'available_addons' => $addons->catalogForSettings(),
         ]);
     }
 }

@@ -47,7 +47,9 @@ class _AuthGateState extends State<AuthGate> {
     await ServerConfig.instance.load();
     await _loadSavedStudentState();
 
-    if (ServerConfig.instance.isConfigured && !AuthService.instance.isBootstrapped) {
+    if (ServerConfig.instance.isConfigured) {
+      await AuthService.instance.bootstrap(validateOnline: false);
+    } else {
       AuthService.instance.markBootstrapped();
     }
 
@@ -71,7 +73,7 @@ class _AuthGateState extends State<AuthGate> {
     });
 
     await _loadSavedStudentState();
-    AuthService.instance.markBootstrapped();
+    await AuthService.instance.bootstrap(validateOnline: false);
 
     if (mounted) {
       setState(() => _initializing = false);

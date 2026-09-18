@@ -15,6 +15,11 @@ class UpdateFeeRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $amountReceived = $this->input('amount_received');
+        if ($amountReceived === null || $amountReceived === '') {
+            $this->merge(['amount_received' => 0]);
+        }
+
         $type = (string) $this->input('fee_type');
 
         if ($type === 'installment') {
@@ -38,6 +43,8 @@ class UpdateFeeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $feeAmount = max(0.01, round((float) $this->input('fee_amount', 0), 2));
+
         return [
             'fee_type' => ['required', Rule::in(['monthly', 'yearly', 'custom', 'one_time', 'membership', 'installment'])],
             'fee_amount' => ['required', 'numeric', 'min:0.01'],
@@ -58,6 +65,19 @@ class UpdateFeeRequest extends FormRequest
                 'required_if:payment_plan,installments',
             ],
             'first_due_date' => ['nullable', 'date', 'required_if:payment_plan,installments'],
+            'amount_received' => ['nullable', 'numeric', 'min:0', 'max:'.$feeAmount],
+            'payment_method' => [
+                'nullable',
+                Rule::requiredIf(fn () => (float) $this->input('amount_received', 0) > 0),
+                Rule::in(['cash', 'upi', 'card', 'bank_transfer', 'other']),
+            ],
+            'payment_date' => [
+                'nullable',
+                'date',
+                Rule::requiredIf(fn () => (float) $this->input('amount_received', 0) > 0),
+            ],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
+            'payment_notes' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -82,6 +102,17 @@ class UpdateFeeRequest extends FormRequest
                 && $this->filled('plan_expiry_date')
                 && $this->input('first_due_date') > $this->input('plan_expiry_date')) {
                 $validator->errors()->add('first_due_date', 'First due date cannot be after the plan end date.');
+            }
+
+            $amountReceived = round((float) $this->input('amount_received', 0), 2);
+            $feeAmount = round((float) $this->input('fee_amount', 0), 2);
+
+            if ($amountReceived > $feeAmount + 0.009) {
+                $validator->errors()->add('amount_received', 'Payment amount cannot exceed the fee amount.');
+            }
+
+            if ($amountReceived > 0 && $amountReceived < 0.01) {
+                $validator->errors()->add('amount_received', 'Payment amount must be greater than 0.');
             }
         });
     }

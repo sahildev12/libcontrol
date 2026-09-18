@@ -11,7 +11,10 @@ use Illuminate\Support\Collection;
 
 class FeeService
 {
-    public function __construct(private PlanExpiryService $planExpiryService) {}
+    public function __construct(
+        private PlanExpiryService $planExpiryService,
+        private ProfitLossService $profitLossService,
+    ) {}
 
     public function baseQuery(?int $branchId): Builder
     {
@@ -31,6 +34,71 @@ class FeeService
     /**
      * @return array{expiring_soon: Collection, expired: Collection, active: Collection}
      */
+    /**
+     * @return array<string, mixed>
+     */
+    public function insightSummary(?int $branchId): array
+    {
+        $today = Carbon::today();
+        $from = $today->copy()->startOfMonth();
+        $to = $today->copy()->endOfMonth();
+
+        $current = $this->profitLossService->feePeriodSummary($branchId, $from, $to);
+
+        $previousFrom = $from->copy()->subMonthNoOverflow()->startOfMonth();
+        $previousTo = $from->copy()->subMonthNoOverflow()->endOfMonth();
+        $previousReceived = $this->profitLossService->feePeriodSummary($branchId, $previousFrom, $previousTo)['received'];
+
+        $bookings = $this->baseQuery($branchId)
+            ->where('fee_amount', '>', 0)
+            ->get();
+
+        $overdueCount = 0;
+        $overdueAmount = 0.0;
+        $outstanding = 0.0;
+        $expiringSoon = 0;
+        $activePlans = 0;
+
+        foreach ($bookings as $booking) {
+            if (! $this->hasFeeSetup($booking)) {
+                continue;
+            }
+
+            $activePlans++;
+            $due = $this->amountDue($booking);
+
+            if ($due > 0) {
+                $outstanding = round($outstanding + $due, 2);
+            }
+
+            if ($this->paymentStatus($booking) === 'overdue') {
+                $overdueCount++;
+                $overdueAmount = round($overdueAmount + $due, 2);
+            }
+
+            if ($this->planStatus($booking) === 'expiring_soon') {
+                $expiringSoon++;
+            }
+        }
+
+        $received = (float) ($current['received'] ?? 0);
+        $pending = (float) ($current['pending'] ?? 0);
+
+        return [
+            'month_label' => $from->format('F Y'),
+            'received' => $received,
+            'received_delta_pct' => $this->deltaPercent($received, (float) $previousReceived),
+            'payment_count' => (int) ($current['payment_count'] ?? 0),
+            'expected' => (float) ($current['expected'] ?? 0),
+            'pending' => $pending,
+            'outstanding' => $outstanding,
+            'overdue_count' => $overdueCount,
+            'overdue_amount' => $overdueAmount,
+            'expiring_soon_count' => $expiringSoon,
+            'active_plans' => $activePlans,
+        ];
+    }
+
     public function overviewForBranch(?int $branchId): array
     {
         $today = Carbon::today();
@@ -175,6 +243,11 @@ class FeeService
         }
 
         return 'partial';
+    }
+
+    public function hasFeeSetup(SeatBooking $booking): bool
+    {
+        return round((float) ($booking->fee_amount ?? 0), 2) > 0;
     }
 
     public function isInstallmentPlan(SeatBooking $booking): bool
@@ -629,5 +702,14 @@ class FeeService
         }
 
         return $booking->fresh(['installments', 'payments', 'student', 'seat.hall.branch']);
+    }
+
+    private function deltaPercent(float $current, float $previous): ?float
+    {
+        if ($previous <= 0) {
+            return $current > 0 ? 100.0 : null;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 0);
     }
 }

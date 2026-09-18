@@ -10,6 +10,7 @@
             studentProfileUrlTemplate: @js(route('attendance.student-profile', ['student' => '__ID__'])),
             indexUrl: @js(route('attendance.index')),
             reportsUrl: @js(route('attendance.reports')),
+            studentReportUrlTemplate: @js(route('attendance.student-report', ['student' => '__ID__'])),
             settingsUrl: @js(route('attendance.settings')),
         })"
         x-init="init()"
@@ -168,7 +169,7 @@
                                                 :disabled="busy"
                                                 class="inline-flex h-8 items-center rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                                             >Mark Present</button>
-                                            <button type="button" @click="openReports()" class="inline-flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="History">
+                                            <button type="button" @click="window.location.href = studentReportUrl(row.student_id)" class="inline-flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Attendance report">
                                                 <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </button>
                                         </div>

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Models\FamilyGroup;
+use App\Models\PlatformSetting;
 use App\Models\Student;
+use App\Services\FeeService;
 use App\Services\StudentCreator;
 use App\Services\StudentFamilyService;
 use Illuminate\Http\JsonResponse;
@@ -235,11 +237,26 @@ class StudentController extends Controller
     public function idCard(Request $request, Student $student): View
     {
         $this->authorizeStudent($request, $student);
-        $student->load('branch');
+        $student->load(['branch', 'bookings' => fn ($query) => $query
+            ->whereNull('cancelled_at')
+            ->where('status', '!=', 'cancelled')
+            ->latest('id'),
+        ]);
+
+        $platformSettings = PlatformSetting::current();
+        $booking = $student->bookings->first();
+        $feeService = app(FeeService::class);
+        $feeType = $booking ? $feeService->normalizeFeeType((string) $booking->fee_type) : 'monthly';
 
         return view('students.id-card', [
             'student' => $student,
             'branchName' => $student->branch?->display_name ?: $student->branch?->name,
+            'template' => $platformSettings->idCardTemplate(),
+            'logoUrl' => $platformSettings->idCardLogoUrl(),
+            'validTill' => $booking?->plan_expiry_date?->format('d M Y') ?? '—',
+            'membershipPlan' => $student->isTrialStudent()
+                ? 'Trial'
+                : ($booking ? $feeService->feeTypeLabel($feeType).' Plan' : 'Regular Plan'),
         ]);
     }
 

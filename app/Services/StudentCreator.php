@@ -13,6 +13,7 @@ class StudentCreator
     public function __construct(
         private StudentCodeService $studentCodeService,
         private StudentFamilyService $studentFamilyService,
+        private StudentEmailNotificationService $studentEmailNotifications,
     ) {}
 
     /**
@@ -89,7 +90,11 @@ class StudentCreator
                 $this->studentFamilyService->linkStudent($student, $group);
             }
 
-            return $student->fresh(['familyGroup', 'branch']);
+            $student = $student->fresh(['familyGroup', 'branch']);
+
+            $this->studentEmailNotifications->sendWelcome($student);
+
+            return $student;
         });
     }
 }

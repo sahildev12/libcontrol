@@ -5,8 +5,10 @@ namespace App\Addons\Attendance\Services;
 use App\Addons\Attendance\Models\AttendanceRecord;
 use App\Addons\Attendance\Models\BranchAttendanceSetting;
 use App\Models\Branch;
+use App\Models\SeatBooking;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\FeeService;
 use App\Services\LibraryScheduleService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -350,12 +352,429 @@ class AttendanceService
         return $checkInMinutes > $openMinutes;
     }
 
-    private function methodLabel(?string $method): string
+    /**
+     * @return array<string, mixed>
+     */
+    public function studentReport(
+        Student $student,
+        Carbon $from,
+        Carbon $to,
+        Carbon $calendarMonth,
+        ?string $selectedDate = null,
+    ): array {
+        $from = $from->copy()->startOfDay();
+        $to = $to->copy()->startOfDay();
+        $calendarMonth = $calendarMonth->copy()->startOfMonth();
+
+        if ($from->greaterThan($to)) {
+            [$from, $to] = [$to->copy(), $from->copy()];
+        }
+
+        $student->loadMissing(['branch', 'bookings' => fn ($query) => $query
+            ->whereNull('cancelled_at')
+            ->where('status', '!=', 'cancelled')
+            ->with('seat.hall')
+            ->latest('id'),
+        ]);
+
+        $booking = $student->bookings->first();
+        $records = AttendanceRecord::query()
+            ->with(['branch', 'markedBy:id,name'])
+            ->where('student_id', $student->id)
+            ->whereDate('attendance_date', '>=', $from->toDateString())
+            ->whereDate('attendance_date', '<=', $to->toDateString())
+            ->orderByDesc('attendance_date')
+            ->get()
+            ->keyBy(fn (AttendanceRecord $record) => $record->attendance_date?->toDateString());
+
+        $dayStatuses = $this->buildStudentDayStatuses($student, $from, $to, $records, $booking);
+        $summary = $this->summarizeStudentDayStatuses($dayStatuses);
+        $calendar = $this->buildStudentCalendar($student, $calendarMonth, $from, $to, $records, $booking);
+        $selected = $this->resolveSelectedReportDate($from, $to, $selectedDate, $dayStatuses);
+        $selectedDay = $this->serializeStudentDayDetail(
+            $student,
+            Carbon::parse($selected, config('libcontrol.timezone', 'Asia/Kolkata')),
+            $records->get($selected),
+            $booking,
+        );
+
+        return [
+            'student' => $this->serializeStudentReportCard($student, $booking),
+            'summary' => $summary,
+            'calendar' => $calendar,
+            'selected_date' => $selected,
+            'selected_day' => $selectedDay,
+            'recent_activity' => $this->buildStudentRecentActivity($student, $from, $to, $records, $booking),
+            'date_from' => $from->toDateString(),
+            'date_to' => $to->toDateString(),
+            'calendar_month' => $calendarMonth->format('Y-m'),
+            'calendar_month_label' => $calendarMonth->format('F Y'),
+            'has_data' => $records->isNotEmpty() || $summary['total_days'] > 0,
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function studentReportExportRows(Student $student, Carbon $from, Carbon $to): array
+    {
+        $student->loadMissing(['branch', 'bookings' => fn ($query) => $query
+            ->whereNull('cancelled_at')
+            ->where('status', '!=', 'cancelled')
+            ->with('seat.hall')
+            ->latest('id'),
+        ]);
+
+        $booking = $student->bookings->first();
+        $card = $this->serializeStudentReportCard($student, $booking);
+        $records = AttendanceRecord::query()
+            ->where('student_id', $student->id)
+            ->whereDate('attendance_date', '>=', $from->toDateString())
+            ->whereDate('attendance_date', '<=', $to->toDateString())
+            ->get()
+            ->keyBy(fn (AttendanceRecord $record) => $record->attendance_date?->toDateString());
+
+        $rows = [];
+        $cursor = $from->copy();
+
+        while ($cursor->lessThanOrEqualTo($to)) {
+            $iso = $cursor->toDateString();
+            $day = $this->serializeStudentDayDetail(
+                $student,
+                $cursor->copy(),
+                $records->get($iso),
+                $booking,
+            );
+
+            $rows[] = [
+                'student_name' => $card['name'],
+                'student_code' => $card['student_code'],
+                'branch' => $card['branch_name'],
+                'date' => $day['date_heading'] ?? $day['date'] ?? $iso,
+                'status' => $day['status_label'],
+                'check_in' => $day['check_in_at'] ?? '—',
+                'check_out' => $day['check_out_at'] ?? '—',
+                'study_time' => $day['study_time_label'] ?? '—',
+                'method' => $day['method_label'] ?? '—',
+                'location' => $day['location_name'] ?? '—',
+            ];
+
+            $cursor->addDay();
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  Collection<string, AttendanceRecord>  $records
+     * @return array<string, string>
+     */
+    private function buildStudentDayStatuses(
+        Student $student,
+        Carbon $from,
+        Carbon $to,
+        Collection $records,
+        ?SeatBooking $booking,
+    ): array {
+        $statuses = [];
+        $cursor = $from->copy();
+
+        while ($cursor->lessThanOrEqualTo($to)) {
+            $iso = $cursor->toDateString();
+            $statuses[$iso] = $this->resolveStudentDayStatus($student, $cursor, $records->get($iso), $booking);
+            $cursor->addDay();
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * @param  array<string, string>  $dayStatuses
+     * @return array<string, int|float>
+     */
+    private function summarizeStudentDayStatuses(array $dayStatuses): array
+    {
+        $present = 0;
+        $absent = 0;
+        $trialHalfDay = 0;
+        $late = 0;
+
+        foreach ($dayStatuses as $status) {
+            match ($status) {
+                'present' => $present++,
+                'absent' => $absent++,
+                'trial' => $trialHalfDay++,
+                'late' => $late++,
+                default => null,
+            };
+        }
+
+        $totalDays = count($dayStatuses);
+
+        return [
+            'present' => $present,
+            'absent' => $absent,
+            'trial_half_day' => $trialHalfDay,
+            'late' => $late,
+            'total_days' => $totalDays,
+            'present_pct' => $this->percentageOf($present, $totalDays),
+            'absent_pct' => $this->percentageOf($absent, $totalDays),
+            'trial_half_day_pct' => $this->percentageOf($trialHalfDay, $totalDays),
+            'late_pct' => $this->percentageOf($late, $totalDays),
+        ];
+    }
+
+    /**
+     * @param  Collection<string, AttendanceRecord>  $records
+     * @return array<string, mixed>
+     */
+    private function buildStudentCalendar(
+        Student $student,
+        Carbon $calendarMonth,
+        Carbon $from,
+        Carbon $to,
+        Collection $records,
+        ?SeatBooking $booking,
+    ): array {
+        $start = $calendarMonth->copy()->startOfMonth()->startOfWeek(Carbon::SUNDAY);
+        $end = $calendarMonth->copy()->endOfMonth()->endOfWeek(Carbon::SATURDAY);
+        $weeks = [];
+        $cursor = $start->copy();
+
+        while ($cursor->lessThanOrEqualTo($end)) {
+            $week = [];
+
+            for ($i = 0; $i < 7; $i++) {
+                $iso = $cursor->toDateString();
+                $inMonth = $cursor->month === $calendarMonth->month;
+                $inRange = $cursor->betweenIncluded($from, $to);
+                $status = null;
+
+                if ($inMonth && $inRange) {
+                    $status = $this->resolveStudentDayStatus($student, $cursor, $records->get($iso), $booking);
+                }
+
+                $week[] = [
+                    'date' => $iso,
+                    'day' => $cursor->day,
+                    'in_month' => $inMonth,
+                    'in_range' => $inRange,
+                    'status' => $status,
+                    'is_today' => $cursor->isToday(),
+                ];
+
+                $cursor->addDay();
+            }
+
+            $weeks[] = $week;
+        }
+
+        return [
+            'weeks' => $weeks,
+            'weekday_labels' => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $dayStatuses
+     */
+    private function resolveSelectedReportDate(Carbon $from, Carbon $to, ?string $selectedDate, array $dayStatuses): string
+    {
+        if ($selectedDate && isset($dayStatuses[$selectedDate])) {
+            return $selectedDate;
+        }
+
+        $today = Carbon::today(config('libcontrol.timezone', 'Asia/Kolkata'))->toDateString();
+
+        if (isset($dayStatuses[$today])) {
+            return $today;
+        }
+
+        return array_key_last($dayStatuses) ?: $from->toDateString();
+    }
+
+    /**
+     * @param  Collection<string, AttendanceRecord>  $records
+     * @return list<array<string, mixed>>
+     */
+    private function buildStudentRecentActivity(
+        Student $student,
+        Carbon $from,
+        Carbon $to,
+        Collection $records,
+        ?SeatBooking $booking,
+    ): array {
+        $items = [];
+        $cursor = $to->copy();
+
+        while ($cursor->greaterThanOrEqualTo($from)) {
+            $iso = $cursor->toDateString();
+
+            $detail = $this->serializeStudentDayDetail($student, $cursor->copy(), $records->get($iso), $booking);
+            $items[] = [
+                'date' => $iso,
+                'date_label' => $detail['date_heading'],
+                'status' => $detail['status'],
+                'status_label' => $detail['status_label'],
+                'study_time_label' => $detail['study_time_label'],
+            ];
+            $cursor->subDay();
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeStudentReportCard(Student $student, ?SeatBooking $booking): array
+    {
+        $feeService = app(FeeService::class);
+        $feeType = $booking ? $feeService->normalizeFeeType((string) $booking->fee_type) : 'monthly';
+        $seatNumber = $booking?->seat?->seat_number;
+        $hallName = $booking?->seat?->hall?->name;
+
+        return [
+            'id' => $student->id,
+            'name' => $student->name,
+            'student_code' => $student->student_code,
+            'photo_url' => $student->photoUrl(),
+            'initials' => $student->initials(),
+            'status' => $student->status,
+            'status_label' => ucfirst((string) $student->status),
+            'membership_plan' => $student->isTrialStudent()
+                ? 'Trial'
+                : ($booking ? $feeService->feeTypeLabel($feeType).' Plan' : '—'),
+            'valid_till' => $booking?->plan_expiry_date?->format('d M Y'),
+            'valid_till_label' => $booking?->plan_expiry_date?->format('d M Y') ?? '—',
+            'branch_name' => $student->branch?->name,
+            'seat_no' => $seatNumber && $hallName
+                ? $hallName.' — #'.$seatNumber
+                : ($seatNumber ? '#'.$seatNumber : null),
+            'contact' => $student->effectivePhone() ?: $student->phone,
+            'student_profile_url' => route('students.show', $student),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeStudentDayDetail(
+        Student $student,
+        Carbon $date,
+        ?AttendanceRecord $record,
+        ?SeatBooking $booking,
+    ): array {
+        $status = $this->resolveStudentDayStatus($student, $date, $record, $booking);
+        $branch = $record?->branch ?? $student->branch;
+        $locationName = $branch?->name;
+
+        if ($status === 'absent') {
+            return [
+                'date' => $date->toDateString(),
+                'date_heading' => $date->format('M d, Y').' ('.$date->format('l').')',
+                'status' => 'absent',
+                'status_label' => 'Absent',
+                'message' => 'No attendance recorded for this date.',
+                'check_in_at' => null,
+                'check_out_at' => null,
+                'study_time_label' => null,
+                'method' => null,
+                'method_label' => null,
+                'location_name' => $locationName,
+                'has_location' => false,
+                'latitude' => null,
+                'longitude' => null,
+            ];
+        }
+
+        return [
+            'date' => $date->toDateString(),
+            'date_heading' => $date->format('M d, Y').' ('.$date->format('l').')',
+            'status' => $status,
+            'status_label' => $this->statusLabel($status),
+            'message' => null,
+            'check_in_at' => $record?->check_in_at?->format('h:i A'),
+            'check_out_at' => null,
+            'study_time_label' => null,
+            'study_time_note' => 'Check-out is not recorded, so total study time cannot be calculated.',
+            'method' => $record?->method,
+            'method_label' => $this->methodLabel($record?->method),
+            'marked_by_name' => $record?->markedBy?->name,
+            'location_name' => $locationName,
+            'has_location' => $record?->latitude !== null && $record?->longitude !== null,
+            'latitude' => $record?->latitude !== null ? (float) $record->latitude : null,
+            'longitude' => $record?->longitude !== null ? (float) $record->longitude : null,
+            'maps_url' => ($record?->latitude !== null && $record?->longitude !== null)
+                ? 'https://www.google.com/maps?q='.$record->latitude.','.$record->longitude
+                : null,
+        ];
+    }
+
+    private function resolveStudentDayStatus(
+        Student $student,
+        Carbon $date,
+        ?AttendanceRecord $record,
+        ?SeatBooking $booking,
+    ): string {
+        if (! $record) {
+            return 'absent';
+        }
+
+        if ($this->studentWasOnTrial($student, $date, $booking)) {
+            return 'trial';
+        }
+
+        if ($student->branch && $this->isLateCheckIn($student->branch, $record->check_in_at)) {
+            return 'late';
+        }
+
+        return 'present';
+    }
+
+    private function studentWasOnTrial(Student $student, Carbon $date, ?SeatBooking $booking): bool
+    {
+        if ($student->student_type === Student::TYPE_TRIAL) {
+            return true;
+        }
+
+        if (! $booking) {
+            return false;
+        }
+
+        if ($booking->trial_start && $booking->trial_end) {
+            return $date->betweenIncluded($booking->trial_start, $booking->trial_end);
+        }
+
+        return false;
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'present' => 'Present',
+            'absent' => 'Absent',
+            'late' => 'Late',
+            'trial' => 'Trial / Half Day',
+            default => ucfirst($status),
+        };
+    }
+
+    private function percentageOf(int $count, int $total): float
+    {
+        if ($total <= 0 || $count <= 0) {
+            return 0.0;
+        }
+
+        return round(($count / $total) * 100, 0);
+    }
+
+    public function methodLabel(?string $method): string
     {
         return match ($method) {
             AttendanceRecord::METHOD_STUDENT_QR => 'Student QR',
             AttendanceRecord::METHOD_STAFF_GPS => 'Staff GPS',
-            AttendanceRecord::METHOD_MANUAL => 'Manual',
+            AttendanceRecord::METHOD_MANUAL => 'Staff Marked',
             AttendanceRecord::METHOD_BIOMETRIC => 'Biometric',
             default => '—',
         };

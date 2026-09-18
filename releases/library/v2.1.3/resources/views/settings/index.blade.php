@@ -358,17 +358,6 @@
 
         @if ($isDeveloperAdmin)
         <section x-show="settingsTab === 'database'" x-cloak class="mt-4 space-y-6">
-            <div class="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-900">
-                <p class="font-semibold">How client updates work</p>
-                <p class="mt-2 text-sky-800">Laravel migrations update the database structure without deleting your existing rows. The normal flow is:</p>
-                <ol class="mt-2 list-decimal space-y-1 pl-5 text-sky-800">
-                    <li>Create a backup (safety copy)</li>
-                    <li>Upload the new app code to the server</li>
-                    <li>Run migrations to apply schema changes</li>
-                </ol>
-                <p class="mt-2 text-sky-800">You do <strong>not</strong> need to import old data after a successful migration. Use restore only if something went wrong.</p>
-            </div>
-
             <div class="grid gap-4 md:grid-cols-3">
                 <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Database</p>

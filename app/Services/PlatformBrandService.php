@@ -36,6 +36,7 @@ class PlatformBrandService
             'favicon' => $settings->favicon_path,
             'simple_logo' => $settings->simple_logo_path,
             'logo_with_text' => $settings->logo_with_text_path ?: $settings->logo_path,
+            'id_card_logo' => $settings->id_card_logo_path,
             default => null,
         };
 

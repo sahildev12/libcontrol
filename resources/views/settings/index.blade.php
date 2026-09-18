@@ -11,7 +11,10 @@
                 'logo_with_text_url' => $platformSettings->logoWithTextUrl(),
                 'simple_logo_url' => $platformSettings->simpleLogoUrl(),
                 'favicon_url' => $platformSettings->faviconUrl(),
+                'id_card_template' => $platformSettings->idCardTemplate(),
+                'id_card_logo_url' => $platformSettings->idCardLogoUrl(),
             ]),
+            idCardTemplates: @js(config('libcontrol.id_card_templates', [])),
             planSnapshot: @js($planSnapshot),
             planForm: @js([
                 'plan_tier' => $platformSettings->planTier(),
@@ -30,9 +33,8 @@
             clearCacheUrl: @js(route('settings.clear-cache')),
             licenseServerEnabled: @js($licenseServerEnabled ?? false),
             deploymentsUrl: @js($deploymentsUrl),
-            installedAddons: @js($installedAddons ?? []),
+            availableAddons: @js($availableAddons ?? []),
             addonInstallUrl: @js(url('/settings/addons')),
-            addonUploadUrl: @js(route('settings.addons.upload')),
             databaseStatus: @js($isDeveloperAdmin ? $databaseMaintenance->status() : null),
             databaseBackups: @js($isDeveloperAdmin ? $databaseMaintenance->listBackups() : []),
             databaseStatusUrl: @js(route('settings.database.status')),
@@ -41,6 +43,12 @@
             databaseRestoreUrl: @js(route('settings.database.restore')),
             databaseDeleteUrl: @js(route('settings.database.backup.destroy')),
             databaseDownloadUrl: @js(route('settings.database.download')),
+            deploymentInfo: @js($deploymentInfo ?? []),
+            syncRuntimeUrl: @js(route('settings.sync-runtime')),
+            websiteSettings: @js($websiteSettings ?? []),
+            websiteUpdateUrl: @js(route('settings.website.update')),
+            emailNotificationSettings: @js($emailNotificationSettings ?? []),
+            emailNotificationsUpdateUrl: @js(route('settings.email-notifications.update')),
         })"
         x-init="init()"
     >
@@ -66,19 +74,49 @@
                     class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
                     :class="settingsTab === 'general' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                 >General</button>
+                <button
+                    type="button"
+                    @click="settingsTab = 'id-cards'"
+                    class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    :class="settingsTab === 'id-cards' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >ID Cards</button>
+                <button
+                    type="button"
+                    @click="settingsTab = 'website'"
+                    class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    :class="settingsTab === 'website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >Website</button>
+                <button
+                    type="button"
+                    @click="settingsTab = 'emails'"
+                    class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    :class="settingsTab === 'emails' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >Emails</button>
                 @endif
                 @if ($isDeveloperAdmin)
                 <button
                     type="button"
-                    @click="settingsTab = 'database'; refreshDatabaseStatus()"
+                    @click="settingsTab = 'subscription'"
                     class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
-                    :class="settingsTab === 'database' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                >Database</button>
+                    :class="settingsTab === 'subscription' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >Subscription</button>
+                <button
+                    type="button"
+                    @click="settingsTab = 'addons'"
+                    class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    :class="settingsTab === 'addons' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >Addons</button>
+                <button
+                    type="button"
+                    @click="settingsTab = 'developer'; refreshDatabaseStatus()"
+                    class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    :class="settingsTab === 'developer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >Developer</button>
                 @endif
             </div>
         @endif
 
-        <form x-show="settingsTab === 'general' || ! isDeveloperAdmin" @submit.prevent="saveSettings()" class="mt-4 space-y-6">
+        <form x-show="showGeneralSettingsForm()" @submit.prevent="saveSettings()" class="mt-4 space-y-6">
             @if ($isPlatformAdmin)
                 <section class="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
                     <div class="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
@@ -112,108 +150,13 @@
                     </div>
                 </section>
 
-                <section class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
-                    <div class="border-b border-amber-100 bg-amber-50 px-5 py-4">
-                        <h2 class="text-sm font-semibold text-gray-900">Subscription plan &amp; limits</h2>
-                        <p class="mt-1 text-xs text-gray-600">Controls how many branches, halls, and seats this installation can use.</p>
-                    </div>
-                    <div class="space-y-4 p-5">
-                        <div class="grid gap-3 sm:grid-cols-3">
-                            <div class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Branches</p>
-                                <p class="mt-1 font-bold text-gray-900">
-                                    <span x-text="planSnapshot.usage.branches"></span>
-                                    <span class="font-normal text-gray-500">/</span>
-                                    <span x-text="planSnapshot.limits.max_branches ?? '∞'"></span>
-                                </p>
-                            </div>
-                            <div class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Halls</p>
-                                <p class="mt-1 font-bold text-gray-900">
-                                    <span x-text="planSnapshot.usage.halls"></span>
-                                    <span class="font-normal text-gray-500">/</span>
-                                    <span x-text="planSnapshot.limits.max_halls ?? '∞'"></span>
-                                </p>
-                            </div>
-                            <div class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Seats</p>
-                                <p class="mt-1 font-bold text-gray-900">
-                                    <span x-text="planSnapshot.usage.seats"></span>
-                                    <span class="font-normal text-gray-500">/</span>
-                                    <span x-text="planSnapshot.limits.max_seats ?? '∞'"></span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <template x-if="isDeveloperAdmin">
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Plan tier</label>
-                                    <select x-model="planForm.plan_tier" class="admin-select mt-1 block w-full px-3 py-2">
-                                        <template x-for="tier in planTiers" :key="tier">
-                                            <option :value="tier" x-text="tier.charAt(0).toUpperCase() + tier.slice(1)"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Custom seat limit</label>
-                                    <input type="number" min="1" x-model.number="planForm.max_seats_override" placeholder="Leave blank for plan default" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Custom hall limit</label>
-                                    <input type="number" min="1" x-model.number="planForm.max_halls_override" placeholder="Leave blank for plan default" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Custom branch limit</label>
-                                    <input type="number" min="1" x-model.number="planForm.max_branches_override" placeholder="Leave blank for plan default" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                                </div>
-                                <div class="md:col-span-2 flex justify-end">
-                                    <button type="button" @click="savePlanSettings()" :disabled="savingPlan" class="inline-flex h-10 items-center rounded-lg bg-amber-500 px-5 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50" x-text="savingPlan ? 'Saving plan...' : 'Save Plan Settings'"></button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </section>
-
-                <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div class="border-b border-gray-200 px-5 py-4">
-                        <h2 class="text-sm font-semibold text-gray-900">Library branding</h2>
-                        <p class="mt-1 text-xs text-gray-500">Name and logos used across admin, branch login, sidebar, and browser tab. Branches cannot upload their own logos.</p>
-                    </div>
-                    <div class="space-y-4 p-5">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Library name</label>
-                            <input type="text" x-model="platformForm.display_name" placeholder="Dise Library" class="mt-1 block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                        </div>
-                        <div class="grid gap-4 md:grid-cols-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Logo with text</label>
-                                <p class="mt-0.5 text-xs text-gray-500">Wide logo for login pages.</p>
-                                <input type="file" @change="platformForm.logo_with_text = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-2 block w-full text-sm text-gray-600">
-                                <img x-show="platformSettings.logo_with_text_url" :src="platformSettings.logo_with_text_url" alt="" class="mt-2 h-12 max-w-full object-contain">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Simple logo</label>
-                                <p class="mt-0.5 text-xs text-gray-500">Icon-only logo for sidebar.</p>
-                                <input type="file" @change="platformForm.simple_logo = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-2 block w-full text-sm text-gray-600">
-                                <img x-show="platformSettings.simple_logo_url" :src="platformSettings.simple_logo_url" alt="" class="mt-2 size-12 object-contain">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Favicon</label>
-                                <p class="mt-0.5 text-xs text-gray-500">Browser tab icon (.ico or .png).</p>
-                                <input type="file" @change="platformForm.favicon = $event.target.files[0]" accept=".ico,.png,.svg" class="mt-2 block w-full text-sm text-gray-600">
-                                <img x-show="platformSettings.favicon_url" :src="platformSettings.favicon_url" alt="" class="mt-2 size-8 object-contain">
-                            </div>
-                        </div>
-                    </div>
-                </section>
             @endif
 
             @if ($branch && $settings)
             <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-5 py-4">
                     <h2 class="text-sm font-semibold text-gray-900">Branch details</h2>
-                    <p class="mt-1 text-xs text-gray-500">Optional label for this branch. Logos are managed in Library branding above.</p>
+                    <p class="mt-1 text-xs text-gray-500">Optional display label for this branch in reports and ID cards.</p>
                 </div>
                 <div class="space-y-4 p-5">
                     <div>
@@ -259,22 +202,6 @@
 
             <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Student contact rules</h2>
-                    <p class="mt-1 text-xs text-gray-500">Control whether phone or email is required when adding students. Linked siblings can share one family contact.</p>
-                </div>
-                <div class="space-y-4 p-5">
-                    <label class="inline-flex items-start gap-3 text-sm text-gray-700">
-                        <input type="checkbox" x-model="form.require_student_contact" class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <span>
-                            <span class="font-medium text-gray-900">Require student contact</span>
-                            <span class="mt-1 block text-xs text-gray-500">When enabled, the first student in a family must have at least a phone or email. Linked siblings can skip contact fields.</span>
-                        </span>
-                    </label>
-                </div>
-            </section>
-
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div class="border-b border-gray-200 px-5 py-4">
                     <h2 class="text-sm font-semibold text-gray-900">Plan expiry emails</h2>
                     <p class="mt-1 text-xs text-gray-500">A reminder email is sent in the morning, this many days before a plan ends.</p>
                 </div>
@@ -288,97 +215,249 @@
             </section>
             @endif
 
-            @if ($isPlatformAdmin)
-            <section class="overflow-hidden rounded-xl border border-violet-200 bg-white shadow-sm">
-                <div class="border-b border-violet-100 bg-violet-50 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Addons</h2>
-                    <p class="mt-1 text-xs text-gray-600">Upload an addon ZIP purchased from Phenomit. Installed addons appear in the sidebar.</p>
-                </div>
-                <div class="space-y-5 p-5">
-                    <div class="rounded-lg border border-dashed border-violet-200 bg-violet-50/40 p-4">
-                        <label class="block text-sm font-medium text-gray-900">Install addon package</label>
-                        <p class="mt-1 text-xs text-gray-500">Choose the ZIP file you received, then click install.</p>
-                        <div class="mt-3 flex flex-wrap items-center gap-3">
-                            <input type="file" accept=".zip,application/zip" x-ref="addonPackage" class="block max-w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700">
-                            <button type="button" @click="uploadAddonPackage()" :disabled="addonBusy" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                                <span x-show="! addonBusy">Install from ZIP</span>
-                                <span x-show="addonBusy">Installing...</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="divide-y divide-gray-100 rounded-lg border border-gray-200">
-                        <template x-for="addon in installedAddons" :key="addon.slug">
-                            <div class="flex flex-wrap items-start justify-between gap-4 p-4">
-                                <div class="min-w-0">
-                                    <p class="font-semibold text-gray-900" x-text="addon.name"></p>
-                                    <p class="mt-1 text-sm text-gray-600" x-text="addon.description"></p>
-                                    <p class="mt-2 text-xs text-gray-500">
-                                        <span x-text="`v${addon.version}`"></span>
-                                        <span x-show="addon.installed"> · Installed <span x-text="addon.installed_version ? `(v${addon.installed_version})` : ''"></span></span>
-                                        <span x-show="addon.enabled" class="font-semibold text-emerald-600"> · Enabled</span>
-                                        <span x-show="addon.installed && ! addon.enabled" class="font-semibold text-amber-600"> · Disabled</span>
-                                    </p>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" x-show="addon.installed && ! addon.enabled" @click="enableAddon(addon.slug)" :disabled="addonBusy" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">Enable</button>
-                                    <button type="button" x-show="addon.installed && addon.enabled" @click="disableAddon(addon.slug)" :disabled="addonBusy" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50">Disable</button>
-                                    <a x-show="addon.installed && addon.enabled && addon.settings_url" :href="addon.settings_url" class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">Open</a>
-                                    <button type="button" x-show="addon.installed" @click="uninstallAddon(addon.slug)" :disabled="addonBusy" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50">Uninstall</button>
-                                </div>
-                            </div>
-                        </template>
-                        <p x-show="installedAddons.length === 0" class="px-5 py-8 text-center text-sm text-gray-500">No addons installed yet.</p>
-                    </div>
-                </div>
-            </section>
-            @endif
-
-            @if ($isDeveloperAdmin)
-            <section class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
-                <div class="border-b border-slate-200 bg-slate-50 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Developer tools</h2>
-                    <p class="mt-1 text-xs text-gray-600">Clear stale cache on the live server.</p>
-                </div>
-                <div class="space-y-4 p-5">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button
-                            type="button"
-                            @click="clearApplicationCache()"
-                            :disabled="clearingCache"
-                            class="inline-flex h-10 items-center rounded-lg bg-slate-800 px-5 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
-                            x-text="clearingCache ? 'Clearing cache...' : 'Clear application cache'"
-                        ></button>
-                        @if ($deploymentsUrl)
-                            <a
-                                href="{{ $deploymentsUrl }}"
-                                class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
-                            >
-                                Deployments &amp; domains
-                            </a>
-                        @endif
-                    </div>
-                </div>
-            </section>
-            @endif
-
             <div class="flex justify-end">
                 <button type="submit" :disabled="saving" class="inline-flex h-10 items-center rounded-lg bg-indigo-600 px-5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" x-text="saving ? 'Saving...' : 'Save Settings'"></button>
             </div>
         </form>
 
-        @if ($isDeveloperAdmin)
-        <section x-show="settingsTab === 'database'" x-cloak class="mt-4 space-y-6">
-            <div class="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-900">
-                <p class="font-semibold">How client updates work</p>
-                <p class="mt-2 text-sky-800">Laravel migrations update the database structure without deleting your existing rows. The normal flow is:</p>
-                <ol class="mt-2 list-decimal space-y-1 pl-5 text-sky-800">
-                    <li>Create a backup (safety copy)</li>
-                    <li>Upload the new app code to the server</li>
-                    <li>Run migrations to apply schema changes</li>
-                </ol>
-                <p class="mt-2 text-sky-800">You do <strong>not</strong> need to import old data after a successful migration. Use restore only if something went wrong.</p>
+        @if ($isPlatformAdmin)
+        <form x-show="settingsTab === 'id-cards'" x-cloak @submit.prevent="saveIdCardSettings()" class="mt-4 space-y-6">
+            <section class="overflow-hidden rounded-xl border border-violet-200 bg-white shadow-sm">
+                <div class="border-b border-violet-100 bg-violet-50 px-5 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Student ID cards</h2>
+                    <p class="mt-1 text-xs text-gray-600">Choose a print template and upload your library logo for student ID cards. System branding stays managed by LibControl.</p>
+                </div>
+                <div class="space-y-5 p-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Library logo for ID cards</label>
+                        <p class="mt-0.5 text-xs text-gray-500">Shown on the selected template when printing student ID cards.</p>
+                        <input type="file" @change="platformForm.id_card_logo = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-2 block w-full max-w-md text-sm text-gray-600">
+                        <img x-show="platformSettings.id_card_logo_url" :src="platformSettings.id_card_logo_url" alt="" class="mt-3 h-12 max-w-[12rem] object-contain rounded border border-gray-200 bg-gray-50 p-2">
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-700">ID card template</p>
+                        <p class="mt-0.5 text-xs text-gray-500">Pick one of three HTML layouts. All templates are print-ready (CR80 size).</p>
+                        <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                            @foreach (config('libcontrol.id_card_templates', []) as $templateKey => $templateMeta)
+                                <button
+                                    type="button"
+                                    @click="platformForm.id_card_template = '{{ $templateKey }}'"
+                                    class="relative rounded-xl border p-4 text-left transition-colors"
+                                    :class="platformForm.id_card_template === '{{ $templateKey }}' ? 'border-violet-500 bg-violet-50/40 ring-2 ring-violet-300' : 'border-gray-200 bg-white hover:border-gray-300'"
+                                >
+                                    <span
+                                        x-show="platformForm.id_card_template === '{{ $templateKey }}'"
+                                        x-cloak
+                                        class="absolute right-3 top-3 z-10 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
+                                    >Selected</span>
+                                    <p class="pr-16 text-sm font-semibold text-gray-900">{{ $templateMeta['label'] }}</p>
+                                    <p class="mt-1 text-xs text-gray-500">{{ $templateMeta['description'] }}</p>
+                                    <x-admin.student-id-card-preview
+                                        :template="$templateKey"
+                                        :logo-url="$platformSettings->idCardLogoUrl()"
+                                    />
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="flex justify-end">
+                <button type="submit" :disabled="savingIdCards" class="inline-flex h-10 items-center rounded-lg bg-indigo-600 px-5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" x-text="savingIdCards ? 'Saving...' : 'Save ID Card Settings'"></button>
             </div>
+        </form>
+        @endif
+
+        @if ($isDeveloperAdmin)
+        <form x-show="settingsTab === 'subscription'" x-cloak @submit.prevent="savePlanSettings()" class="mt-4 space-y-6">
+            <section class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
+                <div class="border-b border-amber-100 bg-amber-50 px-5 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Subscription plan &amp; limits</h2>
+                    <p class="mt-1 text-xs text-gray-600">Controls how many branches, halls, and seats this installation can use.</p>
+                </div>
+                <div class="space-y-4 p-5">
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Branches</p>
+                            <p class="mt-1 font-bold text-gray-900">
+                                <span x-text="planSnapshot.usage.branches"></span>
+                                <span class="font-normal text-gray-500">/</span>
+                                <span x-text="planSnapshot.limits.max_branches ?? '∞'"></span>
+                            </p>
+                        </div>
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Halls</p>
+                            <p class="mt-1 font-bold text-gray-900">
+                                <span x-text="planSnapshot.usage.halls"></span>
+                                <span class="font-normal text-gray-500">/</span>
+                                <span x-text="planSnapshot.limits.max_halls ?? '∞'"></span>
+                            </p>
+                        </div>
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Seats</p>
+                            <p class="mt-1 font-bold text-gray-900">
+                                <span x-text="planSnapshot.usage.seats"></span>
+                                <span class="font-normal text-gray-500">/</span>
+                                <span x-text="planSnapshot.limits.max_seats ?? '∞'"></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Plan tier</label>
+                            <select x-model="planForm.plan_tier" class="admin-select mt-1 block w-full px-3 py-2">
+                                <template x-for="tier in planTiers" :key="tier">
+                                    <option :value="tier" x-text="tier.charAt(0).toUpperCase() + tier.slice(1)"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Custom seat limit</label>
+                            <input type="number" min="1" x-model.number="planForm.max_seats_override" placeholder="Leave blank for plan default" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Custom hall limit</label>
+                            <input type="number" min="1" x-model.number="planForm.max_halls_override" placeholder="Leave blank for plan default" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Custom branch limit</label>
+                            <input type="number" min="1" x-model.number="planForm.max_branches_override" placeholder="Leave blank for plan default" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="flex justify-end">
+                <button type="submit" :disabled="savingPlan" class="inline-flex h-10 items-center rounded-lg bg-amber-500 px-5 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50" x-text="savingPlan ? 'Saving...' : 'Save Subscription Settings'"></button>
+            </div>
+        </form>
+
+        <section x-show="settingsTab === 'addons'" x-cloak class="mt-4 space-y-6">
+            <section class="overflow-hidden rounded-xl border border-violet-200 bg-white shadow-sm">
+                <div class="border-b border-violet-100 bg-violet-50 px-5 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Addon catalog</h2>
+                    <p class="mt-1 text-xs text-gray-600">All available addons are listed below. Click Install to enable one instantly — it will appear in the sidebar when active.</p>
+                </div>
+                <div class="p-5">
+                    <div class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+                        @forelse ($availableAddons as $addon)
+                            <div class="flex flex-wrap items-start justify-between gap-4 p-4">
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-900">{{ $addon['name'] }}</p>
+                                    <p class="mt-1 text-sm text-gray-600">{{ $addon['description'] }}</p>
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        v{{ $addon['version'] }}
+                                        @if ($addon['installed'])
+                                            · Installed @if ($addon['installed_version'])(v{{ $addon['installed_version'] }})@endif
+                                        @else
+                                            · <span class="font-semibold text-gray-500">Not installed</span>
+                                        @endif
+                                        @if ($addon['enabled'])
+                                            · <span class="font-semibold text-emerald-600">Enabled</span>
+                                        @elseif ($addon['installed'])
+                                            · <span class="font-semibold text-amber-600">Disabled</span>
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    @if (! $addon['installed'])
+                                        <button type="button" @click="installAddon('{{ $addon['slug'] }}')" :disabled="addonBusy" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                                            <span x-show="! addonBusy">Install</span>
+                                            <span x-show="addonBusy">Installing...</span>
+                                        </button>
+                                    @elseif (! $addon['enabled'])
+                                        <button type="button" @click="enableAddon('{{ $addon['slug'] }}')" :disabled="addonBusy" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">Enable</button>
+                                    @else
+                                        <button type="button" @click="disableAddon('{{ $addon['slug'] }}')" :disabled="addonBusy" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50">Disable</button>
+                                        @if ($addon['settings_url'])
+                                            <a href="{{ $addon['settings_url'] }}" class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">Open</a>
+                                        @endif
+                                    @endif
+                                    @if ($addon['installed'])
+                                        <button type="button" @click="uninstallAddon('{{ $addon['slug'] }}')" :disabled="addonBusy" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50">Uninstall</button>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <p class="px-5 py-8 text-center text-sm text-gray-500">No addons available in the catalog yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <section x-show="settingsTab === 'developer'" x-cloak class="mt-4 space-y-6">
+            <section class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                <div class="border-b border-slate-200 bg-slate-50 px-5 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Developer tools</h2>
+                    <p class="mt-1 text-xs text-gray-600">Cache, Phenomit sync, and deployment registry (license server only).</p>
+                </div>
+                <div class="flex flex-wrap gap-3 p-5">
+                    <button
+                        type="button"
+                        @click="clearApplicationCache()"
+                        :disabled="clearingCache"
+                        class="inline-flex h-10 items-center rounded-lg bg-slate-800 px-5 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
+                        x-text="clearingCache ? 'Clearing cache...' : 'Clear application cache'"
+                    ></button>
+                    <button
+                        type="button"
+                        @click="syncRuntimeMetrics()"
+                        :disabled="syncingRuntime"
+                        class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                        x-text="syncingRuntime ? 'Syncing...' : 'Sync library to Phenomit'"
+                    ></button>
+                    @if ($deploymentsUrl)
+                        <a
+                            href="{{ $deploymentsUrl }}"
+                            class="inline-flex h-10 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                        >
+                            Dev &amp; Domains registry
+                        </a>
+                    @endif
+                </div>
+            </section>
+
+            <section class="overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-sm">
+                <div class="border-b border-indigo-100 bg-indigo-50 px-5 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Student registration contact rules</h2>
+                    <p class="mt-1 text-xs text-gray-600">Require phone number and email address when adding students. Linked siblings can share one family contact.</p>
+                </div>
+                <div class="space-y-4 p-5">
+                    <div x-show="viewingAll" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                        Select a specific branch from the top bar before changing this setting.
+                    </div>
+                    <div x-show="! viewingAll && settings" class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                        Applying to branch:
+                        <span class="font-semibold text-gray-900">{{ $branch?->display_name ?: $branch?->name }}</span>
+                    </div>
+                    <label class="inline-flex items-start gap-3 text-sm text-gray-700" :class="viewingAll ? 'opacity-60' : ''">
+                        <input
+                            type="checkbox"
+                            x-model="form.require_student_contact"
+                            :disabled="viewingAll"
+                            class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                        >
+                        <span>
+                            <span class="font-medium text-gray-900">Require phone number and email address</span>
+                            <span class="mt-1 block text-xs text-gray-500">When enabled, every new student must have both a phone number and email on registration. Siblings linked to an existing family contact can skip these fields.</span>
+                        </span>
+                    </label>
+                    <div class="flex justify-end">
+                        <button
+                            type="button"
+                            @click="saveStudentContactRules()"
+                            :disabled="contactRulesSaving || viewingAll"
+                            class="inline-flex h-10 items-center rounded-lg bg-indigo-600 px-5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                        >
+                            <span x-show="! contactRulesSaving">Save contact rules</span>
+                            <span x-show="contactRulesSaving">Saving...</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
 
             <div class="grid gap-4 md:grid-cols-3">
                 <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -465,6 +544,11 @@
                 </div>
             </section>
         </section>
+        @endif
+
+        @if ($isPlatformAdmin)
+            @include('settings.partials.website-tab')
+            @include('settings.partials.emails-tab')
         @endif
     </div>
 </x-admin-layout>

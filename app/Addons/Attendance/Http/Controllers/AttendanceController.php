@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceController extends Controller
 {
@@ -181,6 +182,82 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function studentReport(Request $request, Student $student, AttendanceService $attendance): View
+    {
+        $this->assertCanAccessBranch($request, $student->branch_id);
+
+        [$from, $to, $calendarMonth, $selectedDate] = $this->resolveStudentReportDates($request);
+
+        $payload = $attendance->studentReport($student, $from, $to, $calendarMonth, $selectedDate);
+
+        return view('attendance.student-report', [
+            'student' => $student,
+            'payload' => $payload,
+            'dateFrom' => $payload['date_from'],
+            'dateTo' => $payload['date_to'],
+            'rangeLabel' => Carbon::parse($payload['date_from'])->format('d M Y').' → '.Carbon::parse($payload['date_to'])->format('d M Y'),
+            'reportDataUrl' => route('attendance.student-report.data', $student),
+            'exportUrl' => route('attendance.student-report.export', $student),
+            'studentsUrl' => route('students.index'),
+            'attendanceUrl' => route('attendance.index'),
+        ]);
+    }
+
+    public function studentReportData(Request $request, Student $student, AttendanceService $attendance): JsonResponse
+    {
+        $this->assertCanAccessBranch($request, $student->branch_id);
+
+        [$from, $to, $calendarMonth, $selectedDate] = $this->resolveStudentReportDates($request);
+
+        return response()->json(
+            $attendance->studentReport($student, $from, $to, $calendarMonth, $selectedDate),
+        );
+    }
+
+    public function studentReportExport(Request $request, Student $student, AttendanceService $attendance): StreamedResponse
+    {
+        $this->assertCanAccessBranch($request, $student->branch_id);
+
+        [$from, $to] = $this->resolveStudentReportDates($request);
+        $rows = $attendance->studentReportExportRows($student, $from, $to);
+        $filename = 'attendance-'.$student->student_code.'-'.now()->format('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, [
+                'Student Name',
+                'Student ID',
+                'Branch',
+                'Date',
+                'Status',
+                'Check-in',
+                'Check-out',
+                'Study Time',
+                'Attendance Method',
+                'Location',
+            ]);
+
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    $row['student_name'],
+                    $row['student_code'],
+                    $row['branch'],
+                    $row['date'],
+                    $row['status'],
+                    $row['check_in'],
+                    $row['check_out'],
+                    $row['study_time'],
+                    $row['method'],
+                    $row['location'],
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
     public function reports(Request $request, AttendanceService $attendance): View
     {
         $tz = config('libcontrol.timezone', 'Asia/Kolkata');
@@ -206,5 +283,33 @@ class AttendanceController extends Controller
                 ? 'all branches'
                 : ($this->optionalActiveBranch($request)?->name ?? ''),
         ]);
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon, 2: Carbon, 3: ?string}
+     */
+    private function resolveStudentReportDates(Request $request): array
+    {
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
+        $from = $request->filled('date_from')
+            ? Carbon::parse($request->string('date_from'), $tz)->startOfDay()
+            : Carbon::now($tz)->startOfMonth();
+        $to = $request->filled('date_to')
+            ? Carbon::parse($request->string('date_to'), $tz)->startOfDay()
+            : Carbon::now($tz)->startOfDay();
+
+        if ($from->greaterThan($to)) {
+            [$from, $to] = [$to->copy(), $from->copy()];
+        }
+
+        $calendarMonth = $request->filled('calendar_month')
+            ? Carbon::parse($request->string('calendar_month').'-01', $tz)->startOfMonth()
+            : ($to->copy()->startOfMonth());
+
+        $selectedDate = $request->filled('selected_date')
+            ? $request->string('selected_date')->toString()
+            : null;
+
+        return [$from, $to, $calendarMonth, $selectedDate];
     }
 }

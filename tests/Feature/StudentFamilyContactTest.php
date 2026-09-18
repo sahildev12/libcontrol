@@ -27,26 +27,7 @@ class StudentFamilyContactTest extends TestCase
         ]);
     }
 
-    public function test_student_can_be_created_without_contact_when_setting_disabled(): void
-    {
-        $branch = Branch::factory()->create(['require_student_contact' => false]);
-        $user = User::factory()->create(['branch_id' => $branch->id]);
-
-        $response = $this->actingAs($user)->postJson(route('students.store'), [
-            'name' => 'No Contact Student',
-            'gender' => 'male',
-            'date_of_birth' => '2001-01-15',
-        ]);
-
-        $response->assertCreated();
-        $this->assertDatabaseHas('students', [
-            'name' => 'No Contact Student',
-            'phone' => null,
-            'email' => null,
-        ]);
-    }
-
-    public function test_student_requires_contact_when_branch_setting_enabled(): void
+    public function test_student_requires_phone_and_email_when_branch_setting_enabled(): void
     {
         $branch = Branch::factory()->create(['require_student_contact' => true]);
         $user = User::factory()->create(['branch_id' => $branch->id]);
@@ -55,13 +36,33 @@ class StudentFamilyContactTest extends TestCase
             'name' => 'Missing Contact',
             'gender' => 'female',
             'date_of_birth' => '2001-01-15',
-        ])->assertStatus(422)->assertJsonValidationErrors(['phone']);
+        ])->assertStatus(422)->assertJsonValidationErrors(['phone', 'email']);
 
         $this->actingAs($user)->postJson(route('students.store'), [
             'name' => 'Phone Only',
             'gender' => 'female',
             'date_of_birth' => '2001-01-15',
             'phone' => '9876543210',
+        ])->assertStatus(422)->assertJsonValidationErrors(['email']);
+
+        $this->actingAs($user)->postJson(route('students.store'), [
+            'name' => 'Complete Contact',
+            'gender' => 'female',
+            'date_of_birth' => '2001-01-15',
+            'phone' => '9876543210',
+            'email' => 'student@example.com',
+        ])->assertCreated();
+    }
+
+    public function test_student_contact_is_optional_when_branch_setting_disabled(): void
+    {
+        $branch = Branch::factory()->create(['require_student_contact' => false]);
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+
+        $this->actingAs($user)->postJson(route('students.store'), [
+            'name' => 'No Contact',
+            'gender' => 'female',
+            'date_of_birth' => '2001-01-15',
         ])->assertCreated();
     }
 
@@ -104,6 +105,7 @@ class StudentFamilyContactTest extends TestCase
             'gender' => 'male',
             'date_of_birth' => '2000-01-15',
             'phone' => '9876543210',
+            'email' => 'student-a@example.com',
         ])->assertCreated();
 
         $this->actingAs($user)->postJson(route('students.store'), [
@@ -111,6 +113,7 @@ class StudentFamilyContactTest extends TestCase
             'gender' => 'female',
             'date_of_birth' => '2001-01-15',
             'phone' => '9876543210',
+            'email' => 'student-b@example.com',
         ])->assertCreated();
 
         $this->assertSame(2, Student::query()->where('phone', '9876543210')->count());

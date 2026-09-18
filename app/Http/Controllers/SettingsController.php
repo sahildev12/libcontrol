@@ -11,6 +11,8 @@ use App\Services\Addons\AddonRegistry;
 use App\Services\BranchBrandService;
 use App\Services\DatabaseMaintenanceService;
 use App\Services\LibraryScheduleService;
+use App\Services\LibraryWebsiteService;
+use App\Services\MailDeliveryService;
 use App\Services\PlatformBrandService;
 use App\Services\PlanLimitService;
 use App\Services\StudentCodeService;
@@ -27,7 +29,7 @@ class SettingsController extends Controller
         private PlanLimitService $planLimitService,
     ) {}
 
-    public function index(Request $request, BranchBrandService $branchBrandService, AddonRegistry $addonRegistry, DatabaseMaintenanceService $databaseMaintenance): View
+    public function index(Request $request, BranchBrandService $branchBrandService, AddonRegistry $addonRegistry, DatabaseMaintenanceService $databaseMaintenance, LibraryWebsiteService $libraryWebsiteService, MailDeliveryService $mailDelivery): View
     {
         $branch = $this->optionalActiveBranch($request);
         $viewingAll = $this->viewingAllBranches($request);
@@ -44,9 +46,58 @@ class SettingsController extends Controller
             ? route('developer.deployments.index')
             : null;
 
-        $installedAddons = $addonRegistry->installed()->values()->all();
+        $availableAddons = $isDeveloperAdmin
+            ? $addonRegistry->catalogForSettings()
+            : [];
+        $publicUrl = trim((string) config('libcontrol.deployment.public_url', ''));
+        $appUrl = rtrim((string) config('app.url'), '/');
+        $deploymentInfo = [
+            'public_url' => $publicUrl !== '' ? $publicUrl : $appUrl,
+            'app_url' => $appUrl,
+            'library_code' => $platformSettings->library_code,
+            'sync_endpoint' => config('libcontrol.deployment.sync_endpoint'),
+            'public_url_is_localhost' => $this->isLocalhostUrl($publicUrl !== '' ? $publicUrl : $appUrl),
+        ];
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'installedAddons', 'databaseMaintenance'));
+        $websiteSettings = $libraryWebsiteService->settingsPayload($platformSettings);
+        $emailNotificationSettings = $this->serializeEmailNotificationSettings($platformSettings);
+        $mailDeliveryStatus = $mailDelivery->status();
+
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'mailDeliveryStatus'));
+    }
+
+    public function updateEmailNotifications(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email_welcome_enabled' => ['nullable', 'boolean'],
+            'email_birthday_enabled' => ['nullable', 'boolean'],
+            'email_offers_enabled' => ['nullable', 'boolean'],
+            'email_marketing_enabled' => ['nullable', 'boolean'],
+            'email_recovery_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $settings = PlatformSetting::current();
+        $settings->update($validated);
+
+        return response()->json([
+            'message' => 'Email notification settings saved.',
+            'email_notifications' => $this->serializeEmailNotificationSettings($settings->fresh()),
+        ]);
+    }
+
+    public function syncRuntime(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->isDeveloperAdmin(), 403);
+
+        Artisan::call('app:sync-runtime-metrics');
+
+        $publicUrl = trim((string) config('libcontrol.deployment.public_url', ''));
+        $appUrl = $publicUrl !== '' ? $publicUrl : rtrim((string) config('app.url'), '/');
+        $code = PlatformSetting::current()->library_code;
+
+        return response()->json([
+            'message' => "Library {$code} synced to Phenomit with student app URL {$appUrl}.",
+        ]);
     }
 
     public function clearCache(Request $request): JsonResponse
@@ -81,22 +132,10 @@ class SettingsController extends Controller
     public function updatePlatform(UpdatePlatformSettingsRequest $request, PlatformBrandService $platformBrand): JsonResponse
     {
         $settings = PlatformSetting::current();
-        $data = $request->safe()->except(['logo_with_text', 'simple_logo', 'favicon', 'logo']);
+        $data = $request->safe()->except(['id_card_logo']);
 
-        if ($request->hasFile('logo_with_text')) {
-            $data['logo_with_text_path'] = $platformBrand->storeUpload($request->file('logo_with_text'), 'logo_with_text');
-        }
-
-        if ($request->hasFile('simple_logo')) {
-            $data['simple_logo_path'] = $platformBrand->storeUpload($request->file('simple_logo'), 'simple_logo');
-        }
-
-        if ($request->hasFile('favicon')) {
-            $data['favicon_path'] = $platformBrand->storeUpload($request->file('favicon'), 'favicon');
-        }
-
-        if ($request->hasFile('logo')) {
-            $data['logo_with_text_path'] = $platformBrand->storeUpload($request->file('logo'), 'logo_with_text');
+        if ($request->hasFile('id_card_logo')) {
+            $data['id_card_logo_path'] = $platformBrand->storeUpload($request->file('id_card_logo'), 'id_card_logo');
         }
 
         $settings->update($data);
@@ -140,6 +179,27 @@ class SettingsController extends Controller
     /**
      * @return array<string, mixed>
      */
+    private function isLocalhostUrl(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function serializeEmailNotificationSettings(PlatformSetting $settings): array
+    {
+        return [
+            'email_welcome_enabled' => (bool) $settings->email_welcome_enabled,
+            'email_birthday_enabled' => (bool) $settings->email_birthday_enabled,
+            'email_offers_enabled' => (bool) $settings->email_offers_enabled,
+            'email_marketing_enabled' => (bool) $settings->email_marketing_enabled,
+            'email_recovery_enabled' => (bool) $settings->email_recovery_enabled,
+        ];
+    }
+
     private function serializePlatformSettings(PlatformSetting $settings): array
     {
         return [
@@ -152,6 +212,8 @@ class SettingsController extends Controller
             'simple_logo_url' => $settings->simpleLogoUrl(),
             'logo_url' => $settings->logoUrl(),
             'favicon_url' => $settings->faviconUrl(),
+            'id_card_template' => $settings->idCardTemplate(),
+            'id_card_logo_url' => $settings->idCardLogoUrl(),
         ];
     }
 }

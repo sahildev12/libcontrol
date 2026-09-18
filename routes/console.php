@@ -1,6 +1,8 @@
 <?php
 
 use App\Console\Commands\SendPlanExpiryReminders;
+use App\Console\Commands\SendStudentBirthdayEmails;
+use App\Console\Commands\SendStudentRecoveryEmails;
 use App\Console\Commands\SyncRuntimeMetrics;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -19,3 +21,13 @@ Schedule::command(SyncRuntimeMetrics::class)
     ->dailyAt('03:15')
     ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
     ->description('Synchronize runtime metrics');
+
+Schedule::command(SendStudentBirthdayEmails::class)
+    ->dailyAt('08:30')
+    ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
+    ->description('Send birthday emails to students');
+
+Schedule::command(SendStudentRecoveryEmails::class)
+    ->weeklyOn(1, '10:00')
+    ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
+    ->description('Send recovery emails to inactive students');

@@ -22,6 +22,21 @@ class PlatformSetting extends Model
         'simple_logo_path',
         'logo_with_text_path',
         'favicon_path',
+        'id_card_template',
+        'id_card_logo_path',
+        'website_enabled',
+        'website_tagline',
+        'website_hero_title',
+        'website_about',
+        'website_amenities',
+        'website_social_links',
+        'website_whatsapp',
+        'website_logo_path',
+        'email_welcome_enabled',
+        'email_birthday_enabled',
+        'email_offers_enabled',
+        'email_marketing_enabled',
+        'email_recovery_enabled',
     ];
 
     /**
@@ -34,6 +49,14 @@ class PlatformSetting extends Model
             'max_seats_override' => 'integer',
             'max_halls_override' => 'integer',
             'max_branches_override' => 'integer',
+            'website_enabled' => 'boolean',
+            'website_amenities' => 'array',
+            'website_social_links' => 'array',
+            'email_welcome_enabled' => 'boolean',
+            'email_birthday_enabled' => 'boolean',
+            'email_offers_enabled' => 'boolean',
+            'email_marketing_enabled' => 'boolean',
+            'email_recovery_enabled' => 'boolean',
         ];
     }
 
@@ -88,6 +111,25 @@ class PlatformSetting extends Model
     public function faviconUrl(): ?string
     {
         return $this->assetUrl($this->favicon_path, config('libcontrol.brand.default_favicon'));
+    }
+
+    public function idCardTemplate(): string
+    {
+        $template = (string) ($this->id_card_template ?: 'classic');
+        $templates = config('libcontrol.id_card_templates', []);
+        $legacy = [
+            'minimal' => 'professional',
+            'executive' => 'modern',
+        ];
+
+        $template = $legacy[$template] ?? $template;
+
+        return array_key_exists($template, $templates) ? $template : 'classic';
+    }
+
+    public function idCardLogoUrl(): ?string
+    {
+        return $this->assetUrl($this->id_card_logo_path);
     }
 
     private function assetUrl(?string $path, ?string $defaultPublicPath = null): ?string

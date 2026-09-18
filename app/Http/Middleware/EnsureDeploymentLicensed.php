@@ -23,6 +23,10 @@ class EnsureDeploymentLicensed
             return $next($request);
         }
 
+        if (app()->environment('local')) {
+            return $next($request);
+        }
+
         if (config('libcontrol.tenancy.enabled') && TenantContext::isTenantRequest()) {
             return $next($request);
         }

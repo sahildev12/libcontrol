@@ -19,6 +19,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "chart.js": "^4.5.1",
         "laravel-echo": "^2.4.0",
         "pusher-js": "^8.6.0",
         "qrcode": "^1.5.4"

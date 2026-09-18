@@ -8,7 +8,7 @@
 >
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ $portal === 'admin' ? route('admin.login.store') : url('/login') }}">
+    <form method="POST" action="{{ $portal === 'admin' ? route('admin.login.store') : route('login.store') }}">
         @csrf
 
         <div>

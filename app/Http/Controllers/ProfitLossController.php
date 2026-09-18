@@ -30,6 +30,7 @@ class ProfitLossController extends Controller
 
         $branchId = $this->optionalActiveBranchId($request);
         $summary = $profitLossService->summary($branchId, $from, $to);
+        $ledger = $profitLossService->ledger($branchId, $from, $to);
 
         $expenses = $this->constrainByActiveBranch(
             Expense::query()->with(['branch:id,name', 'recorder:id,name']),
@@ -47,6 +48,7 @@ class ProfitLossController extends Controller
 
         return view('profit-loss.index', [
             'expenses' => $expenses,
+            'ledger' => $ledger,
             'summary' => $summary,
             'categories' => config('libcontrol.expense_categories', []),
             'dateFrom' => $from->toDateString(),
@@ -58,7 +60,42 @@ class ProfitLossController extends Controller
             'branches' => $branches,
             'viewingAll' => $this->viewingAllBranches($request),
             'defaultBranchId' => $this->optionalActiveBranchId($request),
+            'activeTab' => in_array((string) $request->query('tab'), ['overview', 'statement', 'expenses'], true)
+                ? (string) $request->query('tab')
+                : 'overview',
         ]);
+    }
+
+    public function charts(Request $request, ProfitLossService $profitLossService): JsonResponse
+    {
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
+        $from = $request->filled('date_from')
+            ? Carbon::parse($request->string('date_from'), $tz)->startOfDay()
+            : Carbon::now($tz)->startOfMonth();
+        $to = $request->filled('date_to')
+            ? Carbon::parse($request->string('date_to'), $tz)->endOfDay()
+            : Carbon::now($tz)->endOfDay();
+
+        if ($from->greaterThan($to)) {
+            [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+        }
+
+        $collectionPeriod = in_array((string) $request->query('collection_period'), [
+            'this_month',
+            'last_3_months',
+            'last_6_months',
+            'this_year',
+        ], true) ? (string) $request->query('collection_period') : 'this_month';
+
+        $trendMonths = in_array((int) $request->query('trend_months'), [3, 6, 12], true)
+            ? (int) $request->query('trend_months')
+            : 6;
+
+        $branchId = $this->optionalActiveBranchId($request);
+
+        return response()->json(
+            $profitLossService->chartData($branchId, $from, $to, $collectionPeriod, $trendMonths)
+        );
     }
 
     public function store(StoreExpenseRequest $request, ProfitLossService $profitLossService): JsonResponse

@@ -21,9 +21,6 @@
                     </button>
                 </form>
             </div>
-            <a href="{{ route('attendance.index') }}" class="inline-flex h-10 items-center rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                Today's register
-            </a>
         </div>
     </header>
 

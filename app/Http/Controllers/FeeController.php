@@ -36,11 +36,15 @@ class FeeController extends Controller
             }])
             ->orderBy('name')
             ->get()
-            ->map(fn (Student $student) => $this->serializeStudentForFeeForm($student));
+            ->map(fn (Student $student) => $this->serializeStudentForFeeForm($student))
+            ->filter(fn (array $student) => ($student['current_assignment'] ?? null) !== null
+                && ! ($student['fee_already_setup'] ?? false))
+            ->values();
 
         return view('fees.index', [
             'rows' => $rows,
             'students' => $students,
+            'insights' => $feeService->insightSummary($this->optionalActiveBranchId($request)),
             'scopeLabel' => $this->viewingAllBranches($request)
                 ? 'all branches'
                 : ($this->optionalActiveBranch($request)?->name ?? ''),
@@ -64,6 +68,12 @@ class FeeController extends Controller
             ->first();
 
         abort_unless($existing, 422, 'Assign a seat first from Seat Assignments before setting up a fee.');
+
+        if ($feeService->hasFeeSetup($existing)) {
+            return response()->json([
+                'message' => 'This student already has a fee plan. Use Edit Fee or Renew instead.',
+            ], 422);
+        }
 
         if ($student->student_type !== Student::TYPE_REGULAR) {
             $student->update(['student_type' => Student::TYPE_REGULAR]);
@@ -91,6 +101,7 @@ class FeeController extends Controller
         }
 
         $booking = $this->applyFeeDetails($request, $existing, $feeService);
+        $booking = $this->recordSetupPaymentIfNeeded($request, $booking, $feeService);
 
         if ($branch) {
             $seatMapService->broadcastForBranch((int) $branch->id);
@@ -100,7 +111,7 @@ class FeeController extends Controller
 
         return response()->json([
             'message' => 'Fee saved for the assigned seat.',
-            'row' => $feeService->serializeRow($booking->fresh(['student', 'seat.hall.branch', 'installments'])),
+            'row' => $feeService->serializeRow($booking->fresh(['student', 'seat.hall.branch', 'installments', 'payments'])),
         ], 201);
     }
 
@@ -143,6 +154,7 @@ class FeeController extends Controller
         }
 
         $booking = $this->applyFeeDetails($request, $booking, $feeService);
+        $booking = $this->recordSetupPaymentIfNeeded($request, $booking, $feeService);
 
         if ($branch) {
             $seatMapService->broadcastForBranch((int) $branch->id);
@@ -150,7 +162,7 @@ class FeeController extends Controller
 
         return response()->json([
             'message' => 'Fee updated.',
-            'row' => $feeService->serializeRow($booking->fresh(['student', 'seat.hall.branch', 'installments'])),
+            'row' => $feeService->serializeRow($booking->fresh(['student', 'seat.hall.branch', 'installments', 'payments'])),
         ]);
     }
 
@@ -350,8 +362,26 @@ class FeeController extends Controller
             'name' => $student->name,
             'phone' => $student->phone,
             'student_type' => $student->student_type,
+            'fee_already_setup' => $booking ? app(FeeService::class)->hasFeeSetup($booking) : false,
             'current_assignment' => $booking ? $this->serializeAssignmentForFeeForm($booking) : null,
         ];
+    }
+
+    private function recordSetupPaymentIfNeeded(Request $request, SeatBooking $booking, FeeService $feeService): SeatBooking
+    {
+        $amountReceived = round((float) $request->input('amount_received', 0), 2);
+
+        if ($amountReceived <= 0) {
+            return $booking;
+        }
+
+        return $feeService->recordPayment($booking->fresh('installments'), $amountReceived, [
+            'payment_method' => $request->input('payment_method', 'cash'),
+            'payment_date' => $request->input('payment_date') ?: now()->toDateString(),
+            'reference' => $request->input('payment_reference'),
+            'notes' => $request->input('payment_notes'),
+            'received_by' => $request->user()?->id,
+        ]);
     }
 
     /**

@@ -229,6 +229,8 @@ class StudentAuthTest extends TestCase
             'name' => 'App Student',
             'gender' => 'male',
             'date_of_birth' => '2001-01-15',
+            'phone' => '9876543210',
+            'email' => 'app-student@example.com',
         ]);
 
         $response->assertCreated()

@@ -52,6 +52,11 @@ return [
         'enabled' => filter_var(env('LIBCONTROL_LICENSE_SERVER', false), FILTER_VALIDATE_BOOLEAN),
     ],
 
+    'support' => [
+        'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@phenomit.com'),
+        'phone' => env('LIBCONTROL_SUPPORT_PHONE', ''),
+    ],
+
     'deployment' => [
         'license_key' => env('LIBCONTROL_LICENSE_KEY'),
         // URL sent to Phenomit for the student app (must be reachable from phones, not 127.0.0.1).
@@ -75,6 +80,30 @@ return [
             explode(',', (string) env('LIBCONTROL_TENANT_LANDLORD_HOSTS', 'libcontrol.phenomit.com,localhost,127.0.0.1'))
         ))),
         'landlord_connection' => env('LIBCONTROL_TENANT_LANDLORD_CONNECTION', 'mysql'),
+    ],
+
+    'id_card_templates' => [
+        'classic' => [
+            'label' => 'Classic Sidebar',
+            'description' => 'Purple sidebar with photo, student details, and barcode.',
+        ],
+        'modern' => [
+            'label' => 'Modern Header',
+            'description' => 'Gradient header, photo, details, and QR code.',
+        ],
+        'professional' => [
+            'label' => 'Professional',
+            'description' => 'Clean corporate layout with wave accent and validity strip.',
+        ],
+    ],
+
+    'id_card_preview_sample' => [
+        'name' => 'Aarav Sharma',
+        'student_id' => 'STU00123',
+        'course' => 'BCA',
+        'branch' => 'Main Branch',
+        'valid_till' => '31 Dec 2026',
+        'initials' => 'AS',
     ],
 
     'expense_categories' => [

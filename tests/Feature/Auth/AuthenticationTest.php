@@ -12,16 +12,25 @@ class AuthenticationTest extends TestCase
 
     public function test_login_screen_can_be_rendered(): void
     {
-        $response = $this->get('/login');
+        $this->get('/login')
+            ->assertRedirect('/branch/login');
 
-        $response->assertStatus(200);
+        $this->get('/branch/login')
+            ->assertOk();
+    }
+
+    public function test_branch_login_url_does_not_redirect_loop(): void
+    {
+        $this->get('/branch/login')
+            ->assertOk()
+            ->assertSee('Branch login', false);
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->post('/login', [
+        $response = $this->post('/branch/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -34,7 +43,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->post('/login', [
+        $this->post('/branch/login', [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
@@ -68,7 +77,7 @@ class AuthenticationTest extends TestCase
             'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
         ]);
 
-        $this->post('/login', [
+        $this->post('/branch/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);

@@ -43,8 +43,12 @@ class StudentContactValidator
             $phone = trim((string) ($data['phone'] ?? ''));
             $email = trim((string) ($data['email'] ?? ''));
 
-            if ($phone === '' && $email === '') {
-                $validator->errors()->add('phone', 'Provide at least a phone number or email address.');
+            if ($phone === '') {
+                $validator->errors()->add('phone', 'Phone number is required.');
+            }
+
+            if ($email === '') {
+                $validator->errors()->add('email', 'Email address is required.');
             }
         });
     }

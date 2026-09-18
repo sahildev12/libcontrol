@@ -54,6 +54,27 @@ class DeploymentLicenseMiddlewareTest extends TestCase
             ->assertOk();
     }
 
+    public function test_local_environment_skips_enforcement(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+
+        Config::set('libcontrol.license_server.enabled', false);
+
+        Cache::put(DeploymentState::CACHE_KEY, [
+            'status' => 'pending',
+            'authorized' => false,
+            'grace_until' => now()->subDay()->toIso8601String(),
+            'checked_at' => now()->toIso8601String(),
+        ], now()->addHour());
+
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+    }
+
     public function test_license_server_instance_skips_enforcement(): void
     {
         Config::set('libcontrol.license_server.enabled', true);
