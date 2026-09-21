@@ -1,20 +1,20 @@
 <x-admin-layout>
     <div class="mx-auto max-w-2xl space-y-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Add deployment</h1>
-            <p class="mt-1 text-sm text-gray-600">Create a whitelist entry and issue a new license key.</p>
+            <h1 class="text-2xl font-bold text-gray-900">Authorize client</h1>
+            <p class="mt-1 text-sm text-gray-600">Whitelist the client&rsquo;s domain and issue a license key they paste into their <code class="rounded bg-gray-100 px-1">.env</code> file.</p>
         </div>
 
         <form method="POST" action="{{ route('developer.deployments.store') }}" class="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             @csrf
             <div>
                 <label class="block text-sm font-medium text-gray-700" for="client_name">Client name</label>
-                <input id="client_name" name="client_name" value="{{ old('client_name') }}" required class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <input id="client_name" name="client_name" value="{{ old('client_name', $prefillClientName ?? '') }}" required class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 @error('client_name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700" for="allowed_domains">Allowed domains</label>
-                <textarea id="allowed_domains" name="allowed_domains" rows="4" required placeholder="library.client.com&#10;www.library.client.com" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('allowed_domains') }}</textarea>
+                <textarea id="allowed_domains" name="allowed_domains" rows="4" required placeholder="aims.phenomit.com" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('allowed_domains', $prefillDomains ?? '') }}</textarea>
                 <p class="mt-1 text-xs text-gray-500">One domain per line or comma-separated.</p>
                 @error('allowed_domains') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>

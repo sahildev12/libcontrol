@@ -5563,6 +5563,61 @@ Alpine.data('notificationBell', (config) => ({
     },
 }));
 
+Alpine.data('unauthorizedDomainTable', (config) => ({
+    rows: config.rows || [],
+    searchKeys: ['domain', 'app_url', 'reason', 'last_seen'],
+    exportFileName: 'unauthorized-domains',
+    exportColumns: [
+        { label: 'Domain', key: 'domain' },
+        { label: 'App URL', key: 'app_url' },
+        { label: 'Reason', key: 'reason' },
+        { label: 'Pings', key: 'hits' },
+        { label: 'Last seen', key: 'last_seen' },
+    ],
+    ...createDataTableMixin(),
+
+    init() {
+        this.initDataTable();
+    },
+}));
+
+Alpine.data('licensedDeploymentTable', (config) => ({
+    rows: config.rows || [],
+    searchKeys: ['client_name', 'domains', 'status_label', 'last_seen'],
+    exportFileName: 'authorized-clients',
+    exportColumns: [
+        { label: 'Client', key: 'client_name' },
+        { label: 'Domains', key: 'domains' },
+        { label: 'Status', key: 'status_label' },
+        { label: 'Grace days', key: 'grace_days' },
+        { label: 'Last sync', key: 'last_seen' },
+    ],
+    ...createDataTableMixin(),
+
+    init() {
+        this.initDataTable();
+    },
+}));
+
+Alpine.data('clientLibraryTable', (config) => ({
+    rows: config.rows || [],
+    searchKeys: ['client_name', 'subdomain', 'database_name', 'plan_label', 'status_label', 'provision_label'],
+    exportFileName: 'hosted-libraries',
+    exportColumns: [
+        { label: 'Client', key: 'client_name' },
+        { label: 'Subdomain', key: 'subdomain' },
+        { label: 'Database', key: 'database_name' },
+        { label: 'Plan', key: 'plan_label' },
+        { label: 'Status', key: 'status_label' },
+        { label: 'Provisioned', key: 'provision_label' },
+    ],
+    ...createDataTableMixin(),
+
+    init() {
+        this.initDataTable();
+    },
+}));
+
 Alpine.data('supportTicketTable', (config) => ({
     rows: config.rows || [],
     statusFilter: '',

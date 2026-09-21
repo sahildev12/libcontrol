@@ -6,9 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RemoteManagePlanRequest;
 use App\Http\Requests\StoreLicensedDeploymentRequest;
 use App\Http\Requests\UpdateLicensedDeploymentRequest;
-use App\Models\InstallationEvent;
-use App\Models\LibraryRegistry;
 use App\Models\LicensedDeployment;
+use App\Services\Developer\DeploymentIndexService;
 use App\Services\Developer\DeploymentRemoteManageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,28 +18,29 @@ class DeploymentController extends Controller
 {
     public function __construct(
         private DeploymentRemoteManageService $remoteManage,
+        private DeploymentIndexService $deploymentIndex,
     ) {}
-    public function index(): View
+
+    public function index(Request $request): View
     {
-        $deployments = LicensedDeployment::query()
-            ->orderByDesc('updated_at')
-            ->get();
-
-        $recentInstallations = InstallationEvent::query()
-            ->orderByDesc('last_seen_at')
-            ->limit(10)
-            ->get();
-
-        $libraryRegistry = LibraryRegistry::query()
-            ->orderByDesc('last_seen_at')
-            ->get();
-
-        return view('developer.deployments.index', compact('deployments', 'recentInstallations', 'libraryRegistry'));
+        return view('developer.deployments.index', [
+            'stats' => $this->deploymentIndex->stats(),
+            'unauthorizedRows' => $this->deploymentIndex->unauthorizedDomainRows(),
+            'licenseRows' => $this->deploymentIndex->authorizedLicenseRows(),
+            'activeTab' => in_array($request->string('tab')->toString(), ['unauthorized', 'authorized'], true)
+                ? $request->string('tab')->toString()
+                : 'unauthorized',
+        ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('developer.deployments.create');
+        $domain = LicensedDeployment::normalizeDomain($request->string('domain')->toString());
+
+        return view('developer.deployments.create', [
+            'prefillClientName' => $request->string('client_name')->toString() ?: $this->deploymentIndex->suggestedClientNameFromDomain($domain),
+            'prefillDomains' => $domain,
+        ]);
     }
 
     public function store(StoreLicensedDeploymentRequest $request): RedirectResponse
@@ -94,17 +94,13 @@ class DeploymentController extends Controller
             ->with('status', 'Deployment removed.');
     }
 
-    public function installations(Request $request): View
+    public function installations(Request $request): RedirectResponse
     {
-        $query = InstallationEvent::query()->orderByDesc('last_seen_at');
+        $tab = $request->string('filter')->toString() === 'unauthorized'
+            ? 'unauthorized'
+            : 'authorized';
 
-        if ($request->string('filter')->toString() === 'unauthorized') {
-            $query->where('is_authorized', false);
-        }
-
-        $events = $query->paginate(25)->withQueryString();
-
-        return view('developer.deployments.installations', compact('events'));
+        return redirect()->route('developer.deployments.index', ['tab' => $tab]);
     }
 
     public function manage(LicensedDeployment $deployment): View

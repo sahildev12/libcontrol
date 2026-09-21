@@ -24,9 +24,36 @@ class TenantController extends Controller
 
     public function index(): View
     {
-        $tenants = Tenant::query()->orderByDesc('created_at')->get();
+        $rows = Tenant::query()
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (Tenant $tenant) => [
+                'id' => $tenant->id,
+                'client_name' => $tenant->client_name,
+                'subdomain' => $tenant->host(),
+                'subdomain_url' => $tenant->url(),
+                'database_name' => $tenant->database_name,
+                'plan_label' => ucfirst($tenant->planTier()),
+                'active' => $tenant->active,
+                'status_label' => $tenant->active ? 'Active' : 'Inactive',
+                'provisioned' => $tenant->provisioned_at !== null,
+                'provision_label' => $tenant->provisioned_at ? 'Ready' : 'Not provisioned',
+                'settings_url' => $tenant->provisioned_at
+                    ? route('developer.portals.settings', $tenant)
+                    : null,
+                'manage_url' => route('developer.tenants.manage', $tenant),
+            ])
+            ->values()
+            ->all();
 
-        return view('developer.tenants.index', compact('tenants'));
+        return view('developer.tenants.index', [
+            'rows' => $rows,
+            'stats' => [
+                'total' => count($rows),
+                'active' => collect($rows)->where('active', true)->count(),
+                'provisioned' => collect($rows)->where('provisioned', true)->count(),
+            ],
+        ]);
     }
 
     public function create(): View
