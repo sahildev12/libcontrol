@@ -30,16 +30,16 @@
         @endif
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600|plus-jakarta-sans:400,500,600,700&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased overflow-hidden">
+    <body class="font-sans antialiased overflow-hidden {{ ($isDeveloperAdmin ?? false) ? '' : 'lc-theme' }}">
         <div
             x-data="adminShell({ supportTicketUnread: @js($supportTicketUnreadCount ?? 0) })"
             x-init="init()"
             @toggle-mobile-nav.window="toggleMobileNav()"
-            class="h-svh overflow-hidden bg-gray-100"
+            class="h-svh overflow-hidden {{ ($isDeveloperAdmin ?? false) ? 'bg-gray-100' : 'bg-slate-100/80' }}"
         >
             @include('layouts.partials.admin-sidebar')
 
@@ -49,7 +49,7 @@
             >
                 @include('layouts.partials.admin-topbar')
 
-                <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+                <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 {{ ($isDeveloperAdmin ?? false) ? '' : 'lc-main' }}">
                     <div class="mx-auto max-w-none space-y-6">
                         {{ $slot }}
                     </div>

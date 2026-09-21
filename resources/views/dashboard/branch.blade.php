@@ -7,7 +7,7 @@
 <div class="space-y-6">
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+            <h1 class="lc-page-title">Dashboard</h1>
             <p class="mt-1 text-sm text-gray-500">{{ $scopeLabel }} · Overview</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -24,7 +24,7 @@
 
     {{-- KPI cards: single row --}}
     <div class="flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
-        <div class="min-w-[160px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="min-w-[160px] flex-1 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-gray-500">Total Seats</p>
@@ -36,7 +36,7 @@
                 </span>
             </div>
         </div>
-        <div class="min-w-[160px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="min-w-[160px] flex-1 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-gray-500">Occupied</p>
@@ -48,7 +48,7 @@
                 </span>
             </div>
         </div>
-        <div class="min-w-[160px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="min-w-[160px] flex-1 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-gray-500">Vacant</p>
@@ -60,7 +60,7 @@
                 </span>
             </div>
         </div>
-        <div class="min-w-[160px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="min-w-[160px] flex-1 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-gray-500">On Trial</p>

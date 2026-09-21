@@ -12,7 +12,17 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['"Plus Jakarta Sans"', 'Figtree', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                brand: {
+                    yellow: '#fecf25',
+                    blue: '#243a8b',
+                    navy: '#0c0048',
+                },
+            },
+            boxShadow: {
+                'lc-card': '0 10px 30px -12px rgb(12 0 72 / 0.18)',
             },
         },
     },

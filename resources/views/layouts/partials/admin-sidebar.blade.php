@@ -6,16 +6,30 @@
     $navItems = config('admin-nav.primary', []);
     $currentRoute = request()->route()?->getName();
     $addonRegistry = app(AddonRegistry::class);
+    $lcTheme = ! ($isDeveloperAdmin ?? false);
+    $lcLogoIcon = asset('logo/bg-white-lc-logo.jpg.jpeg');
+    $lcLogoWide = asset('logo/png-background/lc-logo-landscape.png');
+    $navActiveClass = $lcTheme
+        ? 'bg-brand-navy text-white shadow-md'
+        : 'bg-indigo-600 text-white shadow-sm';
+    $navInactiveClass = $lcTheme
+        ? 'text-white/75 hover:bg-white/10 hover:text-white'
+        : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700';
+    $sidebarBorderClass = $lcTheme ? 'border-white/10' : 'border-gray-200';
+    $sidebarBgClass = $lcTheme ? 'bg-brand-blue' : 'bg-white border-gray-200';
+    $collapseBtnClass = $lcTheme
+        ? 'text-white/70 hover:bg-white/10 hover:text-white'
+        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800';
 @endphp
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 hidden lg:flex flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-out"
-    :class="collapsed ? 'w-[72px]' : 'w-[200px]'"
+    class="fixed inset-y-0 left-0 z-40 hidden lg:flex flex-col overflow-hidden border-r transition-[width] duration-200 ease-out {{ $sidebarBgClass }}"
+    :class="collapsed ? '{{ $lcTheme ? 'w-20' : 'w-[72px]' }}' : '{{ $lcTheme ? 'w-[260px]' : 'w-[200px]' }}'"
     aria-label="Admin navigation"
 >
     <div
-        class="flex h-14 shrink-0 items-center border-b border-gray-200"
-        :class="collapsed ? 'justify-center px-2' : 'justify-between gap-2 px-2.5'"
+        class="flex h-16 shrink-0 items-center border-b {{ $sidebarBorderClass }}"
+        :class="collapsed ? 'justify-center px-2' : 'justify-between gap-2 px-3'"
     >
         <a
             href="{{ route('dashboard') }}"
@@ -24,13 +38,19 @@
             title="Dashboard"
         >
             @if (! empty($branding['simple_logo_url']))
-                <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-9 shrink-0 rounded-md object-contain">
+                <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-10 shrink-0 rounded-md object-contain">
+            @elseif ($lcTheme)
+                <img src="{{ $lcLogoIcon }}" alt="LibControl" class="size-10 shrink-0 rounded-md object-contain">
             @else
                 <x-application-logo class="size-7 shrink-0 fill-current text-indigo-600" />
             @endif
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
-                <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
+                @if ($lcTheme && empty($branding['logo_with_text_url']))
+                    <img src="{{ $lcLogoWide }}" alt="LibControl" class="h-8 max-w-[170px] object-contain object-left">
+                @else
+                    <p class="truncate text-sm font-bold {{ $lcTheme ? 'text-white' : 'text-gray-900' }}">{{ $branding['display_name'] ?? config('app.name') }}</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] {{ $lcTheme ? 'text-white/60' : 'text-gray-500' }}">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
+                @endif
             </div>
         </a>
 
@@ -39,26 +59,26 @@
             x-cloak
             type="button"
             @click="toggleCollapsed()"
-            class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors {{ $collapseBtnClass }}"
             aria-label="Collapse sidebar"
         >
             <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         </button>
     </div>
 
-    <div x-show="collapsed" x-cloak class="flex shrink-0 justify-center border-b border-gray-200 py-2">
+    <div x-show="collapsed" x-cloak class="flex shrink-0 justify-center border-b {{ $sidebarBorderClass }} py-2">
         <button
             type="button"
             @click="toggleCollapsed()"
-            class="inline-flex size-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+            class="inline-flex size-8 items-center justify-center rounded-lg transition-colors {{ $collapseBtnClass }}"
             aria-label="Expand sidebar"
         >
             <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
     </div>
 
-    <nav class="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Admin menu">
-        <ul class="space-y-0.5">
+    <nav class="min-h-0 flex-1 overflow-y-auto px-3 py-4" aria-label="Admin menu">
+        <ul class="space-y-1">
             @foreach ($navItems as $item)
                 @php
                     $navUser = auth()->user();
@@ -94,10 +114,10 @@
                         <a
                             href="{{ route($item['route']) }}"
                             title="{{ $item['label'] }}"
-                            class="flex items-center rounded-lg py-2 text-[13px] font-medium transition-colors {{ $isActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700' }}"
-                            :class="collapsed ? 'justify-center px-2' : 'gap-2 px-2.5'"
+                            class="flex items-center {{ $lcTheme ? 'rounded-xl' : 'rounded-lg' }} py-2.5 text-[13px] font-medium transition-colors {{ $isActive ? $navActiveClass : $navInactiveClass }}"
+                            :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'"
                         >
-                            @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive])
+                            @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive, 'lcTheme' => $lcTheme])
                             <span x-show="!collapsed" x-cloak class="flex-1">{{ $item['label'] }}</span>
                             @if (($item['route'] ?? '') === 'developer.support-tickets.index')
                                 <span
@@ -114,13 +134,13 @@
         </ul>
     </nav>
 
-    <div class="shrink-0 border-t border-gray-200 p-2">
+    <div class="shrink-0 border-t {{ $sidebarBorderClass }} p-3">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button
                 type="submit"
-                class="flex w-full items-center rounded-lg py-2 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-                :class="collapsed ? 'justify-center px-2' : 'gap-2 px-2.5'"
+                class="flex w-full items-center {{ $lcTheme ? 'rounded-xl text-white/80 hover:bg-white/10 hover:text-white' : 'rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900' }} py-2.5 text-[13px] font-medium transition-colors"
+                :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'"
                 title="Log out"
             >
                 <svg class="size-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>
@@ -147,34 +167,40 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="translate-x-0"
         x-transition:leave-end="-translate-x-full"
-        class="absolute inset-y-0 left-0 flex w-[min(280px,88vw)] flex-col border-r border-gray-200 bg-white shadow-xl"
+        class="absolute inset-y-0 left-0 flex w-[min(300px,88vw)] flex-col border-r shadow-xl {{ $lcTheme ? 'border-brand-navy/20 bg-brand-blue' : 'border-gray-200 bg-white' }}"
         aria-label="Mobile navigation"
         @click.stop
     >
-        <div class="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 px-4">
+        <div class="flex h-16 shrink-0 items-center justify-between border-b {{ $sidebarBorderClass }} px-4">
             <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-2.5" @click="closeMobileNav()">
                 @if (! empty($branding['simple_logo_url']))
-                    <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-9 shrink-0 rounded-md object-contain">
+                    <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-10 shrink-0 rounded-md object-contain">
+                @elseif ($lcTheme)
+                    <img src="{{ $lcLogoIcon }}" alt="LibControl" class="size-10 shrink-0 rounded-md object-contain">
                 @else
                     <x-application-logo class="size-7 shrink-0 fill-current text-indigo-600" />
                 @endif
                 <div class="min-w-0 leading-tight">
-                    <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
+                    @if ($lcTheme && empty($branding['logo_with_text_url']))
+                        <img src="{{ $lcLogoWide }}" alt="LibControl" class="h-8 max-w-[170px] object-contain object-left">
+                    @else
+                        <p class="truncate text-sm font-bold {{ $lcTheme ? 'text-white' : 'text-gray-900' }}">{{ $branding['display_name'] ?? config('app.name') }}</p>
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.12em] {{ $lcTheme ? 'text-white/60' : 'text-gray-500' }}">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
+                    @endif
                 </div>
             </a>
             <button
                 type="button"
                 @click="closeMobileNav()"
-                class="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                class="inline-flex size-9 items-center justify-center rounded-lg {{ $collapseBtnClass }}"
                 aria-label="Close navigation"
             >
                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
-        <nav class="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Admin menu">
-            <ul class="space-y-0.5">
+        <nav class="min-h-0 flex-1 overflow-y-auto px-3 py-4" aria-label="Admin menu">
+            <ul class="space-y-1">
                 @foreach ($navItems as $item)
                     @php
                         $navUser = auth()->user();
@@ -198,17 +224,17 @@
                     @endphp
                     <li>
                         @if ($disabled)
-                            <span class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-gray-400">
-                                @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon']])
+                            <span class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium {{ $lcTheme ? 'text-white/40' : 'text-gray-400' }}">
+                                @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'lcTheme' => $lcTheme])
                                 <span class="flex-1">{{ $item['label'] }}</span>
                             </span>
                         @else
                             <a
                                 href="{{ route($item['route']) }}"
                                 @click="closeMobileNav()"
-                                class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors {{ $isActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700' }}"
+                                class="flex items-center gap-2.5 {{ $lcTheme ? 'rounded-xl' : 'rounded-lg' }} px-3 py-2.5 text-[13px] font-medium transition-colors {{ $isActive ? $navActiveClass : $navInactiveClass }}"
                             >
-                                @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive])
+                                @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive, 'lcTheme' => $lcTheme])
                                 <span class="flex-1">{{ $item['label'] }}</span>
                                 @if (($item['route'] ?? '') === 'developer.support-tickets.index')
                                     <span
@@ -224,12 +250,12 @@
             </ul>
         </nav>
 
-        <div class="shrink-0 border-t border-gray-200 p-2">
+        <div class="shrink-0 border-t {{ $sidebarBorderClass }} p-3">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button
                     type="submit"
-                    class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors {{ $lcTheme ? 'text-white/80 hover:bg-white/10 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}"
                 >
                     <svg class="size-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>
                     <span>Log out</span>

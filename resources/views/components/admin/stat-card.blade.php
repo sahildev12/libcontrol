@@ -7,6 +7,7 @@
 
 @php
     $tones = [
+        'brand' => ['border' => 'border-brand-blue/20', 'bg' => 'bg-brand-blue/5', 'label' => 'text-brand-blue', 'value' => 'text-brand-navy'],
         'blue' => ['border' => 'border-blue-200', 'bg' => 'bg-blue-50', 'label' => 'text-blue-700', 'value' => 'text-blue-900'],
         'green' => ['border' => 'border-emerald-200', 'bg' => 'bg-emerald-50', 'label' => 'text-emerald-700', 'value' => 'text-emerald-900'],
         'slate' => ['border' => 'border-slate-200', 'bg' => 'bg-slate-50', 'label' => 'text-slate-700', 'value' => 'text-slate-900'],
@@ -19,7 +20,7 @@
     $colors = $tones[$tone] ?? $tones['blue'];
 @endphp
 
-<div class="rounded-xl border {{ $colors['border'] }} {{ $colors['bg'] }} p-5 shadow-sm">
+<div class="rounded-2xl border {{ $colors['border'] }} {{ $colors['bg'] }} p-5 shadow-sm">
     <p class="text-sm font-semibold {{ $colors['label'] }}">{{ $label }}</p>
     <p class="mt-2 text-3xl font-bold {{ $colors['value'] }}">{{ number_format($value) }}</p>
     @if ($hint)

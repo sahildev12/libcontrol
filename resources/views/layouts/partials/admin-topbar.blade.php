@@ -5,9 +5,10 @@
     $navItems = config('admin-nav.primary', []);
     $currentRoute = request()->route()?->getName();
     $addonRegistry = app(AddonRegistry::class);
+    $lcTheme = ! ($isDeveloperAdmin ?? false);
 @endphp
 
-<header class="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 md:px-6 lg:relative">
+<header class="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b px-4 md:px-6 lg:relative {{ $lcTheme ? 'border-gray-200/80 bg-white/95 shadow-sm backdrop-blur' : 'border-gray-200 bg-white' }}">
     <div class="flex min-w-0 items-center gap-2 sm:gap-3 lg:hidden">
         <button
             type="button"
@@ -20,7 +21,7 @@
         <div class="min-w-0">
             <p class="truncate text-sm font-semibold text-gray-900">{{ $viewingAllBranches ?? false ? 'All branches' : ($activeBranch?->display_name ?? $activeBranch?->name ?? config('app.name')) }}</p>
             @if ($adminTypeLabel)
-                <p class="truncate text-xs text-indigo-600">{{ $adminTypeLabel }}</p>
+                <p class="truncate text-xs {{ $lcTheme ? 'text-brand-blue' : 'text-indigo-600' }}">{{ $adminTypeLabel }}</p>
             @endif
         </div>
     </div>
@@ -32,7 +33,7 @@
                 <label class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-400">Branch</label>
                 <x-admin.select
                     wrapper-class="relative inline-block min-w-[220px]"
-                    class="rounded-lg border-indigo-200 bg-indigo-50/60 py-1.5 pl-3 pr-9 text-sm font-medium text-gray-800"
+                    class="rounded-xl border-gray-200 bg-slate-50 py-2 pl-3 pr-9 text-sm font-medium text-gray-800 {{ $lcTheme ? 'focus:border-brand-blue' : 'border-indigo-200 bg-indigo-50/60' }}"
                     x-model="branchId"
                     @change="switchBranch()"
                 >
@@ -48,12 +49,21 @@
         @endif
     </div>
 
-    <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-14 items-center justify-center px-4 lg:flex">
-        <div class="pointer-events-auto inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-1.5 shadow-sm">
-            <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">✓</span>
-            <p class="truncate text-sm font-semibold text-emerald-900">{{ config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered') }}</p>
+    @if ($lcTheme)
+        <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-16 items-center justify-center px-4 lg:flex">
+            <div class="pointer-events-auto inline-flex w-full max-w-xl items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
+                <svg class="size-5 shrink-0 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="search" placeholder="Search here..." class="w-full border-0 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-0" disabled>
+            </div>
         </div>
-    </div>
+    @else
+        <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-14 items-center justify-center px-4 lg:flex">
+            <div class="pointer-events-auto inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-1.5 shadow-sm">
+                <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">✓</span>
+                <p class="truncate text-sm font-semibold text-emerald-900">{{ config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered') }}</p>
+            </div>
+        </div>
+    @endif
 
     <div class="flex shrink-0 items-center gap-2 sm:gap-3">
         <div
@@ -100,7 +110,7 @@
                             @click="markAllRead()"
                             class="text-xs font-semibold text-gray-600 hover:text-gray-900"
                         >Mark all as read</button>
-                        <a :href="allUrl" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">View all</a>
+                        <a :href="allUrl" class="text-xs font-semibold {{ $lcTheme ? 'text-brand-blue hover:text-brand-navy' : 'text-indigo-600 hover:text-indigo-700' }}">View all</a>
                     </div>
                 </div>
                 <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
@@ -121,9 +131,16 @@
             </div>
         </div>
 
+        @if ($lcTheme)
+            <div class="hidden text-right sm:block">
+                <p class="text-sm font-semibold text-brand-navy">{{ Auth::user()->name }}</p>
+                <p class="text-xs text-gray-500">{{ $adminTypeLabel ?? 'Administrator' }}</p>
+            </div>
+        @endif
+
         <x-dropdown align="right" width="48">
             <x-slot name="trigger">
-                <button type="button" class="inline-flex size-9 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700" aria-label="Account menu">
+                <button type="button" class="inline-flex size-10 items-center justify-center rounded-full text-xs font-semibold text-white {{ $lcTheme ? 'bg-brand-blue ring-2 ring-brand-yellow/80 hover:bg-brand-navy' : 'bg-indigo-600 hover:bg-indigo-700' }}" aria-label="Account menu">
                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                 </button>
             </x-slot>
@@ -133,7 +150,7 @@
                     <p class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</p>
                     <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                     @if ($adminTypeLabel)
-                        <p class="text-xs font-medium text-indigo-600">{{ $adminTypeLabel }}</p>
+                        <p class="text-xs font-medium {{ $lcTheme ? 'text-brand-blue' : 'text-indigo-600' }}">{{ $adminTypeLabel }}</p>
                     @endif
                 </div>
                 <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>

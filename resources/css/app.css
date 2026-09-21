@@ -14,6 +14,70 @@
     .admin-main-shell.is-collapsed {
         margin-left: 72px;
     }
+
+    .lc-theme .admin-main-shell {
+        margin-left: 260px;
+    }
+
+    .lc-theme .admin-main-shell.is-collapsed {
+        margin-left: 80px;
+    }
+}
+
+/* LibControl client admin theme — developer portal keeps legacy styles */
+.lc-theme {
+    --lc-yellow: #fecf25;
+    --lc-blue: #243a8b;
+    --lc-navy: #0c0048;
+}
+
+.lc-theme .bg-indigo-600 {
+    background-color: var(--lc-blue) !important;
+}
+
+.lc-theme .hover\:bg-indigo-700:hover,
+.lc-theme .bg-indigo-700 {
+    background-color: var(--lc-navy) !important;
+}
+
+.lc-theme .text-indigo-600,
+.lc-theme .text-indigo-700,
+.lc-theme .hover\:text-indigo-700:hover,
+.lc-theme .hover\:text-indigo-800:hover {
+    color: var(--lc-blue) !important;
+}
+
+.lc-theme .border-indigo-200,
+.lc-theme .border-indigo-500 {
+    border-color: rgb(36 58 139 / 0.25) !important;
+}
+
+.lc-theme .bg-indigo-50,
+.lc-theme .hover\:bg-indigo-50:hover {
+    background-color: rgb(36 58 139 / 0.08) !important;
+}
+
+.lc-theme .focus\:border-indigo-500:focus,
+.lc-theme .focus\:ring-indigo-500:focus,
+.lc-theme .focus\:ring-indigo-500\/30:focus {
+    --tw-ring-color: rgb(36 58 139 / 0.3) !important;
+    border-color: var(--lc-blue) !important;
+}
+
+.lc-theme .lc-page-title {
+    @apply text-2xl font-bold tracking-tight text-brand-navy;
+}
+
+.lc-theme .lc-card {
+    @apply rounded-2xl border border-gray-200/80 bg-white shadow-lc-card;
+}
+
+.lc-theme .lc-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30;
+}
+
+.lc-theme .lc-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-brand-blue/30 hover:text-brand-blue;
 }
 
 select.admin-select {
@@ -39,15 +103,15 @@ select.admin-select::-ms-expand {
 }
 
 select.admin-select:focus {
-    border-color: #6366f1;
+    border-color: #243a8b;
     outline: 2px solid transparent;
     outline-offset: 2px;
-    box-shadow: 0 0 0 2px rgb(99 102 241 / 0.3);
+    box-shadow: 0 0 0 2px rgb(36 58 139 / 0.3);
 }
 
 @layer components {
     .admin-select {
-        @apply appearance-none rounded-lg border border-gray-300 bg-white pr-10 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+        @apply appearance-none rounded-lg border border-gray-300 bg-white pr-10 text-sm text-gray-700 shadow-sm focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/30;
         -webkit-appearance: none;
         -moz-appearance: none;
     }

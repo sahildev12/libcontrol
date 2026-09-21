@@ -1,7 +1,9 @@
-@props(['icon', 'active' => false])
+@props(['icon', 'active' => false, 'lcTheme' => false])
 
 @php
-    $class = 'size-[18px] shrink-0 ' . ($active ? 'text-white' : 'text-gray-500');
+    $class = 'size-[18px] shrink-0 ' . ($active
+        ? 'text-white'
+        : (($lcTheme ?? false) ? 'text-white/70' : 'text-gray-500'));
 @endphp
 
 @switch($icon)

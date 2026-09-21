@@ -45,8 +45,8 @@
 >
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-            <p class="mt-1 text-sm text-gray-500">System Overview</p>
+            <h1 class="lc-page-title">Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-500">System overview and branch performance</p>
         </div>
 
         <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
