@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\NotificationService;
+use App\Services\SupportTicketSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,6 +22,26 @@ class NotificationController extends Controller
         ]);
     }
 
+    public function feed(
+        Request $request,
+        NotificationService $notificationService,
+        SupportTicketSyncService $supportTicketSyncService,
+    ): JsonResponse {
+        $user = $request->user();
+        $branchId = $this->optionalActiveBranchId($request);
+
+        if (! config('libcontrol.license_server.enabled')) {
+            $supportTicketSyncService->pullUpdates($user);
+        }
+
+        return response()->json([
+            'unread_count' => $notificationService->unreadCount($branchId, $user),
+            'alerts' => $notificationService->alertsForBranch($branchId, $user, 8)->values(),
+            'support_ticket_unread' => $notificationService->supportTicketUnreadCount($user),
+            'client_support_ticket_updates' => $notificationService->clientSupportTicketUpdateCount($user),
+        ]);
+    }
+
     public function markRead(Request $request, NotificationService $notificationService): JsonResponse
     {
         $data = $request->validate([
@@ -28,16 +49,25 @@ class NotificationController extends Controller
             'keys.*' => ['required', 'string', 'max:120'],
         ]);
 
-        $notificationService->markKeysRead($request->user(), $data['keys']);
+        $user = $request->user();
+        $notificationService->markKeysRead($user, $data['keys']);
 
-        return response()->json(['ok' => true]);
+        return response()->json([
+            'ok' => true,
+            'support_ticket_unread' => $notificationService->supportTicketUnreadCount($user),
+        ]);
     }
 
     public function markAllRead(Request $request, NotificationService $notificationService): JsonResponse
     {
-        $notificationService->markAllRead($this->optionalActiveBranchId($request), $request->user());
+        $user = $request->user();
+        $notificationService->markAllRead($this->optionalActiveBranchId($request), $user);
 
-        return response()->json(['ok' => true, 'message' => 'All notifications marked as read.']);
+        return response()->json([
+            'ok' => true,
+            'message' => 'All notifications marked as read.',
+            'support_ticket_unread' => $notificationService->supportTicketUnreadCount($user),
+        ]);
     }
 
     public function bulkDestroy(Request $request, NotificationService $notificationService): JsonResponse

@@ -963,14 +963,65 @@ Alpine.data('toastHost', () => ({
     },
 }));
 
-Alpine.data('adminShell', () => ({
+function playNotificationSound() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+        if (! AudioContextClass) {
+            return;
+        }
+
+        const context = new AudioContextClass();
+        const tones = [
+            { frequency: 880, start: 0, duration: 0.18 },
+            { frequency: 1174.66, start: 0.2, duration: 0.22 },
+        ];
+
+        tones.forEach(({ frequency, start, duration }) => {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+
+            const startAt = context.currentTime + start;
+            gain.gain.setValueAtTime(0.0001, startAt);
+            gain.gain.exponentialRampToValueAtTime(0.18, startAt + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+            oscillator.start(startAt);
+            oscillator.stop(startAt + duration + 0.02);
+        });
+
+        window.setTimeout(() => {
+            context.close().catch(() => {});
+        }, 700);
+    } catch (error) {
+        // Ignore browsers that block autoplay audio.
+    }
+}
+
+function dispatchSupportTicketUnread(unread) {
+    window.dispatchEvent(new CustomEvent('LibControl:support-tickets-updated', {
+        detail: { unread: Number(unread) || 0 },
+    }));
+}
+
+Alpine.data('adminShell', (config = {}) => ({
     collapsed: false,
     mobileNavOpen: false,
+    supportTicketUnread: Number(config.supportTicketUnread) || 0,
     init() {
         const stored = localStorage.getItem('LibControl-admin-sidebar-collapsed');
         if (stored === '1') {
             this.collapsed = true;
         }
+
+        window.addEventListener('LibControl:support-tickets-updated', (event) => {
+            this.supportTicketUnread = Number(event.detail?.unread) || 0;
+        });
     },
     toggleMobileNav() {
         this.mobileNavOpen = ! this.mobileNavOpen;
@@ -5422,12 +5473,71 @@ Alpine.data('notificationBell', (config) => ({
     markReadUrl: config.markReadUrl,
     markAllUrl: config.markAllUrl,
     allUrl: config.allUrl,
+    pollUrl: config.pollUrl || null,
+    pollIntervalMs: Number(config.pollIntervalMs) || 15000,
+    enableSound: Boolean(config.enableSound),
+    pollTimer: null,
+    lastPolledUnread: Number(config.unreadCount) || 0,
+    pollingReady: false,
+
+    init() {
+        if (! this.pollUrl) {
+            return;
+        }
+
+        this.pollTimer = window.setInterval(() => {
+            this.pollNotifications();
+        }, this.pollIntervalMs);
+
+        window.setTimeout(() => {
+            this.pollingReady = true;
+        }, this.pollIntervalMs);
+    },
+
+    destroy() {
+        if (this.pollTimer) {
+            window.clearInterval(this.pollTimer);
+            this.pollTimer = null;
+        }
+    },
+
+    applyFeed(data) {
+        const nextUnread = Number(data?.unread_count) || 0;
+        const supportTicketUnread = Number(data?.support_ticket_unread);
+
+        if (this.pollingReady && this.enableSound && nextUnread > this.lastPolledUnread) {
+            playNotificationSound();
+        }
+
+        this.alerts = Array.isArray(data?.alerts) ? data.alerts : this.alerts;
+        this.unreadCount = nextUnread;
+        this.lastPolledUnread = nextUnread;
+
+        if (! Number.isNaN(supportTicketUnread)) {
+            dispatchSupportTicketUnread(supportTicketUnread);
+        }
+    },
+
+    async pollNotifications() {
+        if (! this.pollUrl) {
+            return;
+        }
+
+        try {
+            const { data } = await window.axios.get(this.pollUrl);
+            this.applyFeed(data);
+        } catch (error) {
+            // Keep the current badge state when polling fails.
+        }
+    },
 
     async markAllRead() {
         try {
-            await window.axios.post(this.markAllUrl);
+            const { data } = await window.axios.post(this.markAllUrl);
             this.alerts = this.alerts.map((alert) => ({ ...alert, unread: false }));
             this.unreadCount = 0;
+            this.lastPolledUnread = 0;
+            dispatchSupportTicketUnread(data?.support_ticket_unread ?? 0);
         } catch (e) {
             showToast(e.response?.data?.message || 'Could not mark notifications as read.', 'error');
         }
@@ -5436,7 +5546,14 @@ Alpine.data('notificationBell', (config) => ({
     async openAlert(alert) {
         if (alert.unread) {
             try {
-                await window.axios.post(this.markReadUrl, { keys: [alert.id] });
+                const { data } = await window.axios.post(this.markReadUrl, { keys: [alert.id] });
+                this.unreadCount = Math.max(0, this.unreadCount - 1);
+                this.lastPolledUnread = this.unreadCount;
+                alert.unread = false;
+
+                if (typeof data?.support_ticket_unread === 'number') {
+                    dispatchSupportTicketUnread(data.support_ticket_unread);
+                }
             } catch (e) {
                 // still navigate
             }
@@ -6907,7 +7024,9 @@ Alpine.data('studentOffersPage', (config) => ({
 
 Alpine.data('helpSupportPage', (config) => ({
     storeUrl: config.storeUrl,
+    syncUrl: config.syncUrl || null,
     tickets: config.tickets || [],
+    syncTimer: null,
     supportEmail: config.supportEmail || '',
     companyUrl: config.companyUrl || '',
     whatsappUrl: config.whatsappUrl || '',
@@ -6923,6 +7042,23 @@ Alpine.data('helpSupportPage', (config) => ({
         message: '',
         category: '',
         priority: 'normal',
+    },
+
+    init() {
+        if (! this.syncUrl) {
+            return;
+        }
+
+        this.syncTimer = window.setInterval(() => {
+            this.syncTickets(false);
+        }, 30000);
+    },
+
+    destroy() {
+        if (this.syncTimer) {
+            window.clearInterval(this.syncTimer);
+            this.syncTimer = null;
+        }
     },
 
     messageLength() {
@@ -6975,8 +7111,44 @@ Alpine.data('helpSupportPage', (config) => ({
         return classes[priority] || classes.normal;
     },
 
-    openTicket(ticket) {
-        this.viewingTicket = ticket;
+    async openTicket(ticket) {
+        if (! ticket?.show_url) {
+            this.viewingTicket = ticket;
+            return;
+        }
+
+        try {
+            const { data } = await window.axios.get(ticket.show_url);
+            const freshTicket = data.ticket || ticket;
+
+            this.tickets = this.tickets.map((row) => (
+                row.id === freshTicket.id ? freshTicket : row
+            ));
+            this.viewingTicket = freshTicket;
+        } catch (error) {
+            showToast(extractAxiosError(error), 'error');
+            this.viewingTicket = ticket;
+        }
+    },
+
+    async syncTickets(showToastOnUpdate = false) {
+        if (! this.syncUrl) {
+            return;
+        }
+
+        try {
+            const previousPending = this.tickets.filter((ticket) => ticket.has_update).length;
+            const { data } = await window.axios.get(this.syncUrl);
+            this.tickets = Array.isArray(data.tickets) ? data.tickets : this.tickets;
+
+            const nextPending = this.tickets.filter((ticket) => ticket.has_update).length;
+
+            if (showToastOnUpdate && nextPending > previousPending) {
+                showToast('Your support ticket was updated by Phenomit.');
+            }
+        } catch (error) {
+            // Ignore background sync failures.
+        }
     },
 
     closeTicket() {

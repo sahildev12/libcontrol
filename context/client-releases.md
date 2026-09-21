@@ -15,6 +15,12 @@ All client release zips **must** include a root `.htaccess` so shared hosting ca
 - `scripts/build-client-release.ps1` copies it into every staging zip as `.htaccess`
 - Do not remove this step when building new client packages (Aims, Dise, etc.)
 
+## 2026-09-21 — Aims v2.1.6 (support ticket sync fix)
+
+- Release notes: `releases/client/aims/v2.1.6/RELEASE.md`
+- Code: `releases/client/aims/v2.1.6/staging/`
+- Tickets only save when libcontrol API accepts them; deploy libcontrol + Aims together
+
 ## 2026-09-21 — Aims v2.1.5 (in-place deploy, no zip)
 
 - Release notes: `releases/client/aims/v2.1.5/RELEASE.md`

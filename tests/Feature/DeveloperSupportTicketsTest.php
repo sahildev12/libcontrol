@@ -58,6 +58,47 @@ class DeveloperSupportTicketsTest extends TestCase
             ->assertSee('\u0022unread\u0022:false', false);
     }
 
+    public function test_notification_feed_includes_unread_support_tickets(): void
+    {
+        $user = $this->developerAdmin();
+        $ticket = $this->createTicket(['read_at' => null, 'subject' => 'Billing issue']);
+
+        $this->actingAs($user)
+            ->getJson(route('notifications.feed'))
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonPath('support_ticket_unread', 1)
+            ->assertJsonPath('alerts.0.id', 'support_ticket:'.$ticket->id)
+            ->assertJsonPath('alerts.0.title', 'New support ticket');
+    }
+
+    public function test_marking_support_ticket_notification_read_updates_ticket(): void
+    {
+        $user = $this->developerAdmin();
+        $ticket = $this->createTicket(['read_at' => null]);
+
+        $this->actingAs($user)
+            ->postJson(route('notifications.mark-read'), [
+                'keys' => ['support_ticket:'.$ticket->id],
+            ])
+            ->assertOk()
+            ->assertJsonPath('support_ticket_unread', 0);
+
+        $this->assertNotNull($ticket->fresh()->read_at);
+    }
+
+    public function test_admin_topbar_enables_support_ticket_notification_polling(): void
+    {
+        $user = $this->developerAdmin();
+        $this->createTicket(['read_at' => null]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(route('notifications.feed'), false)
+            ->assertSee('enableSound: true', false);
+    }
+
     private function developerAdmin(): User
     {
         $user = User::factory()->create(['branch_id' => null]);

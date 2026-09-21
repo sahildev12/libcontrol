@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\LicensedDeployment;
 use App\Models\SupportTicket;
+use App\Models\User;
 use App\Support\Runtime\SyncCoordinator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class SupportTicketSyncService
 {
@@ -112,6 +114,124 @@ class SupportTicketSyncService
         }
     }
 
+    public function pullUpdates(?User $user = null): int
+    {
+        if (config('libcontrol.license_server.enabled')) {
+            return 0;
+        }
+
+        if (! Schema::hasTable('support_tickets')) {
+            return 0;
+        }
+
+        $licenseKey = trim((string) config('libcontrol.deployment.license_key'));
+
+        if (LicensedDeployment::isPlaceholderLicenseKey($licenseKey)) {
+            return 0;
+        }
+
+        $query = SupportTicket::query()->whereNotNull('remote_id');
+
+        if ($user && ! $user->isAnyAdmin()) {
+            $query->where('reporter_user_id', $user->id);
+        }
+
+        $tickets = $query->get();
+
+        if ($tickets->isEmpty()) {
+            return 0;
+        }
+
+        $payload = [
+            'domain' => $this->currentDomain(),
+            'uuids' => $tickets->pluck('uuid')->filter()->values()->all(),
+        ];
+
+        $endpoint = $this->supportPullEndpoint();
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+        $token = hash_hmac('sha256', $body, $licenseKey);
+
+        try {
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'X-Sync-Token' => $token,
+                    'X-License-Key' => $licenseKey,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])
+                ->withBody($body, 'application/json')
+                ->post($endpoint);
+
+            if (! $response->successful()) {
+                Log::warning('Support ticket pull failed.', [
+                    'endpoint' => $endpoint,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return 0;
+            }
+
+            $data = $response->json();
+
+            if (! is_array($data) || ! is_array($data['tickets'] ?? null)) {
+                return 0;
+            }
+
+            $updated = 0;
+
+            foreach ($data['tickets'] as $remoteTicket) {
+                if (! is_array($remoteTicket)) {
+                    continue;
+                }
+
+                $uuid = trim((string) ($remoteTicket['uuid'] ?? ''));
+                $localTicket = $tickets->firstWhere('uuid', $uuid);
+
+                if (! $localTicket) {
+                    continue;
+                }
+
+                $remoteStatus = trim((string) ($remoteTicket['status'] ?? $localTicket->status));
+                $remoteNotes = (string) ($remoteTicket['admin_notes'] ?? '');
+
+                if (! in_array($remoteStatus, [
+                    SupportTicket::STATUS_OPEN,
+                    SupportTicket::STATUS_IN_PROGRESS,
+                    SupportTicket::STATUS_RESOLVED,
+                    SupportTicket::STATUS_CLOSED,
+                ], true)) {
+                    $remoteStatus = $localTicket->status;
+                }
+
+                $statusChanged = $localTicket->status !== $remoteStatus;
+                $notesChanged = (string) $localTicket->admin_notes !== $remoteNotes;
+
+                if (! $statusChanged && ! $notesChanged) {
+                    continue;
+                }
+
+                $localTicket->fill([
+                    'status' => $remoteStatus,
+                    'admin_notes' => $remoteNotes !== '' ? $remoteNotes : null,
+                    'client_update_pending' => true,
+                ]);
+
+                $localTicket->save();
+                $updated++;
+            }
+
+            return $updated;
+        } catch (\Throwable $e) {
+            Log::warning('Support ticket pull connection error.', [
+                'endpoint' => $endpoint,
+                'message' => $e->getMessage(),
+            ]);
+
+            return 0;
+        }
+    }
+
     public function push(SupportTicket $ticket): SupportTicketSyncResult
     {
         $result = $this->submit([
@@ -170,6 +290,11 @@ class SupportTicketSyncService
         }
 
         return rtrim((string) config('app.url'), '/').'/api/support/tickets';
+    }
+
+    public function supportPullEndpoint(): string
+    {
+        return str_replace('/api/support/tickets', '/api/support/tickets/pull', $this->supportEndpoint());
     }
 
     private function currentDomain(): string

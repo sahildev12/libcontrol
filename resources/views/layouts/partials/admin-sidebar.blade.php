@@ -99,6 +99,14 @@
                         >
                             @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive])
                             <span x-show="!collapsed" x-cloak class="flex-1">{{ $item['label'] }}</span>
+                            @if (($item['route'] ?? '') === 'developer.support-tickets.index')
+                                <span
+                                    x-show="!collapsed && supportTicketUnread > 0"
+                                    x-cloak
+                                    class="inline-flex min-w-[18px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white"
+                                    x-text="supportTicketUnread > 9 ? '9+' : supportTicketUnread"
+                                ></span>
+                            @endif
                         </a>
                     @endif
                 </li>
@@ -202,6 +210,13 @@
                             >
                                 @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive])
                                 <span class="flex-1">{{ $item['label'] }}</span>
+                                @if (($item['route'] ?? '') === 'developer.support-tickets.index')
+                                    <span
+                                        x-show="supportTicketUnread > 0"
+                                        class="inline-flex min-w-[18px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white"
+                                        x-text="supportTicketUnread > 9 ? '9+' : supportTicketUnread"
+                                    ></span>
+                                @endif
                             </a>
                         @endif
                     </li>

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/runtime/sync',
             'api/support/tickets',
+            'api/support/tickets/pull',
             'setup/install',
             'setup/test-database',
         ]);

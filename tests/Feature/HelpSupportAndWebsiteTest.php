@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\PlatformSetting;
+use App\Models\SupportTicket;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -100,6 +102,52 @@ class HelpSupportAndWebsiteTest extends TestCase
         $this->assertDatabaseMissing('support_tickets', [
             'subject' => 'Need help with fees',
         ]);
+    }
+
+    public function test_client_pulls_ticket_updates_from_phenomit_hub(): void
+    {
+        config([
+            'libcontrol.deployment.license_key' => 'ls_test_license_key_for_support_ticket',
+            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.phenomit.com/api/runtime/sync',
+        ]);
+
+        Http::fake([
+            'https://libcontrol.phenomit.com/api/support/tickets/pull' => Http::response([
+                'tickets' => [[
+                    'uuid' => '00000000-0000-4000-8000-000000000099',
+                    'status' => 'in_progress',
+                    'admin_notes' => 'We are looking into this.',
+                    'updated_at' => now()->toIso8601String(),
+                ]],
+            ], 200),
+        ]);
+
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+
+        SupportTicket::query()->create([
+            'uuid' => '00000000-0000-4000-8000-000000000099',
+            'subject' => 'Need help with fees',
+            'message' => 'Fee setup is not saving correctly.',
+            'category' => 'technical',
+            'priority' => 'normal',
+            'status' => SupportTicket::STATUS_OPEN,
+            'reporter_user_id' => $user->id,
+            'reporter_name' => $user->name,
+            'reporter_email' => $user->email,
+            'remote_id' => 42,
+            'synced_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('help-support.index'))
+            ->assertOk()
+            ->assertSee('In Progress', false)
+            ->assertSee('We are looking into this.', false);
+
+        $ticket = SupportTicket::query()->first();
+        $this->assertSame(SupportTicket::STATUS_IN_PROGRESS, $ticket->status);
+        $this->assertTrue($ticket->client_update_pending);
     }
 
     public function test_support_ticket_is_not_saved_without_real_license_key(): void

@@ -12,7 +12,7 @@ $invokeArgs = @(
     "-ClientSlug", "aims",
     "-ClientName", "Aims Library",
     "-AppUrl", "https://aims.phenomit.com",
-    "-Version", "2.1.5",
+    "-Version", "2.1.6",
     "-StudentCodePrefix", "AIMS",
     "-AdminEmail", "admin@aims.phenomit.com",
     "-AdminPassword", "ChangeMeAfterLogin123!",

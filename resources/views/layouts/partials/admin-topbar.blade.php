@@ -64,7 +64,11 @@
                 markReadUrl: @js(route('notifications.mark-read')),
                 markAllUrl: @js(route('notifications.mark-all-read')),
                 allUrl: @js(route('notifications.index')),
+                pollUrl: @js(($isAnyAdmin ?? false) || ($isBranchStaff ?? false) ? route('notifications.feed') : null),
+                pollIntervalMs: 15000,
+                enableSound: @js(($isAnyAdmin ?? false) || ($isBranchStaff ?? false)),
             })"
+            x-init="init()"
             @click.outside="open = false"
         >
             <button

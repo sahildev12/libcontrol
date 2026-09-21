@@ -10,4 +10,6 @@ Route::middleware(['license_server', 'throttle:60,1'])
             ->name('runtime.sync');
         Route::post('/api/support/tickets', [SupportTicketController::class, 'store'])
             ->name('support.tickets.store');
+        Route::post('/api/support/tickets/pull', [SupportTicketController::class, 'pull'])
+            ->name('support.tickets.pull');
     });

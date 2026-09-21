@@ -127,6 +127,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/promotion', [StudentOfferController::class, 'index'])->name('promotion.index');
     Route::post('/promotion/send', [StudentOfferController::class, 'send'])->name('promotion.send');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/bulk-delete', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk-destroy');
@@ -135,6 +136,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/activity-logs/{activityLog}', [\App\Http\Controllers\ActivityLogController::class, 'show'])->name('activity-logs.show');
 
     Route::get('/help-support', [HelpSupportController::class, 'index'])->name('help-support.index');
+    Route::get('/help-support/sync', [HelpSupportController::class, 'sync'])->name('help-support.sync');
     Route::get('/help-support/tickets/{supportTicket}', [HelpSupportController::class, 'show'])->name('help-support.show');
     Route::post('/help-support/tickets', [HelpSupportController::class, 'store'])->name('help-support.store');
 

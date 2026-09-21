@@ -50,8 +50,9 @@
             </div>
         </div>
         <div class="mt-4">
-            <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Internal notes</label>
-            <textarea name="admin_notes" rows="4" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">{{ old('admin_notes', $ticket->admin_notes) }}</textarea>
+            <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Reply to client</label>
+            <p class="mt-1 text-xs text-gray-500">This message is shown on the client library portal when they view the ticket.</p>
+            <textarea name="admin_notes" rows="4" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="Let the library know what changed or what to try next...">{{ old('admin_notes', $ticket->admin_notes) }}</textarea>
         </div>
         <div class="mt-4 flex justify-end">
             <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Save</button>

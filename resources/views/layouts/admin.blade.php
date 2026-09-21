@@ -36,7 +36,7 @@
     </head>
     <body class="font-sans antialiased overflow-hidden">
         <div
-            x-data="adminShell()"
+            x-data="adminShell({ supportTicketUnread: @js($supportTicketUnreadCount ?? 0) })"
             x-init="init()"
             @toggle-mobile-nav.window="toggleMobileNav()"
             class="h-svh overflow-hidden bg-gray-100"

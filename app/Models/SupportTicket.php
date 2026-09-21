@@ -38,6 +38,7 @@ class SupportTicket extends Model
         'synced_at',
         'read_at',
         'admin_notes',
+        'client_update_pending',
     ];
 
     /**
@@ -48,6 +49,7 @@ class SupportTicket extends Model
         return [
             'synced_at' => 'datetime',
             'read_at' => 'datetime',
+            'client_update_pending' => 'boolean',
         ];
     }
 

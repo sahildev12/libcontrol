@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
 
         Broadcast::routes(['middleware' => ['web', 'auth', 'branch']]);
 
-        View::composer(['layouts.partials.admin-topbar', 'layouts.partials.admin-sidebar'], function ($view) {
+        View::composer(['layouts.admin', 'layouts.partials.admin-topbar', 'layouts.partials.admin-sidebar'], function ($view) {
             $user = auth()->user();
 
             if (! $user) {
@@ -68,14 +68,16 @@ class AppServiceProvider extends ServiceProvider
 
             $recentAlerts = collect();
             $alertCount = 0;
+            $notificationService = app(NotificationService::class);
 
             if ($user->branch_id || $user->isAnyAdmin()) {
-                $notificationService = app(NotificationService::class);
                 $recentAlerts = $notificationService->alertsForBranch($branchId, $user, 8);
                 $alertCount = $notificationService->unreadCount($branchId, $user);
             }
 
             $platformSettings = PlatformSetting::current();
+
+            $supportTicketUnreadCount = $notificationService->supportTicketUnreadCount($user);
 
             $view->with([
                 'activeBranch' => $activeBranch,
@@ -93,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
                 'adminTypeLabel' => $user->adminTypeLabel(),
                 'recentAlerts' => $recentAlerts,
                 'alertCount' => $alertCount,
+                'supportTicketUnreadCount' => $supportTicketUnreadCount,
             ]);
         });
     }

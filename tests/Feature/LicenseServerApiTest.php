@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\LicensedDeployment;
+use App\Models\SupportTicket;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class LicenseServerApiTest extends TestCase
@@ -139,6 +141,46 @@ class LicenseServerApiTest extends TestCase
         ]);
     }
 
+    public function test_support_ticket_pull_returns_updates_for_authorized_license(): void
+    {
+        $licenseKey = LicensedDeployment::generateKey();
+        $licenseKeyHash = LicensedDeployment::hashKey($licenseKey);
+
+        LicensedDeployment::query()->create([
+            'client_name' => 'City Library',
+            'license_key_hash' => $licenseKeyHash,
+            'allowed_domains' => ['library.test'],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        $ticket = SupportTicket::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'deployment_license_key_hash' => $licenseKeyHash,
+            'deployment_domain' => 'library.test',
+            'subject' => 'Printer issue',
+            'message' => 'Receipt printer stopped working.',
+            'category' => 'technical',
+            'priority' => 'normal',
+            'status' => SupportTicket::STATUS_RESOLVED,
+            'reporter_name' => 'Jane Doe',
+            'reporter_email' => 'jane@example.com',
+            'admin_notes' => 'Please restart the printer service.',
+        ]);
+
+        $payload = [
+            'domain' => 'library.test',
+            'uuids' => [$ticket->uuid],
+        ];
+
+        $response = $this->postSupportTickets($licenseKey, '/api/support/tickets/pull', $payload);
+
+        $response->assertOk()
+            ->assertJsonPath('tickets.0.uuid', $ticket->uuid)
+            ->assertJsonPath('tickets.0.status', SupportTicket::STATUS_RESOLVED)
+            ->assertJsonPath('tickets.0.admin_notes', 'Please restart the printer service.');
+    }
+
     public function test_sync_endpoint_does_not_require_csrf_token(): void
     {
         Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
@@ -174,11 +216,19 @@ class LicenseServerApiTest extends TestCase
      */
     private function postSync(string $licenseKey, array $payload)
     {
+        return $this->postSupportTickets($licenseKey, '/api/runtime/sync', $payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function postSupportTickets(string $licenseKey, string $uri, array $payload)
+    {
         $body = json_encode($payload, JSON_THROW_ON_ERROR);
 
         return $this->call(
             'POST',
-            '/api/runtime/sync',
+            $uri,
             [],
             [],
             [],

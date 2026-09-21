@@ -2,44 +2,31 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\AuthenticatesSupportTicketRequests;
 use App\Http\Controllers\Controller;
-use App\Models\LicensedDeployment;
 use App\Models\SupportTicket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SupportTicketController extends Controller
 {
+    use AuthenticatesSupportTicketRequests;
+
     public function store(Request $request): JsonResponse
     {
-        $rawBody = $request->getContent();
-        $payload = json_decode($rawBody, true);
+        $auth = $this->authenticateSupportTicketRequest($request);
 
-        if (! is_array($payload)) {
-            return response()->json(['message' => 'Invalid payload.'], 422);
+        if ($auth instanceof JsonResponse) {
+            return $auth;
         }
 
-        $licenseKey = trim((string) $request->header('X-License-Key', ''));
-        $token = (string) $request->header('X-Sync-Token', '');
-
-        if ($token === '') {
-            return response()->json(['message' => 'Unauthorized.'], 401);
-        }
-
-        $signingKey = LicensedDeployment::isPlaceholderLicenseKey($licenseKey)
-            ? (string) config('libcontrol.discovery.secret')
-            : $licenseKey;
-
-        $expected = hash_hmac('sha256', $rawBody, $signingKey);
-
-        if (! hash_equals($expected, $token)) {
-            return response()->json(['message' => 'Unauthorized.'], 401);
-        }
+        $payload = $auth['payload'];
+        $licenseKeyHash = $auth['license_key_hash'];
 
         $uuid = trim((string) ($payload['uuid'] ?? ''));
         $subject = trim((string) ($payload['subject'] ?? ''));
         $message = trim((string) ($payload['message'] ?? ''));
-        $domain = LicensedDeployment::normalizeDomain((string) ($payload['domain'] ?? ''));
+        $domain = \App\Models\LicensedDeployment::normalizeDomain((string) ($payload['domain'] ?? ''));
         $reporterName = trim((string) ($payload['reporter_name'] ?? 'Library Admin'));
         $reporterEmail = trim((string) ($payload['reporter_email'] ?? ''));
         $libraryCode = trim((string) ($payload['library_code'] ?? ''));
@@ -50,10 +37,6 @@ class SupportTicketController extends Controller
         if ($uuid === '' || $subject === '' || $message === '' || $reporterEmail === '') {
             return response()->json(['message' => 'Missing required ticket fields.'], 422);
         }
-
-        $licenseKeyHash = LicensedDeployment::isPlaceholderLicenseKey($licenseKey)
-            ? LicensedDeployment::discoveryKeyHash()
-            : LicensedDeployment::hashKey($licenseKey);
 
         $ticket = SupportTicket::query()->firstOrNew(['uuid' => $uuid]);
         $ticket->fill([
@@ -76,6 +59,41 @@ class SupportTicketController extends Controller
             'id' => $ticket->id,
             'uuid' => $ticket->uuid,
             'status' => $ticket->status,
+        ]);
+    }
+
+    public function pull(Request $request): JsonResponse
+    {
+        $auth = $this->authenticateSupportTicketRequest($request);
+
+        if ($auth instanceof JsonResponse) {
+            return $auth;
+        }
+
+        $payload = $auth['payload'];
+        $licenseKeyHash = $auth['license_key_hash'];
+        $uuids = array_values(array_filter(array_map(
+            fn ($uuid) => trim((string) $uuid),
+            is_array($payload['uuids'] ?? null) ? $payload['uuids'] : [],
+        )));
+
+        $query = SupportTicket::query()
+            ->where('deployment_license_key_hash', $licenseKeyHash)
+            ->orderByDesc('updated_at');
+
+        if ($uuids !== []) {
+            $query->whereIn('uuid', $uuids);
+        }
+
+        $tickets = $query->get(['uuid', 'status', 'admin_notes', 'updated_at']);
+
+        return response()->json([
+            'tickets' => $tickets->map(fn (SupportTicket $ticket) => [
+                'uuid' => $ticket->uuid,
+                'status' => $ticket->status,
+                'admin_notes' => $ticket->admin_notes,
+                'updated_at' => $ticket->updated_at?->toIso8601String(),
+            ])->values()->all(),
         ]);
     }
 }

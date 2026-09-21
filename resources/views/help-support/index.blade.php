@@ -3,6 +3,7 @@
         class="-mx-1"
         x-data="helpSupportPage({
             storeUrl: @js(route('help-support.store')),
+            syncUrl: @js(route('help-support.sync')),
             tickets: @js($tickets),
             supportEmail: @js($supportEmail),
             companyUrl: @js($companyUrl),
@@ -269,8 +270,11 @@
                             </tr>
                         </template>
                         <template x-for="ticket in filteredTickets()" :key="ticket.id">
-                            <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-                                <td class="px-3 py-3 font-medium text-gray-500" x-text="`#${ticket.id}`"></td>
+                            <tr class="border-b border-gray-100 hover:bg-gray-50/50" :class="ticket.has_update ? 'bg-amber-50/60' : ''">
+                                <td class="px-3 py-3 font-medium text-gray-500">
+                                    <span x-text="`#${ticket.id}`"></span>
+                                    <span x-show="ticket.has_update" class="ml-1 inline-flex size-2 rounded-full bg-amber-500" title="Updated by support"></span>
+                                </td>
                                 <td class="max-w-[12rem] truncate px-3 py-3 font-medium text-gray-900" x-text="ticket.subject"></td>
                                 <td class="px-3 py-3 text-gray-600" x-text="ticket.category_label"></td>
                                 <td class="px-3 py-3">
@@ -339,6 +343,13 @@
                 </div>
 
                 <p class="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-gray-700" x-text="viewingTicket?.message"></p>
+
+                <template x-if="viewingTicket?.admin_notes">
+                    <div class="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/60 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Reply from Phenomit support</p>
+                        <p class="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-800" x-text="viewingTicket.admin_notes"></p>
+                    </div>
+                </template>
 
                 <template x-if="viewingTicket?.attachments?.length > 0">
                     <div class="mt-4 border-t border-gray-100 pt-4">

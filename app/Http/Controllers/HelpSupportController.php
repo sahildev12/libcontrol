@@ -14,8 +14,10 @@ use Illuminate\View\View;
 
 class HelpSupportController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, SupportTicketSyncService $syncService): View
     {
+        $syncService->pullUpdates($request->user());
+
         $ticketsQuery = SupportTicket::query()
             ->when($request->user(), fn ($query) => $query->where('reporter_user_id', $request->user()->id))
             ->orderByDesc('created_at')
@@ -39,14 +41,38 @@ class HelpSupportController extends Controller
         ]);
     }
 
-    public function show(Request $request, SupportTicket $supportTicket): JsonResponse
+    public function show(Request $request, SupportTicket $supportTicket, SupportTicketSyncService $syncService): JsonResponse
     {
-        abort_unless((int) $supportTicket->reporter_user_id === (int) $request->user()?->id, 403);
+        abort_unless($this->canViewTicket($request->user(), $supportTicket), 403);
 
+        $syncService->pullUpdates($request->user());
+        $supportTicket->refresh();
         $supportTicket->load('attachments');
+        $this->acknowledgeClientUpdate($supportTicket);
 
         return response()->json([
-            'ticket' => $this->serializeTicket($supportTicket),
+            'ticket' => $this->serializeTicket($supportTicket->fresh()),
+        ]);
+    }
+
+    public function sync(Request $request, SupportTicketSyncService $syncService): JsonResponse
+    {
+        $syncService->pullUpdates($request->user());
+
+        $ticketsQuery = SupportTicket::query()
+            ->when($request->user(), fn ($query) => $query->where('reporter_user_id', $request->user()->id))
+            ->orderByDesc('created_at')
+            ->limit(50);
+
+        if (Schema::hasTable('support_ticket_attachments')) {
+            $ticketsQuery->with('attachments');
+        }
+
+        return response()->json([
+            'tickets' => $ticketsQuery->get()
+                ->map(fn (SupportTicket $ticket) => $this->serializeTicket($ticket))
+                ->values()
+                ->all(),
         ]);
     }
 
@@ -154,6 +180,9 @@ class HelpSupportController extends Controller
             'updated_at' => $ticket->updated_at?->format('d M Y'),
             'updated_at_full' => $ticket->updated_at?->format('d M Y, h:i A'),
             'synced' => $synced ?? $ticket->synced_at !== null,
+            'admin_notes' => $ticket->admin_notes,
+            'has_update' => (bool) $ticket->client_update_pending,
+            'show_url' => route('help-support.show', $ticket),
             'attachments' => $ticket->attachments->map(fn ($attachment) => [
                 'id' => $attachment->id,
                 'name' => $attachment->original_name,
@@ -176,5 +205,27 @@ class HelpSupportController extends Controller
         }
 
         return 'https://wa.me/'.$digits.'?text='.urlencode('Hi Phenomit, I need help with LibControl.');
+    }
+
+    private function canViewTicket(?\App\Models\User $user, SupportTicket $ticket): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAnyAdmin()) {
+            return true;
+        }
+
+        return (int) $ticket->reporter_user_id === (int) $user->id;
+    }
+
+    private function acknowledgeClientUpdate(SupportTicket $ticket): void
+    {
+        if (! $ticket->client_update_pending) {
+            return;
+        }
+
+        $ticket->forceFill(['client_update_pending' => false])->save();
     }
 }
