@@ -3,16 +3,12 @@
     class="fixed inset-x-0 top-0 z-50 border-b border-transparent bg-white/90 backdrop-blur-md transition [.is-scrolled_&]:border-slate-200 [.is-scrolled_&]:shadow-sm"
 >
     <div class="lw-container flex items-center justify-between gap-4 py-3">
-        <a href="#home" class="flex min-w-0 items-center gap-3">
+        <a href="#home" class="flex min-w-0 items-center">
             @if ($site['logo_url'])
-                <img src="{{ $site['logo_url'] }}" alt="{{ $site['library_name'] }}" class="h-11 w-auto max-w-[140px] object-contain">
+                <img src="{{ $site['logo_url'] }}" alt="{{ $site['library_name'] }}" class="h-11 w-auto max-w-[180px] object-contain">
             @else
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-800 text-sm font-bold text-white">SH</div>
+                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-800 text-sm font-bold text-white">{{ strtoupper(substr($site['library_name'] ?? 'L', 0, 2)) }}</div>
             @endif
-            <div class="min-w-0">
-                <p class="truncate text-sm font-bold uppercase tracking-wide text-slate-900">{{ $site['library_name'] }}</p>
-                <p class="truncate text-xs text-slate-500">{{ $site['subtitle'] }}</p>
-            </div>
         </a>
 
         <nav class="hidden items-center gap-6 lg:flex" aria-label="Main navigation">
