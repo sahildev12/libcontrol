@@ -1,14 +1,13 @@
 @php
     use App\Support\AdminNav;
     use App\Support\AdminNavVisibility;
+    use App\Support\LibControlBrand;
     use App\Services\Addons\AddonRegistry;
 
     $navItems = config('admin-nav.primary', []);
     $currentRoute = request()->route()?->getName();
     $addonRegistry = app(AddonRegistry::class);
     $lcTheme = ! ($isDeveloperAdmin ?? false);
-    $lcLogoIcon = asset('logo/bg-white-lc-logo.jpg.jpeg');
-    $lcLogoWide = asset('logo/png-background/lc-logo-landscape.png');
     $navActiveClass = $lcTheme
         ? 'bg-brand-navy text-white shadow-md'
         : 'bg-indigo-600 text-white shadow-sm';
@@ -37,19 +36,25 @@
             :class="collapsed ? 'justify-center' : ''"
             title="Dashboard"
         >
-            @if (! empty($branding['simple_logo_url']))
+            @if ($lcTheme)
+                <img
+                    src="{{ LibControlBrand::darkIconUrl() }}"
+                    alt="LibControl"
+                    class="size-10 shrink-0 rounded-md object-contain"
+                    :class="collapsed ? '' : 'hidden'"
+                >
+            @elseif (! empty($branding['simple_logo_url']))
                 <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-10 shrink-0 rounded-md object-contain">
-            @elseif ($lcTheme)
-                <img src="{{ $lcLogoIcon }}" alt="LibControl" class="size-10 shrink-0 rounded-md object-contain">
             @else
                 <x-application-logo class="size-7 shrink-0 fill-current text-indigo-600" />
             @endif
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
-                @if ($lcTheme && empty($branding['logo_with_text_url']))
-                    <img src="{{ $lcLogoWide }}" alt="LibControl" class="h-8 max-w-[170px] object-contain object-left">
+                @if ($lcTheme)
+                    <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-9 max-w-[190px] object-contain object-left">
+                    <p class="mt-1 truncate text-[11px] font-medium text-white/75">{{ $branding['display_name'] ?? config('app.name') }}</p>
                 @else
-                    <p class="truncate text-sm font-bold {{ $lcTheme ? 'text-white' : 'text-gray-900' }}">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] {{ $lcTheme ? 'text-white/60' : 'text-gray-500' }}">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
+                    <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
                 @endif
             </div>
         </a>
@@ -173,19 +178,20 @@
     >
         <div class="flex h-16 shrink-0 items-center justify-between border-b {{ $sidebarBorderClass }} px-4">
             <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-2.5" @click="closeMobileNav()">
-                @if (! empty($branding['simple_logo_url']))
+                @if ($lcTheme)
+                    <img src="{{ LibControlBrand::darkIconUrl() }}" alt="LibControl" class="size-10 shrink-0 rounded-md object-contain">
+                @elseif (! empty($branding['simple_logo_url']))
                     <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-10 shrink-0 rounded-md object-contain">
-                @elseif ($lcTheme)
-                    <img src="{{ $lcLogoIcon }}" alt="LibControl" class="size-10 shrink-0 rounded-md object-contain">
                 @else
                     <x-application-logo class="size-7 shrink-0 fill-current text-indigo-600" />
                 @endif
                 <div class="min-w-0 leading-tight">
-                    @if ($lcTheme && empty($branding['logo_with_text_url']))
-                        <img src="{{ $lcLogoWide }}" alt="LibControl" class="h-8 max-w-[170px] object-contain object-left">
+                    @if ($lcTheme)
+                        <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-9 max-w-[190px] object-contain object-left">
+                        <p class="mt-1 truncate text-[11px] font-medium text-white/75">{{ $branding['display_name'] ?? config('app.name') }}</p>
                     @else
-                        <p class="truncate text-sm font-bold {{ $lcTheme ? 'text-white' : 'text-gray-900' }}">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                        <p class="text-[10px] font-semibold uppercase tracking-[0.12em] {{ $lcTheme ? 'text-white/60' : 'text-gray-500' }}">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
+                        <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
                     @endif
                 </div>
             </a>

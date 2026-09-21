@@ -1,3 +1,6 @@
+@php
+    use App\Support\LibControlBrand;
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -23,9 +26,11 @@
             <div class="mx-auto w-full max-w-md">
                 <div class="mb-8 text-center">
                     @if ($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="{{ $name }}" class="mx-auto h-16 max-w-[220px] object-contain">
+                        <div class="mx-auto flex size-20 items-center justify-center rounded-2xl bg-white p-3 shadow-lg shadow-brand-navy/20">
+                            <img src="{{ $logoUrl }}" alt="{{ $name }}" class="max-h-14 max-w-full object-contain">
+                        </div>
                     @else
-                        <img src="{{ asset('logo/png-background/lc-logo-landscape.png') }}" alt="LibControl" class="mx-auto h-14 max-w-[240px] object-contain">
+                        <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="mx-auto h-16 max-w-[240px] object-contain">
                     @endif
                     <h1 class="mt-5 text-xl font-bold text-white">{{ $name }}</h1>
                     @if ($title)

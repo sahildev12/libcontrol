@@ -16,9 +16,13 @@ return [
 
     'brand' => [
         'public_path' => 'brand',
-        'default_favicon' => 'brand/favicon.ico',
-        'default_simple_logo' => 'brand/only-logo-main-color.png',
-        'default_logo_with_text' => null,
+        'default_favicon' => 'logo/png-background/bg-blue-lc-logo.png',
+        'default_simple_logo' => 'logo/bg-white-lc-logo.jpg.jpeg',
+        'default_logo_with_text' => 'logo/png-background/lc-logo-landscape.png',
+        'dark_icon' => 'logo/bg-blue-lc-logo.jpg.jpeg',
+        'dark_wide' => 'logo/png-background/bg-blue-lc-logo.png',
+        'light_icon' => 'logo/bg-white-lc-logo.jpg.jpeg',
+        'light_wide' => 'logo/png-background/lc-logo-landscape.png',
     ],
 
     'defaults' => [
