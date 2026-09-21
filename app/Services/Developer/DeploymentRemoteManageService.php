@@ -33,6 +33,21 @@ class DeploymentRemoteManageService
             ->orderByDesc('last_seen_at')
             ->first();
 
+        if (! $lastHeartbeat && ! empty($deployment->allowed_domains)) {
+            $domains = collect($deployment->allowed_domains)
+                ->map(fn (string $domain) => LicensedDeployment::normalizeDomain($domain))
+                ->filter()
+                ->values()
+                ->all();
+
+            if ($domains !== []) {
+                $lastHeartbeat = InstallationEvent::query()
+                    ->whereIn('domain', $domains)
+                    ->orderByDesc('last_seen_at')
+                    ->first();
+            }
+        }
+
         return [
             'deployment' => $deployment,
             'registry' => $registry,

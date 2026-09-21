@@ -83,11 +83,19 @@ npm ci && npm run build
 
 If you build assets locally, upload `public/build/` after `npm run build`.
 
-### 3. Run migrations
+### 3. Run migrations (required for Help & Support)
 
 ```bash
 php artisan migrate --force
 ```
+
+Support tickets need **both** migrations:
+
+- `2026_09_18_120000_create_support_tickets_table`
+- `2026_09_19_160000_create_support_ticket_attachments_table`
+- `2026_09_21_120000_add_read_at_to_support_tickets_table` (hub only; safe on client)
+
+On **libcontrol.phenomit.com** run the same `migrate --force` so `/api/support/tickets` can receive tickets from client sites.
 
 ### 4. Attendance addon (if using attendance)
 

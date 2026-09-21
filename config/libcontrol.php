@@ -71,6 +71,7 @@ return [
         // URL sent to Phenomit for the student app (must be reachable from phones, not 127.0.0.1).
         'public_url' => env('LIBCONTROL_PUBLIC_URL'),
         'sync_endpoint' => env('LIBCONTROL_SYNC_ENDPOINT'),
+        'support_endpoint' => env('LIBCONTROL_SUPPORT_ENDPOINT'),
         'sync_endpoint_encoded' => env('LIBCONTROL_SYNC_ENDPOINT_ENCODED', 'aHR0cHM6Ly9saWJjb250cm9sLnBoZW5vbWl0LmNvbS9hcGkvcnVudGltZS9zeW5j'),
         'grace_days' => (int) env('LIBCONTROL_LICENSE_GRACE_DAYS', 7),
         // 0 = ping on every eligible page load. Higher values throttle background syncs.

@@ -2,7 +2,12 @@
     <div class="space-y-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Portal Settings</h1>
-            <p class="mt-1 text-sm text-gray-600">Choose a hosted client library to manage its admin and branch settings. Self-hosted installations on client servers cannot be edited from here.</p>
+            <p class="mt-1 text-sm text-gray-600">
+                Manage settings for libraries <strong>hosted on Phenomit</strong> (one database per client, managed from this hub).
+                Separate client installations such as <code class="rounded bg-gray-100 px-1">aims.phenomit.com</code> are listed under
+                <a href="{{ route('developer.deployments.index') }}" class="font-medium text-indigo-600 hover:text-indigo-700">Dev &amp; Domains</a>
+                and are edited on that site&rsquo;s own admin panel.
+            </p>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -38,7 +43,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-10 text-center text-gray-500">No hosted client libraries yet. Add one under Client Libraries.</td>
+                            <td colspan="4" class="px-4 py-10 text-center text-gray-500">
+                                No hosted client libraries yet.
+                                <span class="mt-1 block text-xs text-gray-400">
+                                    Licensed separate installs (e.g. Aims) appear under
+                                    <a href="{{ route('developer.deployments.index') }}" class="font-medium text-indigo-600 hover:text-indigo-700">Dev &amp; Domains</a>,
+                                    not here.
+                                </span>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -7,18 +7,25 @@ use App\Models\SupportTicket;
 use App\Services\SupportTicketSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class HelpSupportController extends Controller
 {
     public function index(Request $request): View
     {
-        $tickets = SupportTicket::query()
-            ->with('attachments')
+        $ticketsQuery = SupportTicket::query()
             ->when($request->user(), fn ($query) => $query->where('reporter_user_id', $request->user()->id))
             ->orderByDesc('created_at')
-            ->limit(50)
-            ->get();
+            ->limit(50);
+
+        if (Schema::hasTable('support_ticket_attachments')) {
+            $ticketsQuery->with('attachments');
+        }
+
+        $tickets = $ticketsQuery->get();
 
         return view('help-support.index', [
             'tickets' => $tickets->map(fn (SupportTicket $ticket) => $this->serializeTicket($ticket)),
@@ -45,42 +52,85 @@ class HelpSupportController extends Controller
 
     public function store(StoreSupportTicketRequest $request, SupportTicketSyncService $syncService): JsonResponse
     {
-        $user = $request->user();
-        $settings = \App\Models\PlatformSetting::current();
-
-        $ticket = SupportTicket::query()->create([
-            'subject' => $request->string('subject')->toString(),
-            'message' => $request->string('message')->toString(),
-            'category' => $request->string('category')->toString(),
-            'priority' => $request->string('priority')->toString() ?: 'normal',
-            'status' => SupportTicket::STATUS_OPEN,
-            'reporter_user_id' => $user?->id,
-            'reporter_name' => $user?->name ?: 'Library Admin',
-            'reporter_email' => $user?->email ?: $request->string('reporter_email')->toString(),
-            'library_code' => $settings->library_code,
-            'library_name' => $settings->displayName(),
-        ]);
-
-        foreach ($request->file('attachments', []) as $file) {
-            $path = $file->store('support-tickets/'.$ticket->id, 'public');
-
-            $ticket->attachments()->create([
-                'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'mime' => $file->getClientMimeType(),
-                'size' => (int) $file->getSize(),
-            ]);
+        if (! Schema::hasTable('support_tickets')) {
+            return response()->json([
+                'message' => 'Support tickets are not set up on this server yet. Run database migrations, then try again.',
+            ], 503);
         }
 
-        $ticket->load('attachments');
-        $synced = $syncService->push($ticket);
+        try {
+            $user = $request->user();
+            $settings = \App\Models\PlatformSetting::current();
+            $reporterEmail = trim((string) ($user?->email ?: $request->string('reporter_email')->toString()));
 
-        return response()->json([
-            'message' => $synced
-                ? 'Support ticket submitted. Our team will respond soon.'
-                : 'Ticket saved locally. We could not reach Phenomit right now, but your request is recorded.',
-            'ticket' => $this->serializeTicket($ticket, $synced),
-        ], 201);
+            if ($reporterEmail === '') {
+                $reporterEmail = (string) config('libcontrol.support.email', 'support@phenomit.com');
+            }
+
+            $uuid = (string) Str::uuid();
+            $syncResult = $syncService->submit([
+                'uuid' => $uuid,
+                'subject' => $request->string('subject')->toString(),
+                'message' => $request->string('message')->toString(),
+                'category' => $request->string('category')->toString(),
+                'priority' => $request->string('priority')->toString() ?: 'normal',
+                'reporter_name' => $user?->name ?: 'Library Admin',
+                'reporter_email' => $reporterEmail,
+                'library_code' => $settings->library_code,
+                'library_name' => $settings->displayName(),
+            ]);
+
+            if (! $syncResult->ok) {
+                return response()->json([
+                    'message' => $syncResult->message,
+                ], 502);
+            }
+
+            $ticket = SupportTicket::query()->create([
+                'uuid' => $uuid,
+                'subject' => $request->string('subject')->toString(),
+                'message' => $request->string('message')->toString(),
+                'category' => $request->string('category')->toString(),
+                'priority' => $request->string('priority')->toString() ?: 'normal',
+                'status' => SupportTicket::STATUS_OPEN,
+                'reporter_user_id' => $user?->id,
+                'reporter_name' => $user?->name ?: 'Library Admin',
+                'reporter_email' => $reporterEmail,
+                'library_code' => $settings->library_code,
+                'library_name' => $settings->displayName(),
+                'remote_id' => $syncResult->remoteId,
+                'synced_at' => now(),
+            ]);
+
+            if (Schema::hasTable('support_ticket_attachments')) {
+                foreach ($request->file('attachments', []) as $file) {
+                    $path = $file->store('support-tickets/'.$ticket->id, 'public');
+
+                    $ticket->attachments()->create([
+                        'path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime' => $file->getClientMimeType(),
+                        'size' => (int) $file->getSize(),
+                    ]);
+                }
+
+                $ticket->load('attachments');
+            }
+
+            return response()->json([
+                'message' => $syncResult->message,
+                'ticket' => $this->serializeTicket($ticket, true),
+            ], 201);
+        } catch (\Throwable $e) {
+            Log::error('Support ticket submission failed.', [
+                'message' => $e->getMessage(),
+                'user_id' => $request->user()?->id,
+            ]);
+
+            return response()->json([
+                'message' => 'Could not submit the support ticket. Ask your administrator to run database migrations on this installation.',
+            ], 500);
+        }
     }
 
     /**

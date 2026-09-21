@@ -3,7 +3,11 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Client Libraries</h1>
-                <p class="mt-1 text-sm text-gray-600">Each client gets their own subdomain and isolated database on {{ config('libcontrol.tenancy.base_domain') }}.</p>
+                <p class="mt-1 text-sm text-gray-600">
+                    Register libraries <strong>hosted on Phenomit</strong> (hub-managed database per subdomain).
+                    Already deployed separate installs with a license key belong under
+                    <a href="{{ route('developer.deployments.index') }}" class="font-medium text-indigo-600 hover:text-indigo-700">Dev &amp; Domains</a>.
+                </p>
             </div>
             <a href="{{ route('developer.tenants.create') }}" class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Add client library</a>
         </div>
