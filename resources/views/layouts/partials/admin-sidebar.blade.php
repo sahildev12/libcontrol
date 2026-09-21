@@ -23,12 +23,12 @@
 
 <aside
     class="fixed inset-y-0 left-0 z-40 hidden lg:flex flex-col overflow-hidden border-r transition-[width] duration-200 ease-out {{ $sidebarBgClass }}"
-    :class="collapsed ? '{{ $lcTheme ? 'w-20' : 'w-[72px]' }}' : '{{ $lcTheme ? 'w-[260px]' : 'w-[200px]' }}'"
+    :class="collapsed ? '{{ $lcTheme ? 'w-16' : 'w-[72px]' }}' : '{{ $lcTheme ? 'w-[220px]' : 'w-[200px]' }}'"
     aria-label="Admin navigation"
 >
     <div
         class="flex h-16 shrink-0 items-center border-b {{ $sidebarBorderClass }}"
-        :class="collapsed ? 'justify-center px-2' : 'justify-between gap-2 px-3'"
+        :class="collapsed ? 'justify-center px-1.5' : 'justify-between gap-2 px-2.5'"
     >
         <a
             href="{{ route('dashboard') }}"
@@ -40,7 +40,7 @@
                 <img
                     src="{{ LibControlBrand::darkIconUrl() }}"
                     alt="LibControl"
-                    class="size-10 shrink-0 rounded-md object-contain"
+                    class="size-9 shrink-0 rounded-md object-contain"
                     :class="collapsed ? '' : 'hidden'"
                 >
             @elseif (! empty($branding['simple_logo_url']))
@@ -50,7 +50,7 @@
             @endif
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
                 @if ($lcTheme)
-                    <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-9 max-w-[190px] object-contain object-left">
+                    <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-8 max-w-[168px] object-contain object-left">
                     <p class="mt-1 truncate text-[11px] font-medium text-white/75">{{ $branding['display_name'] ?? config('app.name') }}</p>
                 @else
                     <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
@@ -71,18 +71,18 @@
         </button>
     </div>
 
-    <div x-show="collapsed" x-cloak class="flex shrink-0 justify-center border-b {{ $sidebarBorderClass }} py-2">
+    <div x-show="collapsed" x-cloak class="flex shrink-0 justify-center border-b {{ $sidebarBorderClass }} py-1.5">
         <button
             type="button"
             @click="toggleCollapsed()"
-            class="inline-flex size-8 items-center justify-center rounded-lg transition-colors {{ $collapseBtnClass }}"
+            class="inline-flex size-7 items-center justify-center rounded-lg transition-colors {{ $collapseBtnClass }}"
             aria-label="Expand sidebar"
         >
             <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
     </div>
 
-    <nav class="min-h-0 flex-1 overflow-y-auto px-3 py-4" aria-label="Admin menu">
+    <nav class="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Admin menu">
         <ul class="space-y-1">
             @foreach ($navItems as $item)
                 @php
@@ -120,7 +120,7 @@
                             href="{{ route($item['route']) }}"
                             title="{{ $item['label'] }}"
                             class="flex items-center {{ $lcTheme ? 'rounded-xl' : 'rounded-lg' }} py-2.5 text-[13px] font-medium transition-colors {{ $isActive ? $navActiveClass : $navInactiveClass }}"
-                            :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'"
+                            :class="collapsed ? 'justify-center px-1.5' : 'gap-2 px-2.5'"
                         >
                             @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive, 'lcTheme' => $lcTheme])
                             <span x-show="!collapsed" x-cloak class="flex-1">{{ $item['label'] }}</span>
@@ -139,13 +139,13 @@
         </ul>
     </nav>
 
-    <div class="shrink-0 border-t {{ $sidebarBorderClass }} p-3">
+    <div class="shrink-0 border-t {{ $sidebarBorderClass }} p-2">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button
                 type="submit"
                 class="flex w-full items-center {{ $lcTheme ? 'rounded-xl text-white/80 hover:bg-white/10 hover:text-white' : 'rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900' }} py-2.5 text-[13px] font-medium transition-colors"
-                :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'"
+                :class="collapsed ? 'justify-center px-1.5' : 'gap-2 px-2.5'"
                 title="Log out"
             >
                 <svg class="size-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>

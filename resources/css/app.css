@@ -16,11 +16,11 @@
     }
 
     .lc-theme .admin-main-shell {
-        margin-left: 260px;
+        margin-left: 220px;
     }
 
     .lc-theme .admin-main-shell.is-collapsed {
-        margin-left: 80px;
+        margin-left: 64px;
     }
 }
 

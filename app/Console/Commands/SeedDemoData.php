@@ -32,7 +32,7 @@ class SeedDemoData extends Command
         $this->newLine();
         $this->info('Demo data ready.');
         $this->line('Platform logins: use your LIBCONTROL_DEVELOPER_* and LIBCONTROL_ADMIN_* credentials from .env');
-        $this->line('Branch logins: admin@main.LibControl.test / password and admin@north.LibControl.test / password');
+        $this->line('Branch logins: admin@main.LibControl.test / 123456789 and admin@north.LibControl.test / 123456789');
 
         return self::SUCCESS;
     }

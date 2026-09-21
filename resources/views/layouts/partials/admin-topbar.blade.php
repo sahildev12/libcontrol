@@ -51,9 +51,9 @@
 
     @if ($lcTheme)
         <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-16 items-center justify-center px-4 lg:flex">
-            <div class="pointer-events-auto inline-flex w-full max-w-xl items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
-                <svg class="size-5 shrink-0 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="search" placeholder="Search here..." class="w-full border-0 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-0" disabled>
+            <div class="pointer-events-auto inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-brand-yellow/40 bg-gradient-to-r from-brand-yellow/15 to-brand-yellow/5 px-4 py-1.5 shadow-sm">
+                <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-[10px] font-bold text-brand-navy">✓</span>
+                <p class="truncate text-sm font-semibold text-brand-navy">{{ config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered') }}</p>
             </div>
         </div>
     @else
@@ -138,7 +138,7 @@
             </div>
         @endif
 
-        <x-dropdown align="right" width="48">
+        <x-dropdown align="right" :width="$lcTheme ? 'w-72 min-w-[17rem]' : '48'">
             <x-slot name="trigger">
                 <button type="button" class="inline-flex size-10 items-center justify-center rounded-full text-xs font-semibold text-white {{ $lcTheme ? 'bg-brand-blue ring-2 ring-brand-yellow/80 hover:bg-brand-navy' : 'bg-indigo-600 hover:bg-indigo-700' }}" aria-label="Account menu">
                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -153,13 +153,43 @@
                         <p class="text-xs font-medium {{ $lcTheme ? 'text-brand-blue' : 'text-indigo-600' }}">{{ $adminTypeLabel }}</p>
                     @endif
                 </div>
-                <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-dropdown-link>
-                </form>
+
+                @if ($lcTheme)
+                    @php($profileMenuLinkClass = 'flex w-full items-center gap-3 whitespace-nowrap px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-100')
+                    <a href="{{ route('profile.edit') }}" class="{{ $profileMenuLinkClass }}">
+                        <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span>My Profile</span>
+                    </a>
+                    @if (\Illuminate\Support\Facades\Route::has('settings.index'))
+                        <a href="{{ route('settings.index') }}" class="{{ $profileMenuLinkClass }}">
+                            <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span>Branch Settings</span>
+                        </a>
+                    @endif
+                    @if (\Illuminate\Support\Facades\Route::has('help-support.index'))
+                        <a href="{{ route('help-support.index') }}" class="{{ $profileMenuLinkClass }}">
+                            <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            <span>Help &amp; Support</span>
+                        </a>
+                    @endif
+                    <div class="border-t border-gray-100">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="{{ $profileMenuLinkClass }} text-left">
+                                <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>
+                                <span>Log out</span>
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();">
+                            {{ __('Log Out') }}
+                        </x-dropdown-link>
+                    </form>
+                @endif
             </x-slot>
         </x-dropdown>
     </div>

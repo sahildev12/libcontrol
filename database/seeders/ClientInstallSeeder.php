@@ -21,7 +21,7 @@ class ClientInstallSeeder extends Seeder
             return;
         }
 
-        $user = User::query()->firstOrCreate(
+        $user = User::query()->updateOrCreate(
             ['email' => $email],
             [
                 'branch_id' => null,

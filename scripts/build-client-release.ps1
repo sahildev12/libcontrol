@@ -12,7 +12,7 @@ param(
     [string]$Version = "2.1.4",
     [string]$StudentCodePrefix = "",
     [string]$AdminEmail = "",
-    [string]$AdminPassword = "ChangeMeAfterLogin123!",
+    [string]$AdminPassword = "123456789",
     [string]$AdminName = "Library Admin",
     [string]$DbName = "",
     [string]$DbUser = "",

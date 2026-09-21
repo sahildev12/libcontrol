@@ -35,7 +35,7 @@
 ## Default admin login (from SQL seed)
 
 - Email: `admin@aims.phenomit.com`
-- Password: `ChangeMeAfterLogin123!`
+- Password: `123456789`
 
 Change the password immediately after first login.
 

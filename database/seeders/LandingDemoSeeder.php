@@ -153,7 +153,7 @@ class LandingDemoSeeder extends Seeder
                 'branch_id' => $branch->id,
                 'name' => $config['admin']['name'],
                 'email_verified_at' => now(),
-                'password' => Hash::make('password'),
+                'password' => Hash::make('123456789'),
             ],
         );
 

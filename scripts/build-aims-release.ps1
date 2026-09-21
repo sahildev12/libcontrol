@@ -15,7 +15,7 @@ $invokeArgs = @(
     "-Version", "2.1.6",
     "-StudentCodePrefix", "AIMS",
     "-AdminEmail", "admin@aims.phenomit.com",
-    "-AdminPassword", "ChangeMeAfterLogin123!",
+    "-AdminPassword", "123456789",
     "-AdminName", "Aims Admin",
     "-DbName", "aims_libcontrol",
     "-DbUser", "aims_libcontrol",

@@ -31,7 +31,7 @@ class AdminSeeder extends Seeder
                     'branch_id' => null,
                     'name' => $adminData['name'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make('123456789'),
                 ],
             );
 

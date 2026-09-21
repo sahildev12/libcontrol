@@ -12,7 +12,7 @@ class ExportClientReleaseSql extends Command
     protected $signature = 'LibControl:export-client-sql
         {--output= : Output SQL file path}
         {--admin-email=admin@your-domain.com : Default admin email in the seed data}
-        {--admin-password=ChangeMeAfterLogin123! : Default admin password in the seed data}
+        {--admin-password=123456789 : Default admin password in the seed data}
         {--admin-name=Library Admin : Default admin display name}
         {--display-name= : Library display name stored in platform settings}
         {--student-code-prefix=LIB : Student ID prefix stored in platform settings}';

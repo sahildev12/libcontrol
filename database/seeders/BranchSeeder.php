@@ -41,7 +41,7 @@ class BranchSeeder extends Seeder
                 'name' => $branchData['user']['name'],
                 'email' => $branchData['user']['email'],
                 'email_verified_at' => now(),
-                'password' => Hash::make('password'),
+                'password' => Hash::make('123456789'),
             ]);
         }
     }

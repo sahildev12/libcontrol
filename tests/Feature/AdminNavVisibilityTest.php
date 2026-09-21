@@ -12,7 +12,7 @@ class AdminNavVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_client_admin_can_see_settings_in_sidebar(): void
+    public function test_client_admin_sees_profile_menu_links_not_sidebar_utility_items(): void
     {
         $user = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
@@ -23,10 +23,13 @@ class AdminNavVisibilityTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Settings', false);
+            ->assertSee('Branch Settings', false)
+            ->assertSee('Help &amp; Support', false)
+            ->assertDontSee('>Notifications</span>', false)
+            ->assertDontSee('>Settings</span>', false);
     }
 
-    public function test_branch_staff_can_see_settings_in_sidebar(): void
+    public function test_branch_staff_sees_profile_menu_links_not_sidebar_utility_items(): void
     {
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
@@ -34,7 +37,10 @@ class AdminNavVisibilityTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Settings', false);
+            ->assertSee('Branch Settings', false)
+            ->assertSee('Help &amp; Support', false)
+            ->assertDontSee('>Notifications</span>', false)
+            ->assertDontSee('>Settings</span>', false);
     }
 
     public function test_developer_admin_does_not_see_settings_in_sidebar(): void

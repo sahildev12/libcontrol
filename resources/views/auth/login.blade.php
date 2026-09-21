@@ -53,11 +53,6 @@
                 Library admin?
                 <a href="{{ route('admin.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use admin login</a>
             @elseif ($portal === 'admin')
-                @if (\App\Support\InstallState::isHub() && \Illuminate\Support\Facades\Route::has('developer.login'))
-                    Phenomit developer?
-                    <a href="{{ route('developer.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use developer login</a>
-                    <span class="mx-1">·</span>
-                @endif
                 Branch staff?
                 <a href="{{ route('login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use branch login</a>
             @else
