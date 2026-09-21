@@ -44,38 +44,46 @@
         </header>
 
         <section class="mt-5 grid gap-3 lg:grid-cols-[1fr_auto]">
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Present</p>
-                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700" x-text="`${percentOf(summary.present)}%`"></span>
+            <div class="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4">
+                <div class="lc-kpi-card lc-kpi-card--no-icon min-w-[160px]">
+                    <div class="lc-kpi-card__body">
+                        <div class="lc-kpi-card__label-row">
+                            <p class="lc-kpi-card__label">Present</p>
+                            <span class="lc-kpi-card__badge" x-text="`${percentOf(summary.present)}%`"></span>
+                        </div>
+                        <p class="lc-kpi-card__value" x-text="summary.present"></p>
+                        <p class="lc-kpi-card__hint" x-text="`${percentOf(summary.present)}% of total`"></p>
                     </div>
-                    <p class="mt-2 text-3xl font-bold tabular-nums text-emerald-900" x-text="summary.present"></p>
-                    <p class="mt-1 text-xs text-emerald-700" x-text="`${percentOf(summary.present)}% of total`"></p>
                 </div>
-                <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-rose-700">Absent</p>
-                        <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700" x-text="`${percentOf(summary.absent)}%`"></span>
+                <div class="lc-kpi-card lc-kpi-card--no-icon min-w-[160px]">
+                    <div class="lc-kpi-card__body">
+                        <div class="lc-kpi-card__label-row">
+                            <p class="lc-kpi-card__label">Absent</p>
+                            <span class="lc-kpi-card__badge" x-text="`${percentOf(summary.absent)}%`"></span>
+                        </div>
+                        <p class="lc-kpi-card__value" x-text="summary.absent"></p>
+                        <p class="lc-kpi-card__hint" x-text="`${percentOf(summary.absent)}% of total`"></p>
                     </div>
-                    <p class="mt-2 text-3xl font-bold tabular-nums text-rose-900" x-text="summary.absent"></p>
-                    <p class="mt-1 text-xs text-rose-700" x-text="`${percentOf(summary.absent)}% of total`"></p>
                 </div>
-                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Late</p>
-                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700" x-text="`${percentOf(summary.late)}%`"></span>
+                <div class="lc-kpi-card lc-kpi-card--no-icon min-w-[160px]">
+                    <div class="lc-kpi-card__body">
+                        <div class="lc-kpi-card__label-row">
+                            <p class="lc-kpi-card__label">Late</p>
+                            <span class="lc-kpi-card__badge" x-text="`${percentOf(summary.late)}%`"></span>
+                        </div>
+                        <p class="lc-kpi-card__value" x-text="summary.late ?? 0"></p>
+                        <p class="lc-kpi-card__hint" x-text="`${percentOf(summary.late)}% of total`"></p>
                     </div>
-                    <p class="mt-2 text-3xl font-bold tabular-nums text-amber-900" x-text="summary.late ?? 0"></p>
-                    <p class="mt-1 text-xs text-amber-700" x-text="`${percentOf(summary.late)}% of total`"></p>
                 </div>
-                <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">Not Marked</p>
-                        <span class="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700" x-text="`${percentOf(summary.not_marked)}%`"></span>
+                <div class="lc-kpi-card lc-kpi-card--no-icon min-w-[160px]">
+                    <div class="lc-kpi-card__body">
+                        <div class="lc-kpi-card__label-row">
+                            <p class="lc-kpi-card__label">Not Marked</p>
+                            <span class="lc-kpi-card__badge" x-text="`${percentOf(summary.not_marked)}%`"></span>
+                        </div>
+                        <p class="lc-kpi-card__value" x-text="summary.not_marked ?? 0"></p>
+                        <p class="lc-kpi-card__hint" x-text="`${percentOf(summary.not_marked)}% of total`"></p>
                     </div>
-                    <p class="mt-2 text-3xl font-bold tabular-nums text-sky-900" x-text="summary.not_marked ?? 0"></p>
-                    <p class="mt-1 text-xs text-sky-700" x-text="`${percentOf(summary.not_marked)}% of total`"></p>
                 </div>
             </div>
 
@@ -93,7 +101,7 @@
 
         <div class="mt-6 flex flex-col gap-4 xl:flex-row xl:items-start">
             <section class="min-w-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+                <div class="lc-table-toolbar flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
                     <div class="relative min-w-[220px] flex-1">
                         <svg class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <input type="search" x-model="search" placeholder="Search students by name or ID..." class="w-full rounded-lg border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:ring-indigo-500">

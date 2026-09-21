@@ -15,11 +15,11 @@
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <x-admin.data-table-toolbar search-placeholder="Search activity..." :show-bulk-delete="true" />
 
-            <div class="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3">
+            <div class="lc-table-toolbar flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3">
                 <span class="text-xs font-semibold uppercase tracking-wide text-gray-400">Show</span>
-                <button type="button" @click="setActorFilter('')" class="rounded-full border px-3 py-1 text-xs font-semibold" :class="! actorFilter ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">All</button>
-                <button type="button" @click="setActorFilter('admin')" class="rounded-full border px-3 py-1 text-xs font-semibold" :class="actorFilter === 'admin' ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">Admin only</button>
-                <button type="button" @click="setActorFilter('branch')" class="rounded-full border px-3 py-1 text-xs font-semibold" :class="actorFilter === 'branch' ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">Library staff only</button>
+                <button type="button" @click="setActorFilter('')" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold" :class="! actorFilter ? 'is-active' : ''">All</button>
+                <button type="button" @click="setActorFilter('admin')" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold" :class="actorFilter === 'admin' ? 'is-active' : ''">Admin only</button>
+                <button type="button" @click="setActorFilter('branch')" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold" :class="actorFilter === 'branch' ? 'is-active' : ''">Library staff only</button>
             </div>
 
             <div class="overflow-x-auto">

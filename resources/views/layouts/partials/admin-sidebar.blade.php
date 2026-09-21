@@ -51,7 +51,6 @@
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
                 @if ($lcTheme)
                     <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-8 max-w-[168px] object-contain object-left">
-                    <p class="mt-1 truncate text-[11px] font-medium text-white/75">{{ $branding['display_name'] ?? config('app.name') }}</p>
                 @else
                     <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
                     <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>

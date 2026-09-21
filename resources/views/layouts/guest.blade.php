@@ -13,7 +13,7 @@
         @if ($faviconUrl)
             <link rel="icon" href="{{ $faviconUrl }}">
         @else
-            <link rel="icon" href="{{ asset('logo/png-background/bg-blue-lc-logo.png') }}">
+            <link rel="icon" href="{{ asset('logo/png-background/yellow-lc-logo.png') }}">
         @endif
 
         <link rel="preconnect" href="https://fonts.bunny.net">

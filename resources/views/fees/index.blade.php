@@ -21,36 +21,17 @@
         </header>
 
         <section class="mt-4 flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
-            <div class="min-w-[200px] flex-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Received This Month</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-900">₹{{ number_format($insights['received'], 2) }}</p>
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Pending This Month</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-amber-900">₹{{ number_format($insights['pending'], 2) }}</p>
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-red-700">Overdue</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-red-900">₹{{ number_format($insights['overdue_amount'], 2) }}</p>
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">Total Outstanding</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-indigo-900">₹{{ number_format($insights['outstanding'], 2) }}</p>
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">Expiring Soon</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-sky-900">{{ number_format($insights['expiring_soon_count']) }}</p>
-            </div>
+            <x-admin.kpi-card class="min-w-[200px]" label="Received This Month" :value="'₹'.number_format($insights['received'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Pending This Month" :value="'₹'.number_format($insights['pending'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Overdue" :value="'₹'.number_format($insights['overdue_amount'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Total Outstanding" :value="'₹'.number_format($insights['outstanding'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Expiring Soon" :value="number_format($insights['expiring_soon_count'])" />
         </section>
 
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <x-admin.data-table-toolbar search-placeholder="Search fees by student, hall, status..." :show-bulk-delete="true" />
 
-            <div class="flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
+            <div class="lc-table-toolbar flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
                 <div>
                     <label class="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Plan status</label>
                     <select x-model="planStatusFilter" class="mt-1 min-w-[11rem] rounded-lg border border-gray-300 py-2 pl-3 pr-10 text-sm">
@@ -81,7 +62,7 @@
                     <label class="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">To date</label>
                     <input type="date" x-model="dateTo" class="mt-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
                 </div>
-                <button type="button" @click="planStatusFilter = 'expiring_or_expired'; paymentStatusFilter = ''; dateFrom = ''; dateTo = ''" class="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">Clear filters</button>
+                <button type="button" @click="planStatusFilter = 'expiring_or_expired'; paymentStatusFilter = ''; dateFrom = ''; dateTo = ''" class="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600">Clear filters</button>
             </div>
 
             <div class="overflow-x-auto">

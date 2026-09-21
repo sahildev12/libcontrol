@@ -71,80 +71,94 @@
         </div>
     </header>
 
-    {{-- KPI cards: single row on desktop --}}
-    <div class="flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
-        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-10h2m4 0h2"/></svg>
+    {{-- KPI cards: 4 per row on desktop --}}
+    <div class="lc-kpi-row lc-kpi-row--lg grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Total Branches</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['branches']) }}</p>
+                <p class="lc-kpi-card__hint">Active branches</p>
             </div>
-            <p class="text-xs font-medium text-gray-500">Total Branches</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['branches']) }}</p>
-            <p class="mt-0.5 text-[11px] text-gray-400">Active branches</p>
-            @if ($kpis['branches_delta'] > 0)
-                <p class="mt-2 text-[11px] font-semibold text-emerald-600">↑ {{ $kpis['branches_delta'] }} this month</p>
-            @endif
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-10h2m4 0h2"/></svg>
+            </div>
         </div>
 
-        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Total Students</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['students']) }}</p>
+                <p class="lc-kpi-card__hint">Across all branches</p>
             </div>
-            <p class="text-xs font-medium text-gray-500">Total Students</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['students']) }}</p>
-            <p class="mt-0.5 text-[11px] text-gray-400">Across all branches</p>
-            @if ($kpis['students_delta_pct'] !== null)
-                <p class="mt-2 text-[11px] font-semibold {{ $kpis['students_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                    {{ $kpis['students_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($kpis['students_delta_pct']) }}% this month
-                </p>
-            @endif
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
         </div>
 
-        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Total Seats</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['seats']) }}</p>
+                <p class="lc-kpi-card__hint">Across all branches</p>
             </div>
-            <p class="text-xs font-medium text-gray-500">Total Seats</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['seats']) }}</p>
-            <p class="mt-0.5 text-[11px] text-gray-400">Across all branches</p>
-            @if ($kpis['seats_delta_pct'] !== null)
-                <p class="mt-2 text-[11px] font-semibold {{ $kpis['seats_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                    {{ $kpis['seats_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($kpis['seats_delta_pct']) }}% this month
-                </p>
-            @endif
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+            </div>
         </div>
 
-        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 20v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 20h6M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Monthly Revenue</p>
+                <p class="lc-kpi-card__value">₹{{ number_format($kpis['monthly_revenue']) }}</p>
+                <p class="lc-kpi-card__hint">This month</p>
             </div>
-            <p class="text-xs font-medium text-gray-500">Occupied Seats</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['occupied']) }}</p>
-            <p class="mt-0.5 text-[11px] text-gray-400">Assigned seats</p>
-            <p class="mt-2 text-[11px] font-semibold text-amber-600">{{ number_format($kpis['occupancy_pct'], 2) }}% occupancy</p>
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            </div>
         </div>
 
-        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Occupied Seats</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['occupied']) }}</p>
+                <p class="lc-kpi-card__hint">Assigned seats</p>
             </div>
-            <p class="text-xs font-medium text-gray-500">Available Seats</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($kpis['available']) }}</p>
-            <p class="mt-0.5 text-[11px] text-gray-400">Seats available</p>
-            <p class="mt-2 text-[11px] font-semibold text-teal-600">{{ number_format($kpis['availability_pct'], 2) }}% availability</p>
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 20v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 20h6M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
         </div>
 
-        <div class="min-w-[148px] flex-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Available Seats</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['available']) }}</p>
+                <p class="lc-kpi-card__hint">Seats available</p>
             </div>
-            <p class="text-xs font-medium text-gray-500">Monthly Revenue</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">₹{{ number_format($kpis['monthly_revenue']) }}</p>
-            <p class="mt-0.5 text-[11px] text-gray-400">This month</p>
-            @if ($kpis['revenue_delta_pct'] !== null)
-                <p class="mt-2 text-[11px] font-semibold {{ $kpis['revenue_delta_pct'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                    {{ $kpis['revenue_delta_pct'] >= 0 ? '↑' : '↓' }} {{ abs($kpis['revenue_delta_pct']) }}% vs last month
-                </p>
-            @endif
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+            </div>
+        </div>
+
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Trial Seats</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['on_trial']) }}</p>
+                <p class="lc-kpi-card__hint">On trial allocation</p>
+            </div>
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+
+        <div class="lc-kpi-card">
+            <div class="lc-kpi-card__body">
+                <p class="lc-kpi-card__label">Expired Seats</p>
+                <p class="lc-kpi-card__value">{{ number_format($kpis['expired_seats']) }}</p>
+                <p class="lc-kpi-card__hint">Plan expired</p>
+            </div>
+            <div class="lc-kpi-card__icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            </div>
         </div>
     </div>
 

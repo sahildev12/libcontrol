@@ -50,53 +50,16 @@
         </header>
 
         <div class="mt-4 flex flex-wrap gap-2 border-b border-gray-200">
-            <button type="button" @click="setTab('overview')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'overview' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'">Overview</button>
-            <button type="button" @click="setTab('statement')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'statement' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'">Statement</button>
-            <button type="button" @click="setTab('expenses')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'expenses' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'">Expenses</button>
+            <button type="button" @click="setTab('overview')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'overview' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-gray-500 hover:text-gray-700'">Overview</button>
+            <button type="button" @click="setTab('statement')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'statement' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-gray-500 hover:text-gray-700'">Statement</button>
+            <button type="button" @click="setTab('expenses')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'expenses' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-gray-500 hover:text-gray-700'">Expenses</button>
         </div>
 
         <section x-show="activeTab === 'overview'" x-cloak class="mt-4 flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
-            <div class="min-w-[200px] flex-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div> -->
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Fee Income</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-900">₹{{ number_format($summary['fee_income_total'], 2) }}</p>
-                <!-- <p class="mt-1 text-[11px] text-emerald-700/80">{{ $summary['fee_payment_count'] }} student {{ $summary['fee_payment_count'] === 1 ? 'payment' : 'payments' }}</p> -->
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
-                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                </div> -->
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-red-700">Total Expenses</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-red-900">₹{{ number_format($summary['total_expenses'], 2) }}</p>
-                <!-- <p class="mt-1 text-[11px] text-red-700/80">Recorded in selected period</p> -->
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                </div> -->
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">Net Profit</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums {{ $summary['net_profit'] >= 0 ? 'text-indigo-900' : 'text-red-900' }}">₹{{ number_format($summary['net_profit'], 2) }}</p>
-                <!-- <p class="mt-1 text-[11px] text-indigo-700/80">Fee income minus expenses</p> -->
-            </div>
-
-            <div class="min-w-[200px] flex-1 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-                </div> -->
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Top Expense Category</p>
-                <p class="mt-1 truncate text-xl font-bold text-amber-950">{{ $summary['top_category'] }}</p>
-                <!-- <p class="mt-1 text-[11px] text-amber-800/80">
-                    @if ($summary['top_category_amount'] > 0)
-                        ₹{{ number_format($summary['top_category_amount'], 2) }} ({{ $summary['top_category_share_pct'] }}%)
-                    @else
-                        No expenses in this period
-                    @endif
-                </p> -->
-            </div>
+            <x-admin.kpi-card class="min-w-[200px]" label="Fee Income" :value="'₹'.number_format($summary['fee_income_total'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Total Expenses" :value="'₹'.number_format($summary['total_expenses'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Net Profit" :value="'₹'.number_format($summary['net_profit'], 2)" />
+            <x-admin.kpi-card class="min-w-[200px]" label="Top Expense Category" :value="$summary['top_category']" />
         </section>
 
         <section x-show="activeTab === 'overview'" x-cloak class="mt-4 grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -184,7 +147,7 @@
                 <p class="text-sm font-semibold text-gray-900">Financial statement</p>
                 <p class="text-xs text-gray-500">Combined fee receipts and operating expenses for the selected period.</p>
             </div>
-            <div class="flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
+            <div class="lc-table-toolbar flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
                 <div class="min-w-[12rem] flex-1">
                     <label class="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Search</label>
                     <input type="search" x-model="statementSearch" placeholder="Search description, student, branch..." class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
@@ -250,7 +213,7 @@
         <section x-show="activeTab === 'expenses'" x-cloak class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <x-admin.data-table-toolbar search-placeholder="Search expenses..." :show-bulk-delete="true" />
 
-            <div class="flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
+            <div class="lc-table-toolbar flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
                 <div>
                     <label class="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Category</label>
                     <select x-model="categoryFilter" class="mt-1 min-w-[11rem] rounded-lg border border-gray-300 py-2 pl-3 pr-10 text-sm">

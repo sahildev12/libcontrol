@@ -35,11 +35,13 @@
 
         @if ($offersEnabled && $mailConfigured && ! $viewingAll)
         <div class="mt-6 grid gap-4 lg:grid-cols-5">
-            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-3">
-                <h2 class="text-sm font-semibold text-gray-900">Compose promotion email</h2>
-                <p class="mt-1 text-xs text-gray-500">Only students with an email address receive this message.</p>
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-3">
+                <div class="lc-panel-header border-b border-gray-100 px-5 py-4">
+                    <h2 class="text-base font-semibold text-gray-900">Compose promotion email</h2>
+                    <p class="mt-1 text-xs text-gray-500">Only students with an email address receive this message.</p>
+                </div>
 
-                <form class="mt-4 space-y-4" @submit.prevent="sendOffers">
+                <form class="space-y-4 p-5" @submit.prevent="sendOffers">
                     <div>
                         <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Subject</label>
                         <input
@@ -106,20 +108,22 @@
                 </form>
             </section>
 
-            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2" x-show="form.audience === 'selected'">
-                <div class="flex items-center justify-between gap-3">
-                    <h2 class="text-sm font-semibold text-gray-900">Select students</h2>
-                    <button type="button" @click="toggleSelectAllVisible()" class="text-xs font-semibold text-indigo-600 hover:underline">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2" x-show="form.audience === 'selected'">
+                <div class="lc-panel-header flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+                    <h2 class="text-base font-semibold text-gray-900">Select students</h2>
+                    <button type="button" @click="toggleSelectAllVisible()" class="text-xs font-semibold hover:underline">
                         <span x-text="allVisibleSelected() ? 'Clear all' : 'Select all'"></span>
                     </button>
                 </div>
-                <input
-                    type="search"
-                    x-model="search"
-                    placeholder="Search by name, code, or email..."
-                    class="mt-3 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                >
-                <div class="mt-3 max-h-[28rem] space-y-2 overflow-y-auto">
+                <div class="lc-table-toolbar border-b border-gray-100 px-4 py-3">
+                    <input
+                        type="search"
+                        x-model="search"
+                        placeholder="Search by name, code, or email..."
+                        class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    >
+                </div>
+                <div class="max-h-[28rem] space-y-2 overflow-y-auto p-4">
                     <template x-for="student in filteredStudents()" :key="student.id">
                         <label class="flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2 hover:bg-gray-50">
                             <input type="checkbox" :value="student.id" x-model="form.student_ids" class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
@@ -133,9 +137,11 @@
                 </div>
             </section>
 
-            <section class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-5 shadow-sm lg:col-span-2" x-show="form.audience === 'all'">
-                <h2 class="text-sm font-semibold text-gray-900">Ready to send</h2>
-                <p class="mt-2 text-sm text-gray-600">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2" x-show="form.audience === 'all'">
+                <div class="lc-panel-header border-b border-gray-100 px-5 py-4">
+                    <h2 class="text-base font-semibold text-gray-900">Ready to send</h2>
+                </div>
+                <p class="p-5 text-sm text-gray-600">
                     This promotion will be emailed to
                     <span class="font-semibold text-gray-900" x-text="students.length"></span>
                     active student(s) who have an email address on file.

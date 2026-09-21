@@ -69,7 +69,7 @@
             class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
             x-data="{ search: '' }"
         >
-            <div class="border-b border-gray-200 px-4 py-3">
+            <div class="lc-table-toolbar border-b border-gray-200 px-4 py-3">
                 <input type="search" x-model="search" placeholder="Search branches..." class="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm">
             </div>
             <div class="overflow-x-auto">

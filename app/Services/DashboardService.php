@@ -93,6 +93,7 @@ class DashboardService
             ];
         })->values();
 
+        $platformSeatCounts = $this->countSeatStatuses($allSeats);
         $totalSeats = $branchRows->sum('seats');
         $occupied = $branchRows->sum('occupied');
         $available = $branchRows->sum('available');
@@ -184,6 +185,8 @@ class DashboardService
                 'occupancy_pct' => $totalSeats > 0 ? round(($occupied / $totalSeats) * 100, 2) : 0,
                 'available' => $available,
                 'availability_pct' => $totalSeats > 0 ? round(($available / $totalSeats) * 100, 2) : 0,
+                'on_trial' => $platformSeatCounts['on_trial'],
+                'expired_seats' => $platformSeatCounts['expired'],
                 'monthly_revenue' => $monthRevenue,
                 'revenue_delta_pct' => $this->percentChange($monthRevenue, $prevMonthRevenue),
             ],
