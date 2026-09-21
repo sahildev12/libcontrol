@@ -2,6 +2,7 @@
 
 namespace App\Services\Setup;
 
+use App\Support\InstallState;
 use App\Support\Runtime\SyncCoordinator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class SetupInstaller
 
     public function isInstalled(): bool
     {
-        return File::exists(storage_path('app/install.lock'));
+        return InstallState::isInstalled();
     }
 
     /**

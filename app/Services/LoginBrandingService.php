@@ -11,6 +11,8 @@ class LoginBrandingService
 {
     public const PORTAL_ADMIN = 'admin';
 
+    public const PORTAL_DEVELOPER = 'developer';
+
     public const PORTAL_BRANCH = 'branch';
 
     public function __construct(
@@ -41,11 +43,22 @@ class LoginBrandingService
     {
         $settings = PlatformSetting::current();
 
+        if ($portal === self::PORTAL_DEVELOPER) {
+            return [
+                'portal' => self::PORTAL_DEVELOPER,
+                'title' => 'Developer login',
+                'subtitle' => 'Phenomit platform access for client libraries',
+                'name' => $settings->displayName(),
+                'logo_url' => $settings->logoUrl(),
+                'favicon_url' => $settings->faviconUrl(),
+            ];
+        }
+
         if ($portal === self::PORTAL_ADMIN) {
             return [
                 'portal' => self::PORTAL_ADMIN,
                 'title' => 'Admin login',
-                'subtitle' => 'For the people who manage the whole system',
+                'subtitle' => 'For library owners managing their branches',
                 'name' => $settings->displayName(),
                 'logo_url' => $settings->logoUrl(),
                 'favicon_url' => $settings->faviconUrl(),

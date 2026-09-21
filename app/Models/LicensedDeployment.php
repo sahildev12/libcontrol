@@ -18,6 +18,10 @@ class LicensedDeployment extends Model
         'grace_days',
         'active',
         'notes',
+        'plan_tier',
+        'max_seats_override',
+        'max_halls_override',
+        'max_branches_override',
     ];
 
     /**
@@ -29,7 +33,22 @@ class LicensedDeployment extends Model
             'allowed_domains' => 'array',
             'grace_days' => 'integer',
             'active' => 'boolean',
+            'max_seats_override' => 'integer',
+            'max_halls_override' => 'integer',
+            'max_branches_override' => 'integer',
         ];
+    }
+
+    public function commands(): HasMany
+    {
+        return $this->hasMany(DeploymentCommand::class);
+    }
+
+    public function planTier(): string
+    {
+        $tier = (string) ($this->plan_tier ?: config('libcontrol.defaults.plan_tier', 'starter'));
+
+        return array_key_exists($tier, config('libcontrol.plans', [])) ? $tier : 'starter';
     }
 
     public function installationEvents(): HasMany

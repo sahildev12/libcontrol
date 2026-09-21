@@ -52,7 +52,7 @@ class StudentOfferService
     ): array {
         if (! $this->offersEnabled()) {
             throw ValidationException::withMessages([
-                'offers' => 'Offer emails are disabled. Enable them in Settings → Emails.',
+                'offers' => 'Promotion emails are disabled. Enable them in Settings → Emails.',
             ]);
         }
 
@@ -92,7 +92,7 @@ class StudentOfferService
 
         if ($sent === 0) {
             throw ValidationException::withMessages([
-                'mail' => 'No offer emails could be delivered. Check your SMTP settings and try again.',
+                'mail' => 'No promotion emails could be delivered. Check your SMTP settings and try again.',
             ]);
         }
 

@@ -100,7 +100,7 @@
                                 <h3 class="shrink-0 text-sm font-semibold text-gray-800" x-text="group.hall_name"></h3>
                                 <hr class="min-w-0 flex-1 border-gray-300">
                             </div>
-                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+                            <div class="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-12">
                                 <template x-for="seat in group.seats" :key="seat.id">
                                     <div
                                         class="relative w-full"
@@ -118,12 +118,12 @@
                                                 class="absolute right-1.5 top-1.5 size-2.5 rounded-full bg-[#06B6D4] ring-2 ring-white"
                                                 title="Trial student also assigned"
                                             ></span>
-                                            <div class="flex flex-1 flex-col items-center justify-center gap-1">
-                                                <svg class="size-6 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M5 12V7a2 2 0 012-2h10a2 2 0 012 2v5M5 12l-1 8h16l-1-8M5 12h14"/></svg>
-                                                <span class="text-lg font-bold leading-none" x-text="seat.seat_number"></span>
+                                            <div class="flex flex-col items-center justify-center gap-0.5">
+                                                <svg class="size-4 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M5 12V7a2 2 0 012-2h10a2 2 0 012 2v5M5 12l-1 8h16l-1-8M5 12h14"/></svg>
+                                                <span class="text-sm font-bold leading-none" x-text="seat.seat_number"></span>
                                             </div>
 
-                                            <div class="w-full truncate text-[10px] font-semibold" x-text="seatStudentLabel(seat)"></div>
+                                            <div class="w-full truncate text-[9px] font-semibold leading-tight" x-text="seatStudentLabel(seat)"></div>
                                         </button>
                                     </div>
                                 </template>

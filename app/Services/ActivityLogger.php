@@ -24,7 +24,12 @@ class ActivityLogger
         return ActivityLog::query()->create([
             'user_id' => $user?->id,
             'branch_id' => $branchId ?? $user?->branch_id,
-            'actor_type' => $user?->isPlatformAdmin() ? 'admin' : ($user ? 'branch' : 'system'),
+            'actor_type' => match (true) {
+                $user?->isDeveloperAdmin() => 'developer',
+                $user?->isClientAdmin() => 'admin',
+                $user !== null => 'branch',
+                default => 'system',
+            },
             'action' => $action,
             'description' => $description,
             'subject_type' => $subject ? $subject::class : null,

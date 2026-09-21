@@ -63,7 +63,7 @@ abstract class Controller
             return;
         }
 
-        abort_unless($user?->isPlatformAdmin(), 403);
+        abort_unless($user?->isAnyAdmin(), 403);
 
         if ($this->viewingAllBranches($request)) {
             return;
@@ -80,7 +80,7 @@ abstract class Controller
             return Branch::query()->findOrFail((int) $user->branch_id);
         }
 
-        abort_unless($user?->isPlatformAdmin(), 403);
+        abort_unless($user?->isAnyAdmin(), 403);
 
         $branchId = $requestedBranchId ?: $this->optionalActiveBranchId($request);
 

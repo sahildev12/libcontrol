@@ -3,7 +3,7 @@
 return [
     'primary' => [
         ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'home'],
-        ['label' => 'Branch', 'route' => 'branch.index', 'icon' => 'branch', 'platform_admin_only' => true],
+        ['label' => 'Branch', 'route' => 'branch.index', 'icon' => 'branch', 'client_admin_only' => true],
         ['label' => 'Halls', 'route' => 'halls.index', 'icon' => 'building'],
         ['label' => 'Seats', 'route' => 'seats.index', 'icon' => 'grid'],
         ['label' => 'Trial Seats', 'route' => 'trial-seats.index', 'icon' => 'clock'],

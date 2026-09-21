@@ -43,20 +43,26 @@ class BranchFoundationTest extends TestCase
         $this->actingAs($user)->get(route('branch.index'))->assertForbidden();
     }
 
-    public function test_platform_admin_can_access_branch_management_page(): void
+    public function test_client_admin_can_access_branch_management_page(): void
     {
         Branch::factory()->create(['name' => 'Main Library Center']);
-        $user = User::factory()->create(['branch_id' => null]);
-        Admin::query()->create([
-            'user_id' => $user->id,
-            'admin_type' => Admin::TYPE_DEVELOPER,
-        ]);
+        $user = $this->clientAdmin();
 
         $response = $this->actingAs($user)->get(route('branch.index'));
 
         $response->assertOk();
         $response->assertSee('Branches');
         $response->assertSee('Main Library Center');
+    }
+
+    public function test_developer_admin_is_redirected_from_branch_management_page(): void
+    {
+        Branch::factory()->create(['name' => 'Main Library Center']);
+        $user = $this->developerAdmin();
+
+        $this->actingAs($user)
+            ->get(route('branch.index'))
+            ->assertRedirect(route('settings.index', ['tab' => 'developer']));
     }
 
     public function test_platform_admin_cannot_delete_branch_with_halls_or_students(): void
@@ -101,7 +107,18 @@ class BranchFoundationTest extends TestCase
         ]);
     }
 
-    private function platformAdmin(): User
+    private function clientAdmin(): User
+    {
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_CLIENT,
+        ]);
+
+        return $user;
+    }
+
+    private function developerAdmin(): User
     {
         $user = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
@@ -110,5 +127,10 @@ class BranchFoundationTest extends TestCase
         ]);
 
         return $user;
+    }
+
+    private function platformAdmin(): User
+    {
+        return $this->clientAdmin();
     }
 }

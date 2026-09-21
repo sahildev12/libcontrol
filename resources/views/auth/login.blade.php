@@ -8,7 +8,11 @@
 >
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ $portal === 'admin' ? route('admin.login.store') : route('login.store') }}">
+    <form method="POST" action="{{ match($portal) {
+        'developer' => route('developer.login.store'),
+        'admin' => route('admin.login.store'),
+        default => route('login.store'),
+    } }}">
         @csrf
 
         <div>
@@ -36,17 +40,29 @@
 
         <div class="mt-6">
             <x-primary-button class="w-full justify-center">
-                {{ $portal === 'admin' ? 'Admin log in' : 'Branch log in' }}
+                {{ match($portal) {
+                    'developer' => 'Developer log in',
+                    'admin' => 'Admin log in',
+                    default => 'Branch log in',
+                } }}
             </x-primary-button>
         </div>
 
         <p class="mt-4 text-center text-xs text-gray-500">
-            @if ($portal === 'admin')
+            @if ($portal === 'developer')
+                Library admin?
+                <a href="{{ route('admin.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use admin login</a>
+            @elseif ($portal === 'admin')
+                @if (\App\Support\InstallState::isHub() && \Illuminate\Support\Facades\Route::has('developer.login'))
+                    Phenomit developer?
+                    <a href="{{ route('developer.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use developer login</a>
+                    <span class="mx-1">·</span>
+                @endif
                 Branch staff?
                 <a href="{{ route('login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use branch login</a>
             @else
-                <!-- Platform admin? -->
-                <!-- <a href="{{ route('admin.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use admin login</a> -->
+                Library admin?
+                <a href="{{ route('admin.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use admin login</a>
             @endif
         </p>
     </form>

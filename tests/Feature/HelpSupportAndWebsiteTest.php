@@ -21,8 +21,16 @@ class HelpSupportAndWebsiteTest extends TestCase
         $this->actingAs($user)
             ->get(route('help-support.index'))
             ->assertOk()
-            ->assertSee('Help', false)
-            ->assertSee('Create a ticket', false);
+            ->assertSee('Help &amp; Support', false)
+            ->assertSee('Create a support ticket', false)
+            ->assertSee('Get in touch', false)
+            ->assertSee('Your recent tickets', false)
+            ->assertSee('support-agent.png', false)
+            ->assertSee('Support Articles', false)
+            ->assertSee('Support Documentation', false)
+            ->assertSee('libcontrol/support-articles.html', false)
+            ->assertSee('libcontrol/documentation.html', false)
+            ->assertSee('wa.me/918901223423', false);
     }
 
     public function test_user_can_create_support_ticket(): void
@@ -56,7 +64,7 @@ class HelpSupportAndWebsiteTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Demo Library', false)
-            ->assertSee('Staff login', false);
+            ->assertSee('Branch login', false);
     }
 
     public function test_home_shows_configured_website_content(): void
@@ -74,7 +82,7 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertOk()
             ->assertSee('Welcome to Demo Library', false)
             ->assertSee('Wi-Fi', false)
-            ->assertSee('Staff login', false);
+            ->assertSee('Branch login', false);
     }
 
     public function test_authenticated_user_is_redirected_from_home_to_dashboard(): void
@@ -106,7 +114,6 @@ class HelpSupportAndWebsiteTest extends TestCase
                 'email_welcome_enabled' => true,
                 'email_birthday_enabled' => false,
                 'email_offers_enabled' => true,
-                'email_marketing_enabled' => false,
                 'email_recovery_enabled' => true,
             ])
             ->assertOk()

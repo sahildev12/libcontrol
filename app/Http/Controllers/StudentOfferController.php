@@ -18,7 +18,7 @@ class StudentOfferController extends Controller
         $viewingAll = $this->viewingAllBranches($request);
         $mailStatus = $mailDelivery->status();
 
-        return view('offers.index', [
+        return view('promotion.index', [
             'students' => $offerService->serializeStudentsForPicker($branchId),
             'offersEnabled' => $offerService->offersEnabled(),
             'mailConfigured' => $mailStatus['configured'],
@@ -61,15 +61,15 @@ class StudentOfferController extends Controller
             $this->logActivity(
                 $request,
                 'offers.sent',
-                "Sent offer email \"{$request->string('subject')}\" to {$result['sent']} student(s).",
+                "Sent promotion email \"{$request->string('subject')}\" to {$result['sent']} student(s).",
                 null,
                 $branchId,
             );
         }
 
         $message = $result['sent'] === 1
-            ? 'Offer email sent to 1 student.'
-            : "Offer emails sent to {$result['sent']} students.";
+            ? 'Promotion email sent to 1 student.'
+            : "Promotion emails sent to {$result['sent']} students.";
 
         if ($result['skipped'] > 0) {
             $message .= " {$result['skipped']} could not be emailed.";

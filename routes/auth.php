@@ -18,6 +18,11 @@ Route::middleware('guest')->group(function () {
     Route::get('admin/login', [AuthenticatedSessionController::class, 'create'])->name('admin.login');
     Route::post('admin/login', [AuthenticatedSessionController::class, 'store'])->name('admin.login.store');
 
+    if (config('libcontrol.license_server.enabled')) {
+        Route::get('developer/login', [AuthenticatedSessionController::class, 'create'])->name('developer.login');
+        Route::post('developer/login', [AuthenticatedSessionController::class, 'store'])->name('developer.login.store');
+    }
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
     Route::redirect('admin/forgot-password', '/forgot-password?from=admin')->name('admin.password.request');

@@ -10,32 +10,47 @@ use Illuminate\View\View;
 
 class SupportTicketController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $status = trim((string) $request->query('status', ''));
-        $search = trim((string) $request->query('search', ''));
-
-        $tickets = SupportTicket::query()
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($inner) use ($search) {
-                    $inner->where('subject', 'like', "%{$search}%")
-                        ->orWhere('library_name', 'like', "%{$search}%")
-                        ->orWhere('library_code', 'like', "%{$search}%")
-                        ->orWhere('reporter_email', 'like', "%{$search}%");
-                });
-            })
+        $rows = SupportTicket::query()
             ->orderByDesc('created_at')
-            ->paginate(20)
-            ->withQueryString();
+            ->get()
+            ->map(fn (SupportTicket $ticket) => [
+                'id' => $ticket->id,
+                'library_name' => $ticket->library_name ?: '—',
+                'library_sub' => $ticket->library_code ?: $ticket->deployment_domain ?: '—',
+                'subject' => $ticket->subject,
+                'category' => $ticket->categoryLabel(),
+                'reporter_name' => $ticket->reporter_name,
+                'reporter_email' => $ticket->reporter_email,
+                'status' => $ticket->status,
+                'status_label' => $ticket->statusLabel(),
+                'priority' => $ticket->priority,
+                'priority_label' => $ticket->priorityLabel(),
+                'created_at' => $ticket->created_at?->format('d M Y, h:i A'),
+                'unread' => $ticket->isUnread(),
+                'show_url' => route('developer.support-tickets.show', $ticket),
+            ])
+            ->values()
+            ->all();
 
-        return view('developer.support-tickets.index', compact('tickets', 'status', 'search'));
+        $stats = [
+            'total' => SupportTicket::query()->count(),
+            'unread' => SupportTicket::query()->whereNull('read_at')->count(),
+            'open' => SupportTicket::query()->where('status', SupportTicket::STATUS_OPEN)->count(),
+            'in_progress' => SupportTicket::query()->where('status', SupportTicket::STATUS_IN_PROGRESS)->count(),
+            'resolved' => SupportTicket::query()->where('status', SupportTicket::STATUS_RESOLVED)->count(),
+        ];
+
+        return view('developer.support-tickets.index', compact('rows', 'stats'));
     }
 
     public function show(SupportTicket $supportTicket): View
     {
+        $supportTicket->markAsRead();
+
         return view('developer.support-tickets.show', [
-            'ticket' => $supportTicket,
+            'ticket' => $supportTicket->fresh(),
         ]);
     }
 

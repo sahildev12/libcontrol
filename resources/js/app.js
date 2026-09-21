@@ -566,6 +566,8 @@ function seatStudentLabel(seat) {
     return seat.student_code;
 }
 
+window.seatStudentLabel = seatStudentLabel;
+
 function createStudentEditMixin({ requireStudentContact = false, onStudentUpdated = null } = {}) {
     return {
         editOpen: false,
@@ -1392,7 +1394,7 @@ function visibleOnTrialMap(seat) {
 }
 
 function seatTileClasses(seat) {
-    const base = 'relative flex aspect-square min-h-[76px] w-full cursor-pointer flex-col items-center justify-between rounded-xl p-2 text-center shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400';
+    const base = 'relative flex h-[64px] w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1 text-center shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400';
     const status = displaySeatStatus(seat);
 
     return {
@@ -2346,6 +2348,10 @@ Alpine.data('seatMap', (config) => ({
         return seatTileClasses(seat);
     },
 
+    seatStudentLabel(seat) {
+        return seatStudentLabel(seat);
+    },
+
     displayStatus(seat) {
         void this.tick;
 
@@ -2801,6 +2807,10 @@ Alpine.data('trialSeatMap', (config) => ({
         void this.tick;
 
         return seatTileClasses(seat);
+    },
+
+    seatStudentLabel(seat) {
+        return seatStudentLabel(seat);
     },
 
     displayStatus(seat) {
@@ -5436,6 +5446,83 @@ Alpine.data('notificationBell', (config) => ({
     },
 }));
 
+Alpine.data('supportTicketTable', (config) => ({
+    rows: config.rows || [],
+    statusFilter: '',
+    emailModal: null,
+    searchKeys: [
+        'library_name',
+        'library_sub',
+        'subject',
+        'category',
+        'reporter_name',
+        'reporter_email',
+        'status_label',
+        'priority_label',
+        'created_at',
+    ],
+    exportFileName: 'support-tickets',
+    exportColumns: [
+        { label: 'ID', key: 'id' },
+        { label: 'Library', key: 'library_name' },
+        { label: 'Library code', key: 'library_sub' },
+        { label: 'Subject', key: 'subject' },
+        { label: 'Category', key: 'category' },
+        { label: 'Reporter', key: 'reporter_name' },
+        { label: 'Email', key: 'reporter_email' },
+        { label: 'Status', key: 'status_label' },
+        { label: 'Priority', key: 'priority_label' },
+        { label: 'Created', key: 'created_at' },
+    ],
+    ...createDataTableMixin(),
+
+    extraFilter(row) {
+        if (! this.statusFilter) {
+            return true;
+        }
+
+        return row.status === this.statusFilter;
+    },
+
+    init() {
+        this.initDataTable();
+        this.$watch('statusFilter', () => { this.page = 1; });
+    },
+
+    setStatusFilter(value) {
+        this.statusFilter = value || '';
+    },
+
+    openEmail(email) {
+        this.emailModal = email;
+    },
+
+    closeEmail() {
+        this.emailModal = null;
+    },
+
+    statusBadgeClass(status) {
+        const classes = {
+            in_progress: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+            resolved: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+            closed: 'bg-gray-100 text-gray-600 ring-gray-500/20',
+            open: 'bg-sky-50 text-sky-700 ring-sky-600/20',
+        };
+
+        return classes[status] || classes.open;
+    },
+
+    priorityDotClass(priority) {
+        const classes = {
+            low: 'bg-sky-400',
+            high: 'bg-red-500',
+            urgent: 'bg-red-700',
+        };
+
+        return classes[priority] || 'bg-emerald-500';
+    },
+}));
+
 Alpine.data('activityLogTable', (config) => ({
     rows: config.rows || [],
     isPlatformAdmin: config.isPlatformAdmin || false,
@@ -5548,6 +5635,7 @@ Alpine.data('settingsPage', (config) => ({
     },
     planTiers: config.planTiers || ['starter', 'pro', 'custom'],
     isPlatformAdmin: config.isPlatformAdmin || false,
+    isClientAdmin: config.isClientAdmin ?? config.isPlatformAdmin ?? false,
     isDeveloperAdmin: config.isDeveloperAdmin || false,
     viewingAll: config.viewingAll || false,
     form: {
@@ -5619,11 +5707,12 @@ Alpine.data('settingsPage', (config) => ({
     websiteLogoFile: null,
     websiteSaving: false,
     emailNotificationsUpdateUrl: config.emailNotificationsUpdateUrl || '',
+    globalUpdateUrl: config.globalUpdateUrl || '',
+    globalExpiryReminderDays: config.globalExpiryReminderDays ?? null,
     emailForm: {
         email_welcome_enabled: Boolean(config.emailNotificationSettings?.email_welcome_enabled ?? true),
         email_birthday_enabled: Boolean(config.emailNotificationSettings?.email_birthday_enabled ?? true),
         email_offers_enabled: Boolean(config.emailNotificationSettings?.email_offers_enabled ?? false),
-        email_marketing_enabled: Boolean(config.emailNotificationSettings?.email_marketing_enabled ?? false),
         email_recovery_enabled: Boolean(config.emailNotificationSettings?.email_recovery_enabled ?? true),
     },
     emailSaving: false,
@@ -5631,15 +5720,34 @@ Alpine.data('settingsPage', (config) => ({
 
     init() {
         const tab = new URLSearchParams(window.location.search).get('tab');
-        const allowedTabs = ['general', 'id-cards', 'website', 'emails', 'subscription', 'addons', 'developer'];
+        const adminTabs = ['general', 'website'];
+        if (this.viewingAll) {
+            adminTabs.push('id-cards', 'emails');
+        }
+        const developerTabs = ['subscription', 'addons', 'developer'];
+        const allowedTabs = this.isClientAdmin
+            ? [...adminTabs, ...(this.isDeveloperAdmin ? developerTabs : [])]
+            : ['general'];
+
+        if (this.viewingAll && this.isClientAdmin && Number.isFinite(Number(this.globalExpiryReminderDays))) {
+            this.form.expiry_reminder_days = Number(this.globalExpiryReminderDays);
+        }
 
         if (tab && allowedTabs.includes(tab)) {
             this.settingsTab = tab;
+        } else if (this.isDeveloperAdmin && ! this.isClientAdmin) {
+            this.settingsTab = 'developer';
+        } else if (! allowedTabs.includes(this.settingsTab)) {
+            this.settingsTab = 'general';
         }
     },
 
     showGeneralSettingsForm() {
-        if (! this.isPlatformAdmin && ! this.isDeveloperAdmin) {
+        if (this.isDeveloperAdmin && ! this.isClientAdmin) {
+            return false;
+        }
+
+        if (! this.isClientAdmin && ! this.isDeveloperAdmin) {
             return true;
         }
 
@@ -5670,7 +5778,9 @@ Alpine.data('settingsPage', (config) => ({
 
     buildFormData() {
         const data = new FormData();
-        ['display_name', 'expiry_reminder_days', 'library_open_time', 'library_close_time'].forEach((key) => {
+        const keys = ['library_open_time', 'library_close_time'];
+
+        keys.forEach((key) => {
             if (this.form[key] !== null && this.form[key] !== undefined && this.form[key] !== '') {
                 data.append(key, this.form[key]);
             }
@@ -5681,7 +5791,7 @@ Alpine.data('settingsPage', (config) => ({
     },
 
     validatePlatformForm() {
-        if (! this.isPlatformAdmin) {
+        if (! this.isPlatformAdmin || this.viewingAll) {
             return null;
         }
 
@@ -5925,17 +6035,22 @@ Alpine.data('settingsPage', (config) => ({
         this.saving = true;
         this.error = '';
         try {
-            if (this.isPlatformAdmin) {
+            if (this.isPlatformAdmin && ! this.viewingAll) {
                 const platformData = new FormData();
                 platformData.append('student_code_prefix', String(this.platformForm.student_code_prefix || '').trim().toUpperCase());
                 platformData.append('student_code_padding', String(this.platformForm.student_code_padding || 3));
-
                 const platformResponse = await window.axios.post(`${this.platformUpdateUrl}?_method=PATCH`, platformData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 this.platformSettings = platformResponse.data.platform_settings;
                 this.platformForm.student_code_prefix = this.platformSettings.student_code_prefix;
                 this.platformForm.student_code_padding = this.platformSettings.student_code_padding;
+            }
+
+            if (this.viewingAll && this.isClientAdmin && this.globalUpdateUrl) {
+                await window.axios.patch(this.globalUpdateUrl, {
+                    expiry_reminder_days: this.form.expiry_reminder_days,
+                });
             }
 
             if (! this.viewingAll) {
@@ -6793,38 +6908,166 @@ Alpine.data('studentOffersPage', (config) => ({
 Alpine.data('helpSupportPage', (config) => ({
     storeUrl: config.storeUrl,
     tickets: config.tickets || [],
+    supportEmail: config.supportEmail || '',
+    companyUrl: config.companyUrl || '',
+    whatsappUrl: config.whatsappUrl || '',
+    faqUrl: config.faqUrl || '',
     saving: false,
     errors: {},
+    search: '',
+    statusFilter: '',
+    selectedFiles: [],
+    viewingTicket: null,
     form: {
         subject: '',
         message: '',
-        category: 'general',
+        category: '',
         priority: 'normal',
+    },
+
+    messageLength() {
+        return String(this.form.message || '').length;
+    },
+
+    filteredTickets() {
+        const term = String(this.search || '').trim().toLowerCase();
+
+        return this.tickets.filter((ticket) => {
+            if (this.statusFilter && ticket.status !== this.statusFilter) {
+                return false;
+            }
+
+            if (! term) {
+                return true;
+            }
+
+            const haystack = [
+                ticket.subject,
+                ticket.category_label,
+                ticket.status_label,
+                ticket.priority_label,
+                String(ticket.id),
+            ].join(' ').toLowerCase();
+
+            return haystack.includes(term);
+        });
+    },
+
+    statusBadgeClass(status) {
+        const classes = {
+            open: 'bg-sky-50 text-sky-700',
+            in_progress: 'bg-amber-50 text-amber-700',
+            resolved: 'bg-emerald-50 text-emerald-700',
+            closed: 'bg-gray-100 text-gray-600',
+        };
+
+        return classes[status] || classes.open;
+    },
+
+    priorityDotClass(priority) {
+        const classes = {
+            low: 'bg-sky-400',
+            normal: 'bg-emerald-500',
+            high: 'bg-red-500',
+            urgent: 'bg-red-700',
+        };
+
+        return classes[priority] || classes.normal;
+    },
+
+    openTicket(ticket) {
+        this.viewingTicket = ticket;
+    },
+
+    closeTicket() {
+        this.viewingTicket = null;
+    },
+
+    onFilesSelected(event) {
+        this.addFiles(Array.from(event.target.files || []));
+        event.target.value = '';
+    },
+
+    onFilesDropped(event) {
+        this.addFiles(Array.from(event.dataTransfer?.files || []));
+    },
+
+    addFiles(files) {
+        const maxSize = 5 * 1024 * 1024;
+        const combined = [...this.selectedFiles, ...files];
+
+        if (combined.length > 5) {
+            this.errors.attachments = 'You can upload up to 5 files.';
+            return;
+        }
+
+        for (const file of files) {
+            if (file.size > maxSize) {
+                this.errors.attachments = 'Each file must be 5MB or smaller.';
+                return;
+            }
+        }
+
+        this.errors.attachments = '';
+        this.selectedFiles = combined;
+    },
+
+    removeFile(index) {
+        this.selectedFiles = this.selectedFiles.filter((_, fileIndex) => fileIndex !== index);
     },
 
     async submitTicket() {
         this.errors = {};
+
+        if (! String(this.form.category || '').trim()) {
+            this.errors.category = 'Please select a category.';
+        }
+
         if (! String(this.form.subject || '').trim()) {
             this.errors.subject = 'Subject is required.';
         }
+
         if (! String(this.form.message || '').trim()) {
             this.errors.message = 'Message is required.';
         }
+
         if (Object.keys(this.errors).length > 0) {
             return;
         }
 
         this.saving = true;
+
         try {
-            const response = await window.axios.post(this.storeUrl, this.form);
+            const formData = new FormData();
+            formData.append('subject', this.form.subject);
+            formData.append('message', this.form.message);
+            formData.append('category', this.form.category);
+            formData.append('priority', this.form.priority || 'normal');
+            this.selectedFiles.forEach((file, index) => {
+                formData.append(`attachments[${index}]`, file);
+            });
+
+            const response = await window.axios.post(this.storeUrl, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
             this.tickets.unshift(response.data.ticket);
             this.form.subject = '';
             this.form.message = '';
-            this.form.category = 'general';
+            this.form.category = '';
             this.form.priority = 'normal';
+            this.selectedFiles = [];
             showToast(response.data.message);
         } catch (e) {
-            showToast(extractAxiosError(e), 'error');
+            const validationErrors = e.response?.data?.errors;
+
+            if (validationErrors) {
+                this.errors = Object.fromEntries(
+                    Object.entries(validationErrors).map(([key, messages]) => [key, messages[0]]),
+                );
+            } else {
+                showToast(extractAxiosError(e), 'error');
+            }
         } finally {
             this.saving = false;
         }

@@ -53,6 +53,7 @@ class ActivityLog extends Model
     public function actorLabel(): string
     {
         return match ($this->actor_type) {
+            'developer' => 'Developer',
             'admin' => 'Admin',
             'branch' => 'Library staff',
             default => 'System',

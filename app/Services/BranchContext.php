@@ -13,7 +13,7 @@ class BranchContext
 
     public function viewingAll(?User $user, ?Request $request = null): bool
     {
-        return (bool) $user?->isPlatformAdmin()
+        return (bool) $user?->isAnyAdmin()
             && (string) $request?->session()->get('active_branch_id') === self::ALL;
     }
 
@@ -23,7 +23,7 @@ class BranchContext
             return (int) $user->branch_id;
         }
 
-        if (! $user->isPlatformAdmin()) {
+        if (! $user->isAnyAdmin()) {
             abort(403, 'Your account is not assigned to a branch.');
         }
 
@@ -68,7 +68,7 @@ class BranchContext
 
     public function canManageAllBranches(User $user): bool
     {
-        return $user->isPlatformAdmin();
+        return $user->isAnyAdmin();
     }
 
     public function apply(Builder $query, User $user, Request $request, string $column = 'branch_id'): Builder

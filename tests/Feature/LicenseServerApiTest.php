@@ -39,7 +39,9 @@ class LicenseServerApiTest extends TestCase
 
         $response = $this->postSync($licenseKey, $payload);
 
-        $response->assertOk()->assertJson(['status' => 'ok']);
+        $response->assertOk()
+            ->assertJson(['status' => 'ok'])
+            ->assertJsonStructure(['commands']);
 
         $this->assertDatabaseHas('installation_events', [
             'domain' => 'library.test',

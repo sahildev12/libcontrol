@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Observers\RecordsModelChanges;
 use App\Services\BranchContext;
 use App\Services\NotificationService;
+use App\Support\InstallState;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
@@ -25,12 +26,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Support\Runtime\DeploymentState::class);
         $this->app->singleton(\App\Support\Runtime\SyncCoordinator::class);
 
-        if (! $this->app->runningInConsole() && ! File::exists(storage_path('app/install.lock'))) {
-            config([
-                'session.driver' => 'file',
-                'cache.default' => 'file',
-                'queue.default' => 'sync',
-            ]);
+        if (! $this->app->runningInConsole()) {
+            InstallState::configureRuntimeForInstallation();
         }
     }
 
@@ -61,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
             $branchId = null;
 
             try {
-                if ($user->branch_id || $user->isPlatformAdmin()) {
+                if ($user->branch_id || $user->isAnyAdmin()) {
                     $activeBranch = $viewingAll ? null : $branchContext->optionalBranch($user, request());
                     $branchId = $viewingAll ? null : $branchContext->optionalBranchId($user, request());
                 }
@@ -72,19 +69,24 @@ class AppServiceProvider extends ServiceProvider
             $recentAlerts = collect();
             $alertCount = 0;
 
-            if ($user->branch_id || $user->isPlatformAdmin()) {
+            if ($user->branch_id || $user->isAnyAdmin()) {
                 $notificationService = app(NotificationService::class);
                 $recentAlerts = $notificationService->alertsForBranch($branchId, $user, 8);
                 $alertCount = $notificationService->unreadCount($branchId, $user);
             }
 
+            $platformSettings = PlatformSetting::current();
+
             $view->with([
                 'activeBranch' => $activeBranch,
                 'viewingAllBranches' => $viewingAll,
-                'allBranches' => $user->isPlatformAdmin()
+                'allBranches' => $user->isAnyAdmin()
                     ? Branch::query()->orderBy('name')->get(['id', 'name'])
                     : collect(),
-                'isPlatformAdmin' => $user->isPlatformAdmin(),
+                'isAnyAdmin' => $user->isAnyAdmin(),
+                'isPlatformAdmin' => $user->isClientAdmin(),
+                'isClientAdmin' => $user->isClientAdmin(),
+                'isBranchStaff' => $user->isBranchStaff(),
                 'isDeveloperAdmin' => $user->isDeveloperAdmin(),
                 'licenseServerEnabled' => (bool) config('libcontrol.license_server.enabled'),
                 'tenancyEnabled' => (bool) config('libcontrol.tenancy.enabled'),

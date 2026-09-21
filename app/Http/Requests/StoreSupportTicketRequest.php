@@ -19,10 +19,12 @@ class StoreSupportTicketRequest extends FormRequest
     {
         return [
             'subject' => ['required', 'string', 'max:200'],
-            'message' => ['required', 'string', 'max:5000'],
+            'message' => ['required', 'string', 'max:1000'],
             'category' => ['required', Rule::in(['general', 'billing', 'technical', 'feature'])],
-            'priority' => ['nullable', Rule::in(['normal', 'high'])],
+            'priority' => ['nullable', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'reporter_email' => ['nullable', 'email', 'max:255'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'max:5120'],
         ];
     }
 }

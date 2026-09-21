@@ -56,9 +56,15 @@ class User extends Authenticatable
         return $this->hasOne(Admin::class);
     }
 
-    public function isPlatformAdmin(): bool
+    public function isAnyAdmin(): bool
     {
         return $this->adminProfile !== null;
+    }
+
+    /** @deprecated Use isClientAdmin() or isAnyAdmin() explicitly. */
+    public function isPlatformAdmin(): bool
+    {
+        return $this->isClientAdmin();
     }
 
     public function isDeveloperAdmin(): bool
@@ -71,13 +77,26 @@ class User extends Authenticatable
         return $this->adminProfile?->isClient() ?? false;
     }
 
+    public function isBranchStaff(): bool
+    {
+        return $this->branch_id !== null && ! $this->isAnyAdmin();
+    }
+
     public function adminTypeLabel(): ?string
     {
-        return match ($this->adminProfile?->admin_type) {
-            Admin::TYPE_DEVELOPER => 'Developer Admin',
-            Admin::TYPE_CLIENT => 'Client Admin',
-            default => null,
-        };
+        if ($this->isDeveloperAdmin()) {
+            return 'Developer';
+        }
+
+        if ($this->isClientAdmin()) {
+            return 'Admin';
+        }
+
+        if ($this->isBranchStaff()) {
+            return 'Branch';
+        }
+
+        return null;
     }
 
     public function sendPasswordResetNotification(mixed $token): void

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\InstallState;
 use App\Support\Runtime\SyncCoordinator;
 use App\Support\Tenancy\TenantContext;
 use Closure;
@@ -34,6 +35,10 @@ class RuntimeProbe
 
     private function shouldSkip(Request $request, Response $response): bool
     {
+        if (InstallState::needsInstallation()) {
+            return true;
+        }
+
         if (config('libcontrol.license_server.enabled')) {
             return true;
         }

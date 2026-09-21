@@ -20,82 +20,30 @@
             </button>
         </header>
 
-        @php
-            $formatDelta = static function (?float $value): string {
-                if ($value === null) {
-                    return '';
-                }
-
-                $sign = $value >= 0 ? '+' : '';
-
-                return $sign.$value.'%';
-            };
-            $deltaClass = static function (?float $value, string $positive = 'text-emerald-700', string $negative = 'text-red-700'): string {
-                if ($value === null) {
-                    return 'text-gray-500';
-                }
-
-                return $value >= 0 ? $positive : $negative;
-            };
-        @endphp
-
         <section class="mt-4 flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
             <div class="min-w-[200px] flex-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Received This Month</p>
-                <div class="mt-1 flex flex-wrap items-center gap-2">
-                    <p class="text-2xl font-bold tabular-nums text-emerald-900">₹{{ number_format($insights['received'], 2) }}</p>
-                    @if ($insights['received_delta_pct'] !== null)
-                        <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold {{ $deltaClass($insights['received_delta_pct'], 'text-emerald-700', 'text-emerald-800') }}">
-                            {{ $insights['received_delta_pct'] >= 0 ? '↑' : '↓' }} {{ $formatDelta($insights['received_delta_pct']) }}
-                        </span>
-                    @endif
-                </div>
-                <p class="mt-1 text-[11px] text-emerald-700/80">{{ $insights['payment_count'] }} {{ $insights['payment_count'] === 1 ? 'payment' : 'payments' }} · {{ $insights['month_label'] }}</p>
+                <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-900">₹{{ number_format($insights['received'], 2) }}</p>
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Pending This Month</p>
                 <p class="mt-1 text-2xl font-bold tabular-nums text-amber-900">₹{{ number_format($insights['pending'], 2) }}</p>
-                <p class="mt-1 text-[11px] text-amber-700/80">
-                    @if ($insights['expected'] > 0)
-                        ₹{{ number_format($insights['expected'], 2) }} due in {{ $insights['month_label'] }}
-                    @else
-                        No scheduled dues this month
-                    @endif
-                </p>
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                </div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-red-700">Overdue</p>
                 <p class="mt-1 text-2xl font-bold tabular-nums text-red-900">₹{{ number_format($insights['overdue_amount'], 2) }}</p>
-                <p class="mt-1 text-[11px] text-red-700/80">{{ $insights['overdue_count'] }} {{ $insights['overdue_count'] === 1 ? 'student' : 'students' }} need follow-up</p>
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                </div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">Total Outstanding</p>
                 <p class="mt-1 text-2xl font-bold tabular-nums text-indigo-900">₹{{ number_format($insights['outstanding'], 2) }}</p>
-                <p class="mt-1 text-[11px] text-indigo-700/80">Across {{ $insights['active_plans'] }} active fee {{ $insights['active_plans'] === 1 ? 'plan' : 'plans' }}</p>
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                </div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">Expiring Soon</p>
                 <p class="mt-1 text-2xl font-bold tabular-nums text-sky-900">{{ number_format($insights['expiring_soon_count']) }}</p>
-                <p class="mt-1 text-[11px] text-sky-700/80">Plans ending within 7 days</p>
             </div>
         </section>
 

@@ -3,19 +3,23 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RemoteManagePlanRequest;
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use App\Models\Tenant;
+use App\Services\Developer\TenantRemoteManageService;
 use App\Services\Tenancy\TenantProvisioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class TenantController extends Controller
 {
     public function __construct(
         private TenantProvisioner $provisioner,
+        private TenantRemoteManageService $remoteManage,
     ) {}
 
     public function index(): View
@@ -104,6 +108,65 @@ class TenantController extends Controller
             'planTiers' => array_keys(config('libcontrol.plans', [])),
             'baseDomain' => config('libcontrol.tenancy.base_domain'),
         ]);
+    }
+
+    public function manage(Tenant $tenant): View
+    {
+        return view('developer.tenants.manage', $this->remoteManage->managePayload($tenant));
+    }
+
+    public function updateRemotePlan(RemoteManagePlanRequest $request, Tenant $tenant): RedirectResponse
+    {
+        $this->remoteManage->updatePlan($tenant, $request->validated(), $request->user(), $request);
+
+        return redirect()
+            ->route('developer.tenants.manage', $tenant)
+            ->with('status', 'Plan updated on the client database.');
+    }
+
+    public function runAction(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'string', Rule::in([
+                'clear_cache',
+                'addon_install',
+                'addon_enable',
+                'addon_disable',
+                'database_backup',
+                'database_migrate',
+                'database_restore',
+            ])],
+            'slug' => ['nullable', 'string', 'max:120'],
+            'filename' => ['nullable', 'string', 'max:255'],
+            'confirmation' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $payload = [];
+
+        if (in_array($validated['action'], ['addon_install', 'addon_enable', 'addon_disable'], true)) {
+            $payload['slug'] = $validated['slug'] ?? '';
+        }
+
+        if ($validated['action'] === 'database_restore') {
+            $payload['filename'] = $validated['filename'] ?? '';
+            $payload['confirmation'] = $validated['confirmation'] ?? '';
+        }
+
+        $result = $this->remoteManage->runAction(
+            $tenant,
+            $validated['action'],
+            $payload,
+            $request->user(),
+            $request,
+        );
+
+        $message = $result['status'] === 'completed'
+            ? $result['message']
+            : 'Action failed: '.$result['message'];
+
+        return redirect()
+            ->route('developer.tenants.manage', $tenant)
+            ->with($result['status'] === 'completed' ? 'status' : 'error', $message);
     }
 
     public function update(UpdateTenantRequest $request, Tenant $tenant): RedirectResponse

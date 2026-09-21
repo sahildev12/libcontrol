@@ -118,8 +118,9 @@
                                     {{ $deployment->active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <a href="{{ route('developer.deployments.edit', $deployment) }}" class="font-medium text-indigo-600 hover:text-indigo-700">Edit</a>
+                            <td class="px-4 py-3 text-right space-x-3">
+                                <a href="{{ route('developer.deployments.manage', $deployment) }}" class="font-medium text-indigo-600 hover:text-indigo-700">Manage</a>
+                                <a href="{{ route('developer.deployments.edit', $deployment) }}" class="font-medium text-gray-600 hover:text-gray-700">Edit</a>
                             </td>
                         </tr>
                     @empty

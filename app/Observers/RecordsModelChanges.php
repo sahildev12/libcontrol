@@ -33,6 +33,10 @@ class RecordsModelChanges
             return;
         }
 
+        if ($user->isDeveloperAdmin() && config('database.default') === 'tenant') {
+            return;
+        }
+
         $changes = $this->changedFields($model);
 
         if ($changes === []) {

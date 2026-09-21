@@ -28,15 +28,6 @@ class StudentEmailNotificationService
         return $this->deliver($student, $subject, $body, 'offers');
     }
 
-    public function sendMarketing(Student $student, string $subject, string $body): bool
-    {
-        if (! $this->canSend($student, 'marketing')) {
-            return false;
-        }
-
-        return $this->deliver($student, $subject, $body, 'marketing');
-    }
-
     public function sendRecovery(Student $student): void
     {
         $this->sendIfEnabled($student, 'recovery', 'We miss you at {library}');
@@ -69,7 +60,6 @@ class StudentEmailNotificationService
             'welcome' => (bool) $settings->email_welcome_enabled,
             'birthday' => (bool) $settings->email_birthday_enabled,
             'offers' => (bool) $settings->email_offers_enabled,
-            'marketing' => (bool) $settings->email_marketing_enabled,
             'recovery' => (bool) $settings->email_recovery_enabled,
             default => false,
         };

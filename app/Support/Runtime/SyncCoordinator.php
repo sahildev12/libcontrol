@@ -3,12 +3,17 @@
 namespace App\Support\Runtime;
 
 use App\Models\LicensedDeployment;
+use App\Services\DeploymentCommandProcessor;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class SyncCoordinator
 {
+    private const COMMAND_RESULTS_CACHE_KEY = 'runtime_sync_command_results';
+
     public function __construct(
         private DeploymentState $state,
+        private DeploymentCommandProcessor $commandProcessor,
     ) {}
 
     public function fingerprint(): string
@@ -50,20 +55,28 @@ class SyncCoordinator
 
         $settings = \App\Models\PlatformSetting::current();
 
+        $meta = [
+            'php' => PHP_VERSION,
+            'app' => (string) config('app.version', '1.0'),
+            'event' => $setupComplete ? 'setup_complete' : 'heartbeat',
+            'library_code' => $settings->library_code,
+            'client_name' => $settings->displayName(),
+            'student_code_prefix' => $settings->student_code_prefix,
+            'student_code_padding' => $settings->student_code_padding
+                ?: config('libcontrol.defaults.student_code_padding', 3),
+        ];
+
+        $pendingResults = Cache::get(self::COMMAND_RESULTS_CACHE_KEY);
+        if (is_array($pendingResults) && $pendingResults !== []) {
+            $meta['command_results'] = $pendingResults;
+            Cache::forget(self::COMMAND_RESULTS_CACHE_KEY);
+        }
+
         $payload = [
             'domain' => $this->currentDomain(),
             'app_url' => $this->syncAppUrl(),
             'fingerprint' => $this->fingerprint(),
-            'meta' => [
-                'php' => PHP_VERSION,
-                'app' => (string) config('app.version', '1.0'),
-                'event' => $setupComplete ? 'setup_complete' : 'heartbeat',
-                'library_code' => $settings->library_code,
-                'client_name' => $settings->displayName(),
-                'student_code_prefix' => $settings->student_code_prefix,
-                'student_code_padding' => $settings->student_code_padding
-                    ?: config('libcontrol.defaults.student_code_padding', 3),
-            ],
+            'meta' => $meta,
         ];
 
         $body = json_encode($payload, JSON_THROW_ON_ERROR);
@@ -101,6 +114,12 @@ class SyncCoordinator
                 'authorized' => ($data['status'] ?? '') === 'ok',
                 'grace_until' => $data['grace_until'] ?? null,
             ]);
+
+            $commands = $data['commands'] ?? null;
+            if (is_array($commands) && $commands !== []) {
+                $results = $this->commandProcessor->processMany($commands);
+                Cache::put(self::COMMAND_RESULTS_CACHE_KEY, $results, now()->addDay());
+            }
         } catch (\Throwable) {
             // Fail open on network errors.
         }

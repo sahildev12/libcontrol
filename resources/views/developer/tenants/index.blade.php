@@ -38,8 +38,12 @@
                                     {{ $tenant->active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <a href="{{ route('developer.tenants.edit', $tenant) }}" class="font-medium text-indigo-600 hover:text-indigo-700">Manage</a>
+                            <td class="px-4 py-3 text-right space-x-3">
+                                @if ($tenant->provisioned_at)
+                                    <a href="{{ route('developer.portals.settings', $tenant) }}" class="font-medium text-indigo-600 hover:text-indigo-700">Settings</a>
+                                @endif
+                                <a href="{{ route('developer.tenants.manage', $tenant) }}" class="font-medium text-gray-600 hover:text-gray-700">Manage</a>
+                                <a href="{{ route('developer.tenants.edit', $tenant) }}" class="font-medium text-gray-600 hover:text-gray-700">Edit</a>
                             </td>
                         </tr>
                     @empty

@@ -32,6 +32,14 @@ class StudentNotificationMail extends Mailable
     {
         return new Content(
             markdown: 'emails.student-notification',
+            with: [
+                'showStudentCode' => $this->showStudentCode(),
+            ],
         );
+    }
+
+    public function showStudentCode(): bool
+    {
+        return $this->notificationType !== 'offers';
     }
 }

@@ -30,15 +30,8 @@
             <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
                 <input type="checkbox" x-model="emailForm.email_offers_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
                 <span>
-                    <span class="block text-sm font-semibold text-gray-900">Offers email</span>
-                    <span class="mt-0.5 block text-xs text-gray-500">Used when you send promotional offers to students.</span>
-                </span>
-            </label>
-            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
-                <input type="checkbox" x-model="emailForm.email_marketing_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
-                <span>
-                    <span class="block text-sm font-semibold text-gray-900">Marketing email</span>
-                    <span class="mt-0.5 block text-xs text-gray-500">Used for newsletters and marketing campaigns.</span>
+                    <span class="block text-sm font-semibold text-gray-900">Promotion email</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Used when you send promotional emails to students from the Promotion page.</span>
                 </span>
             </label>
             <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">

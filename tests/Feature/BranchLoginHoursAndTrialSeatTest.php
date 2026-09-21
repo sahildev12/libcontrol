@@ -425,7 +425,7 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         $user = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
             'user_id' => $user->id,
-            'admin_type' => Admin::TYPE_DEVELOPER,
+            'admin_type' => Admin::TYPE_CLIENT,
         ]);
 
         return $user;

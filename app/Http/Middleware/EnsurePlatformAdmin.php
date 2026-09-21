@@ -15,8 +15,8 @@ class EnsurePlatformAdmin
     {
         $user = $request->user();
 
-        if (! $user?->isPlatformAdmin()) {
-            abort(403, 'Platform admin access required.');
+        if (! $user?->isClientAdmin()) {
+            abort(403, 'Library admin access required.');
         }
 
         return $next($request);

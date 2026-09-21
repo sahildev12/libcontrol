@@ -25,6 +25,7 @@ return [
         'student_code_padding' => 3,
         'expiry_reminder_days' => 10,
         'plan_tier' => 'starter',
+        'admin_impact_text' => 'Total 124+ Libraries Registered',
     ],
 
     'plans' => [
@@ -55,6 +56,14 @@ return [
     'support' => [
         'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@phenomit.com'),
         'phone' => env('LIBCONTROL_SUPPORT_PHONE', ''),
+        'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8901223423'),
+        'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://phenomit.com/libcontrol/support-articles.html'),
+        'articles_url' => env('LIBCONTROL_SUPPORT_ARTICLES_URL', 'https://phenomit.com/libcontrol/support-articles.html'),
+        'documentation_url' => env('LIBCONTROL_SUPPORT_DOCUMENTATION_URL', 'https://phenomit.com/libcontrol/documentation.html'),
+        'whatsapp_button_image' => env(
+            'LIBCONTROL_SUPPORT_WHATSAPP_IMAGE',
+            'https://renprints.com/p_assets/img/footer/renprints-whatsapp-us-.png',
+        ),
     ],
 
     'deployment' => [
@@ -122,6 +131,8 @@ return [
     'install' => [
         'token' => env('LIBCONTROL_SETUP_TOKEN'),
         'product_name' => env('LIBCONTROL_PRODUCT_NAME'),
+        'display_name' => env('LIBCONTROL_CLIENT_NAME'),
+        'student_code_prefix' => env('LIBCONTROL_INSTALL_STUDENT_CODE_PREFIX'),
         'developer_email' => env('LIBCONTROL_DEVELOPER_EMAIL'),
         'developer_password' => env('LIBCONTROL_DEVELOPER_PASSWORD'),
         'admin_email' => env('LIBCONTROL_ADMIN_EMAIL'),

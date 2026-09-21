@@ -3,14 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, DashboardService $dashboardService): View
+    public function __invoke(Request $request, DashboardService $dashboardService): View|RedirectResponse
     {
+        if ($request->user()?->isDeveloperAdmin()) {
+            return redirect()->route(
+                \Illuminate\Support\Facades\Route::has('developer.deployments.index')
+                    ? 'developer.deployments.index'
+                    : 'settings.index',
+                \Illuminate\Support\Facades\Route::has('developer.deployments.index') ? [] : ['tab' => 'developer'],
+            );
+        }
+
         $branchId = $this->optionalActiveBranchId($request);
         $viewingAll = $this->viewingAllBranches($request);
         $isAdminOverview = (bool) $request->user()?->isPlatformAdmin() && $viewingAll;

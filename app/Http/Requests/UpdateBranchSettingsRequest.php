@@ -53,13 +53,17 @@ class UpdateBranchSettingsRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'display_name' => ['nullable', 'string', 'max:255'],
-            'expiry_reminder_days' => ['nullable', 'integer', 'min:1', 'max:90'],
+        $rules = [
             'library_open_time' => ['nullable', 'date_format:H:i'],
             'library_close_time' => ['nullable', 'date_format:H:i'],
             'is_open_24_hours' => ['nullable', 'boolean'],
             'require_student_contact' => ['nullable', 'boolean'],
         ];
+
+        if ($this->user()?->isClientAdmin()) {
+            $rules['display_name'] = ['nullable', 'string', 'max:255'];
+        }
+
+        return $rules;
     }
 }

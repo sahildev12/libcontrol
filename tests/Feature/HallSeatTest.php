@@ -182,7 +182,7 @@ class HallSeatTest extends TestCase
         $adminUser = User::factory()->create(['branch_id' => null]);
         \App\Models\Admin::query()->create([
             'user_id' => $adminUser->id,
-            'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
+            'admin_type' => \App\Models\Admin::TYPE_CLIENT,
         ]);
         $active = Branch::factory()->create(['name' => 'Active Branch']);
         $other = Branch::factory()->create(['name' => 'Other Branch']);

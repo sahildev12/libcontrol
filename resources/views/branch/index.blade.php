@@ -11,7 +11,7 @@
         <header class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Branches</h1>
-                <p class="mt-1 text-sm text-gray-600">Create and manage all library branches. Use the top bar to switch the active branch for halls, students, and settings.</p>
+                <p class="mt-1 text-sm text-gray-600">Create and manage all library branches.</p>
             </div>
             <button type="button" @click="openCreate()" :disabled="! canAddBranch()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
                 Create Branch

@@ -32,6 +32,10 @@ class LoginRequest extends FormRequest
 
     public function portal(): string
     {
+        if ($this->routeIs('developer.login', 'developer.login.store')) {
+            return LoginBrandingService::PORTAL_DEVELOPER;
+        }
+
         if ($this->routeIs('admin.login', 'admin.login.store')) {
             return LoginBrandingService::PORTAL_ADMIN;
         }
@@ -60,24 +64,36 @@ class LoginRequest extends FormRequest
         $user = Auth::user();
         $user->loadMissing('adminProfile');
 
-        $isAdmin = $user->isPlatformAdmin();
         $portal = $this->portal();
 
-        if ($portal === LoginBrandingService::PORTAL_ADMIN && ! $isAdmin) {
+        if ($portal === LoginBrandingService::PORTAL_DEVELOPER) {
+            if (! $user->isDeveloperAdmin()) {
+                Auth::logout();
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'email' => 'Use the admin or branch login page for this account.',
+                ]);
+            }
+        } elseif ($portal === LoginBrandingService::PORTAL_ADMIN) {
+            if (! $user->isClientAdmin()) {
+                Auth::logout();
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'email' => $user->isDeveloperAdmin()
+                        ? 'Use the developer login page for this account.'
+                        : 'Use the branch login page for this account.',
+                ]);
+            }
+        } elseif ($user->isAnyAdmin()) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => 'Use the branch login page for this account.',
-            ]);
-        }
-
-        if ($portal === LoginBrandingService::PORTAL_BRANCH && $isAdmin) {
-            Auth::logout();
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => 'Use the admin login page for this account.',
+                'email' => $user->isDeveloperAdmin()
+                    ? 'Use the developer login page for this account.'
+                    : 'Use the admin login page for this account.',
             ]);
         }
 

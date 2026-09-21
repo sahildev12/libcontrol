@@ -22,7 +22,7 @@
         </nav>
 
         <div class="hidden items-center gap-3 lg:flex">
-            <a href="{{ $site['branch_login_url'] }}" class="text-sm font-medium text-slate-500 hover:text-blue-800">Staff login</a>
+            <a href="{{ $site['branch_login_url'] }}" class="text-sm font-medium text-slate-500 hover:text-blue-800">Branch login</a>
             <a href="#contact" class="lw-btn-primary">Enquire Now</a>
         </div>
 
@@ -36,7 +36,7 @@
             @foreach ($site['navigation'] as $item)
                 <a href="{{ $item['href'] }}" data-lw-nav-link class="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-800">{{ $item['label'] }}</a>
             @endforeach
-            <a href="{{ $site['branch_login_url'] }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">Staff login</a>
+            <a href="{{ $site['branch_login_url'] }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">Branch login</a>
             <a href="#contact" class="lw-btn-primary mt-2 w-full">Enquire Now</a>
         </nav>
     </div>

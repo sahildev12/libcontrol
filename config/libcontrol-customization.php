@@ -107,7 +107,7 @@ return [
         'email_notifications' => [
             'label' => 'Email notifications',
             'status' => 'custom',
-            'notes' => 'Welcome, birthday, offers, marketing, recovery emails when student has email.',
+            'notes' => 'Welcome, birthday, promotion, recovery emails when student has email.',
         ],
         'student_contact_mandatory' => [
             'label' => 'Mandatory student phone and email',

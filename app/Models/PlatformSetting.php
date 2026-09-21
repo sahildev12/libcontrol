@@ -35,7 +35,6 @@ class PlatformSetting extends Model
         'email_welcome_enabled',
         'email_birthday_enabled',
         'email_offers_enabled',
-        'email_marketing_enabled',
         'email_recovery_enabled',
     ];
 
@@ -55,7 +54,6 @@ class PlatformSetting extends Model
             'email_welcome_enabled' => 'boolean',
             'email_birthday_enabled' => 'boolean',
             'email_offers_enabled' => 'boolean',
-            'email_marketing_enabled' => 'boolean',
             'email_recovery_enabled' => 'boolean',
         ];
     }

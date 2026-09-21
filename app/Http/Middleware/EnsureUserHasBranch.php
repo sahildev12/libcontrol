@@ -23,7 +23,7 @@ class EnsureUserHasBranch
             return $next($request);
         }
 
-        if ($user->isPlatformAdmin()) {
+        if ($user->isAnyAdmin()) {
             if (! $request->session()->has('active_branch_id')) {
                 $request->session()->put('active_branch_id', 'all');
             }

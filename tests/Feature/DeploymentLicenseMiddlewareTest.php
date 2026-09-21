@@ -93,7 +93,7 @@ class DeploymentLicenseMiddlewareTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('settings.index', ['tab' => 'developer']))
             ->assertOk();
     }
 }

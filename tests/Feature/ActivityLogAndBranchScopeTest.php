@@ -41,12 +41,12 @@ class ActivityLogAndBranchScopeTest extends TestCase
             ->assertSee($trial->student_code);
     }
 
-    public function test_platform_admin_all_branches_shows_students_from_every_branch(): void
+    public function test_client_admin_all_branches_shows_students_from_every_branch(): void
     {
         $admin = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
             'user_id' => $admin->id,
-            'admin_type' => Admin::TYPE_DEVELOPER,
+            'admin_type' => Admin::TYPE_CLIENT,
         ]);
 
         $branchA = Branch::factory()->create(['name' => 'Alpha Center']);

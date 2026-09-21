@@ -64,7 +64,7 @@ class SupportTicketController extends Controller
             'subject' => $subject,
             'message' => $message,
             'category' => in_array($category, ['general', 'billing', 'technical', 'feature'], true) ? $category : 'general',
-            'priority' => in_array($priority, ['normal', 'high'], true) ? $priority : 'normal',
+            'priority' => in_array($priority, ['low', 'normal', 'high', 'urgent'], true) ? $priority : 'normal',
             'status' => $ticket->exists ? $ticket->status : SupportTicket::STATUS_OPEN,
             'reporter_name' => $reporterName,
             'reporter_email' => $reporterEmail,

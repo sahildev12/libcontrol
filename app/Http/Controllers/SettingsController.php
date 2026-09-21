@@ -10,12 +10,12 @@ use App\Models\PlatformSetting;
 use App\Services\Addons\AddonRegistry;
 use App\Services\BranchBrandService;
 use App\Services\DatabaseMaintenanceService;
-use App\Services\LibraryScheduleService;
 use App\Services\LibraryWebsiteService;
 use App\Services\MailDeliveryService;
 use App\Services\PlatformBrandService;
 use App\Services\PlanLimitService;
-use App\Services\StudentCodeService;
+use App\Services\Settings\SettingsPayloadService;
+use App\Support\InstallState;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -25,8 +25,8 @@ use Illuminate\View\View;
 class SettingsController extends Controller
 {
     public function __construct(
-        private StudentCodeService $studentCodeService,
         private PlanLimitService $planLimitService,
+        private SettingsPayloadService $settingsPayload,
     ) {}
 
     public function index(Request $request, BranchBrandService $branchBrandService, AddonRegistry $addonRegistry, DatabaseMaintenanceService $databaseMaintenance, LibraryWebsiteService $libraryWebsiteService, MailDeliveryService $mailDelivery): View
@@ -34,12 +34,23 @@ class SettingsController extends Controller
         $branch = $this->optionalActiveBranch($request);
         $viewingAll = $this->viewingAllBranches($request);
 
-        abort_unless($branch || $request->user()?->isPlatformAdmin(), 403);
+        $user = $request->user();
+        $isHub = InstallState::isHub();
 
-        $settings = $branch ? $this->serializeSettings($branch, $branchBrandService) : null;
+        if ($user?->isDeveloperAdmin() && ! $isHub) {
+            abort(403, 'Developer settings are managed from the LibControl hub.');
+        }
+
+        abort_unless(
+            $branch || $user?->isClientAdmin() || ($user?->isDeveloperAdmin() && $isHub),
+            403,
+        );
+
+        $settings = $branch ? $this->settingsPayload->serializeBranchSettings($branch) : null;
         $platformSettings = PlatformSetting::current();
-        $isPlatformAdmin = (bool) $request->user()?->isPlatformAdmin();
-        $isDeveloperAdmin = (bool) $request->user()?->isDeveloperAdmin();
+        $isPlatformAdmin = (bool) $user?->isClientAdmin();
+        $isClientAdmin = (bool) $user?->isClientAdmin();
+        $isDeveloperAdmin = (bool) $user?->isDeveloperAdmin();
         $planSnapshot = $this->planLimitService->snapshot();
         $licenseServerEnabled = (bool) config('libcontrol.license_server.enabled');
         $deploymentsUrl = $licenseServerEnabled && Route::has('developer.deployments.index')
@@ -60,10 +71,38 @@ class SettingsController extends Controller
         ];
 
         $websiteSettings = $libraryWebsiteService->settingsPayload($platformSettings);
-        $emailNotificationSettings = $this->serializeEmailNotificationSettings($platformSettings);
+        $emailNotificationSettings = $this->settingsPayload->serializeEmailNotificationSettings($platformSettings);
         $mailDeliveryStatus = $mailDelivery->status();
+        $globalExpiryReminderDays = $viewingAll
+            ? (int) (Branch::query()->value('expiry_reminder_days') ?: config('libcontrol.defaults.expiry_reminder_days', 10))
+            : null;
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isDeveloperAdmin', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'mailDeliveryStatus'));
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isClientAdmin', 'isDeveloperAdmin', 'isHub', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'mailDeliveryStatus', 'globalExpiryReminderDays') + [
+            'portalContext' => false,
+            'managedTenant' => null,
+            'portalBranches' => [],
+            'portalBranchId' => null,
+            'portalRoutes' => [],
+        ]);
+    }
+
+    public function updateGlobal(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->isClientAdmin(), 403);
+        abort_unless($this->viewingAllBranches($request), 422, 'Switch to all branches to update library-wide settings.');
+
+        $validated = $request->validate([
+            'expiry_reminder_days' => ['required', 'integer', 'min:1', 'max:90'],
+        ]);
+
+        Branch::query()->update([
+            'expiry_reminder_days' => $validated['expiry_reminder_days'],
+        ]);
+
+        return response()->json([
+            'message' => 'Plan expiry reminder updated for all branches.',
+            'expiry_reminder_days' => $validated['expiry_reminder_days'],
+        ]);
     }
 
     public function updateEmailNotifications(Request $request): JsonResponse
@@ -72,7 +111,6 @@ class SettingsController extends Controller
             'email_welcome_enabled' => ['nullable', 'boolean'],
             'email_birthday_enabled' => ['nullable', 'boolean'],
             'email_offers_enabled' => ['nullable', 'boolean'],
-            'email_marketing_enabled' => ['nullable', 'boolean'],
             'email_recovery_enabled' => ['nullable', 'boolean'],
         ]);
 
@@ -81,7 +119,7 @@ class SettingsController extends Controller
 
         return response()->json([
             'message' => 'Email notification settings saved.',
-            'email_notifications' => $this->serializeEmailNotificationSettings($settings->fresh()),
+            'email_notifications' => $this->settingsPayload->serializeEmailNotificationSettings($settings->fresh()),
         ]);
     }
 
@@ -125,7 +163,7 @@ class SettingsController extends Controller
 
         return response()->json([
             'message' => 'Settings saved.',
-            'settings' => $this->serializeSettings($branch->fresh(), $branchBrandService),
+            'settings' => $this->settingsPayload->serializeBranchSettings($branch->fresh()),
         ]);
     }
 
@@ -142,7 +180,7 @@ class SettingsController extends Controller
 
         return response()->json([
             'message' => 'Global settings saved.',
-            'platform_settings' => $this->serializePlatformSettings($settings->fresh()),
+            'platform_settings' => $this->settingsPayload->serializePlatformSettings($settings->fresh()),
         ]);
     }
 
@@ -160,25 +198,6 @@ class SettingsController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function serializeSettings(Branch $branch, BranchBrandService $branchBrandService): array
-    {
-        return [
-            'display_name' => $branch->display_name,
-            'expiry_reminder_days' => $branch->expiry_reminder_days ?: config('libcontrol.defaults.expiry_reminder_days'),
-            'library_open_time' => $branch->library_open_time ? substr((string) $branch->library_open_time, 0, 5) : '09:00',
-            'library_close_time' => $branch->library_close_time ? substr((string) $branch->library_close_time, 0, 5) : '18:00',
-            'is_open_24_hours' => (bool) $branch->is_open_24_hours,
-            'require_student_contact' => (bool) $branch->require_student_contact,
-            'time_slot_options' => LibraryScheduleService::forBranch($branch)->timeSlotOptions(),
-            'logo_with_text_url' => $branchBrandService->logoWithTextUrl($branch),
-            'simple_logo_url' => $branchBrandService->simpleLogoUrl($branch),
-            'favicon_url' => $branchBrandService->faviconUrl($branch),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
     private function isLocalhostUrl(string $url): bool
     {
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));
@@ -186,34 +205,4 @@ class SettingsController extends Controller
         return in_array($host, ['localhost', '127.0.0.1', '::1'], true);
     }
 
-    /**
-     * @return array<string, bool>
-     */
-    private function serializeEmailNotificationSettings(PlatformSetting $settings): array
-    {
-        return [
-            'email_welcome_enabled' => (bool) $settings->email_welcome_enabled,
-            'email_birthday_enabled' => (bool) $settings->email_birthday_enabled,
-            'email_offers_enabled' => (bool) $settings->email_offers_enabled,
-            'email_marketing_enabled' => (bool) $settings->email_marketing_enabled,
-            'email_recovery_enabled' => (bool) $settings->email_recovery_enabled,
-        ];
-    }
-
-    private function serializePlatformSettings(PlatformSetting $settings): array
-    {
-        return [
-            'library_code' => $settings->library_code,
-            'student_code_prefix' => $settings->student_code_prefix,
-            'student_code_padding' => $settings->student_code_padding ?: config('libcontrol.defaults.student_code_padding'),
-            'sample_student_code' => $this->studentCodeService->preview(),
-            'display_name' => $settings->display_name,
-            'logo_with_text_url' => $settings->logoWithTextUrl(),
-            'simple_logo_url' => $settings->simpleLogoUrl(),
-            'logo_url' => $settings->logoUrl(),
-            'favicon_url' => $settings->faviconUrl(),
-            'id_card_template' => $settings->idCardTemplate(),
-            'id_card_logo_url' => $settings->idCardLogoUrl(),
-        ];
-    }
 }

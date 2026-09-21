@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\InstallState;
 use App\Support\Runtime\DeploymentState;
 use App\Support\Tenancy\TenantContext;
 use Closure;
@@ -19,6 +20,10 @@ class EnsureDeploymentLicensed
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (InstallState::needsInstallation()) {
+            return $next($request);
+        }
+
         if (config('libcontrol.license_server.enabled')) {
             return $next($request);
         }

@@ -55,87 +55,47 @@
             <button type="button" @click="setTab('expenses')" class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors" :class="activeTab === 'expenses' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'">Expenses</button>
         </div>
 
-        @php
-            $formatDelta = static function (?float $value): string {
-                if ($value === null) {
-                    return '';
-                }
-
-                $sign = $value >= 0 ? '+' : '';
-
-                return $sign.$value.'%';
-            };
-            $deltaClass = static function (?float $value, string $positive = 'text-emerald-700', string $negative = 'text-red-700'): string {
-                if ($value === null) {
-                    return 'text-gray-500';
-                }
-
-                return $value >= 0 ? $positive : $negative;
-            };
-        @endphp
-
         <section x-show="activeTab === 'overview'" x-cloak class="mt-4 flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
             <div class="min-w-[200px] flex-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
+                </div> -->
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Fee Income</p>
-                <div class="mt-1 flex flex-wrap items-center gap-2">
-                    <p class="text-2xl font-bold tabular-nums text-emerald-900">₹{{ number_format($summary['fee_income_total'], 2) }}</p>
-                    @if ($summary['fee_income_delta_pct'] !== null)
-                        <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold {{ $deltaClass($summary['fee_income_delta_pct'], 'text-emerald-700', 'text-emerald-800') }}">
-                            {{ $summary['fee_income_delta_pct'] >= 0 ? '↑' : '↓' }} {{ $formatDelta($summary['fee_income_delta_pct']) }}
-                        </span>
-                    @endif
-                </div>
-                <p class="mt-1 text-[11px] text-emerald-700/80">{{ $summary['fee_payment_count'] }} student {{ $summary['fee_payment_count'] === 1 ? 'payment' : 'payments' }}</p>
+                <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-900">₹{{ number_format($summary['fee_income_total'], 2) }}</p>
+                <!-- <p class="mt-1 text-[11px] text-emerald-700/80">{{ $summary['fee_payment_count'] }} student {{ $summary['fee_payment_count'] === 1 ? 'payment' : 'payments' }}</p> -->
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                </div>
+                </div> -->
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-red-700">Total Expenses</p>
-                <div class="mt-1 flex flex-wrap items-center gap-2">
-                    <p class="text-2xl font-bold tabular-nums text-red-900">₹{{ number_format($summary['total_expenses'], 2) }}</p>
-                    @if ($summary['total_expenses_delta_pct'] !== null)
-                        <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold {{ $deltaClass($summary['total_expenses_delta_pct'], 'text-red-700', 'text-red-800') }}">
-                            {{ $summary['total_expenses_delta_pct'] >= 0 ? '↑' : '↓' }} {{ $formatDelta($summary['total_expenses_delta_pct']) }}
-                        </span>
-                    @endif
-                </div>
-                <p class="mt-1 text-[11px] text-red-700/80">Recorded in selected period</p>
+                <p class="mt-1 text-2xl font-bold tabular-nums text-red-900">₹{{ number_format($summary['total_expenses'], 2) }}</p>
+                <!-- <p class="mt-1 text-[11px] text-red-700/80">Recorded in selected period</p> -->
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                </div>
+                </div> -->
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">Net Profit</p>
-                <div class="mt-1 flex flex-wrap items-center gap-2">
-                    <p class="text-2xl font-bold tabular-nums {{ $summary['net_profit'] >= 0 ? 'text-indigo-900' : 'text-red-900' }}">₹{{ number_format($summary['net_profit'], 2) }}</p>
-                    @if ($summary['net_profit_delta_pct'] !== null)
-                        <span class="inline-flex rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold {{ $deltaClass($summary['net_profit_delta_pct'], 'text-indigo-700', 'text-red-700') }}">
-                            {{ $summary['net_profit_delta_pct'] >= 0 ? '↑' : '↓' }} {{ $formatDelta($summary['net_profit_delta_pct']) }}
-                        </span>
-                    @endif
-                </div>
-                <p class="mt-1 text-[11px] text-indigo-700/80">Fee income minus expenses</p>
+                <p class="mt-1 text-2xl font-bold tabular-nums {{ $summary['net_profit'] >= 0 ? 'text-indigo-900' : 'text-red-900' }}">₹{{ number_format($summary['net_profit'], 2) }}</p>
+                <!-- <p class="mt-1 text-[11px] text-indigo-700/80">Fee income minus expenses</p> -->
             </div>
 
             <div class="min-w-[200px] flex-1 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                <!-- <div class="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-                </div>
+                </div> -->
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Top Expense Category</p>
                 <p class="mt-1 truncate text-xl font-bold text-amber-950">{{ $summary['top_category'] }}</p>
-                <p class="mt-1 text-[11px] text-amber-800/80">
+                <!-- <p class="mt-1 text-[11px] text-amber-800/80">
                     @if ($summary['top_category_amount'] > 0)
                         ₹{{ number_format($summary['top_category_amount'], 2) }} ({{ $summary['top_category_share_pct'] }}%)
                     @else
                         No expenses in this period
                     @endif
-                </p>
+                </p> -->
             </div>
         </section>
 
@@ -172,9 +132,6 @@
                     <div class="rounded-lg bg-indigo-50 px-3 py-2.5">
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Fee Collected</p>
                         <p class="mt-1 text-base font-bold text-indigo-900" x-text="formatInr(feeCollectionSummary.received)"></p>
-                        <p class="mt-1 text-[11px] text-indigo-700/80" x-show="(Number(feeCollectionSummary.other_collected) || 0) > 0">
-                            Includes <span x-text="formatInr(feeCollectionSummary.other_collected)"></span> beyond current dues
-                        </p>
                     </div>
                 </div>
             </div>

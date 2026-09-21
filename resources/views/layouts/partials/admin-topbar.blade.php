@@ -7,7 +7,7 @@
     $addonRegistry = app(AddonRegistry::class);
 @endphp
 
-<header class="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 md:px-6">
+<header class="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 md:px-6 lg:relative">
     <div class="flex min-w-0 items-center gap-2 sm:gap-3 lg:hidden">
         <button
             type="button"
@@ -19,14 +19,14 @@
         </button>
         <div class="min-w-0">
             <p class="truncate text-sm font-semibold text-gray-900">{{ $viewingAllBranches ?? false ? 'All branches' : ($activeBranch?->display_name ?? $activeBranch?->name ?? config('app.name')) }}</p>
-            @if ($isPlatformAdmin)
+            @if ($adminTypeLabel)
                 <p class="truncate text-xs text-indigo-600">{{ $adminTypeLabel }}</p>
             @endif
         </div>
     </div>
 
-    <div class="hidden min-w-0 lg:block" x-data="branchSwitcher({ switchUrl: @js(route('active-branch.switch')) })" @if ($isPlatformAdmin) x-init="init()" @endif>
-        @if ($isPlatformAdmin)
+    <div class="hidden min-w-0 flex-1 lg:block" x-data="branchSwitcher({ switchUrl: @js(route('active-branch.switch')) })" @if ($isAnyAdmin ?? false) x-init="init()" @endif>
+        @if ($isAnyAdmin ?? false)
             <!-- <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">{{ $adminTypeLabel }}</p> -->
             <div class="mt-0.5 flex items-center gap-2">
                 <label class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-400">Branch</label>
@@ -48,7 +48,14 @@
         @endif
     </div>
 
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-14 items-center justify-center px-4 lg:flex">
+        <div class="pointer-events-auto inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-1.5 shadow-sm">
+            <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">✓</span>
+            <p class="truncate text-sm font-semibold text-emerald-900">{{ config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered') }}</p>
+        </div>
+    </div>
+
+    <div class="flex shrink-0 items-center gap-2 sm:gap-3">
         <div
             class="relative"
             x-data="notificationBell({

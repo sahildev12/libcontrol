@@ -8,7 +8,7 @@
             @php
                 $metaBranchId = auth()->user()->branch_id;
 
-                if (! $metaBranchId && auth()->user()->isPlatformAdmin()) {
+                if (! $metaBranchId && auth()->user()->isAnyAdmin()) {
                     try {
                         if (! app(\App\Services\BranchContext::class)->viewingAll(auth()->user(), request())) {
                             $metaBranchId = app(\App\Services\BranchContext::class)->optionalBranchId(auth()->user(), request());

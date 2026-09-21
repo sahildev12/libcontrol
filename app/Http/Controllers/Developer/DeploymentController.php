@@ -3,17 +3,23 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RemoteManagePlanRequest;
 use App\Http\Requests\StoreLicensedDeploymentRequest;
 use App\Http\Requests\UpdateLicensedDeploymentRequest;
 use App\Models\InstallationEvent;
 use App\Models\LibraryRegistry;
 use App\Models\LicensedDeployment;
+use App\Services\Developer\DeploymentRemoteManageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class DeploymentController extends Controller
 {
+    public function __construct(
+        private DeploymentRemoteManageService $remoteManage,
+    ) {}
     public function index(): View
     {
         $deployments = LicensedDeployment::query()
@@ -99,6 +105,57 @@ class DeploymentController extends Controller
         $events = $query->paginate(25)->withQueryString();
 
         return view('developer.deployments.installations', compact('events'));
+    }
+
+    public function manage(LicensedDeployment $deployment): View
+    {
+        return view('developer.deployments.manage', $this->remoteManage->managePayload($deployment));
+    }
+
+    public function updatePlan(RemoteManagePlanRequest $request, LicensedDeployment $deployment): RedirectResponse
+    {
+        $this->remoteManage->updatePlan($deployment, $request->validated(), $request->user(), $request);
+
+        return redirect()
+            ->route('developer.deployments.manage', $deployment)
+            ->with('status', 'Plan update queued. The client will apply it on the next sync heartbeat.');
+    }
+
+    public function queueCommand(Request $request, LicensedDeployment $deployment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'string', Rule::in([
+                'clear_cache',
+                'force_sync',
+                'addon_install',
+                'addon_enable',
+                'addon_disable',
+                'database_backup',
+                'database_migrate',
+                'database_restore',
+            ])],
+            'slug' => ['nullable', 'string', 'max:120'],
+            'filename' => ['nullable', 'string', 'max:255'],
+            'confirmation' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $action = $validated['action'];
+        $payload = [];
+
+        if (in_array($action, ['addon_install', 'addon_enable', 'addon_disable'], true)) {
+            $payload['slug'] = $validated['slug'] ?? '';
+        }
+
+        if ($action === 'database_restore') {
+            $payload['filename'] = $validated['filename'] ?? '';
+            $payload['confirmation'] = $validated['confirmation'] ?? '';
+        }
+
+        $this->remoteManage->queueAction($deployment, $action, $payload, $request->user(), $request);
+
+        return redirect()
+            ->route('developer.deployments.manage', $deployment)
+            ->with('status', ucfirst(str_replace('_', ' ', $action)).' queued for the client.');
     }
 
     public function regenerateKey(LicensedDeployment $deployment): RedirectResponse

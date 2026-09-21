@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class SupportTicket extends Model
@@ -35,6 +36,7 @@ class SupportTicket extends Model
         'reporter_email',
         'remote_id',
         'synced_at',
+        'read_at',
         'admin_notes',
     ];
 
@@ -45,6 +47,7 @@ class SupportTicket extends Model
     {
         return [
             'synced_at' => 'datetime',
+            'read_at' => 'datetime',
         ];
     }
 
@@ -62,10 +65,15 @@ class SupportTicket extends Model
         return $this->belongsTo(User::class, 'reporter_user_id');
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(SupportTicketAttachment::class);
+    }
+
     public function statusLabel(): string
     {
         return match ($this->status) {
-            self::STATUS_IN_PROGRESS => 'In progress',
+            self::STATUS_IN_PROGRESS => 'In Progress',
             self::STATUS_RESOLVED => 'Resolved',
             self::STATUS_CLOSED => 'Closed',
             default => 'Open',
@@ -80,5 +88,29 @@ class SupportTicket extends Model
             'feature' => 'Feature request',
             default => 'General',
         };
+    }
+
+    public function priorityLabel(): string
+    {
+        return match ($this->priority) {
+            'low' => 'Low',
+            'high' => 'High',
+            'urgent' => 'Urgent',
+            default => 'Normal',
+        };
+    }
+
+    public function isUnread(): bool
+    {
+        return $this->read_at === null;
+    }
+
+    public function markAsRead(): void
+    {
+        if ($this->read_at !== null) {
+            return;
+        }
+
+        $this->forceFill(['read_at' => now()])->save();
     }
 }

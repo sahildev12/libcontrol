@@ -1,15 +1,90 @@
 # LibControl client release packager
-# Usage: powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1
+# Usage:
+#   powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1 -ClientSlug aims
+#   powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1 -ClientSlug aims -ClientName "Aims Library" -AppUrl "https://aims.phenomit.com"
+
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$ClientSlug,
+
+    [string]$ClientName = "",
+    [string]$AppUrl = "",
+    [string]$Version = "2.1.4",
+    [string]$StudentCodePrefix = "",
+    [string]$AdminEmail = "",
+    [string]$AdminPassword = "ChangeMeAfterLogin123!",
+    [string]$AdminName = "Library Admin",
+    [string]$DbName = "",
+    [string]$DbUser = "",
+    [string]$DbPassword = "",
+    [string]$MailFrom = "",
+    [string]$LicenseKey = "your_license_key_from_phenomit",
+    [switch]$SkipZip,
+    [switch]$SkipSql
+)
 
 $ErrorActionPreference = "Stop"
 
-$Version = "1.0.0"
-$Root = Split-Path -Parent $PSScriptRoot
-$ReleaseDir = Join-Path $Root "releases\client\v$Version"
-$StagingDir = Join-Path $ReleaseDir "staging"
-$ZipPath = Join-Path $ReleaseDir "LibControl-client-v$Version.zip"
+function Write-Utf8NoBom {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
 
-Write-Host "Building LibControl client release v$Version..."
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $Value, $encoding)
+}
+
+$Slug = $ClientSlug.Trim().ToLower()
+if ($Slug -notmatch '^[a-z0-9-]+$') {
+    throw "ClientSlug must contain only lowercase letters, numbers, and hyphens."
+}
+
+if ([string]::IsNullOrWhiteSpace($ClientName)) {
+    $pretty = ($Slug -split '-' | ForEach-Object {
+        if ($_.Length -eq 0) { return }
+        $_.Substring(0, 1).ToUpper() + $_.Substring(1)
+    }) -join ' '
+    $ClientName = "$pretty Library"
+}
+
+if ([string]::IsNullOrWhiteSpace($AppUrl)) {
+    $AppUrl = "https://$Slug.phenomit.com"
+}
+
+if ([string]::IsNullOrWhiteSpace($StudentCodePrefix)) {
+    $StudentCodePrefix = ($Slug -replace '[^a-z0-9]', '').ToUpper()
+    if ($StudentCodePrefix.Length -gt 6) {
+        $StudentCodePrefix = $StudentCodePrefix.Substring(0, 6)
+    }
+    if ($StudentCodePrefix.Length -lt 2) {
+        $StudentCodePrefix = "LIB"
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($AdminEmail)) {
+    $AdminEmail = "admin@$Slug.phenomit.com"
+}
+
+if ([string]::IsNullOrWhiteSpace($DbName)) {
+    $DbName = "${Slug}_libcontrol"
+}
+
+if ([string]::IsNullOrWhiteSpace($DbUser)) {
+    $DbUser = $DbName
+}
+
+if ([string]::IsNullOrWhiteSpace($MailFrom)) {
+    $MailFrom = $AdminEmail
+}
+
+$Root = Split-Path -Parent $PSScriptRoot
+$ReleaseDir = Join-Path $Root "releases\client\$Slug\v$Version"
+$StagingDir = Join-Path $ReleaseDir "staging"
+$ZipPath = Join-Path $ReleaseDir "LibControl-$Slug-v$Version.zip"
+$SqlPath = Join-Path $ReleaseDir "LibControl-$Slug-v$Version.sql"
+
+Write-Host "Building LibControl client release for [$ClientName] ($Slug) v$Version..."
 
 if (Test-Path $StagingDir) {
     Remove-Item $StagingDir -Recurse -Force
@@ -24,22 +99,34 @@ try {
     Write-Host "Building frontend assets..."
     npm run build | Out-Host
 
-    $sqlPath = Join-Path $ReleaseDir "LibControl-client-v$Version.sql"
-    Write-Host "Exporting client database SQL..."
-    php artisan LibControl:export-client-sql --output="$sqlPath" | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-        throw "SQL export failed. Check MySQL is running and mysqldump is available."
+    if ($SkipSql) {
+        Write-Host "Skipping SQL export (-SkipSql). Use for in-place client updates; run migrations on the server."
+    } else {
+        Write-Host "Exporting client database SQL..."
+        $exportArgs = @(
+            "LibControl:export-client-sql",
+            "--output=$SqlPath",
+            "--admin-email=$AdminEmail",
+            "--admin-password=$AdminPassword",
+            "--admin-name=$AdminName",
+            "--display-name=$ClientName",
+            "--student-code-prefix=$StudentCodePrefix"
+        )
+        php artisan @exportArgs | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw "SQL export failed. Check MySQL is running and mysqldump is available."
+        }
     }
 
     $appKey = (php artisan key:generate --show).Trim()
     $setupToken = -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
 
     $clientEnv = @"
-APP_NAME=LibControl
+APP_NAME="$ClientName"
 APP_ENV=production
 APP_KEY=$appKey
 APP_DEBUG=false
-APP_URL=https://your-domain.com
+APP_URL=$AppUrl
 APP_TIMEZONE=Asia/Kolkata
 
 APP_LOCALE=en
@@ -57,11 +144,11 @@ LOG_LEVEL=error
 DB_CONNECTION=mysql
 DB_HOST=localhost
 DB_PORT=3306
-DB_DATABASE=your_database_name
-DB_USERNAME=your_database_user
-DB_PASSWORD=your_database_password
+DB_DATABASE=$DbName
+DB_USERNAME=$DbUser
+DB_PASSWORD=$DbPassword
 
-SESSION_DRIVER=database
+SESSION_DRIVER=file
 SESSION_LIFETIME=120
 SESSION_ENCRYPT=false
 SESSION_PATH=/
@@ -69,8 +156,8 @@ SESSION_DOMAIN=null
 
 BROADCAST_CONNECTION=log
 FILESYSTEM_DISK=local
-QUEUE_CONNECTION=database
-CACHE_STORE=database
+QUEUE_CONNECTION=sync
+CACHE_STORE=file
 
 MAIL_MAILER=smtp
 MAIL_SCHEME=smtps
@@ -78,60 +165,72 @@ MAIL_HOST=smtp.hostinger.com
 MAIL_PORT=465
 MAIL_USERNAME=
 MAIL_PASSWORD=
-MAIL_FROM_ADDRESS=
+MAIL_FROM_ADDRESS="$MailFrom"
 MAIL_FROM_NAME="`${APP_NAME}"
-MAIL_REPLY_TO_ADDRESS=
+MAIL_REPLY_TO_ADDRESS="$MailFrom"
 MAIL_REPLY_TO_NAME="`${APP_NAME}"
 
 VITE_APP_NAME="`${APP_NAME}"
 
-LIBCONTROL_PRODUCT_NAME=LibControl
+LIBCONTROL_PRODUCT_NAME="$ClientName"
 LIBCONTROL_COMPANY_NAME=Phenomit
 LIBCONTROL_COMPANY_URL=https://phenomit.com
 LIBCONTROL_PRODUCT_BYLINE="LibControl is a product by Phenomit.com"
 
-# Deployment licensing (required on client servers)
-LIBCONTROL_LICENSE_KEY=your_license_key_from_phenomit
+LIBCONTROL_CLIENT_NAME="$ClientName"
+LIBCONTROL_DEPLOYMENT_SLUG=$Slug
+LIBCONTROL_LIBRARY_STYLE=standard
+LIBCONTROL_BASELINE_VERSION=$Version
+LIBCONTROL_CLIENT_MAINTAINER=Phenomit
+LIBCONTROL_INSTALL_STUDENT_CODE_PREFIX=$StudentCodePrefix
+
+LIBCONTROL_LICENSE_KEY=$LicenseKey
 LIBCONTROL_SYNC_ENDPOINT=https://libcontrol.phenomit.com/api/runtime/sync
+LIBCONTROL_PUBLIC_URL=$AppUrl
 LIBCONTROL_LICENSE_GRACE_DAYS=7
 LIBCONTROL_SYNC_INTERVAL=0
 LIBCONTROL_LICENSE_SERVER=false
+LIBCONTROL_TENANCY_ENABLED=false
+LIBCONTROL_SEED_DEMO=false
 
-# Browser installer (no SSH) — keep token secret until install is done
+LIBCONTROL_SUPPORT_EMAIL=support@phenomit.com
+LIBCONTROL_SUPPORT_PHONE=
+
 LIBCONTROL_SETUP_TOKEN=$setupToken
-LIBCONTROL_ADMIN_EMAIL=admin@your-domain.com
-LIBCONTROL_ADMIN_PASSWORD=ChangeMeAfterLogin123!
-LIBCONTROL_ADMIN_NAME=Library Admin
+LIBCONTROL_ADMIN_EMAIL=$AdminEmail
+LIBCONTROL_ADMIN_PASSWORD=$AdminPassword
+LIBCONTROL_ADMIN_NAME=$AdminName
 "@
 
     $excludeDirs = @(
         ".git",
         "node_modules",
         "libcontrol-website",
+        "libspace-website",
         "tests",
         "releases",
-        ".cursor"
+        ".cursor",
+        "mobile"
     )
 
-  $items = Get-ChildItem -Path $Root -Force
-  foreach ($item in $items) {
-      if ($excludeDirs -contains $item.Name) {
-          continue
-      }
+    $items = Get-ChildItem -Path $Root -Force
+    foreach ($item in $items) {
+        if ($excludeDirs -contains $item.Name) {
+            continue
+        }
 
-      if ($item.Name -eq "scripts" -and $item.PSIsContainer) {
-          continue
-      }
+        if ($item.Name -eq "scripts" -and $item.PSIsContainer) {
+            continue
+        }
 
-      $destination = Join-Path $StagingDir $item.Name
-      if ($item.PSIsContainer) {
-          Copy-Item -Path $item.FullName -Destination $destination -Recurse -Force
-      } else {
-          Copy-Item -Path $item.FullName -Destination $destination -Force
-      }
-  }
+        $destination = Join-Path $StagingDir $item.Name
+        if ($item.PSIsContainer) {
+            Copy-Item -Path $item.FullName -Destination $destination -Recurse -Force
+        } else {
+            Copy-Item -Path $item.FullName -Destination $destination -Force
+        }
+    }
 
-    # Remove dev-only files from staging
     $devFiles = @(
         ".env",
         ".env.example",
@@ -150,7 +249,6 @@ LIBCONTROL_ADMIN_NAME=Library Admin
         }
     }
 
-    # Clean runtime cache folders
     $runtimePaths = @(
         "storage\logs",
         "storage\framework\cache\data",
@@ -164,74 +262,107 @@ LIBCONTROL_ADMIN_NAME=Library Admin
         }
     }
 
-    Set-Content -Path (Join-Path $StagingDir ".env") -Value $clientEnv -Encoding UTF8
-    Set-Content -Path (Join-Path $StagingDir "VERSION") -Value $Version -Encoding UTF8
-    Copy-Item -Path $sqlPath -Destination (Join-Path $StagingDir "database\LibControl-install.sql") -Force
+    $customizationPath = Join-Path $StagingDir "config\libcontrol-customization.php"
+    if (Test-Path $customizationPath) {
+        $customization = Get-Content $customizationPath -Raw
+        $customization = $customization -replace "'client_name' => env\('LIBCONTROL_CLIENT_NAME', '[^']*'\)", "'client_name' => env('LIBCONTROL_CLIENT_NAME', '$ClientName')"
+        $customization = $customization -replace "'deployment_slug' => env\('LIBCONTROL_DEPLOYMENT_SLUG', '[^']*'\)", "'deployment_slug' => env('LIBCONTROL_DEPLOYMENT_SLUG', '$Slug')"
+        $customization = $customization -replace "'baseline_version' => env\('LIBCONTROL_BASELINE_VERSION', '[^']*'\)", "'baseline_version' => env('LIBCONTROL_BASELINE_VERSION', '$Version')"
+        $customization = $customization -replace "'summary' => '[^']*'", "'summary' => 'Production deployment for $ClientName.'"
+        Set-Content -Path $customizationPath -Value $customization -Encoding UTF8
+    }
 
-    $installUrl = "https://your-domain.com/install?token=$setupToken"
+    $htaccessSource = Join-Path $Root "deploy\client-root.htaccess"
+    if (-not (Test-Path $htaccessSource)) {
+        throw "Missing deploy/client-root.htaccess - required for all client release zips."
+    }
+    Copy-Item -Path $htaccessSource -Destination (Join-Path $StagingDir ".htaccess") -Force
+
+    Write-Utf8NoBom -Path (Join-Path $StagingDir ".env") -Value $clientEnv
+    Set-Content -Path (Join-Path $StagingDir "VERSION") -Value $Version -Encoding UTF8
+    if (-not $SkipSql) {
+        Copy-Item -Path $SqlPath -Destination (Join-Path $StagingDir "database\LibControl-install.sql") -Force
+    }
+    Write-Utf8NoBom -Path (Join-Path $ReleaseDir ".env.example") -Value $clientEnv
+
+    $installUrl = "$AppUrl/install?token=$setupToken"
     $installDoc = @"
-# LibControl Client Release v$Version
+# LibControl Client Release — $ClientName
+
+**Slug:** ``$Slug``  
+**Version:** ``$Version``  
+**URL:** ``$AppUrl``
 
 ## Package contents
 
-Upload and extract ``LibControl-client-v$Version.zip`` to your hosting account.
-Point your domain document root to the ``public`` folder inside the extracted app.
+- ``LibControl-$Slug-v$Version.zip`` — upload to hosting (document root = extracted app folder; root ``.htaccess`` routes to ``public/``)
+- ``LibControl-$Slug-v$Version.sql`` — phpMyAdmin import
+- ``.env.example`` — client environment template (also inside the zip as ``.env``)
 
-The zip also includes ``database/LibControl-install.sql`` for direct phpMyAdmin import.
+## Client .env highlights
 
-## Before install
+| Setting | Value |
+|---------|-------|
+| APP_NAME | $ClientName |
+| APP_URL | $AppUrl |
+| DB_DATABASE | $DbName |
+| LIBCONTROL_CLIENT_NAME | $ClientName |
+| LIBCONTROL_DEPLOYMENT_SLUG | $Slug |
+| LIBCONTROL_INSTALL_STUDENT_CODE_PREFIX | $StudentCodePrefix |
+| LIBCONTROL_PUBLIC_URL | $AppUrl |
+| LIBCONTROL_ADMIN_EMAIL | $AdminEmail |
 
-1. Create a MySQL database in your hosting panel.
-2. Edit ``.env`` in the extracted folder (File Manager):
-   - ``APP_URL`` - your live site URL (https)
-   - ``DB_*`` - database name, user, password
-   - ``LIBCONTROL_LICENSE_KEY`` - key from Phenomit
-   - ``MAIL_*`` - SMTP settings (optional at first)
-   - ``LIBCONTROL_ADMIN_EMAIL`` / ``LIBCONTROL_ADMIN_PASSWORD`` - first admin login
+## Before go-live
 
-## Option A: Import SQL (recommended on shared hosting)
+1. Create MySQL database ``$DbName`` on Hostinger.
+2. Edit ``.env`` after upload:
+   - ``DB_USERNAME`` / ``DB_PASSWORD``
+   - ``LIBCONTROL_LICENSE_KEY`` from Phenomit
+   - ``MAIL_USERNAME`` / ``MAIL_PASSWORD`` (quote passwords containing ``#``)
+3. Import ``database/LibControl-install.sql`` in phpMyAdmin **or** open the browser installer.
 
-1. Open phpMyAdmin for the client database.
-2. Import ``database/LibControl-install.sql`` (or the standalone ``LibControl-client-v$Version.sql`` from this release folder).
-3. Create an empty file at ``storage/app/install.lock`` in File Manager.
-4. Open the site and log in with the admin email/password from ``.env``.
+## Default admin login (from SQL seed)
 
-Default seeded login (change in ``.env`` before import if you edit the SQL manually):
+- Email: ``$AdminEmail``
+- Password: ``$AdminPassword``
 
-- Email: ``admin@your-domain.com``
-- Password: ``ChangeMeAfterLogin123!``
+Change the password immediately after first login.
 
-## Option B: Browser installer (no SQL import)
+## Browser installer (alternative)
 
-Open this URL once in your browser (token is in your ``.env`` as ``LIBCONTROL_SETUP_TOKEN``):
+``$installUrl``
 
-    /install?token=$setupToken
-
-Example after you set APP_URL:
-
-    $installUrl
-
-Click **Run installation**. This creates tables and your admin user.
+Token is also in ``LIBCONTROL_SETUP_TOKEN`` inside ``.env``.
 
 ## After install
 
-- Log in with the admin email/password from ``.env``
-- Change the admin password immediately
-- Remove or keep ``LIBCONTROL_SETUP_TOKEN`` - installer is locked after success
-- Do not enable ``LIBCONTROL_LICENSE_SERVER`` on client servers
-
-## Support
-
-Licensed installs phone home to:
-
-    https://libcontrol.phenomit.com/api/runtime/sync
-
-Contact Phenomit if the site shows an unlicensed error.
+- Run **Settings → Database → Run migrations** when updating an existing install.
+- Sync library to Phenomit: **Settings → Developer → Sync library to Phenomit**
+- Do **not** enable ``LIBCONTROL_LICENSE_SERVER`` on client servers.
 "@
 
     Set-Content -Path (Join-Path $ReleaseDir "INSTALL.md") -Value $installDoc -Encoding UTF8
     Set-Content -Path (Join-Path $ReleaseDir "VERSION.txt") -Value $Version -Encoding UTF8
     Set-Content -Path (Join-Path $ReleaseDir "SETUP-TOKEN.txt") -Value $setupToken -Encoding UTF8
+    Set-Content -Path (Join-Path $ReleaseDir "CLIENT.txt") -Value "$ClientName`n$Slug`n$AppUrl" -Encoding UTF8
+
+    Write-Host ""
+    Write-Host "Done."
+    Write-Host "Client: $ClientName ($Slug)"
+    Write-Host "Code: $(Join-Path $ReleaseDir 'staging')"
+    Write-Host "Env:  $(Join-Path $ReleaseDir '.env.example')"
+    Write-Host "Install token (also in SETUP-TOKEN.txt): $setupToken"
+
+    if ($SkipSql) {
+        Write-Host "SQL:  (skipped - run php artisan migrate --force on the live server)"
+    } else {
+        Write-Host "SQL:  $SqlPath"
+    }
+
+    if ($SkipZip) {
+        Write-Host "Zip:  (skipped - upload the staging folder or zip it yourself)"
+        return
+    }
 
     if (Test-Path $ZipPath) {
         Remove-Item $ZipPath -Force
@@ -239,14 +370,8 @@ Contact Phenomit if the site shows an unlicensed error.
 
     Write-Host "Creating zip archive (this may take a minute)..."
     Compress-Archive -Path (Join-Path $StagingDir "*") -DestinationPath $ZipPath -CompressionLevel Optimal
-
     Remove-Item $StagingDir -Recurse -Force
-
-    Write-Host ""
-    Write-Host "Done."
-    Write-Host "Zip: $ZipPath"
-    Write-Host "SQL: $sqlPath"
-    Write-Host "Install token (also in SETUP-TOKEN.txt): $setupToken"
+    Write-Host "Zip:  $ZipPath"
 }
 finally {
     Pop-Location

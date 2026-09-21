@@ -53,7 +53,7 @@ return [
         'primary_cta' => ['label' => 'Join Now', 'href' => '#membership'],
         'secondary_cta' => ['label' => 'Take a Tour', 'href' => '#gallery'],
         'quote' => 'Discipline Today, Success Tomorrow.',
-        'image' => 'https://images.unsplash.com/photo-1521587760476-6c12a4b04020?auto=format&fit=crop&w=1920&q=80',
+        'image' => 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1920&q=80',
         'image_alt' => 'Students studying in a warm, well-lit library hall',
         'benefits' => [
             ['icon' => 'peace', 'label' => 'Peaceful Environment'],
@@ -100,14 +100,14 @@ return [
         'description' => 'Take a look inside — warm lighting, organized spaces, and a setting made for concentration.',
         'cta' => ['label' => 'View Full Gallery', 'href' => '#gallery'],
         'images' => [
-            ['src' => 'https://images.unsplash.com/photo-1521587760476-6c12a4b04020?auto=format&fit=crop&w=900&q=80', 'alt' => 'Main study hall with bookshelves'],
+            ['src' => 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=900&q=80', 'alt' => 'Main study hall with bookshelves'],
             ['src' => 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=900&q=80', 'alt' => 'Library bookshelves and reading area'],
             ['src' => 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=900&q=80', 'alt' => 'Individual study desks'],
-            ['src' => 'https://images.unsplash.com/photo-1524995997942-9eca77b42e16?auto=format&fit=crop&w=900&q=80', 'alt' => 'Quiet reading area'],
-            ['src' => 'https://images.unsplash.com/photo-1507842217343-583bb7270bba?auto=format&fit=crop&w=900&q=80', 'alt' => 'Library entrance and reception area'],
-            ['src' => 'https://images.unsplash.com/photo-1497633762263-9fc17901db2a?auto=format&fit=crop&w=900&q=80', 'alt' => 'Evening study environment'],
+            ['src' => 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=900&q=80', 'alt' => 'Quiet reading area'],
+            ['src' => 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80', 'alt' => 'Library entrance and reception area'],
+            ['src' => 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80', 'alt' => 'Evening study environment'],
             ['src' => 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80', 'alt' => 'Comfortable seating for students'],
-            ['src' => 'https://images.unsplash.com/photo-1506880018603-83cc5ab44ffc?auto=format&fit=crop&w=900&q=80', 'alt' => 'Library interior details'],
+            ['src' => 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=900&q=80', 'alt' => 'Library interior details'],
         ],
     ],
 
@@ -186,7 +186,7 @@ return [
         'cta' => ['label' => 'Follow Us', 'href' => '#contact'],
         'posts' => [
             [
-                'image' => 'https://images.unsplash.com/photo-1521587760476-6c12a4b04020?auto=format&fit=crop&w=600&q=80',
+                'image' => 'https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?auto=format&fit=crop&w=600&q=80',
                 'caption' => 'A Focused Mind Builds a Brighter Future',
                 'likes' => '248',
                 'comments' => '18',
@@ -207,7 +207,7 @@ return [
                 'date' => '1 week ago',
             ],
             [
-                'image' => 'https://images.unsplash.com/photo-1497633762263-9fc17901db2a?auto=format&fit=crop&w=600&q=80',
+                'image' => 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80',
                 'caption' => 'Discipline Today. Success Tomorrow.',
                 'likes' => '276',
                 'comments' => '15',

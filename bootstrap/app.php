@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'branch' => \App\Http\Middleware\EnsureUserHasBranch::class,
             'platform_admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
+            'client_admin' => \App\Http\Middleware\EnsureClientAdmin::class,
             'page.activity' => \App\Http\Middleware\RecordPageActivity::class,
             'developer_admin' => \App\Http\Middleware\EnsureDeveloperAdmin::class,
             'license_server' => \App\Http\Middleware\EnsureLicenseServer::class,
@@ -37,9 +38,24 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            \App\Http\Middleware\EnsureLibraryOperationsAccess::class,
             \App\Http\Middleware\RuntimeProbe::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if (app()->runningUnitTests()) {
+                return null;
+            }
+
+            if (! \App\Support\InstallState::needsInstallation()) {
+                return null;
+            }
+
+            if (\App\Support\InstallState::allowsInstallerRequest($request->path())) {
+                return null;
+            }
+
+            return redirect()->route('setup.show');
+        });
     })->create();

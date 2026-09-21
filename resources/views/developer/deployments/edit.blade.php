@@ -42,6 +42,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Save changes</button>
+                <a href="{{ route('developer.deployments.manage', $deployment) }}" class="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 hover:bg-indigo-100">Remote manage</a>
                 <a href="{{ route('developer.deployments.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Back</a>
             </div>
         </form>

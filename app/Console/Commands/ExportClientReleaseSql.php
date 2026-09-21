@@ -13,7 +13,9 @@ class ExportClientReleaseSql extends Command
         {--output= : Output SQL file path}
         {--admin-email=admin@your-domain.com : Default admin email in the seed data}
         {--admin-password=ChangeMeAfterLogin123! : Default admin password in the seed data}
-        {--admin-name=Library Admin : Default admin display name}';
+        {--admin-name=Library Admin : Default admin display name}
+        {--display-name= : Library display name stored in platform settings}
+        {--student-code-prefix=LIB : Student ID prefix stored in platform settings}';
 
     protected $description = 'Export a fresh client database schema and seed data to a single SQL file';
 
@@ -56,6 +58,8 @@ class ExportClientReleaseSql extends Command
                 'libcontrol.install.admin_email' => (string) $this->option('admin-email'),
                 'libcontrol.install.admin_password' => (string) $this->option('admin-password'),
                 'libcontrol.install.admin_name' => (string) $this->option('admin-name'),
+                'libcontrol.install.display_name' => (string) $this->option('display-name'),
+                'libcontrol.install.student_code_prefix' => strtoupper((string) $this->option('student-code-prefix')),
             ]);
 
             $this->info('Running migrations...');

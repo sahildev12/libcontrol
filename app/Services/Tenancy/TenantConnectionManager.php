@@ -13,6 +13,11 @@ class TenantConnectionManager
         $landlord = (string) config('libcontrol.tenancy.landlord_connection', 'mysql');
 
         Config::set('database.default', $landlord);
+
+        if ($this->shouldPreserveConnection($landlord)) {
+            return;
+        }
+
         DB::purge($landlord);
         DB::reconnect($landlord);
     }
@@ -45,9 +50,22 @@ class TenantConnectionManager
         } finally {
             Config::set('database.default', $previousDefault);
             DB::purge('tenant');
-            if (is_string($previousDefault)) {
+
+            if (is_string($previousDefault) && ! $this->shouldPreserveConnection($previousDefault)) {
                 DB::reconnect($previousDefault);
             }
         }
+    }
+
+    private function shouldPreserveConnection(string $connection): bool
+    {
+        $config = config("database.connections.{$connection}");
+
+        if (! is_array($config)) {
+            return false;
+        }
+
+        return ($config['driver'] ?? '') === 'sqlite'
+            && ($config['database'] ?? '') === ':memory:';
     }
 }

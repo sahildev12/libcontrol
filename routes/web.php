@@ -123,8 +123,9 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
         Route::delete('/expenses/{expense}', [ProfitLossController::class, 'destroy'])->name('expenses.destroy');
         Route::post('/expenses/bulk-delete', [ProfitLossController::class, 'bulkDestroy'])->name('expenses.bulk-destroy');
     });
-    Route::get('/offers', [StudentOfferController::class, 'index'])->name('offers.index');
-    Route::post('/offers/send', [StudentOfferController::class, 'send'])->name('offers.send');
+    Route::redirect('/offers', '/promotion');
+    Route::get('/promotion', [StudentOfferController::class, 'index'])->name('promotion.index');
+    Route::post('/promotion/send', [StudentOfferController::class, 'send'])->name('promotion.send');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
@@ -134,10 +135,12 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/activity-logs/{activityLog}', [\App\Http\Controllers\ActivityLogController::class, 'show'])->name('activity-logs.show');
 
     Route::get('/help-support', [HelpSupportController::class, 'index'])->name('help-support.index');
+    Route::get('/help-support/tickets/{supportTicket}', [HelpSupportController::class, 'show'])->name('help-support.show');
     Route::post('/help-support/tickets', [HelpSupportController::class, 'store'])->name('help-support.store');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::patch('/settings/global', [SettingsController::class, 'updateGlobal'])->name('settings.global.update')->middleware('platform_admin');
     Route::patch('/settings/platform', [SettingsController::class, 'updatePlatform'])->name('settings.platform.update')->middleware('platform_admin');
     Route::post('/settings/website', [LibraryWebsiteController::class, 'update'])->name('settings.website.update')->middleware('platform_admin');
     Route::patch('/settings/email-notifications', [SettingsController::class, 'updateEmailNotifications'])->name('settings.email-notifications.update')->middleware('platform_admin');

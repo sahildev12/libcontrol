@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\ActivityLogger;
 use App\Services\LoginBrandingService;
+use App\Support\InstallState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -27,7 +29,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         $request->session()->put('login_portal', $request->portal());
 
-        if ($request->user()?->isPlatformAdmin()) {
+        if ($request->user()?->isAnyAdmin()) {
             $request->session()->put('active_branch_id', 'all');
         }
 
@@ -41,13 +43,32 @@ class AuthenticatedSessionController extends Controller
             $request,
         );
 
+        if ($request->user()?->isDeveloperAdmin()) {
+            $target = Route::has('developer.deployments.index')
+                ? route('developer.deployments.index', absolute: false)
+                : route('settings.index', ['tab' => 'developer'], absolute: false);
+
+            return redirect()->intended($target);
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
     public function destroy(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $loginRoute = $user?->isPlatformAdmin() ? 'admin.login' : 'login';
+        $portal = (string) $request->session()->get('login_portal', '');
+        $loginRoute = match ($portal) {
+            LoginBrandingService::PORTAL_DEVELOPER => Route::has('developer.login') ? 'developer.login' : 'admin.login',
+            LoginBrandingService::PORTAL_ADMIN => 'admin.login',
+            default => 'login',
+        };
+
+        if ($portal === '' && $user?->isDeveloperAdmin() && Route::has('developer.login')) {
+            $loginRoute = 'developer.login';
+        } elseif ($portal === '' && $user?->isAnyAdmin()) {
+            $loginRoute = 'admin.login';
+        }
 
         app(ActivityLogger::class)->record(
             $user,
@@ -69,6 +90,10 @@ class AuthenticatedSessionController extends Controller
 
     private function portal(Request $request): string
     {
+        if ($request->routeIs('developer.login', 'developer.login.store')) {
+            return LoginBrandingService::PORTAL_DEVELOPER;
+        }
+
         if ($request->routeIs('admin.login', 'admin.login.store')) {
             return LoginBrandingService::PORTAL_ADMIN;
         }

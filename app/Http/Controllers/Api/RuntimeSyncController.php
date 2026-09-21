@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\InstallationEvent;
 use App\Models\LibraryRegistry;
 use App\Models\LicensedDeployment;
+use App\Services\Developer\DeploymentCommandService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class RuntimeSyncController extends Controller
 {
+    public function __construct(
+        private DeploymentCommandService $deploymentCommands,
+    ) {}
+
     public function __invoke(Request $request): JsonResponse
     {
         $rawBody = $request->getContent();
@@ -78,8 +83,15 @@ class RuntimeSyncController extends Controller
         InstallationEvent::recordHeartbeat($licenseKeyHash, $eventPayload, $authorized);
 
         if ($authorized) {
+            $meta = is_array($payload['meta'] ?? null) ? $payload['meta'] : [];
+
+            if (isset($meta['command_results']) && is_array($meta['command_results'])) {
+                $this->deploymentCommands->recordResults($meta['command_results']);
+            }
+
             return response()->json([
                 'status' => 'ok',
+                'commands' => $this->deploymentCommands->pendingForDeployment($deployment),
             ]);
         }
 

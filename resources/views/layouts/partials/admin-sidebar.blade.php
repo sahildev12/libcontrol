@@ -1,5 +1,6 @@
 @php
     use App\Support\AdminNav;
+    use App\Support\AdminNavVisibility;
     use App\Services\Addons\AddonRegistry;
 
     $navItems = config('admin-nav.primary', []);
@@ -29,7 +30,7 @@
             @endif
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
                 <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">ADMIN PANEL</p>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
             </div>
         </a>
 
@@ -60,10 +61,8 @@
         <ul class="space-y-0.5">
             @foreach ($navItems as $item)
                 @php
-                    if (($item['platform_admin_only'] ?? false) && ! ($isPlatformAdmin ?? false)) {
-                        continue;
-                    }
-                    if (($item['developer_admin_only'] ?? false) && ! ($isDeveloperAdmin ?? false)) {
+                    $navUser = auth()->user();
+                    if (! $navUser || ! AdminNavVisibility::visibleFor($navUser, $item)) {
                         continue;
                     }
                     if (($item['license_server_only'] ?? false) && ! ($licenseServerEnabled ?? false)) {
@@ -153,7 +152,7 @@
                 @endif
                 <div class="min-w-0 leading-tight">
                     <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">ADMIN PANEL</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
                 </div>
             </a>
             <button
@@ -170,10 +169,8 @@
             <ul class="space-y-0.5">
                 @foreach ($navItems as $item)
                     @php
-                        if (($item['platform_admin_only'] ?? false) && ! ($isPlatformAdmin ?? false)) {
-                            continue;
-                        }
-                        if (($item['developer_admin_only'] ?? false) && ! ($isDeveloperAdmin ?? false)) {
+                        $navUser = auth()->user();
+                        if (! $navUser || ! AdminNavVisibility::visibleFor($navUser, $item)) {
                             continue;
                         }
                         if (($item['license_server_only'] ?? false) && ! ($licenseServerEnabled ?? false)) {

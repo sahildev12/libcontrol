@@ -6,7 +6,7 @@
 
 @endforeach
 
-@if ($student->student_code)
+@if ($showStudentCode && $student->student_code)
 **Student code:** {{ $student->student_code }}
 @endif
 

@@ -85,13 +85,48 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_platform_admin_can_authenticate_on_admin_login(): void
+    public function test_developer_admin_cannot_authenticate_on_admin_login(): void
     {
+        \Illuminate\Support\Facades\Config::set('libcontrol.license_server.enabled', true);
         \App\Models\Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => null]);
         \App\Models\Admin::query()->create([
             'user_id' => $user->id,
             'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
+        ]);
+
+        $this->post('/admin/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    public function test_developer_admin_can_logout_to_developer_login_when_hub_enabled(): void
+    {
+        \Illuminate\Support\Facades\Config::set('libcontrol.license_server.enabled', true);
+        $user = User::factory()->create(['branch_id' => null]);
+        \App\Models\Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => \App\Models\Admin::TYPE_DEVELOPER,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withSession(['login_portal' => 'developer'])
+            ->post(route('logout'));
+
+        $this->assertGuest();
+        $response->assertRedirect(route('developer.login', absolute: false));
+    }
+
+    public function test_client_admin_can_authenticate_on_admin_login(): void
+    {
+        \App\Models\Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => null]);
+        \App\Models\Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => \App\Models\Admin::TYPE_CLIENT,
         ]);
 
         $response = $this->post('/admin/login', [

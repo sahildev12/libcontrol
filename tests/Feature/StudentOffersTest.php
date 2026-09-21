@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\StudentNotificationMail;
+use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\PlatformSetting;
 use App\Models\Student;
@@ -44,10 +45,10 @@ class StudentOffersTest extends TestCase
         $user = User::factory()->create(['branch_id' => $branch->id]);
 
         $this->actingAs($user)
-            ->get(route('offers.index'))
+            ->get(route('promotion.index'))
             ->assertOk()
-            ->assertSee('Offers', false)
-            ->assertSee('Compose offer email', false);
+            ->assertSee('Promotion', false)
+            ->assertSee('Compose promotion email', false);
     }
 
     public function test_user_can_send_offer_email_to_selected_students(): void
@@ -75,7 +76,7 @@ class StudentOffersTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->actingAs($user)->postJson(route('offers.send'), [
+        $response = $this->actingAs($user)->postJson(route('promotion.send'), [
             'subject' => 'September discount',
             'message' => 'Get 20% off your next renewal.',
             'action_url' => 'https://example.com/offer',
@@ -108,7 +109,7 @@ class StudentOffersTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($user)->postJson(route('offers.send'), [
+        $this->actingAs($user)->postJson(route('promotion.send'), [
             'subject' => 'Library-wide offer',
             'message' => 'Special discount for everyone.',
             'audience' => 'all',
@@ -131,13 +132,32 @@ class StudentOffersTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($user)->postJson(route('offers.send'), [
+        $this->actingAs($user)->postJson(route('promotion.send'), [
             'subject' => 'Blocked offer',
             'message' => 'This should not send.',
             'audience' => 'selected',
             'student_ids' => [$student->id],
         ])->assertStatus(422)
             ->assertJsonValidationErrors(['mail']);
+    }
+
+    public function test_offers_page_shows_only_disabled_message_when_promotion_emails_are_off(): void
+    {
+        PlatformSetting::current()->update(['email_offers_enabled' => false]);
+
+        $admin = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $admin->id,
+            'admin_type' => Admin::TYPE_CLIENT,
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['active_branch_id' => 'all'])
+            ->get(route('promotion.index'))
+            ->assertOk()
+            ->assertSee('Promotion emails are turned off.', false)
+            ->assertDontSee('Select a specific branch from the top bar to send promotion emails.', false)
+            ->assertDontSee('Compose promotion email', false);
     }
 
     public function test_offer_send_is_blocked_when_offers_disabled(): void
@@ -152,7 +172,7 @@ class StudentOffersTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($user)->postJson(route('offers.send'), [
+        $this->actingAs($user)->postJson(route('promotion.send'), [
             'subject' => 'Blocked offer',
             'message' => 'This should not send.',
             'audience' => 'selected',

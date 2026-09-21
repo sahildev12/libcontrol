@@ -25,25 +25,43 @@ class SettingsTest extends TestCase
         $this->actingAs($user)->get(route('settings.index'))->assertOk()->assertSee('Settings')->assertSee('Library hours');
     }
 
-    public function test_branch_user_can_update_branch_settings(): void
+    public function test_branch_user_can_update_library_hours(): void
     {
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
 
         $response = $this->actingAs($user)->patchJson(route('settings.update'), [
-            'display_name' => 'City Library',
-            'expiry_reminder_days' => 12,
+            'library_open_time' => '08:00',
+            'library_close_time' => '20:00',
+            'is_open_24_hours' => false,
         ]);
 
-        $response->assertOk()->assertJsonPath('settings.display_name', 'City Library');
+        $response->assertOk()->assertJsonPath('settings.library_open_time', '08:00');
         $this->assertDatabaseHas('branches', [
             'id' => $branch->id,
-            'display_name' => 'City Library',
-            'expiry_reminder_days' => 12,
+            'library_open_time' => '08:00',
+            'library_close_time' => '20:00',
         ]);
     }
 
-    public function test_platform_admin_can_update_id_card_template_settings(): void
+    public function test_branch_user_cannot_update_plan_expiry_reminder_days(): void
+    {
+        $branch = Branch::factory()->create(['expiry_reminder_days' => 10]);
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+
+        $this->actingAs($user)->patchJson(route('settings.update'), [
+            'expiry_reminder_days' => 25,
+            'library_open_time' => '09:00',
+            'library_close_time' => '18:00',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('branches', [
+            'id' => $branch->id,
+            'expiry_reminder_days' => 10,
+        ]);
+    }
+
+    public function test_client_admin_can_update_id_card_template_settings(): void
     {
         PlatformSetting::query()->create([
             'student_code_prefix' => 'LIB',
@@ -51,11 +69,7 @@ class SettingsTest extends TestCase
             'id_card_template' => 'classic',
         ]);
 
-        $user = User::factory()->create(['branch_id' => null]);
-        Admin::query()->create([
-            'user_id' => $user->id,
-            'admin_type' => Admin::TYPE_DEVELOPER,
-        ]);
+        $user = $this->clientAdmin();
 
         $response = $this->actingAs($user)->patchJson(route('settings.platform.update'), [
             'student_code_prefix' => 'LIB',
@@ -69,18 +83,14 @@ class SettingsTest extends TestCase
         ]);
     }
 
-    public function test_platform_admin_can_update_global_student_code_settings(): void
+    public function test_client_admin_can_update_global_student_code_settings(): void
     {
         PlatformSetting::query()->create([
             'student_code_prefix' => 'LIB',
             'student_code_padding' => 3,
         ]);
 
-        $user = User::factory()->create(['branch_id' => null]);
-        Admin::query()->create([
-            'user_id' => $user->id,
-            'admin_type' => Admin::TYPE_DEVELOPER,
-        ]);
+        $user = $this->clientAdmin();
 
         $response = $this->actingAs($user)->patchJson(route('settings.platform.update'), [
             'student_code_prefix' => 'CIT',
@@ -122,11 +132,7 @@ class SettingsTest extends TestCase
             'student_code_padding' => 3,
         ]);
 
-        $user = User::factory()->create(['branch_id' => null]);
-        Admin::query()->create([
-            'user_id' => $user->id,
-            'admin_type' => Admin::TYPE_DEVELOPER,
-        ]);
+        $user = $this->clientAdmin();
 
         $response = $this->actingAs($user)->postJson(route('branch.store'), [
             'name' => 'East Branch',
@@ -154,14 +160,42 @@ class SettingsTest extends TestCase
 
     public function test_non_developer_admin_cannot_clear_application_cache(): void
     {
+        $user = $this->clientAdmin();
+
+        $this->actingAs($user)
+            ->postJson(route('settings.clear-cache'))
+            ->assertForbidden();
+    }
+
+    public function test_developer_admin_cannot_update_platform_settings(): void
+    {
+        PlatformSetting::query()->create([
+            'student_code_prefix' => 'LIB',
+            'student_code_padding' => 3,
+        ]);
+
+        $user = User::factory()->create(['branch_id' => null]);
+        Admin::query()->create([
+            'user_id' => $user->id,
+            'admin_type' => Admin::TYPE_DEVELOPER,
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson(route('settings.platform.update'), [
+                'student_code_prefix' => 'DEV',
+                'student_code_padding' => 3,
+            ])
+            ->assertForbidden();
+    }
+
+    private function clientAdmin(): User
+    {
         $user = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
             'user_id' => $user->id,
             'admin_type' => Admin::TYPE_CLIENT,
         ]);
 
-        $this->actingAs($user)
-            ->postJson(route('settings.clear-cache'))
-            ->assertForbidden();
+        return $user;
     }
 }

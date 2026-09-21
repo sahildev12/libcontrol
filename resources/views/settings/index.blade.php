@@ -1,3 +1,12 @@
+@php
+    $portal = $portalRoutes ?? [];
+    $settingsUpdateUrl = $portal['update'] ?? route('settings.update');
+    $settingsPlatformUpdateUrl = $portal['platform'] ?? route('settings.platform.update');
+    $settingsWebsiteUpdateUrl = $portal['website'] ?? route('settings.website.update');
+    $settingsEmailNotificationsUpdateUrl = $portal['email_notifications'] ?? route('settings.email-notifications.update');
+    $settingsGlobalUpdateUrl = $portal['global'] ?? route('settings.global.update');
+@endphp
+
 <x-admin-layout>
     <div
         x-data="settingsPage({
@@ -23,10 +32,11 @@
                 'max_branches_override' => $platformSettings->max_branches_override,
             ]),
             planTiers: @js(array_keys(config('libcontrol.plans', []))),
-            updateUrl: @js(route('settings.update')),
-            platformUpdateUrl: @js(route('settings.platform.update')),
+            updateUrl: @js($settingsUpdateUrl),
+            platformUpdateUrl: @js($settingsPlatformUpdateUrl),
             platformPlanUpdateUrl: @js(route('settings.platform.plan.update')),
-            isPlatformAdmin: @js($isPlatformAdmin),
+            isPlatformAdmin: @js($isClientAdmin),
+            isClientAdmin: @js($isClientAdmin),
             isDeveloperAdmin: @js($isDeveloperAdmin),
             viewingAll: @js($viewingAll ?? false),
             timezone: @js(config('libcontrol.timezone')),
@@ -46,46 +56,96 @@
             deploymentInfo: @js($deploymentInfo ?? []),
             syncRuntimeUrl: @js(route('settings.sync-runtime')),
             websiteSettings: @js($websiteSettings ?? []),
-            websiteUpdateUrl: @js(route('settings.website.update')),
+            websiteUpdateUrl: @js($settingsWebsiteUpdateUrl),
             emailNotificationSettings: @js($emailNotificationSettings ?? []),
-            emailNotificationsUpdateUrl: @js(route('settings.email-notifications.update')),
+            emailNotificationsUpdateUrl: @js($settingsEmailNotificationsUpdateUrl),
+            globalUpdateUrl: @js($settingsGlobalUpdateUrl),
+            portalContext: @js($portalContext ?? false),
+            globalExpiryReminderDays: @js($globalExpiryReminderDays),
         })"
         x-init="init()"
     >
+        @if ($portalContext ?? false)
+            <div class="mb-5 overflow-hidden rounded-xl border border-indigo-200 bg-indigo-50 shadow-sm">
+                <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Portal settings</p>
+                        <h2 class="mt-1 text-lg font-bold text-gray-900">Managing {{ $managedTenant['client_name'] }}</h2>
+                        <p class="mt-1 text-sm text-gray-600">
+                            <a href="{{ $managedTenant['url'] }}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">{{ $managedTenant['host'] }}</a>
+                            · Scope:
+                            @if ($viewingAll ?? false)
+                                All branches (platform admin)
+                            @elseif ($branch)
+                                {{ $branch->display_name ?: $branch->name }}
+                            @endif
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-end gap-2">
+                        <form method="POST" action="{{ $portal['switch_branch'] }}" class="flex flex-wrap items-end gap-2">
+                            @csrf
+                            <div>
+                                <label class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Settings scope</label>
+                                <select name="branch_id" class="mt-1 min-w-[12rem] rounded-lg border border-gray-300 py-2 pl-3 pr-10 text-sm">
+                                    <option value="" @selected(($portalBranchId ?? null) === null)>All branches</option>
+                                    @foreach ($portalBranches as $portalBranch)
+                                        <option value="{{ $portalBranch['id'] }}" @selected((int) ($portalBranchId ?? 0) === (int) $portalBranch['id'])>
+                                            {{ $portalBranch['display_name'] ?: $portalBranch['name'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="submit" class="inline-flex h-[42px] items-center rounded-lg border border-indigo-300 bg-white px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">Apply</button>
+                        </form>
+                        <a href="{{ $portal['index'] }}" class="inline-flex h-[42px] items-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50">Change library</a>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <header>
             <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
             <p class="mt-1 text-sm text-gray-600">
-                @if ($viewingAll ?? false)
-                    Viewing all branches. Choose a specific branch to edit library hours and reminders.
-                @elseif ($isPlatformAdmin && $branch)
-                    Library hours and reminders for {{ $branch->display_name ?: $branch->name }}.
+                @if ($portalContext ?? false)
+                    @if ($viewingAll ?? false)
+                        Platform-wide settings for this hosted library. Switch scope to edit a specific branch.
+                    @else
+                        Branch settings for {{ $branch?->display_name ?: $branch?->name }}.
+                    @endif
+                @elseif ($viewingAll ?? false)
+                    Library-wide settings for all branches. Choose a specific branch to edit opening hours or student ID prefixes.
+                @elseif ($isClientAdmin && $branch)
+                    Library hours for {{ $branch->display_name ?: $branch->name }}.
                 @elseif ($branch)
                     Library hours and expiry reminders for {{ $branch->display_name ?: $branch->name }}.
                 @endif
             </p>
         </header>
 
-        @if ($isPlatformAdmin || $isDeveloperAdmin)
+        @if ($isClientAdmin || ($isDeveloperAdmin && ($isHub ?? false)))
             <div class="mt-5 flex flex-wrap gap-2 border-b border-gray-200">
-                @if ($isPlatformAdmin)
+                @if ($isClientAdmin)
                 <button
                     type="button"
                     @click="settingsTab = 'general'"
                     class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
                     :class="settingsTab === 'general' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                 >General</button>
+                @if ($viewingAll ?? false)
                 <button
                     type="button"
                     @click="settingsTab = 'id-cards'"
                     class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
                     :class="settingsTab === 'id-cards' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                 >ID Cards</button>
+                @endif
                 <button
                     type="button"
                     @click="settingsTab = 'website'"
                     class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
                     :class="settingsTab === 'website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                 >Website</button>
+                @if ($viewingAll ?? false)
                 <button
                     type="button"
                     @click="settingsTab = 'emails'"
@@ -93,7 +153,8 @@
                     :class="settingsTab === 'emails' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                 >Emails</button>
                 @endif
-                @if ($isDeveloperAdmin)
+                @endif
+                @if ($isDeveloperAdmin && ($isHub ?? false))
                 <button
                     type="button"
                     @click="settingsTab = 'subscription'"
@@ -117,7 +178,7 @@
         @endif
 
         <form x-show="showGeneralSettingsForm()" @submit.prevent="saveSettings()" class="mt-4 space-y-6">
-            @if ($isPlatformAdmin)
+            @if ($isClientAdmin)
                 <section class="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
                     <div class="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
                         <h2 class="text-sm font-semibold text-gray-900">Library code</h2>
@@ -128,10 +189,11 @@
                     </div>
                 </section>
 
+                @unless ($viewingAll ?? false)
                 <section class="overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-sm">
                     <div class="border-b border-indigo-100 bg-indigo-50 px-5 py-4">
                         <h2 class="text-sm font-semibold text-gray-900">Student ID numbers</h2>
-                        <p class="mt-1 text-xs text-gray-600">Every new student gets an ID like this. All branches share the same series.</p>
+                        <p class="mt-1 text-xs text-gray-600">Default student ID style for this library. Each branch can override its own prefix from the Branch page.</p>
                     </div>
                     <div class="grid gap-4 p-5 md:grid-cols-2">
                         <div>
@@ -149,23 +211,11 @@
                         </div>
                     </div>
                 </section>
+                @endunless
 
             @endif
 
-            @if ($branch && $settings)
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div class="border-b border-gray-200 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Branch details</h2>
-                    <p class="mt-1 text-xs text-gray-500">Optional display label for this branch in reports and ID cards.</p>
-                </div>
-                <div class="space-y-4 p-5">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Branch name</label>
-                        <input type="text" x-model="form.display_name" placeholder="Main Library Center" class="mt-1 block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                    </div>
-                </div>
-            </section>
-
+            @if ($branch && $settings && ! ($viewingAll ?? false))
             <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-5 py-4">
                     <h2 class="text-sm font-semibold text-gray-900">Library hours</h2>
@@ -199,18 +249,19 @@
                     </div>
                 </div>
             </section>
+            @endif
 
+            @if (($viewingAll ?? false) && $isClientAdmin)
             <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-5 py-4">
                     <h2 class="text-sm font-semibold text-gray-900">Plan expiry emails</h2>
-                    <p class="mt-1 text-xs text-gray-500">A reminder email is sent in the morning, this many days before a plan ends.</p>
+                    <p class="mt-1 text-xs text-gray-500">A reminder email is sent in the morning, this many days before a plan ends. Applies to all branches.</p>
                 </div>
                 <div class="space-y-4 p-5">
                     <div class="max-w-xs">
                         <label class="block text-sm font-medium text-gray-700">Send reminder days before expiry</label>
                         <input type="number" min="1" max="90" x-model.number="form.expiry_reminder_days" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
                     </div>
-                    <p class="text-xs text-gray-500">Students must have an email on their profile. Each booking receives one reminder per expiry cycle.</p>
                 </div>
             </section>
             @endif
@@ -220,7 +271,7 @@
             </div>
         </form>
 
-        @if ($isPlatformAdmin)
+        @if ($isClientAdmin && ($viewingAll ?? false))
         <form x-show="settingsTab === 'id-cards'" x-cloak @submit.prevent="saveIdCardSettings()" class="mt-4 space-y-6">
             <section class="overflow-hidden rounded-xl border border-violet-200 bg-white shadow-sm">
                 <div class="border-b border-violet-100 bg-violet-50 px-5 py-4">
@@ -269,7 +320,7 @@
         </form>
         @endif
 
-        @if ($isDeveloperAdmin)
+        @if ($isDeveloperAdmin && ($isHub ?? false))
         <form x-show="settingsTab === 'subscription'" x-cloak @submit.prevent="savePlanSettings()" class="mt-4 space-y-6">
             <section class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
                 <div class="border-b border-amber-100 bg-amber-50 px-5 py-4">
@@ -546,9 +597,11 @@
         </section>
         @endif
 
-        @if ($isPlatformAdmin)
+        @if ($isClientAdmin)
             @include('settings.partials.website-tab')
-            @include('settings.partials.emails-tab')
+            @if ($viewingAll ?? false)
+                @include('settings.partials.emails-tab')
+            @endif
         @endif
     </div>
 </x-admin-layout>
