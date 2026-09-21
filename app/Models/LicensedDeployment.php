@@ -119,4 +119,18 @@ class LicensedDeployment extends Model
             ->where('license_key_hash', self::hashKey($licenseKey))
             ->first();
     }
+
+    public static function findActiveByDomain(string $domain): ?self
+    {
+        $normalized = self::normalizeDomain($domain);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return self::query()
+            ->where('active', true)
+            ->get()
+            ->first(fn (self $deployment) => $deployment->allowsDomain($normalized));
+    }
 }

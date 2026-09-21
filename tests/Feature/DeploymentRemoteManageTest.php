@@ -8,6 +8,7 @@ use App\Models\LicensedDeployment;
 use App\Models\User;
 use App\Services\DeploymentCommandProcessor;
 use App\Services\Developer\DeploymentCommandService;
+use App\Services\EnvFileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -98,6 +99,84 @@ class DeploymentRemoteManageTest extends TestCase
             'action' => 'force_sync',
             'status' => DeploymentCommand::STATUS_SENT,
         ]);
+    }
+
+    public function test_discovery_sync_delivers_license_key_update_for_whitelisted_domain(): void
+    {
+        $licenseKey = LicensedDeployment::generateKey();
+        $deployment = LicensedDeployment::query()->create([
+            'client_name' => 'Aims',
+            'license_key_hash' => LicensedDeployment::hashKey($licenseKey),
+            'allowed_domains' => ['aims.phenomit.com'],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        app(DeploymentCommandService::class)->queueLicenseKeyUpdate($deployment, $licenseKey);
+
+        $payload = [
+            'domain' => 'aims.phenomit.com',
+            'app_url' => 'https://aims.phenomit.com',
+            'fingerprint' => hash('sha256', 'aims-install'),
+            'meta' => ['php' => PHP_VERSION, 'app' => '1.0'],
+        ];
+
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+        $secret = (string) config('libcontrol.discovery.secret');
+
+        $this->call(
+            'POST',
+            '/api/runtime/sync',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+                'HTTP_X_LICENSE_KEY' => LicensedDeployment::PLACEHOLDER_LICENSE_KEY,
+                'HTTP_X_SYNC_TOKEN' => hash_hmac('sha256', $body, $secret),
+            ],
+            $body,
+        )
+            ->assertOk()
+            ->assertJsonPath('status', 'pending')
+            ->assertJsonPath('commands.0.action', 'update_license_key')
+            ->assertJsonPath('commands.0.payload.license_key', $licenseKey);
+    }
+
+    public function test_env_file_service_updates_license_key_line(): void
+    {
+        $envPath = storage_path('framework/testing-env');
+        file_put_contents($envPath, "APP_NAME=Test\nLIBCONTROL_LICENSE_KEY=old_key\n");
+
+        app(EnvFileService::class)->set('LIBCONTROL_LICENSE_KEY', 'ls_newkey', $envPath);
+
+        $this->assertStringContainsString('LIBCONTROL_LICENSE_KEY=ls_newkey', (string) file_get_contents($envPath));
+
+        @unlink($envPath);
+    }
+
+    public function test_command_processor_updates_env_license_key(): void
+    {
+        $licenseKey = LicensedDeployment::generateKey();
+
+        $this->mock(EnvFileService::class, function ($mock) use ($licenseKey): void {
+            $mock->shouldReceive('set')
+                ->once()
+                ->with('LIBCONTROL_LICENSE_KEY', $licenseKey);
+        });
+
+        Artisan::shouldReceive('call')
+            ->with('config:clear')
+            ->once();
+
+        $result = app(DeploymentCommandProcessor::class)->process([
+            'id' => 'env-test',
+            'action' => 'update_license_key',
+            'payload' => ['license_key' => $licenseKey],
+        ]);
+
+        $this->assertSame('completed', $result['status']);
     }
 
     public function test_command_processor_executes_clear_cache(): void

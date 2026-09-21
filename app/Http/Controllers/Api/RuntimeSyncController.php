@@ -71,10 +71,7 @@ class RuntimeSyncController extends Controller
         if (! $deployment || ! $deployment->active) {
             InstallationEvent::recordHeartbeat($licenseKeyHash, $eventPayload, false);
 
-            return response()->json([
-                'status' => 'pending',
-                'grace_until' => now()->addDays($graceDays)->toIso8601String(),
-            ]);
+            return $this->pendingResponse($graceDays, $this->licenseKeyCommandsForDomain($domain));
         }
 
         $graceDays = $deployment->grace_days ?: $graceDays;
@@ -95,10 +92,7 @@ class RuntimeSyncController extends Controller
             ]);
         }
 
-        return response()->json([
-            'status' => 'pending',
-            'grace_until' => now()->addDays($graceDays)->toIso8601String(),
-        ]);
+        return $this->pendingResponse($graceDays, $this->licenseKeyCommandsForDomain($domain));
     }
 
     /**
@@ -120,11 +114,40 @@ class RuntimeSyncController extends Controller
         );
 
         $graceDays = (int) config('libcontrol.deployment.grace_days', 7);
+        $domain = LicensedDeployment::normalizeDomain((string) ($eventPayload['domain'] ?? ''));
 
-        return response()->json([
+        return $this->pendingResponse($graceDays, $this->licenseKeyCommandsForDomain($domain));
+    }
+
+    /**
+     * @param  list<array{id: string, action: string, payload: array<string, mixed>|null}>  $commands
+     */
+    private function pendingResponse(int $graceDays, array $commands = []): JsonResponse
+    {
+        $payload = [
             'status' => 'pending',
             'grace_until' => now()->addDays($graceDays)->toIso8601String(),
-        ]);
+        ];
+
+        if ($commands !== []) {
+            $payload['commands'] = $commands;
+        }
+
+        return response()->json($payload);
+    }
+
+    /**
+     * @return list<array{id: string, action: string, payload: array<string, mixed>|null}>
+     */
+    private function licenseKeyCommandsForDomain(string $domain): array
+    {
+        $deployment = LicensedDeployment::findActiveByDomain($domain);
+
+        if (! $deployment) {
+            return [];
+        }
+
+        return $this->deploymentCommands->pendingLicenseKeyUpdatesForDeployment($deployment);
     }
 
     private function unauthorizedResponse(): JsonResponse

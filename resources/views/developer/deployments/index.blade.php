@@ -42,8 +42,8 @@
 
         <template x-if="issuedKey">
             <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 shadow-sm">
-                <p class="text-sm font-semibold text-amber-900">License key — copy now</p>
-                <p class="mt-1 text-xs text-amber-800">Set as <code class="rounded bg-amber-100 px-1">LIBCONTROL_LICENSE_KEY</code> in the client server <code class="rounded bg-amber-100 px-1">.env</code> file. It will not be shown again.</p>
+                <p class="text-sm font-semibold text-amber-900">License key — copy as backup</p>
+                <p class="mt-1 text-xs text-amber-800">This key is queued to update <code class="rounded bg-amber-100 px-1">LIBCONTROL_LICENSE_KEY</code> in the client <code class="rounded bg-amber-100 px-1">.env</code> on the next sync heartbeat. Copy it now — it will not be shown again.</p>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <code class="flex-1 break-all rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-mono text-gray-900" x-text="issuedKey"></code>
                     <button

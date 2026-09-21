@@ -22,6 +22,46 @@ class DeploymentCommandService
         ]);
     }
 
+    public function queueLicenseKeyUpdate(LicensedDeployment $deployment, string $licenseKey): DeploymentCommand
+    {
+        DeploymentCommand::query()
+            ->where('licensed_deployment_id', $deployment->id)
+            ->where('action', 'update_license_key')
+            ->where('status', DeploymentCommand::STATUS_PENDING)
+            ->delete();
+
+        return $this->queue($deployment, 'update_license_key', [
+            'license_key' => $licenseKey,
+        ]);
+    }
+
+    /**
+     * @return list<array{id: string, action: string, payload: array<string, mixed>|null}>
+     */
+    public function pendingLicenseKeyUpdatesForDeployment(LicensedDeployment $deployment): array
+    {
+        $commands = DeploymentCommand::query()
+            ->where('licensed_deployment_id', $deployment->id)
+            ->where('status', DeploymentCommand::STATUS_PENDING)
+            ->where('action', 'update_license_key')
+            ->orderBy('created_at')
+            ->limit(1)
+            ->get();
+
+        foreach ($commands as $command) {
+            $command->update([
+                'status' => DeploymentCommand::STATUS_SENT,
+                'sent_at' => now(),
+            ]);
+        }
+
+        return $commands->map(fn (DeploymentCommand $command) => [
+            'id' => (string) $command->id,
+            'action' => $command->action,
+            'payload' => $command->payload,
+        ])->all();
+    }
+
     /**
      * @return list<array{id: string, action: string, payload: array<string, mixed>|null}>
      */

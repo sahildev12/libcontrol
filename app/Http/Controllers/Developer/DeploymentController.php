@@ -7,6 +7,7 @@ use App\Http\Requests\RemoteManagePlanRequest;
 use App\Http\Requests\StoreLicensedDeploymentRequest;
 use App\Http\Requests\UpdateLicensedDeploymentRequest;
 use App\Models\LicensedDeployment;
+use App\Services\Developer\DeploymentCommandService;
 use App\Services\Developer\DeploymentIndexService;
 use App\Services\Developer\DeploymentRemoteManageService;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +21,7 @@ class DeploymentController extends Controller
     public function __construct(
         private DeploymentRemoteManageService $remoteManage,
         private DeploymentIndexService $deploymentIndex,
+        private DeploymentCommandService $deploymentCommands,
     ) {}
 
     public function index(Request $request): View
@@ -72,10 +74,12 @@ class DeploymentController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
+        $this->deploymentCommands->queueLicenseKeyUpdate($deployment, $licenseKey);
+
         return redirect()
             ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
             ->with('issued_license_key', $licenseKey)
-            ->with('status', 'Client authorized. Copy the license key below into the client .env file.');
+            ->with('status', 'Client authorized. The license key will be pushed to the client .env on the next sync.');
     }
 
     public function edit(LicensedDeployment $deployment): RedirectResponse
@@ -127,10 +131,12 @@ class DeploymentController extends Controller
             'active' => true,
         ]);
 
+        $this->deploymentCommands->queueLicenseKeyUpdate($deployment, $licenseKey);
+
         return redirect()
             ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
             ->with('issued_license_key', $licenseKey)
-            ->with('status', "Domain {$domain} authorized. Copy the license key into the client .env file.");
+            ->with('status', "Domain {$domain} authorized. The license key will be pushed to the client .env on the next sync.");
     }
 
     public function update(UpdateLicensedDeploymentRequest $request, LicensedDeployment $deployment): RedirectResponse
@@ -262,10 +268,12 @@ class DeploymentController extends Controller
             'license_key_hash' => LicensedDeployment::hashKey($licenseKey),
         ]);
 
+        $this->deploymentCommands->queueLicenseKeyUpdate($deployment, $licenseKey);
+
         return redirect()
             ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
             ->with('issued_license_key', $licenseKey)
-            ->with('status', 'New license key issued. Update LIBCONTROL_LICENSE_KEY on the client server.');
+            ->with('status', 'New license key issued. It will be pushed to the client .env on the next sync.');
     }
 
     /**

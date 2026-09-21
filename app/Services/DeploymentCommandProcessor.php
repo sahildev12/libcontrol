@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PlatformSetting;
 use App\Services\Addons\AddonRegistry;
+use App\Services\EnvFileService;
 use Illuminate\Support\Facades\Artisan;
 
 class DeploymentCommandProcessor
@@ -33,6 +34,7 @@ class DeploymentCommandProcessor
                 'database_migrate' => $this->databaseMigrate(),
                 'database_restore' => $this->databaseRestore($payload),
                 'force_sync' => ['status' => 'completed', 'result' => 'Sync acknowledged.'],
+                'update_license_key' => $this->updateLicenseKey((string) ($payload['license_key'] ?? '')),
                 default => ['status' => 'failed', 'result' => "Unknown command: {$action}"],
             };
         } catch (\Throwable $e) {
@@ -166,5 +168,22 @@ class DeploymentCommandProcessor
         $this->databaseMaintenance->restoreBackup($filename);
 
         return ['status' => 'completed', 'result' => "Database restored from {$filename}."];
+    }
+
+    /**
+     * @return array{status: string, result: string}
+     */
+    private function updateLicenseKey(string $licenseKey): array
+    {
+        $licenseKey = trim($licenseKey);
+
+        if ($licenseKey === '' || ! str_starts_with($licenseKey, 'ls_')) {
+            return ['status' => 'failed', 'result' => 'Invalid license key payload.'];
+        }
+
+        app(EnvFileService::class)->set('LIBCONTROL_LICENSE_KEY', $licenseKey);
+        Artisan::call('config:clear');
+
+        return ['status' => 'completed', 'result' => 'License key saved to .env file.'];
     }
 }
