@@ -6,7 +6,7 @@
                 <p class="mt-1 text-sm text-gray-600">Self-hosted deployment. Actions are queued and delivered on the client's next sync heartbeat.</p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('developer.deployments.edit', $deployment) }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit deployment</a>
+                <a href="{{ route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id]) }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Domains &amp; license</a>
                 <a href="{{ route('developer.deployments.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Back</a>
             </div>
         </div>

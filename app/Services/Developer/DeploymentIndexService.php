@@ -44,11 +44,25 @@ class DeploymentIndexService
                 'hits' => $event->hit_count,
                 'reason' => $this->unauthorizedReason($event),
                 'last_seen' => $event->last_seen_at?->format('d M Y, h:i A') ?: '—',
-                'authorize_url' => route('developer.deployments.create', [
-                    'domain' => $event->domain,
-                    'client_name' => $this->suggestedClientName($event),
-                ]),
+                'suggested_client_name' => $this->suggestedClientName($event),
             ])
+            ->all();
+    }
+
+    /**
+     * @return list<array{id: int, client_name: string, domains: list<string>}>
+     */
+    public function clientOptions(): array
+    {
+        return LicensedDeployment::query()
+            ->orderBy('client_name')
+            ->get(['id', 'client_name', 'allowed_domains'])
+            ->map(fn (LicensedDeployment $deployment) => [
+                'id' => $deployment->id,
+                'client_name' => $deployment->client_name,
+                'domains' => $deployment->allowed_domains ?? [],
+            ])
+            ->values()
             ->all();
     }
 
@@ -77,6 +91,8 @@ class DeploymentIndexService
                     'id' => $deployment->id,
                     'client_name' => $deployment->client_name,
                     'domains' => $domains !== [] ? implode(', ', $domains) : '—',
+                    'domains_text' => implode("\n", $domains),
+                    'domains_list' => $domains,
                     'grace_days' => $deployment->grace_days,
                     'active' => $deployment->active,
                     'status_label' => $deployment->active ? 'Active' : 'Inactive',
@@ -84,7 +100,8 @@ class DeploymentIndexService
                         ? $lastSeen->format('d M Y, h:i A')
                         : 'Not seen yet',
                     'manage_url' => route('developer.deployments.manage', $deployment),
-                    'edit_url' => route('developer.deployments.edit', $deployment),
+                    'update_url' => route('developer.deployments.update-domains', $deployment),
+                    'regenerate_url' => route('developer.deployments.regenerate-key', $deployment),
                 ];
             })
             ->values()

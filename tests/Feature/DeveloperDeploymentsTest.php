@@ -31,7 +31,7 @@ class DeveloperDeploymentsTest extends TestCase
             ->assertSee('Dev &amp; Domains', false)
             ->assertSee('Unauthorized domains', false)
             ->assertSee('Authorized clients', false)
-            ->assertSee('unauthorizedDomainTable', false);
+            ->assertSee('deploymentHubPage', false);
     }
 
     public function test_installations_route_redirects_to_deployments_index(): void
@@ -79,9 +79,11 @@ class DeveloperDeploymentsTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('developer.deployments.create', ['domain' => 'aims.phenomit.com']))
-            ->assertOk()
-            ->assertSee('Aims', false)
-            ->assertSee('aims.phenomit.com', false);
+            ->assertRedirect(route('developer.deployments.index', [
+                'tab' => 'authorized',
+                'action' => 'create',
+                'domain' => 'aims.phenomit.com',
+            ]));
     }
 
     public function test_developer_admin_can_create_deployment(): void
@@ -99,11 +101,61 @@ class DeveloperDeploymentsTest extends TestCase
         $deployment = LicensedDeployment::query()->first();
 
         $this->assertNotNull($deployment);
-        $response->assertRedirect(route('developer.deployments.edit', $deployment));
+        $response->assertRedirect(route('developer.deployments.index', [
+            'tab' => 'authorized',
+            'client' => $deployment->id,
+        ]));
         $this->assertDatabaseHas('licensed_deployments', [
             'client_name' => 'North Library',
             'grace_days' => 7,
         ]);
+    }
+
+    public function test_developer_admin_can_authorize_domain_for_existing_client(): void
+    {
+        $user = $this->developerAdmin();
+
+        $deployment = LicensedDeployment::query()->create([
+            'client_name' => 'Aims',
+            'license_key_hash' => LicensedDeployment::hashKey('ls_test_key'),
+            'allowed_domains' => ['old.example.com'],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('developer.deployments.authorize-domain'), [
+                'domain' => 'aims.phenomit.com',
+                'deployment_id' => $deployment->id,
+            ])
+            ->assertRedirect(route('developer.deployments.index', [
+                'tab' => 'authorized',
+                'client' => $deployment->id,
+            ]));
+
+        $deployment->refresh();
+
+        $this->assertSame(['old.example.com', 'aims.phenomit.com'], $deployment->allowed_domains);
+    }
+
+    public function test_edit_route_redirects_to_deployments_index(): void
+    {
+        $user = $this->developerAdmin();
+
+        $deployment = LicensedDeployment::query()->create([
+            'client_name' => 'Aims',
+            'license_key_hash' => LicensedDeployment::hashKey('ls_test_key'),
+            'allowed_domains' => ['aims.phenomit.com'],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('developer.deployments.edit', $deployment))
+            ->assertRedirect(route('developer.deployments.index', [
+                'tab' => 'authorized',
+                'client' => $deployment->id,
+            ]));
     }
 
     private function developerAdmin(): User

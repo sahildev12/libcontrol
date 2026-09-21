@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateLicensedDeploymentRequest;
 use App\Models\LicensedDeployment;
 use App\Services\Developer\DeploymentIndexService;
 use App\Services\Developer\DeploymentRemoteManageService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,24 +24,39 @@ class DeploymentController extends Controller
 
     public function index(Request $request): View
     {
+        $activeTab = in_array($request->string('tab')->toString(), ['unauthorized', 'authorized'], true)
+            ? $request->string('tab')->toString()
+            : 'authorized';
+
+        $prefillDomain = LicensedDeployment::normalizeDomain($request->string('domain')->toString());
+        $prefillClientName = $request->string('client_name')->toString();
+
+        if ($prefillClientName === '' && $prefillDomain !== '') {
+            $prefillClientName = $this->deploymentIndex->suggestedClientNameFromDomain($prefillDomain);
+        }
+
         return view('developer.deployments.index', [
             'stats' => $this->deploymentIndex->stats(),
             'unauthorizedRows' => $this->deploymentIndex->unauthorizedDomainRows(),
             'licenseRows' => $this->deploymentIndex->authorizedLicenseRows(),
-            'activeTab' => in_array($request->string('tab')->toString(), ['unauthorized', 'authorized'], true)
-                ? $request->string('tab')->toString()
-                : 'unauthorized',
+            'clientOptions' => $this->deploymentIndex->clientOptions(),
+            'activeTab' => $activeTab,
+            'openClientId' => $request->integer('client') ?: null,
+            'prefillDomain' => $prefillDomain,
+            'prefillClientName' => $prefillClientName,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): RedirectResponse
     {
-        $domain = LicensedDeployment::normalizeDomain($request->string('domain')->toString());
-
-        return view('developer.deployments.create', [
-            'prefillClientName' => $request->string('client_name')->toString() ?: $this->deploymentIndex->suggestedClientNameFromDomain($domain),
-            'prefillDomains' => $domain,
+        $query = array_filter([
+            'tab' => 'authorized',
+            'action' => 'create',
+            'domain' => $request->string('domain')->toString(),
+            'client_name' => $request->string('client_name')->toString(),
         ]);
+
+        return redirect()->route('developer.deployments.index', $query);
     }
 
     public function store(StoreLicensedDeploymentRequest $request): RedirectResponse
@@ -57,17 +73,64 @@ class DeploymentController extends Controller
         ]);
 
         return redirect()
-            ->route('developer.deployments.edit', $deployment)
+            ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
             ->with('issued_license_key', $licenseKey)
-            ->with('status', 'Deployment created. Copy the license key now — it will not be shown again.');
+            ->with('status', 'Client authorized. Copy the license key below into the client .env file.');
     }
 
-    public function edit(LicensedDeployment $deployment): View
+    public function edit(LicensedDeployment $deployment): RedirectResponse
     {
-        return view('developer.deployments.edit', [
-            'deployment' => $deployment,
-            'domainsText' => implode("\n", $deployment->allowed_domains ?? []),
+        return redirect()->route('developer.deployments.index', [
+            'tab' => 'authorized',
+            'client' => $deployment->id,
         ]);
+    }
+
+    public function authorizeDomain(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'domain' => ['required', 'string', 'max:255'],
+            'deployment_id' => ['nullable', 'integer', 'exists:licensed_deployments,id'],
+            'client_name' => ['required_without:deployment_id', 'string', 'max:120'],
+        ]);
+
+        $domain = LicensedDeployment::normalizeDomain($validated['domain']);
+
+        if ($domain === '') {
+            return back()->withErrors(['domain' => 'Enter a valid domain.']);
+        }
+
+        if (! empty($validated['deployment_id'])) {
+            $deployment = LicensedDeployment::query()->findOrFail($validated['deployment_id']);
+            $domains = $deployment->allowed_domains ?? [];
+
+            if (! in_array($domain, $domains, true)) {
+                $domains[] = $domain;
+            }
+
+            $deployment->update([
+                'allowed_domains' => $domains,
+                'active' => true,
+            ]);
+
+            return redirect()
+                ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
+                ->with('status', "Domain {$domain} is now authorized for {$deployment->client_name}.");
+        }
+
+        $licenseKey = LicensedDeployment::generateKey();
+        $deployment = LicensedDeployment::query()->create([
+            'client_name' => $validated['client_name'],
+            'license_key_hash' => LicensedDeployment::hashKey($licenseKey),
+            'allowed_domains' => [$domain],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        return redirect()
+            ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
+            ->with('issued_license_key', $licenseKey)
+            ->with('status', "Domain {$domain} authorized. Copy the license key into the client .env file.");
     }
 
     public function update(UpdateLicensedDeploymentRequest $request, LicensedDeployment $deployment): RedirectResponse
@@ -81,8 +144,45 @@ class DeploymentController extends Controller
         ]);
 
         return redirect()
-            ->route('developer.deployments.edit', $deployment)
-            ->with('status', 'Deployment updated.');
+            ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
+            ->with('status', 'Client updated.');
+    }
+
+    public function updateDomains(Request $request, LicensedDeployment $deployment): JsonResponse
+    {
+        $validated = $request->validate([
+            'client_name' => ['required', 'string', 'max:120'],
+            'allowed_domains' => ['required', 'string', 'max:2000'],
+            'active' => ['sometimes', 'boolean'],
+        ]);
+
+        $domains = $this->parseDomains($validated['allowed_domains']);
+
+        if ($domains === []) {
+            return response()->json([
+                'message' => 'Add at least one domain.',
+            ], 422);
+        }
+
+        $deployment->update([
+            'client_name' => $validated['client_name'],
+            'allowed_domains' => $domains,
+            'active' => $request->boolean('active', true),
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Domains saved.',
+            'deployment' => [
+                'id' => $deployment->id,
+                'client_name' => $deployment->client_name,
+                'domains' => implode(', ', $domains),
+                'domains_text' => implode("\n", $domains),
+                'domains_list' => $domains,
+                'active' => $deployment->active,
+                'status_label' => $deployment->active ? 'Active' : 'Inactive',
+            ],
+        ]);
     }
 
     public function destroy(LicensedDeployment $deployment): RedirectResponse
@@ -163,9 +263,9 @@ class DeploymentController extends Controller
         ]);
 
         return redirect()
-            ->route('developer.deployments.edit', $deployment)
+            ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
             ->with('issued_license_key', $licenseKey)
-            ->with('status', 'New license key issued. Update the client .env file.');
+            ->with('status', 'New license key issued. Update LIBCONTROL_LICENSE_KEY on the client server.');
     }
 
     /**

@@ -5563,6 +5563,151 @@ Alpine.data('notificationBell', (config) => ({
     },
 }));
 
+Alpine.data('deploymentHubPage', (config) => ({
+    tab: config.activeTab || 'authorized',
+    modal: null,
+    issuedKey: config.issuedLicenseKey || '',
+    clients: config.clients || [],
+    licenseRows: config.licenseRows || [],
+    csrf: config.csrf || '',
+    urls: config.urls || {},
+
+    createForm: {
+        client_name: config.prefillClientName || '',
+        allowed_domains: config.prefillDomain || '',
+    },
+
+    authorizeForm: {
+        domain: '',
+        mode: 'existing',
+        deployment_id: '',
+        client_name: '',
+    },
+
+    manageForm: {
+        id: null,
+        client_name: '',
+        allowed_domains: '',
+        active: true,
+        manage_url: '',
+        regenerate_url: '',
+        update_url: '',
+        saving: false,
+        error: '',
+    },
+
+    init() {
+        if (config.openClientId) {
+            const row = this.licenseRows.find((entry) => entry.id === config.openClientId);
+
+            if (row) {
+                this.tab = 'authorized';
+                this.$nextTick(() => this.openManage(row));
+            }
+        }
+
+        if (config.initialAction === 'create') {
+            this.tab = 'authorized';
+            this.$nextTick(() => this.openCreate());
+        }
+    },
+
+    openCreate() {
+        if (!this.createForm.client_name && config.prefillClientName) {
+            this.createForm.client_name = config.prefillClientName;
+        }
+
+        if (!this.createForm.allowed_domains && config.prefillDomain) {
+            this.createForm.allowed_domains = config.prefillDomain;
+        }
+
+        this.modal = 'create';
+    },
+
+    openAuthorize(row) {
+        this.authorizeForm = {
+            domain: row.domain || '',
+            mode: this.clients.length > 0 ? 'existing' : 'new',
+            deployment_id: this.clients[0]?.id ? String(this.clients[0].id) : '',
+            client_name: row.suggested_client_name || '',
+        };
+        this.tab = 'unauthorized';
+        this.modal = 'authorize';
+    },
+
+    openManage(row) {
+        this.manageForm = {
+            id: row.id,
+            client_name: row.client_name,
+            allowed_domains: row.domains_text || '',
+            active: Boolean(row.active),
+            manage_url: row.manage_url,
+            regenerate_url: row.regenerate_url,
+            update_url: row.update_url,
+            saving: false,
+            error: '',
+        };
+        this.tab = 'authorized';
+        this.modal = 'manage';
+    },
+
+    closeModal() {
+        this.modal = null;
+        this.manageForm.error = '';
+    },
+
+    async copyIssuedKey() {
+        if (!this.issuedKey) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(this.issuedKey);
+        } catch (error) {
+            console.error('Could not copy license key.', error);
+        }
+    },
+
+    async saveDomains() {
+        if (!this.manageForm.update_url) {
+            return;
+        }
+
+        this.manageForm.saving = true;
+        this.manageForm.error = '';
+
+        try {
+            const response = await fetch(this.manageForm.update_url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': this.csrf,
+                },
+                body: JSON.stringify({
+                    client_name: this.manageForm.client_name,
+                    allowed_domains: this.manageForm.allowed_domains,
+                    active: this.manageForm.active,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                this.manageForm.error = data.message || 'Could not save domains.';
+                return;
+            }
+
+            this.$dispatch('client-updated', data.deployment);
+            this.closeModal();
+        } catch (error) {
+            this.manageForm.error = 'Could not save domains. Try again.';
+        } finally {
+            this.manageForm.saving = false;
+        }
+    },
+}));
+
 Alpine.data('unauthorizedDomainTable', (config) => ({
     rows: config.rows || [],
     searchKeys: ['domain', 'app_url', 'reason', 'last_seen'],
@@ -5596,6 +5741,19 @@ Alpine.data('licensedDeploymentTable', (config) => ({
 
     init() {
         this.initDataTable();
+    },
+
+    updateRow(updated) {
+        const index = this.rows.findIndex((row) => row.id === updated.id);
+
+        if (index === -1) {
+            return;
+        }
+
+        this.rows[index] = {
+            ...this.rows[index],
+            ...updated,
+        };
     },
 }));
 

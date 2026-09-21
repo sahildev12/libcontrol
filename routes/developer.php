@@ -20,7 +20,9 @@ Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host']
         Route::get('/', [DeploymentController::class, 'index'])->name('index');
         Route::get('/installations', [DeploymentController::class, 'installations'])->name('installations');
         Route::get('/create', [DeploymentController::class, 'create'])->name('create');
+        Route::post('/authorize-domain', [DeploymentController::class, 'authorizeDomain'])->name('authorize-domain');
         Route::post('/', [DeploymentController::class, 'store'])->name('store');
+        Route::patch('/{deployment}/domains', [DeploymentController::class, 'updateDomains'])->name('update-domains');
         Route::get('/{deployment}/manage', [DeploymentController::class, 'manage'])->name('manage');
         Route::post('/{deployment}/manage/plan', [DeploymentController::class, 'updatePlan'])->name('manage.plan');
         Route::post('/{deployment}/manage/command', [DeploymentController::class, 'queueCommand'])->name('manage.command');
