@@ -15,7 +15,7 @@ class DeploymentIndexService
     public function stats(): array
     {
         return [
-            'unauthorized' => $this->unauthorizedDomainRows()->count(),
+            'unauthorized' => count($this->unauthorizedDomainRows()),
             'licenses' => LicensedDeployment::query()->count(),
             'online' => InstallationEvent::query()
                 ->where('is_authorized', true)
