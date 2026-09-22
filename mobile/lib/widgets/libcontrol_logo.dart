@@ -8,7 +8,7 @@ class LibControlLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/brand/only-logo-main-color.png',
+      'assets/brand/yellow-lc-logo.png',
       width: size,
       height: size,
       fit: BoxFit.contain,

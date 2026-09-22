@@ -1,13 +1,8 @@
 # Brand assets
 
-Store **static** LibControl brand files here (served directly from `/brand/...`):
+Official LibControl logos live under **`public/logo/png-background/`**:
 
-- `favicon.ico`
-- `apple-touch-icon.png`
-- `favicon-16x16.png` / `favicon-32x32.png`
-- `site.webmanifest`
-- Default logos if you are not uploading per-branch logos in Settings
-
-**Do not** use the project `temp/` folder for production assets.
+- `yellow-lc-logo.png` — icon / dark backgrounds (sidebar, favicon)
+- `lc-logo-landscape.png` — wide logo on light backgrounds (documents, login wide)
 
 **Admin-uploaded** logos and favicons are stored under `storage/app/public/branches/{branch_id}/` and linked via **Settings** in the admin panel.

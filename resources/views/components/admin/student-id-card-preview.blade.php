@@ -6,7 +6,7 @@
 
 @php
     $sample = $sample ?? config('libcontrol.id_card_preview_sample', []);
-    $logoUrl = $logoUrl ?: asset('brand/only-logo-main-color.png');
+    $logoUrl = $logoUrl ?: asset('logo/png-background/lc-logo-landscape.png');
     $previewView = 'components.admin.id-card-previews.'.$template;
 
     if (! view()->exists($previewView)) {

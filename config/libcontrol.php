@@ -18,11 +18,11 @@ return [
         'public_path' => 'brand',
         'default_favicon' => 'logo/png-background/yellow-lc-logo.png',
         'default_simple_logo' => 'logo/png-background/yellow-lc-logo.png',
-        'default_logo_with_text' => 'logo/png-background/yellow-lc-logo.png',
+        'default_logo_with_text' => 'logo/png-background/lc-logo-landscape.png',
         'dark_icon' => 'logo/png-background/yellow-lc-logo.png',
         'dark_wide' => 'logo/png-background/yellow-lc-logo.png',
         'light_icon' => 'logo/png-background/yellow-lc-logo.png',
-        'light_wide' => 'logo/png-background/yellow-lc-logo.png',
+        'light_wide' => 'logo/png-background/lc-logo-landscape.png',
     ],
 
     'defaults' => [

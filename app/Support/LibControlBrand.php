@@ -23,6 +23,6 @@ class LibControlBrand
 
     public static function lightWideUrl(): string
     {
-        return asset(config('libcontrol.brand.light_wide', 'logo/png-background/yellow-lc-logo.png'));
+        return asset(config('libcontrol.brand.light_wide', 'logo/png-background/lc-logo-landscape.png'));
     }
 }
