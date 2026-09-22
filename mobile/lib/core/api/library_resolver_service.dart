@@ -157,7 +157,7 @@ class LibraryResolverService {
 
     if (host == '127.0.0.1' || host == 'localhost' || host == '::1') {
       throw LibraryResolverException(
-        'This library is registered as $base on Phenomit. Phones cannot reach localhost — set LIBCONTROL_PUBLIC_URL to your PC IP in .env and run php artisan app:sync-runtime-metrics.',
+        'This library is not reachable from your phone yet. Ask your library admin to set the public website URL in LibControl settings and sync with Phenomit.',
       );
     }
 

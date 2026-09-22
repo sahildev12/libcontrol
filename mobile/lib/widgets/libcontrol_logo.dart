@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
 
 class LibControlLogo extends StatelessWidget {
-  const LibControlLogo({super.key, this.size = 72});
+  const LibControlLogo({
+    super.key,
+    this.height = 56,
+    this.wide = false,
+  });
 
-  final double size;
+  /// Height of the logo (width scales for wide landscape asset).
+  final double height;
+
+  /// Use landscape wordmark (connect / marketing screens).
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
+    if (wide) {
+      return Image.asset(
+        'assets/brand/lc-logo-landscape.png',
+        height: height,
+        fit: BoxFit.contain,
+      );
+    }
+
     return Image.asset(
       'assets/brand/yellow-lc-logo.png',
-      width: size,
-      height: size,
+      height: height,
+      width: height,
       fit: BoxFit.contain,
     );
   }

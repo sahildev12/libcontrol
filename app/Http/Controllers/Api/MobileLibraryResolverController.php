@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\LicensedDeployment;
 use App\Models\LibraryRegistry;
 use App\Models\PlatformSetting;
+use App\Support\DeploymentPublicUrl;
 use Illuminate\Http\JsonResponse;
 
 class MobileLibraryResolverController extends Controller
@@ -47,7 +49,11 @@ class MobileLibraryResolverController extends Controller
         }
 
         $public = trim((string) config('libcontrol.deployment.public_url', ''));
-        $appUrl = $public !== '' ? rtrim($public, '/') : rtrim((string) config('app.url'), '/');
+        $appUrl = DeploymentPublicUrl::forMobile(
+            $public,
+            (string) config('app.url'),
+            LicensedDeployment::normalizeDomain((string) config('app.url')),
+        );
         $prefix = strtoupper(trim((string) $settings->student_code_prefix));
         $padding = max(1, min(6, (int) ($settings->student_code_padding
             ?: config('libcontrol.defaults.student_code_padding', 3))));

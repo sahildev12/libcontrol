@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DeploymentPublicUrl;
 use Illuminate\Database\Eloquent\Model;
 
 class LibraryRegistry extends Model
@@ -50,6 +51,9 @@ class LibraryRegistry extends Model
         }
 
         $appUrl = trim((string) ($payload['app_url'] ?? ''));
+        if ($appUrl !== '' && DeploymentPublicUrl::isLocalhost($appUrl) && $domain !== '') {
+            $appUrl = 'https://'.$domain;
+        }
         $clientName = trim((string) ($meta['client_name'] ?? ''));
         $prefix = strtoupper(trim((string) ($meta['student_code_prefix'] ?? '')));
         $padding = max(1, min(6, (int) ($meta['student_code_padding'] ?? 3)));
@@ -90,10 +94,9 @@ class LibraryRegistry extends Model
 
     public function apiBaseUrl(): string
     {
-        if (filled($this->app_url)) {
-            return rtrim((string) $this->app_url, '/');
-        }
+        $stored = filled($this->app_url) ? rtrim((string) $this->app_url, '/') : '';
+        $fallback = $this->domain !== '' ? 'https://'.$this->domain : '';
 
-        return 'https://'.$this->domain;
+        return DeploymentPublicUrl::forMobile($stored, $stored !== '' ? $stored : $fallback, $this->domain);
     }
 }

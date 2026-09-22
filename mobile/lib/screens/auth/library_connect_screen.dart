@@ -143,7 +143,7 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
           child: Column(
             children: [
               const SizedBox(height: 24),
-              const LibControlLogo(size: 80),
+              const LibControlLogo(height: 52, wide: true),
               const SizedBox(height: 16),
               Text('Connect to your library', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),

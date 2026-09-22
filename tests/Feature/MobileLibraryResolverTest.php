@@ -84,6 +84,21 @@ class MobileLibraryResolverTest extends TestCase
             ->assertJsonPath('sample_student_code', 'NBR-001');
     }
 
+    public function test_resolver_replaces_localhost_app_url_with_public_domain(): void
+    {
+        LibraryRegistry::query()->create([
+            'library_code' => '111222',
+            'domain' => 'aims.phenomit.com',
+            'app_url' => 'http://127.0.0.1:8000',
+            'client_name' => 'Aims Library',
+            'last_seen_at' => now(),
+        ]);
+
+        $this->getJson('/api/v1/mobile/libraries/111222')
+            ->assertOk()
+            ->assertJsonPath('api_base_url', 'https://aims.phenomit.com');
+    }
+
     public function test_runtime_sync_updates_library_registry(): void
     {
         Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
@@ -125,6 +140,42 @@ class MobileLibraryResolverTest extends TestCase
             'client_name' => 'Dise Library',
             'student_code_prefix' => 'DISE',
             'student_code_padding' => 3,
+        ]);
+    }
+
+    public function test_runtime_sync_rewrites_localhost_app_url_to_https_domain(): void
+    {
+        Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
+
+        $payload = [
+            'domain' => 'aims.phenomit.com',
+            'app_url' => 'http://127.0.0.1:8000',
+            'fingerprint' => hash('sha256', 'install-aims'),
+            'meta' => [
+                'library_code' => '555666',
+                'client_name' => 'Aims Library',
+            ],
+        ];
+
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+
+        $this->call(
+            'POST',
+            '/api/runtime/sync',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+                'HTTP_X_SYNC_TOKEN' => hash_hmac('sha256', $body, 'test-discovery-secret'),
+            ],
+            $body,
+        )->assertOk();
+
+        $this->assertDatabaseHas('library_registry', [
+            'library_code' => '555666',
+            'app_url' => 'https://aims.phenomit.com',
         ]);
     }
 }
