@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
 import 'package:libcontrol_app/core/api/attendance_api.dart';
-import 'package:libcontrol_app/core/auth/auth_service.dart';
-import 'package:libcontrol_app/data/dummy_data.dart';
 import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:libcontrol_app/widgets/scan/scan_mode_switch.dart';
 import 'package:libcontrol_app/widgets/scan/scan_success_panel.dart';
@@ -204,8 +202,6 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            _LocationCard(onTap: () {}),
           ],
         ),
       ),
@@ -295,64 +291,4 @@ class _ScanSuccess {
 
   final bool isCheckOut;
   final DateTime at;
-}
-
-class _LocationCard extends StatelessWidget {
-  const _LocationCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-            boxShadow: const [
-              BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBg,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AuthService.instance.student?.homeBranch ?? DummyData.fallbackStudent.homeBranch,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        AuthService.instance.student?.currentHall ?? DummyData.fallbackStudent.currentHall,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

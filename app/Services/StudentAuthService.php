@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FeePayment;
 use App\Models\SeatBooking;
 use App\Models\Student;
 use Carbon\Carbon;
@@ -116,6 +117,11 @@ class StudentAuthService
         $hallLabel = $hall?->name;
         $currentHall = $hallLabel ?? '';
 
+        $expiry = $booking?->plan_expiry_date;
+        $daysUntilExpiry = $expiry
+            ? (int) Carbon::today()->diffInDays($expiry, false)
+            : null;
+
         return [
             'id' => $student->id,
             'student_code' => $student->student_code,
@@ -128,13 +134,46 @@ class StudentAuthService
             'branch_name' => $student->branch?->name,
             'current_seat' => $seat?->seat_number ?? '',
             'current_hall' => $currentHall,
-            'plan_valid_till' => $booking?->plan_expiry_date?->format('d M Y') ?? '',
+            'plan_valid_till' => $expiry?->format('d M Y') ?? '',
+            'plan_expiry_date' => $expiry?->toDateString() ?? '',
+            'days_until_plan_expiry' => $daysUntilExpiry,
+            'seat_expiring_soon' => $daysUntilExpiry !== null && $daysUntilExpiry >= 0 && $daysUntilExpiry <= 7,
+            'booked_on' => $booking?->joining_date?->format('d M Y') ?? '',
+            'fee_amount' => $booking ? (float) $booking->fee_amount : null,
+            'amount_paid' => $booking ? (float) $booking->amount_paid : null,
             'is_checked_in' => false,
             'checked_in_at' => '',
             'avatar_url' => $student->photoUrl() ?? '',
             'has_app_pin' => $student->hasAppPin(),
             'needs_pin_setup' => ! $student->hasAppPin(),
+            'payment_history' => $this->paymentHistory($student),
         ];
+    }
+
+    /**
+     * @return list<array{amount: float, amount_label: string, payment_date: string, payment_method: string, reference: string}>
+     */
+    private function paymentHistory(Student $student): array
+    {
+        return FeePayment::query()
+            ->whereHas('booking', fn ($query) => $query->where('student_id', $student->id))
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get()
+            ->map(static function (FeePayment $payment): array {
+                $amount = (float) $payment->amount;
+
+                return [
+                    'amount' => $amount,
+                    'amount_label' => '₹'.number_format($amount, $amount == floor($amount) ? 0 : 2),
+                    'payment_date' => $payment->payment_date?->format('d M Y') ?? '',
+                    'payment_method' => $payment->payment_method ?: '—',
+                    'reference' => $payment->reference ?? '',
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     private function pinSetupCacheKey(string $token): string

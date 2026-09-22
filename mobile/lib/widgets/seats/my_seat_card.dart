@@ -96,22 +96,46 @@ class MySeatCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _InfoTile(
-                    icon: Icons.calendar_today_outlined,
-                    label: 'Booked on',
-                    value: seat.formattedBookedOn,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoTile(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'Booked on',
+                        value: seat.formattedBookedOn,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _InfoTile(
+                        icon: Icons.event_available_outlined,
+                        label: 'Valid till',
+                        value: seat.planValidTill.isNotEmpty ? seat.planValidTill : '—',
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _InfoTile(
-                    icon: Icons.payments_outlined,
-                    label: 'Amount paid',
-                    value: seat.formattedAmount,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoTile(
+                        icon: Icons.payments_outlined,
+                        label: 'Paid',
+                        value: seat.formattedAmount,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _InfoTile(
+                        icon: Icons.receipt_long_outlined,
+                        label: 'Plan fee',
+                        value: seat.feeAmount != null ? '₹${seat.feeAmount!.round()}' : '—',
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -8,6 +8,8 @@ class AllottedSeat {
     required this.status,
     required this.bookedOn,
     required this.amountPaid,
+    this.planValidTill = '',
+    this.feeAmount,
   });
 
   final String seatCode;
@@ -16,6 +18,8 @@ class AllottedSeat {
   final SeatAllotmentStatus status;
   final DateTime bookedOn;
   final int amountPaid;
+  final String planValidTill;
+  final double? feeAmount;
 
   String get statusLabel => switch (status) {
         SeatAllotmentStatus.active => 'Active',
