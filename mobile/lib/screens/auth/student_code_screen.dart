@@ -105,7 +105,7 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
           child: Column(
             children: [
               const SizedBox(height: 24),
-              const LibControlLogo(size: 80),
+              const LibControlLogo(height: 52, wide: true),
               const SizedBox(height: 16),
               Text('LibControl', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 6),

@@ -106,7 +106,7 @@ class _BiometricUnlockScreenState extends State<BiometricUnlockScreen> {
           child: Column(
             children: [
               const Spacer(),
-              const LibControlLogo(size: 80),
+              const LibControlLogo(height: 52, wide: true),
               const SizedBox(height: 20),
               Text('Welcome back', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
