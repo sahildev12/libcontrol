@@ -57,19 +57,16 @@
                     <span class="size-3 rounded bg-[#E5E7EB] ring-1 ring-gray-300"></span> Vacant
                 </button>
                 <button type="button" @click="toggleStatusFilter('occupied')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'occupied' ? 'border-green-600 bg-green-50 text-green-900' : 'border-transparent hover:bg-gray-100'">
-                    <span class="size-3 rounded bg-[#16A34A]"></span> Occupied (Full Day)
+                    <span class="size-3 rounded bg-[#3a995d]"></span> Occupied (Full Day)
                 </button>
                 <button type="button" @click="toggleStatusFilter('occupied_custom')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'occupied_custom' ? 'border-indigo-500 bg-indigo-50 text-indigo-900' : 'border-transparent hover:bg-gray-100'">
                     <span class="size-3 rounded bg-[#6366F1]"></span> Occupied (Custom Hours)
                 </button>
                 <button type="button" @click="toggleStatusFilter('expiring_soon')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'expiring_soon' ? 'border-amber-500 bg-amber-50 text-amber-950' : 'border-transparent hover:bg-gray-100'">
-                    <span class="size-3 rounded bg-[#F59E0B]"></span> Expiring Soon
+                    <span class="size-3 rounded bg-[#ebb862]"></span> Expiring Soon
                 </button>
                 <button type="button" @click="toggleStatusFilter('expired')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'expired' ? 'border-red-500 bg-red-50 text-red-900' : 'border-transparent hover:bg-gray-100'">
-                    <span class="size-3 rounded bg-[#EF4444]"></span> Expired
-                </button>
-                <button type="button" @click="toggleStatusFilter('on_trial')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'on_trial' ? 'border-cyan-500 bg-cyan-50 text-cyan-950' : 'border-transparent hover:bg-gray-100'">
-                    <span class="size-3 rounded bg-[#06B6D4]"></span> Trial
+                    <span class="size-3 rounded bg-[#c15858]"></span> Expired
                 </button>
             </div>
 
@@ -99,7 +96,7 @@
                                         >
                                             <span
                                                 x-show="showsTrialDot(seat)"
-                                                class="absolute right-1.5 top-1.5 size-2.5 rounded-full bg-[#06B6D4] ring-2 ring-white"
+                                                class="absolute right-1.5 top-1.5 size-2.5 rounded-full bg-[#6366F1] ring-2 ring-white"
                                                 title="Trial student also assigned"
                                             ></span>
                                             <div class="flex flex-col items-center justify-center gap-0.5">
@@ -190,11 +187,10 @@
                             <span
                                 class="size-2 rounded-full"
                                 :class="{
-                                    'bg-[#16A34A]': displayStatus(hoverSeat) === 'occupied',
-                                    'bg-[#6366F1]': displayStatus(hoverSeat) === 'occupied_custom',
-                                    'bg-[#F59E0B]': displayStatus(hoverSeat) === 'expiring_soon',
-                                    'bg-[#EF4444]': displayStatus(hoverSeat) === 'expired',
-                                    'bg-[#06B6D4]': displayStatus(hoverSeat) === 'on_trial',
+                                    'bg-[#3a995d]': displayStatus(hoverSeat) === 'occupied',
+                                    'bg-[#6366F1]': displayStatus(hoverSeat) === 'occupied_custom' || displayStatus(hoverSeat) === 'on_trial',
+                                    'bg-[#ebb862]': displayStatus(hoverSeat) === 'expiring_soon',
+                                    'bg-[#c15858]': displayStatus(hoverSeat) === 'expired',
                                 }"
                             ></span>
                             <span x-text="statusLabel(displayStatus(hoverSeat))"></span>
@@ -228,7 +224,7 @@
                 <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-4">
                     <h3 class="text-lg font-semibold text-gray-900">
                         Seat <span x-text="selectedSeat?.seat_number"></span>
-                        <span class="text-sm font-medium text-gray-500" x-text="selectedSeat?.hall_name ? ` · ${selectedSeat.hall_name}` : ''"></span>
+                        <span class="text-sm font-medium text-light-500" x-text="selectedSeat?.hall_name ? ` · ${selectedSeat.hall_name}` : ''"></span>
                     </h3>
                     <button
                         type="button"
@@ -263,11 +259,10 @@
                                 class="shrink-0 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold"
                                 :class="{
                                     'bg-[#E5E7EB] text-gray-800': displayStatus(selectedSeat) === 'available',
-                                    'bg-[#16A34A] text-white': displayStatus(selectedSeat) === 'occupied',
-                                    'bg-[#6366F1] text-white': displayStatus(selectedSeat) === 'occupied_custom',
-                                    'bg-[#F59E0B] text-amber-950': displayStatus(selectedSeat) === 'expiring_soon',
-                                    'bg-[#EF4444] text-white': displayStatus(selectedSeat) === 'expired',
-                                    'bg-[#06B6D4] text-cyan-950': displayStatus(selectedSeat) === 'on_trial',
+                                    'bg-[#3a995d] text-white': displayStatus(selectedSeat) === 'occupied',
+                                    'bg-[#6366F1] text-white': displayStatus(selectedSeat) === 'occupied_custom' || displayStatus(selectedSeat) === 'on_trial',
+                                    'bg-[#ebb862] text-amber-950': displayStatus(selectedSeat) === 'expiring_soon',
+                                    'bg-[#c15858] text-white': displayStatus(selectedSeat) === 'expired',
                                 }"
                                 x-text="statusLabel(displayStatus(selectedSeat))"
                             ></div>

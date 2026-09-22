@@ -41,7 +41,7 @@ Change the password immediately after first login.
 
 ## Browser installer (alternative)
 
-`https://aims.phenomit.com/install?token=OY4exoli1IAdGwS8E32WamLrtRsBZb7T`
+`https://aims.phenomit.com/install?token=QGIWwLghbE64JqykTAzcURC5N2Dp1rFS`
 
 Token is also in `LIBCONTROL_SETUP_TOKEN` inside `.env`.
 

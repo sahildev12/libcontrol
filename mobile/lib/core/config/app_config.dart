@@ -17,4 +17,10 @@ class AppConfig {
 
   static String get studentMeUrl =>
       '${ServerConfig.instance.apiBaseUrl}/api/v1/student/auth/me';
+
+  static String get studentAttendanceUrl =>
+      '${ServerConfig.instance.apiBaseUrl}/api/v1/student/attendance';
+
+  static String get studentAttendanceCheckInUrl =>
+      '${ServerConfig.instance.apiBaseUrl}/api/v1/student/attendance/check-in';
 }

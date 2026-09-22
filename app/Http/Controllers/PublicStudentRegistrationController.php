@@ -67,8 +67,8 @@ class PublicStudentRegistrationController extends Controller
         });
 
         return view('students.register-status', [
-            'title' => 'Registration Complete',
-            'message' => "Thank you, {$student->name}! Your details were submitted successfully.",
+            'title' => 'Student Registered Successfully',
+            'message' => "Thank you, {$student->name}! Your registration has been submitted to the library.",
         ]);
     }
 }

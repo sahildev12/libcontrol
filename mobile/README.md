@@ -16,7 +16,7 @@ The connected server URL is saved on the device. Students can change it later fr
 The app uses Phenomit by default. No extra flags needed:
 
 ```bash
-cd mobile/libcontrol_app
+cd mobile
 flutter pub get
 flutter run
 ```

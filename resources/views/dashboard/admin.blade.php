@@ -77,10 +77,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Total Branches</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['branches']) }}</p>
-                <p class="lc-kpi-card__hint">Active branches</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-10h2m4 0h2"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
         </div>
 
@@ -88,10 +87,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Total Students</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['students']) }}</p>
-                <p class="lc-kpi-card__hint">Across all branches</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             </div>
         </div>
 
@@ -99,10 +97,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Total Seats</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['seats']) }}</p>
-                <p class="lc-kpi-card__hint">Across all branches</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+                <x-admin.kpi-chair-icon />
             </div>
         </div>
 
@@ -110,10 +107,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Monthly Revenue</p>
                 <p class="lc-kpi-card__value">₹{{ number_format($kpis['monthly_revenue']) }}</p>
-                <p class="lc-kpi-card__hint">This month</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
             </div>
         </div>
 
@@ -121,10 +117,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Occupied Seats</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['occupied']) }}</p>
-                <p class="lc-kpi-card__hint">Assigned seats</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 20v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 20h6M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             </div>
         </div>
 
@@ -132,10 +127,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Available Seats</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['available']) }}</p>
-                <p class="lc-kpi-card__hint">Seats available</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+                <x-admin.kpi-chair-icon />
             </div>
         </div>
 
@@ -143,7 +137,6 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Trial Seats</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['on_trial']) }}</p>
-                <p class="lc-kpi-card__hint">On trial allocation</p>
             </div>
             <div class="lc-kpi-card__icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -154,10 +147,9 @@
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Expired Seats</p>
                 <p class="lc-kpi-card__value">{{ number_format($kpis['expired_seats']) }}</p>
-                <p class="lc-kpi-card__hint">Plan expired</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14 11h-4"/></svg>
             </div>
         </div>
     </div>
@@ -165,7 +157,7 @@
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
             <h2 class="text-base font-semibold text-gray-900">Branch Performance</h2>
-            <a href="{{ route('branch.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View all branches →</a>
+            <a href="{{ route('branch.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View all branches</a>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[960px] text-left text-sm">

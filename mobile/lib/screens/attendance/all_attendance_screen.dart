@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/routes/app_routes.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
-import 'package:libcontrol_app/data/dummy_data.dart';
+import 'package:libcontrol_app/core/api/api_client.dart';
+import 'package:libcontrol_app/core/api/attendance_api.dart';
 import 'package:libcontrol_app/models/attendance_record.dart';
 import 'package:libcontrol_app/widgets/attendance/attendance_date_filter_bar.dart';
 import 'package:libcontrol_app/widgets/attendance/attendance_overview_strip.dart';
@@ -16,18 +17,52 @@ class AllAttendanceScreen extends StatefulWidget {
 }
 
 class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
+  final _api = AttendanceApi();
+  List<AttendanceRecord> _allRecords = [];
+  bool _loading = true;
+
   late DateTime _filterStart;
   late DateTime _filterEnd;
 
   @override
   void initState() {
     super.initState();
-    _filterStart = DateTime(2026, 8, 1);
-    _filterEnd = DateTime(2026, 9, 30);
+    final now = DateTime.now();
+    _filterStart = DateTime(now.year, now.month, 1);
+    _filterEnd = DateTime(now.year, now.month, now.day);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    final passed = ModalRoute.of(context)?.settings.arguments;
+    if (passed is List<AttendanceRecord> && passed.isNotEmpty) {
+      setState(() {
+        _allRecords = passed;
+        _loading = false;
+      });
+      return;
+    }
+
+    await _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final dashboard = await _api.fetchDashboard();
+      if (!mounted) return;
+      setState(() {
+        _allRecords = dashboard.records;
+        _loading = false;
+      });
+    } on ApiException catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
   }
 
   List<AttendanceRecord> get _filteredRecords {
-    return DummyData.attendanceRecords
+    return _allRecords
         .where((record) {
           final date = DateTime(record.date.year, record.date.month, record.date.day);
           final start = DateTime(_filterStart.year, _filterStart.month, _filterStart.day);
@@ -42,7 +77,8 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
 
   int get _absentCount => _filteredRecords.where((r) => r.status == AttendanceStatus.absent).length;
 
-  int get _leaveCount => _filteredRecords.where((r) => r.status == AttendanceStatus.late || r.status == AttendanceStatus.notMarked).length;
+  int get _leaveCount =>
+      _filteredRecords.where((r) => r.status == AttendanceStatus.late || r.status == AttendanceStatus.notMarked).length;
 
   int get _attendanceRate {
     final total = _presentCount + _absentCount + _leaveCount;
@@ -182,51 +218,53 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
               onBack: () => Navigator.of(context).pop(),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                children: [
-                  AttendanceOverviewStrip(
-                    rate: _attendanceRate,
-                    present: _presentCount,
-                    absent: _absentCount,
-                    leave: _leaveCount,
-                  ),
-                  const SizedBox(height: 12),
-                  AttendanceDateFilterBar(
-                    label: _filterLabel,
-                    onTap: _openDateFilter,
-                  ),
-                  const SizedBox(height: 12),
-                  if (records.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'No attendance records for this period.',
-                          style: Theme.of(context).textTheme.bodySmall,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      children: [
+                        AttendanceOverviewStrip(
+                          rate: _attendanceRate,
+                          present: _presentCount,
+                          absent: _absentCount,
+                          leave: _leaveCount,
                         ),
-                      ),
-                    )
-                  else
-                    ...records.map(
-                      (record) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: AttendanceRecordCard(
-                          record: record,
-                          onTap: () => Navigator.of(context).pushNamed(
-                            AppRoutes.attendanceDetail,
-                            arguments: record,
+                        const SizedBox(height: 12),
+                        AttendanceDateFilterBar(
+                          label: _filterLabel,
+                          onTap: _openDateFilter,
+                        ),
+                        const SizedBox(height: 12),
+                        if (records.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'No attendance records for this period.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          )
+                        else
+                          ...records.map(
+                            (record) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: AttendanceRecordCard(
+                                record: record,
+                                onTap: () => Navigator.of(context).pushNamed(
+                                  AppRoutes.attendanceDetail,
+                                  arguments: record,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                      ],
                     ),
-                ],
-              ),
             ),
           ],
         ),

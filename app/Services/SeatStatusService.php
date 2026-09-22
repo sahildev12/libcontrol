@@ -79,7 +79,7 @@ class SeatStatusService
             'occupied_custom' => 'Occupied (Custom Hours)',
             'expiring_soon' => 'Expiring Soon',
             'expired' => 'Expired',
-            'on_trial' => 'Trial',
+            'on_trial' => 'Occupied (Custom Hours)',
             default => ucwords(str_replace('_', ' ', $status)),
         };
     }

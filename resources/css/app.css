@@ -144,7 +144,7 @@
 .lc-theme .lc-kpi-card {
     border-color: rgb(255 255 255 / 0.1);
     background: linear-gradient(135deg, var(--lc-navy) 0%, var(--lc-blue) 100%);
-    box-shadow: 0 18px 40px -24px rgb(12 0 72 / 0.65);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow, 0 0 #0000),var(--tw-shadow);
 }
 
 .lc-kpi-card__icon {
@@ -421,5 +421,46 @@ select.admin-select:focus {
         @apply appearance-none rounded-lg border border-gray-300 bg-white pr-10 text-sm text-gray-700 shadow-sm focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/30;
         -webkit-appearance: none;
         -moz-appearance: none;
+    }
+
+    .lc-reg-label {
+        @apply mb-1.5 block text-sm font-medium text-gray-700;
+    }
+
+    .lc-reg-input,
+    .lc-reg-select {
+        @apply block w-full min-h-[42px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400;
+        @apply focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25;
+    }
+
+    .lc-reg-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 2.5rem;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.65rem center;
+        background-size: 1rem 1rem;
+    }
+
+    .lc-reg-file {
+        @apply block w-full min-h-[42px] cursor-pointer rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-600 shadow-sm;
+        @apply file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand-blue file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white;
+        @apply hover:border-gray-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25;
+    }
+
+    .lc-reg-file::file-selector-button:hover {
+        background-color: #0c0048;
+    }
+
+    .lc-reg-input--error,
+    .lc-reg-select--error,
+    .lc-reg-file--error {
+        @apply border-red-500 focus:border-red-500 focus:ring-red-200;
+    }
+
+    .lc-reg-error {
+        @apply mt-1 text-xs text-red-600;
     }
 }

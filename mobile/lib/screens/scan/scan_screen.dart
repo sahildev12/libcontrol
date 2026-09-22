@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
+import 'package:libcontrol_app/core/api/api_client.dart';
+import 'package:libcontrol_app/core/api/attendance_api.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
 import 'package:libcontrol_app/widgets/centered_page_header.dart';
@@ -17,6 +19,7 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
+  final _attendanceApi = AttendanceApi();
   int _modeIndex = 0;
   final _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
@@ -60,21 +63,87 @@ class _ScanScreenState extends State<ScanScreen> {
     _handlingScan = true;
     _lastScannedCode = value;
 
-    final mode = _modeIndex == 0 ? 'Check-in' : 'Check-out';
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$mode recorded successfully.'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (_modeIndex != 0) {
+      _showSnack('Check-out is not available yet. Use Check In to mark attendance.', AppColors.warning);
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        _handlingScan = false;
+        _lastScannedCode = null;
+      }
+      return;
+    }
+
+    try {
+      final message = await _attendanceApi.checkInFromQr(value);
+      if (!mounted) return;
+      _showSnack(message, AppColors.success);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      final color = error.statusCode == 422 ? AppColors.warning : AppColors.danger;
+      _showSnack(error.message, color);
+    } catch (_) {
+      if (!mounted) return;
+      _showSnack('Could not complete check-in. Try again.', AppColors.danger);
+    }
 
     await Future<void>.delayed(const Duration(seconds: 2));
     if (mounted) {
       _handlingScan = false;
       _lastScannedCode = null;
+    }
+  }
+
+  void _showSnack(String message, Color background) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: background,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _openManualEntry() async {
+    final controller = TextEditingController();
+    final submitted = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter attendance QR'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'Paste QR URL or token',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Check in'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (submitted == null || submitted.isEmpty || !mounted) return;
+
+    if (_modeIndex != 0) {
+      _showSnack('Switch to Check In to mark attendance.', AppColors.warning);
+      return;
+    }
+
+    try {
+      final message = await _attendanceApi.checkInFromQr(submitted);
+      if (!mounted) return;
+      _showSnack(message, AppColors.success);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      _showSnack(error.message, error.statusCode == 422 ? AppColors.warning : AppColors.danger);
     }
   }
 
@@ -114,7 +183,7 @@ class _ScanScreenState extends State<ScanScreen> {
             const SizedBox(height: 8),
             _LocationCard(onTap: () {}),
             const SizedBox(height: 8),
-            _ManualEntryButton(onPressed: () {}),
+            _ManualEntryButton(onPressed: _openManualEntry),
           ],
         ),
       ),
@@ -129,14 +198,14 @@ class _ScanScreenState extends State<ScanScreen> {
         children: [
           if (_checkingPermission)
             Container(
-              color: const Color(0xFF0F172A),
+              color: AppColors.primaryDark,
               child: const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
             )
           else if (!_cameraGranted)
             Container(
-              color: const Color(0xFF0F172A),
+              color: AppColors.primaryDark,
               padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -182,8 +251,8 @@ class _ScanScreenState extends State<ScanScreen> {
       height: 26,
       decoration: const BoxDecoration(
         border: Border(
-          top: BorderSide(color: AppColors.primary, width: 4),
-          left: BorderSide(color: AppColors.primary, width: 4),
+          top: BorderSide(color: AppColors.secondary, width: 4),
+          left: BorderSide(color: AppColors.secondary, width: 4),
         ),
       ),
     );

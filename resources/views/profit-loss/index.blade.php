@@ -143,11 +143,7 @@
         </section>
 
         <section x-show="activeTab === 'statement'" x-cloak class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-100 px-4 py-3">
-                <p class="text-sm font-semibold text-gray-900">Financial statement</p>
-                <p class="text-xs text-gray-500">Combined fee receipts and operating expenses for the selected period.</p>
-            </div>
-            <div class="lc-table-toolbar flex flex-wrap items-end gap-3 border-b border-gray-100 px-4 py-3">
+            <div class="lc-table-toolbar flex flex-wrap items-end gap-3 rounded-t-xl border-b border-gray-100 px-4 py-3">
                 <div class="min-w-[12rem] flex-1">
                     <label class="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Search</label>
                     <input type="search" x-model="statementSearch" placeholder="Search description, student, branch..." class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">

@@ -69,10 +69,12 @@ class HallController extends Controller
     {
         $this->authorizeHall($request, $hall);
 
-        $hall->loadCount($this->hallCountRelations());
+        $hall->load(['branch:id,name'])->loadCount($this->hallCountRelations());
 
         return response()->json([
             'id' => $hall->id,
+            'branch_id' => $hall->branch_id,
+            'branch_name' => $hall->branch?->name,
             'name' => $hall->name,
             'description' => $hall->description,
             'seat_capacity' => $hall->seat_capacity,

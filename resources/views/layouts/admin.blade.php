@@ -58,5 +58,6 @@
         </div>
 
         @include('layouts.partials.admin-toasts')
+        @include('layouts.partials.admin-confirm-dialog')
     </body>
 </html>

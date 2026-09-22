@@ -5,7 +5,7 @@
             <p class="mt-1 text-xs text-gray-500">Create a simple public page for students with amenities, social links, WhatsApp, and about us.</p>
         </div>
         <form class="space-y-4 p-5" @submit.prevent="saveWebsiteSettings()">
-            <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+            <label class="hidden inline-flex items-center gap-2 text-sm font-medium text-gray-700">
                 <input type="checkbox" x-model="websiteForm.website_enabled" class="rounded border-gray-300 text-indigo-600">
                 Enable public website
             </label>

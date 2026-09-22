@@ -22,43 +22,39 @@
         </div>
     </header>
 
-    {{-- KPI cards: single row --}}
-    <div class="flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
-        <div class="lc-kpi-card min-w-[160px]">
+    {{-- KPI cards: match main dashboard sizing --}}
+    <div class="lc-kpi-row lc-kpi-row--lg grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="lc-kpi-card">
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Total Seats</p>
                 <p class="lc-kpi-card__value">{{ number_format($stats['total_seats']) }}</p>
-                <p class="lc-kpi-card__hint">All seats in branch</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+                <x-admin.kpi-chair-icon />
             </div>
         </div>
-        <div class="lc-kpi-card min-w-[160px]">
+        <div class="lc-kpi-card">
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Occupied</p>
                 <p class="lc-kpi-card__value">{{ number_format($occupiedActive) }}</p>
-                <p class="lc-kpi-card__hint">Active assignments</p>
             </div>
             <div class="lc-kpi-card__icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             </div>
         </div>
-        <div class="lc-kpi-card min-w-[160px]">
+        <div class="lc-kpi-card">
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">Vacant</p>
                 <p class="lc-kpi-card__value">{{ number_format($stats['available']) }}</p>
-                <p class="lc-kpi-card__hint">Ready to assign</p>
             </div>
             <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+                <x-admin.kpi-chair-icon />
             </div>
         </div>
-        <div class="lc-kpi-card min-w-[160px]">
+        <div class="lc-kpi-card">
             <div class="lc-kpi-card__body">
                 <p class="lc-kpi-card__label">On Trial</p>
                 <p class="lc-kpi-card__value">{{ number_format($stats['on_trial']) }}</p>
-                <p class="lc-kpi-card__hint">Trial allocations</p>
             </div>
             <div class="lc-kpi-card__icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -72,32 +68,30 @@
             <div class="lc-panel-header flex items-center rounded-t-xl border-b border-gray-100 px-5 py-4">
                 <h2 class="text-base font-semibold text-gray-900">Today's Overview</h2>
             </div>
-            <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 {{ config('libcontrol.modules.enquiries') ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }}">
+            <div class="lc-kpi-row lc-kpi-row--lg grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 {{ config('libcontrol.modules.enquiries') ? 'lg:grid-cols-2' : 'lg:grid-cols-3' }}">
                 @if (config('libcontrol.modules.enquiries'))
-                <x-admin.kpi-card compact label="New Enquiries" :value="number_format($today['enquiries'])" hint="vs yesterday">
+                <x-admin.kpi-card label="New Enquiries" :value="number_format($today['enquiries'])">
                     <x-slot:icon>
-                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z"/></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z"/></svg>
                     </x-slot:icon>
                 </x-admin.kpi-card>
                 @endif
-                <x-admin.kpi-card compact label="New Students" :value="number_format($today['students'])" hint="vs yesterday">
+                <x-admin.kpi-card label="New Students" :value="number_format($today['students'])">
                     <x-slot:icon>
-                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </x-slot:icon>
                 </x-admin.kpi-card>
-                <x-admin.kpi-card compact label="Today's Revenue" :value="'₹'.number_format($today['revenue'])" hint="vs yesterday">
+                <x-admin.kpi-card label="Today's Revenue" :value="'₹'.number_format($today['revenue'])">
                     <x-slot:icon>
-                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
                     </x-slot:icon>
                 </x-admin.kpi-card>
                 <x-admin.kpi-card
-                    compact
-                    label="Expiring Plans"
+                    label="Expiring Plans (Next 7 Days)"
                     :value="number_format($today['expiring_plans'])"
-                    hint="Next 7 days"
                 >
                     <x-slot:icon>
-                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </x-slot:icon>
                 </x-admin.kpi-card>
             </div>

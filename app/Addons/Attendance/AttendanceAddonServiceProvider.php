@@ -4,6 +4,7 @@ namespace App\Addons\Attendance;
 
 use App\Addons\Attendance\Http\Controllers\Api\AttendanceApiController;
 use App\Addons\Attendance\Http\Controllers\Api\AuthApiController;
+use App\Addons\Attendance\Http\Controllers\Api\StudentAttendanceApiController;
 use App\Addons\Attendance\Http\Controllers\AttendanceController;
 use App\Addons\Attendance\Http\Controllers\PublicCheckInController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,13 @@ class AttendanceAddonServiceProvider extends ServiceProvider
             Route::patch('/attendance/settings', [AttendanceController::class, 'updateSettings'])->name('attendance.settings.update');
             Route::post('/attendance/settings/rotate-qr', [AttendanceController::class, 'rotateQr'])->name('attendance.settings.rotate-qr');
             Route::get('/attendance/reports', [AttendanceController::class, 'reports'])->name('attendance.reports');
+        });
+
+        Route::middleware(['api', 'addon:attendance'])->prefix('api/v1/student')->group(function (): void {
+            Route::middleware(['auth:sanctum', 'student.api'])->group(function (): void {
+                Route::get('/attendance', [StudentAttendanceApiController::class, 'index']);
+                Route::post('/attendance/check-in', [StudentAttendanceApiController::class, 'checkIn']);
+            });
         });
 
         Route::middleware(['api', 'addon:attendance'])->prefix('api/v1')->group(function (): void {

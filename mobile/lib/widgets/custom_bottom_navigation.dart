@@ -38,10 +38,12 @@ class CustomBottomNavigation extends StatelessWidget {
             children: List.generate(_items.length, (index) {
               final item = _items[index];
               final selected = currentIndex == index;
+              final isScan = index == 2;
               return _NavItem(
                 icon: selected ? item.activeIcon : item.icon,
                 label: item.label,
                 selected: selected,
+                emphasize: isScan && selected,
                 onTap: () => onTap(index),
               );
             }),
@@ -57,12 +59,14 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.selected,
+    this.emphasize = false,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final bool emphasize;
   final VoidCallback onTap;
 
   @override
@@ -82,10 +86,16 @@ class _NavItem extends StatelessWidget {
                 width: selected ? 44 : 36,
                 height: selected ? 30 : 28,
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primaryBg : Colors.transparent,
+                  color: selected
+                      ? (emphasize ? AppColors.secondary : AppColors.primaryBg)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Icon(icon, size: 22, color: color),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: emphasize ? AppColors.primaryDark : color,
+                ),
               ),
               const SizedBox(height: 2),
               Text(

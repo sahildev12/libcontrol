@@ -2,12 +2,12 @@
 <div x-show="editOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-900/60" @click="closeEdit()"></div>
     <div class="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl" @click.stop>
-        <div class="flex shrink-0 items-start justify-between border-b border-gray-200 px-6 py-4">
-            <div>
-                <h3 class="text-lg font-bold text-gray-900">Edit Student</h3>
-                <p class="mt-0.5 text-sm text-gray-500" x-show="editForm.student_code" x-text="editForm.student_code"></p>
+        <div class="lc-panel-header flex shrink-0 items-start justify-between rounded-t-2xl border-b border-white/10 px-6 py-4">
+            <div class="min-w-0">
+                <h3 class="text-lg font-semibold text-white">Edit Student</h3>
+                <p class="mt-0.5 text-sm text-white/75" x-show="editForm.student_code" x-text="editForm.student_code"></p>
             </div>
-            <button type="button" @click="closeEdit()" class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600" aria-label="Close">
+            <button type="button" @click="closeEdit()" class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white" aria-label="Close">
                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -191,7 +191,7 @@
 
         <div class="flex shrink-0 justify-end gap-2 border-t border-gray-200 px-6 py-4">
             <button type="button" @click="closeEdit()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-            <button type="submit" form="student-edit-form" :disabled="editSaving" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+            <button type="submit" form="student-edit-form" :disabled="editSaving" class="rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white hover:bg-brand-navy disabled:opacity-60">
                 <span x-show="! editSaving">Save Changes</span>
                 <span x-show="editSaving">Saving...</span>
             </button>

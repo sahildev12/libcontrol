@@ -72,6 +72,23 @@ function showToast(message, type = 'success', duration = 5000) {
 window.showToast = showToast;
 window.sanitizeDigits = sanitizeDigits;
 
+function confirmDialog(options = {}) {
+    return new Promise((resolve) => {
+        window.dispatchEvent(new CustomEvent('confirm-dialog', {
+            detail: {
+                title: options.title ?? 'Please confirm',
+                message: options.message ?? '',
+                confirmLabel: options.confirmLabel ?? 'Confirm',
+                cancelLabel: options.cancelLabel ?? 'Cancel',
+                tone: options.tone ?? 'danger',
+                resolve,
+            },
+        }));
+    });
+}
+
+window.confirmDialog = confirmDialog;
+
 function createDataTableMixin() {
     return {
         search: '',
@@ -746,8 +763,15 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             }
         },
 
-        resetStudentAppLogin() {
-            if (! confirm('Reset app login for this student? They will need to set up a new PIN on their next mobile sign-in.')) {
+        async resetStudentAppLogin() {
+            const confirmed = await confirmDialog({
+                title: 'Reset app login?',
+                message: 'This student will need to set up a new PIN on their next mobile sign-in.',
+                confirmLabel: 'Reset login',
+                tone: 'danger',
+            });
+
+            if (! confirmed) {
                 return;
             }
 
@@ -760,7 +784,14 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
                 return;
             }
 
-            if (! confirm('Unlink this student from the shared family contact?')) {
+            const confirmed = await confirmDialog({
+                title: 'Unlink from family?',
+                message: 'Unlink this student from the shared family contact?',
+                confirmLabel: 'Unlink',
+                tone: 'danger',
+            });
+
+            if (! confirmed) {
                 return;
             }
 
@@ -916,6 +947,41 @@ function createStudentPickerMixin({ formKey = 'assignForm', idKey = 'student_id'
         },
     };
 }
+
+Alpine.data('confirmDialogHost', () => ({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel',
+    tone: 'danger',
+    _resolve: null,
+
+    openDialog(detail) {
+        this.title = detail?.title ?? 'Please confirm';
+        this.message = detail?.message ?? '';
+        this.confirmLabel = detail?.confirmLabel ?? 'Confirm';
+        this.cancelLabel = detail?.cancelLabel ?? 'Cancel';
+        this.tone = detail?.tone ?? 'danger';
+        this._resolve = detail?.resolve ?? null;
+        this.isOpen = true;
+    },
+
+    confirm() {
+        this._resolve?.(true);
+        this.close();
+    },
+
+    cancel() {
+        this._resolve?.(false);
+        this.close();
+    },
+
+    close() {
+        this.isOpen = false;
+        this._resolve = null;
+    },
+}));
 
 Alpine.data('toastHost', () => ({
     toasts: [],
@@ -1421,7 +1487,13 @@ function matchesStatusFilter(seat, statusFilter) {
         return true;
     }
 
-    return displaySeatStatus(seat) === statusFilter;
+    const status = displaySeatStatus(seat);
+
+    if (statusFilter === 'occupied_custom') {
+        return status === 'occupied_custom' || status === 'on_trial';
+    }
+
+    return status === statusFilter;
 }
 
 function visibleOnRegularMap(seat) {
@@ -1450,11 +1522,11 @@ function seatTileClasses(seat) {
 
     return {
         available: `${base} bg-[#E5E7EB] text-gray-700 hover:bg-gray-300`,
-        occupied: `${base} bg-[#16A34A] text-white hover:bg-green-700`,
+        occupied: `${base} bg-[#3a995d] text-white hover:brightness-95`,
         occupied_custom: `${base} bg-[#6366F1] text-white hover:bg-indigo-600`,
-        expiring_soon: `${base} bg-[#F59E0B] text-amber-950 hover:bg-amber-500`,
-        expired: `${base} bg-[#EF4444] text-white hover:bg-red-600`,
-        on_trial: `${base} bg-[#06B6D4] text-cyan-950 hover:bg-cyan-500`,
+        expiring_soon: `${base} bg-[#ebb862] text-amber-950 hover:brightness-95`,
+        expired: `${base} bg-[#c15858] text-white hover:brightness-95`,
+        on_trial: `${base} bg-[#6366F1] text-white hover:bg-indigo-600`,
         cancelled: `${base} bg-[#E5E7EB] text-gray-600 opacity-70`,
     }[status] || `${base} bg-white text-gray-700`;
 }
@@ -1466,7 +1538,7 @@ function seatStatusLabel(status) {
         occupied_custom: 'Occupied (Custom Hours)',
         expiring_soon: 'Expiring Soon',
         expired: 'Expired',
-        on_trial: 'Trial',
+        on_trial: 'Occupied (Custom Hours)',
         cancelled: 'Cancelled',
     }[status] || status;
 }
@@ -3736,7 +3808,17 @@ Alpine.data('studentTable', (config) => ({
     },
 
     async deleteOne(row) {
-        if (! confirm(`Delete student "${row.name}"?`)) return;
+        const confirmed = await confirmDialog({
+            title: 'Delete student?',
+            message: `Delete student "${row.name}"? This cannot be undone.`,
+            confirmLabel: 'Delete',
+            tone: 'danger',
+        });
+
+        if (! confirmed) {
+            return;
+        }
+
         try {
             const response = await window.axios.delete(`/students/${row.id}`);
             this.rows = this.rows.filter((item) => item.id !== row.id);
@@ -3753,7 +3835,14 @@ Alpine.data('studentTable', (config) => ({
             return;
         }
 
-        if (! confirm(`Delete ${this.selectedIds.length} selected student(s)?`)) {
+        const confirmed = await confirmDialog({
+            title: 'Delete selected students?',
+            message: `Delete ${this.selectedIds.length} selected student(s)? This cannot be undone.`,
+            confirmLabel: 'Delete',
+            tone: 'danger',
+        });
+
+        if (! confirmed) {
             return;
         }
 
