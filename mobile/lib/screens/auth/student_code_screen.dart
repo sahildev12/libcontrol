@@ -151,43 +151,25 @@ class _StudentCodeScreenState extends State<StudentCodeScreen> {
                   onSubmitted: (_) => _loading ? null : _continue(),
                 )
               else if (usesSinglePrefix)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-                      ),
-                      child: Text(
-                        style!.displayPrefix,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _studentCodeController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(style!.padding.clamp(1, 6)),
-                        ],
-                        decoration: InputDecoration(
-                          labelText: 'Student number',
-                          hintText: '1'.padLeft(style!.padding, '0'),
-                        ),
-                        onSubmitted: (_) => _loading ? null : _continue(),
-                      ),
-                    ),
+                TextField(
+                  controller: _studentCodeController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(style!.padding.clamp(1, 6)),
                   ],
+                  decoration: InputDecoration(
+                    labelText: 'Student number',
+                    hintText: '1'.padLeft(style!.padding, '0'),
+                    prefix: Text(
+                      style!.displayPrefix,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  onSubmitted: (_) => _loading ? null : _continue(),
                 )
               else
                 TextField(

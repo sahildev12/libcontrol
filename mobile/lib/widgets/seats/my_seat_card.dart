@@ -18,105 +18,115 @@ class MySeatCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: const [
-          BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 6)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryBg,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.event_seat_rounded, color: AppColors.primary, size: 22),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          seat.seatCode,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textDark,
-                                height: 1.1,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(seat.hall, style: Theme.of(context).textTheme.bodyMedium),
-                        Text(seat.floor, style: Theme.of(context).textTheme.bodySmall),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    color: AppColors.border,
-                  ),
-                  Expanded(
-                    flex: 6,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: SeatActiveBadge(label: seat.statusLabel),
-                        ),
-                        const SizedBox(height: 12),
-                        _DetailRow(
-                          icon: Icons.calendar_today_outlined,
-                          label: 'Booked On',
-                          value: seat.formattedBookedOn,
-                        ),
-                        const SizedBox(height: 10),
-                        _DetailRow(
-                          icon: Icons.payments_outlined,
-                          label: 'Amount Paid',
-                          value: seat.formattedAmount,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primaryDark],
               ),
             ),
-          ),
-          Material(
-            color: AppColors.primaryBg,
-            child: InkWell(
-              onTap: onViewQr,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    const Icon(Icons.qr_code_2_rounded, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'View QR Code',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Your allotted seat',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    const Icon(Icons.chevron_right_rounded, color: AppColors.primary, size: 20),
+                    const Spacer(),
+                    SeatActiveBadge(
+                      label: seat.statusLabel,
+                      compact: true,
+                      onDark: true,
+                    ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Text(
+                  seat.seatCode,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.05,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.meeting_room_outlined, color: AppColors.secondary, size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${seat.hall} · ${seat.floor}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Booked on',
+                    value: seat.formattedBookedOn,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.payments_outlined,
+                    label: 'Amount paid',
+                    value: seat.formattedAmount,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: FilledButton.icon(
+              onPressed: onViewQr,
+              icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+              label: const Text('View attendance QR'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -126,8 +136,8 @@ class MySeatCard extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
     required this.icon,
     required this.label,
     required this.value,
@@ -139,25 +149,26 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(height: 8),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

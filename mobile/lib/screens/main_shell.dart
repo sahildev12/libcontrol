@@ -35,6 +35,7 @@ class _MainShellState extends State<MainShell> {
         onBack: () => setState(() => _currentIndex = 0),
       ),
       ScanScreen(
+        isActive: _currentIndex == 2,
         onBack: () => setState(() => _currentIndex = 0),
       ),
       SeatsScreen(

@@ -6,13 +6,19 @@ import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/data/dummy_data.dart';
 import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:libcontrol_app/widgets/scan/scan_mode_switch.dart';
+import 'package:libcontrol_app/widgets/scan/scan_success_panel.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ScanScreen extends StatefulWidget {
-  const ScanScreen({super.key, this.onBack});
+  const ScanScreen({
+    super.key,
+    this.onBack,
+    this.isActive = true,
+  });
 
   final VoidCallback? onBack;
+  final bool isActive;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -21,25 +27,48 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   final _attendanceApi = AttendanceApi();
   int _modeIndex = 0;
-  final _scannerController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-  );
+  late final MobileScannerController _scannerController;
   bool _cameraGranted = false;
   bool _checkingPermission = true;
   bool _handlingScan = false;
   String? _lastScannedCode;
+  _ScanSuccess? _success;
 
   @override
   void initState() {
     super.initState();
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+    );
     _ensureCameraPermission();
+  }
+
+  @override
+  void didUpdateWidget(ScanScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive != widget.isActive) {
+      _syncCameraWithVisibility();
+      if (!widget.isActive) {
+        setState(() => _success = null);
+      }
+    }
   }
 
   @override
   void dispose() {
     _scannerController.dispose();
     super.dispose();
+  }
+
+  Future<void> _syncCameraWithVisibility() async {
+    if (!widget.isActive || _success != null) {
+      await _scannerController.stop();
+      return;
+    }
+    if (_cameraGranted && !_checkingPermission) {
+      await _scannerController.start();
+    }
   }
 
   Future<void> _ensureCameraPermission() async {
@@ -49,10 +78,16 @@ class _ScanScreenState extends State<ScanScreen> {
       _cameraGranted = status.isGranted;
       _checkingPermission = false;
     });
+    await _syncCameraWithVisibility();
+  }
+
+  void _clearSuccess() {
+    setState(() => _success = null);
+    _syncCameraWithVisibility();
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_handlingScan) return;
+    if (_handlingScan || _success != null || !widget.isActive) return;
 
     final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
@@ -65,7 +100,9 @@ class _ScanScreenState extends State<ScanScreen> {
 
     if (!mounted) return;
 
-    if (_modeIndex != 0) {
+    final isCheckOut = _modeIndex == 1;
+
+    if (isCheckOut) {
       _showSnack('Check-out is not available yet. Use Check In to mark attendance.', AppColors.warning);
       await Future<void>.delayed(const Duration(seconds: 2));
       if (mounted) {
@@ -76,9 +113,12 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     try {
-      final message = await _attendanceApi.checkInFromQr(value);
+      await _attendanceApi.checkInFromQr(value);
       if (!mounted) return;
-      _showSnack(message, AppColors.success);
+      await _scannerController.stop();
+      setState(() {
+        _success = _ScanSuccess(isCheckOut: false, at: DateTime.now());
+      });
     } on ApiException catch (error) {
       if (!mounted) return;
       final color = error.statusCode == 422 ? AppColors.warning : AppColors.danger;
@@ -88,7 +128,7 @@ class _ScanScreenState extends State<ScanScreen> {
       _showSnack('Could not complete check-in. Try again.', AppColors.danger);
     }
 
-    await Future<void>.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 1));
     if (mounted) {
       _handlingScan = false;
       _lastScannedCode = null;
@@ -105,50 +145,34 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  Future<void> _openManualEntry() async {
-    final controller = TextEditingController();
-    final submitted = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Enter attendance QR'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Paste QR URL or token',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: const Text('Check in'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (submitted == null || submitted.isEmpty || !mounted) return;
-
-    if (_modeIndex != 0) {
-      _showSnack('Switch to Check In to mark attendance.', AppColors.warning);
-      return;
+  void _onModeChanged(int index) {
+    if (_success != null) {
+      _clearSuccess();
     }
-
-    try {
-      final message = await _attendanceApi.checkInFromQr(submitted);
-      if (!mounted) return;
-      _showSnack(message, AppColors.success);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      _showSnack(error.message, error.statusCode == 422 ? AppColors.warning : AppColors.danger);
-    }
+    setState(() => _modeIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_success != null) {
+      return SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Column(
+            children: [
+              Expanded(
+                child: ScanSuccessPanel(
+                  isCheckOut: _success!.isCheckOut,
+                  time: _success!.at,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -164,7 +188,7 @@ class _ScanScreenState extends State<ScanScreen> {
             const SizedBox(height: 12),
             ScanModeSwitch(
               selectedIndex: _modeIndex,
-              onChanged: (index) => setState(() => _modeIndex = index),
+              onChanged: _onModeChanged,
             ),
             const SizedBox(height: 12),
             Expanded(child: _buildScanner()),
@@ -182,8 +206,6 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
             const SizedBox(height: 8),
             _LocationCard(onTap: () {}),
-            const SizedBox(height: 8),
-            _ManualEntryButton(onPressed: _openManualEntry),
           ],
         ),
       ),
@@ -191,6 +213,15 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Widget _buildScanner() {
+    if (!widget.isActive) {
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.primaryDark,
+          borderRadius: BorderRadius.circular(20),
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Stack(
@@ -259,6 +290,13 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 }
 
+class _ScanSuccess {
+  const _ScanSuccess({required this.isCheckOut, required this.at});
+
+  final bool isCheckOut;
+  final DateTime at;
+}
+
 class _LocationCard extends StatelessWidget {
   const _LocationCard({required this.onTap});
 
@@ -313,36 +351,6 @@ class _LocationCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ManualEntryButton extends StatelessWidget {
-  const _ManualEntryButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.keyboard_outlined, size: 18),
-            SizedBox(width: 8),
-            Text('Enter Manually', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-          ],
         ),
       ),
     );
