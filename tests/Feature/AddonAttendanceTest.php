@@ -144,4 +144,23 @@ class AddonAttendanceTest extends AttendanceTestCase
             'method' => AttendanceRecord::METHOD_STAFF_GPS,
         ]);
     }
+
+    public function test_platform_admin_viewing_all_branches_can_open_attendance_settings(): void
+    {
+        $this->installAttendanceAddon();
+
+        $branch = Branch::factory()->create(['name' => 'Alpha Branch']);
+        $user = $this->platformAdmin();
+
+        $this->actingAs($user)
+            ->withSession(['active_branch_id' => 'all'])
+            ->get('/attendance/settings')
+            ->assertRedirect(route('attendance.settings', ['branch_id' => $branch->id]));
+
+        $this->actingAs($user)
+            ->withSession(['active_branch_id' => 'all'])
+            ->get('/attendance/settings?branch_id='.$branch->id)
+            ->assertOk()
+            ->assertSee('Attendance Setup');
+    }
 }

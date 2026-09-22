@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Student;
 use App\Services\LibraryScheduleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -115,9 +116,22 @@ class AttendanceController extends Controller
         return response()->json($attendance->studentProfile($student, $date));
     }
 
-    public function settings(Request $request, AttendanceService $attendance): View
+    public function settings(Request $request, AttendanceService $attendance): View|RedirectResponse
     {
-        $branch = $this->resolveWritableBranch($request, $request->integer('branch_id') ?: null);
+        $requestedBranchId = $request->integer('branch_id') ?: null;
+
+        if (
+            $request->user()?->isAnyAdmin()
+            && $this->viewingAllBranches($request)
+            && ! $requestedBranchId
+        ) {
+            $firstBranchId = Branch::query()->orderBy('name')->value('id');
+            abort_unless($firstBranchId, 422, 'Create a branch before configuring attendance.');
+
+            return redirect()->route('attendance.settings', ['branch_id' => $firstBranchId]);
+        }
+
+        $branch = $this->resolveWritableBranch($request, $requestedBranchId);
         $settings = $attendance->settingsForBranch($branch->id);
 
         $branches = $request->user()?->isPlatformAdmin()
