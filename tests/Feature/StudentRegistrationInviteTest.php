@@ -51,7 +51,12 @@ class StudentRegistrationInviteTest extends TestCase
             'email' => 'rahul@example.com',
         ]);
 
-        $response->assertOk();
+        $response->assertRedirect(route('students.register.show', $invite->token));
+
+        $this->get(route('students.register.show', $invite->token))
+            ->assertOk()
+            ->assertSee('Student Registered Successfully');
+
         $this->assertDatabaseHas('students', [
             'branch_id' => $branch->id,
             'name' => 'Rahul Kumar',
@@ -76,7 +81,8 @@ class StudentRegistrationInviteTest extends TestCase
             'email' => 'first@example.com',
         ];
 
-        $this->post(route('students.register.store', $invite->token), $payload)->assertOk();
+        $this->post(route('students.register.store', $invite->token), $payload)
+            ->assertRedirect(route('students.register.show', $invite->token));
 
         $this->post(route('students.register.store', $invite->token), [
             'name' => 'Second Student',
@@ -84,7 +90,9 @@ class StudentRegistrationInviteTest extends TestCase
             'date_of_birth' => '2001-02-20',
             'phone' => '9123456780',
             'email' => 'second@example.com',
-        ])->assertStatus(410);
+        ])
+            ->assertOk()
+            ->assertSee('Link Already Used', false);
 
         $this->assertSame(1, Student::query()->count());
     }
@@ -105,6 +113,8 @@ class StudentRegistrationInviteTest extends TestCase
             'date_of_birth' => '2000-01-15',
             'phone' => '9876543210',
             'email' => 'late@example.com',
-        ])->assertStatus(410);
+        ])
+            ->assertOk()
+            ->assertSee('Link Expired', false);
     }
 }

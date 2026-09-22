@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePublicStudentRegistrationRequest;
 use App\Models\StudentRegistrationInvite;
 use App\Services\StudentCreator;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -17,17 +18,26 @@ class PublicStudentRegistrationController extends Controller
             ->firstOrFail();
 
         if ($invite->used_at) {
-            return view('students.register-status', [
-                'title' => 'Link Already Used',
-                'message' => 'This registration link has already been used and is no longer available.',
-            ]);
+            $successName = session('registration_success_name');
+
+            if (is_string($successName) && $successName !== '') {
+                return $this->registrationStatus(
+                    'Student Registered Successfully',
+                    "Thank you, {$successName}! Your registration has been submitted to the library.",
+                );
+            }
+
+            return $this->registrationStatus(
+                'Link Already Used',
+                'This registration link has already been used and is no longer available.',
+            );
         }
 
         if ($invite->expires_at->isPast()) {
-            return view('students.register-status', [
-                'title' => 'Link Expired',
-                'message' => 'This registration link expired after 2 hours. Please ask the library staff for a new link.',
-            ]);
+            return $this->registrationStatus(
+                'Link Expired',
+                'This registration link expired after 2 hours. Please ask the library staff for a new link.',
+            );
         }
 
         $invite->load('branch:id,name,display_name');
@@ -42,15 +52,38 @@ class PublicStudentRegistrationController extends Controller
         StorePublicStudentRegistrationRequest $request,
         string $token,
         StudentCreator $studentCreator,
-    ): View {
+    ): View|RedirectResponse {
+        $invite = StudentRegistrationInvite::query()
+            ->where('token', $token)
+            ->firstOrFail();
+
+        if ($invite->used_at !== null) {
+            return $this->registrationStatus(
+                'Link Already Used',
+                'This registration link has already been used. If you already registered, please contact the library staff.',
+            );
+        }
+
+        if ($invite->expires_at->isPast()) {
+            return $this->registrationStatus(
+                'Link Expired',
+                'This registration link expired after 2 hours. Please ask the library staff for a new link.',
+            );
+        }
+
         $student = DB::transaction(function () use ($request, $token, $studentCreator) {
             $invite = StudentRegistrationInvite::query()
                 ->where('token', $token)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            abort_if($invite->used_at !== null, 410, 'This registration link has already been used.');
-            abort_if($invite->expires_at->isPast(), 410, 'This registration link has expired.');
+            if ($invite->used_at !== null) {
+                return null;
+            }
+
+            if ($invite->expires_at->isPast()) {
+                return null;
+            }
 
             $invite->load('branch');
 
@@ -66,9 +99,32 @@ class PublicStudentRegistrationController extends Controller
             return $student;
         });
 
+        if ($student === null) {
+            $invite->refresh();
+
+            if ($invite->used_at !== null) {
+                return $this->registrationStatus(
+                    'Link Already Used',
+                    'This registration link has already been used. If you already registered, please contact the library staff.',
+                );
+            }
+
+            return $this->registrationStatus(
+                'Link Expired',
+                'This registration link expired after 2 hours. Please ask the library staff for a new link.',
+            );
+        }
+
+        return redirect()
+            ->route('students.register.show', $token)
+            ->with('registration_success_name', $student->name);
+    }
+
+    private function registrationStatus(string $title, string $message): View
+    {
         return view('students.register-status', [
-            'title' => 'Student Registered Successfully',
-            'message' => "Thank you, {$student->name}! Your registration has been submitted to the library.",
+            'title' => $title,
+            'message' => $message,
         ]);
     }
 }

@@ -112,6 +112,6 @@ Billing: [Monthly / Yearly]
 Amount: ₹[X] + GST
 Includes: up to [N] seats, [N] halls, [N] branch(es)
 Setup: Guided onboarding included [Pro: priority]
-Support: Mon–Sat 9–6 IST · info@phenomit.com · +91 89012-23423
+Support: Mon–Sat 9–6 IST · info@phenomit.com · +91 8076 105 181
 Valid for: 30 days
 ```

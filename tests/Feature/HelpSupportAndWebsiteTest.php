@@ -33,7 +33,7 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertSee('Support Documentation', false)
             ->assertSee('libcontrol/support-articles.html', false)
             ->assertSee('libcontrol/documentation.html', false)
-            ->assertSee('wa.me/918901223423', false);
+            ->assertSee('wa.me/918076105181', false);
     }
 
     public function test_user_can_create_support_ticket_when_phenomit_accepts_it(): void

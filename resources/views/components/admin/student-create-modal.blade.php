@@ -53,19 +53,22 @@
                         <option value="regular">Regular</option>
                     </select>
                 </div>
-                <div x-show="(branches || []).length > 1" x-cloak>
+                <div x-show="shouldShowStudentBranchField()" x-cloak>
                     <label class="block text-xs font-medium text-gray-700">Branch <span class="text-red-500">*</span></label>
                     <select
                         x-model="studentForm.branch_id"
-                        :disabled="Boolean(selectedSeat?.branch_id)"
+                        @change="createRegistrationInvite()"
+                        :disabled="isStudentBranchLocked()"
                         class="admin-select mt-1 block w-full px-3 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-600"
                         :class="studentFormErrors.branch_id ? 'border-red-400' : ''"
                     >
+                        <option value="" x-show="viewingAll" disabled :selected="!studentForm.branch_id">Select branch</option>
                         <template x-for="branch in (branches || [])" :key="branch.id">
                             <option :value="branch.id" x-text="branch.name"></option>
                         </template>
                     </select>
                     <p x-show="selectedSeat?.branch_id" class="mt-1 text-xs text-gray-500">Locked to this seat’s branch.</p>
+                    <p x-show="isStudentBranchLocked() && ! selectedSeat?.branch_id" class="mt-1 text-xs text-gray-500">Locked to the branch selected in the header.</p>
                     <p x-show="studentFormErrors.branch_id" x-text="studentFormErrors.branch_id" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>

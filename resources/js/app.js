@@ -324,7 +324,7 @@ function createStudentFormMixin({
                 id_proof: null,
                 photo: null,
                 student_type: defaultStudentType,
-                branch_id: this.defaultBranchId || this.branches?.[0]?.id || '',
+                branch_id: this.defaultStudentBranchId(),
             };
         },
 
@@ -337,6 +337,40 @@ function createStudentFormMixin({
             }
 
             return true;
+        },
+
+        shouldShowStudentBranchField() {
+            const branchCount = (this.branches || []).length;
+
+            if (this.viewingAll) {
+                return branchCount > 0;
+            }
+
+            return branchCount > 1;
+        },
+
+        isStudentBranchLocked() {
+            if (this.selectedSeat?.branch_id) {
+                return true;
+            }
+
+            if (this.viewingAll) {
+                return false;
+            }
+
+            return Boolean(this.defaultBranchId);
+        },
+
+        defaultStudentBranchId() {
+            if (this.selectedSeat?.branch_id) {
+                return this.selectedSeat.branch_id;
+            }
+
+            if (this.viewingAll) {
+                return '';
+            }
+
+            return this.defaultBranchId || this.branches?.[0]?.id || '';
         },
 
         async searchFamilyStudents() {
@@ -391,7 +425,7 @@ function createStudentFormMixin({
                 errors.student_type = 'Select Regular or Trial student.';
             }
 
-            if ((this.branches || []).length > 1 && ! this.studentForm.branch_id) {
+            if (this.shouldShowStudentBranchField() && ! this.studentForm.branch_id) {
                 errors.branch_id = 'Select a branch.';
             }
 
@@ -428,9 +462,7 @@ function createStudentFormMixin({
 
         async openStudentCreate() {
             this.resetStudentForm();
-            if (this.selectedSeat?.branch_id) {
-                this.studentForm.branch_id = this.selectedSeat.branch_id;
-            }
+            this.studentForm.branch_id = this.defaultStudentBranchId();
             this.studentCreateOpen = true;
             this.registrationInvite = null;
             this.registrationQrPreviewOpen = false;
@@ -3722,6 +3754,7 @@ Alpine.data('platformBranchesPage', (config) => ({
 Alpine.data('studentTable', (config) => ({
     rows: config.rows || [],
     students: config.rows || [],
+    selectedSeat: null,
     flash: '',
     error: '',
     bulkDeleteUrl: config.bulkDeleteUrl,

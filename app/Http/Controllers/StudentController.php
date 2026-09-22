@@ -30,7 +30,8 @@ class StudentController extends Controller
 
         $viewingAll = $this->viewingAllBranches($request);
         $branchName = $viewingAll ? 'All branches' : ($this->optionalActiveBranch($request)?->name ?? '');
-        $branches = $request->user()?->isPlatformAdmin()
+        $user = $request->user();
+        $branches = ($user?->isAnyAdmin() && ! $user?->branch_id)
             ? \App\Models\Branch::query()->orderBy('name')->get(['id', 'name'])
             : collect();
         $defaultBranchId = $this->optionalActiveBranchId($request);

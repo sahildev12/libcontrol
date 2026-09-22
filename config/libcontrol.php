@@ -59,8 +59,8 @@ return [
 
     'support' => [
         'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@phenomit.com'),
-        'phone' => env('LIBCONTROL_SUPPORT_PHONE', ''),
-        'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8901223423'),
+        'phone' => env('LIBCONTROL_SUPPORT_PHONE', '8076105181'),
+        'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8076105181'),
         'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://phenomit.com/libcontrol/support-articles.html'),
         'articles_url' => env('LIBCONTROL_SUPPORT_ARTICLES_URL', 'https://phenomit.com/libcontrol/support-articles.html'),
         'documentation_url' => env('LIBCONTROL_SUPPORT_DOCUMENTATION_URL', 'https://phenomit.com/libcontrol/documentation.html'),

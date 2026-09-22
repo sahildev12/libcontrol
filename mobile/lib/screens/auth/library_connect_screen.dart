@@ -187,7 +187,7 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
               OutlinedButton.icon(
                 onPressed: _loading || _scanning ? null : _openQrScanner,
                 icon: const Icon(Icons.qr_code_scanner_outlined),
-                label: const Text('Scan attendance QR'),
+                label: const Text('Scan to connect library'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -236,7 +236,7 @@ class _LibraryQrScannerScreenState extends State<_LibraryQrScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan attendance QR')),
+      appBar: AppBar(title: const Text('Scan to connect library')),
       body: MobileScanner(
         controller: _controller,
         onDetect: (capture) async {
