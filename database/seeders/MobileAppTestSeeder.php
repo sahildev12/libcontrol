@@ -2,13 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Addons\Attendance\Models\AttendanceRecord;
+use App\Addons\Attendance\Services\AttendanceService;
 use App\Models\Branch;
+use App\Models\FeeInstallment;
 use App\Models\FeePayment;
 use App\Models\Hall;
 use App\Models\Seat;
 use App\Models\SeatBooking;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\Addons\AddonRegistry;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -71,12 +75,12 @@ class MobileAppTestSeeder extends Seeder
             ],
             [
                 'suffix' => '902',
-                'name' => 'App Test Expiring',
-                'scenario' => 'Seat expiring in 5 days (marquee)',
+                'name' => 'App Test 7 Days Left',
+                'scenario' => 'Seat expiring in 7 days (marquee)',
                 'pin' => self::DEFAULT_PIN,
                 'booking' => [
                     'status' => 'occupied',
-                    'expiry_days' => 5,
+                    'expiry_days' => 7,
                     'fee_amount' => 4500,
                     'payments' => 'single',
                 ],
@@ -161,6 +165,32 @@ class MobileAppTestSeeder extends Seeder
                     'payments' => 'single',
                 ],
             ],
+            [
+                'suffix' => '910',
+                'name' => 'App Test Check Out',
+                'scenario' => 'Checked in today — use app/QR to check OUT',
+                'pin' => self::DEFAULT_PIN,
+                'booking' => [
+                    'status' => 'occupied',
+                    'expiry_days' => 30,
+                    'fee_amount' => 3500,
+                    'payments' => 'single',
+                ],
+                'attendance' => 'checked_in',
+            ],
+            [
+                'suffix' => '911',
+                'name' => 'App Test Checked Out',
+                'scenario' => 'Already checked in and out today',
+                'pin' => self::DEFAULT_PIN,
+                'booking' => [
+                    'status' => 'occupied',
+                    'expiry_days' => 30,
+                    'fee_amount' => 3500,
+                    'payments' => 'single',
+                ],
+                'attendance' => 'checked_out',
+            ],
         ];
     }
 
@@ -201,6 +231,8 @@ class MobileAppTestSeeder extends Seeder
 
         $bookingConfig = $persona['booking'] ?? null;
         if (! $bookingConfig) {
+            $this->seedAttendance($student, $persona['attendance'] ?? null, $today);
+
             return;
         }
 
@@ -231,6 +263,7 @@ class MobileAppTestSeeder extends Seeder
         ]);
 
         $this->seedPayments($booking, $bookingConfig['payments'], $receiver, $today);
+        $this->seedAttendance($student, $persona['attendance'] ?? null, $today);
     }
 
     private function clearStudentBookings(Student $student): void
@@ -241,7 +274,59 @@ class MobileAppTestSeeder extends Seeder
         }
 
         FeePayment::query()->whereIn('seat_booking_id', $ids)->delete();
+        FeeInstallment::query()->whereIn('seat_booking_id', $ids)->delete();
         SeatBooking::query()->whereIn('id', $ids)->delete();
+    }
+
+    private function seedAttendance(Student $student, ?string $mode, Carbon $today): void
+    {
+        if (! $mode) {
+            return;
+        }
+
+        try {
+            $registry = app(AddonRegistry::class);
+            if (! $registry->isInstalled('attendance')) {
+                $registry->install('attendance');
+            } elseif (! $registry->isEnabled('attendance')) {
+                $registry->enable('attendance');
+            }
+        } catch (\Throwable) {
+            return;
+        }
+
+        $attendance = app(AttendanceService::class);
+        $checkInAt = $today->copy()->setTime(9, 15);
+
+        AttendanceRecord::query()
+            ->where('student_id', $student->id)
+            ->whereDate('attendance_date', $today->toDateString())
+            ->delete();
+
+        if ($mode === 'checked_in') {
+            $attendance->checkInStudent(
+                $student,
+                AttendanceRecord::METHOD_STUDENT_QR,
+                meta: ['seed' => 'mobile_app_test'],
+                at: $checkInAt,
+            );
+
+            return;
+        }
+
+        if ($mode === 'checked_out') {
+            $attendance->checkInStudent(
+                $student,
+                AttendanceRecord::METHOD_STUDENT_QR,
+                meta: ['seed' => 'mobile_app_test'],
+                at: $checkInAt,
+            );
+            $attendance->checkOutStudent(
+                $student,
+                meta: ['seed' => 'mobile_app_test'],
+                at: $checkInAt->copy()->addHours(4),
+            );
+        }
     }
 
     private function vacantSeat(Branch $branch): ?Seat
