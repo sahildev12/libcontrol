@@ -40,8 +40,7 @@
                 <img
                     src="{{ LibControlBrand::darkIconUrl() }}"
                     alt="LibControl"
-                    class="size-9 shrink-0 rounded-md object-contain"
-                    :class="collapsed ? '' : 'hidden'"
+                    class="size-9 shrink-0 object-contain"
                 >
             @elseif (! empty($branding['simple_logo_url']))
                 <img src="{{ $branding['simple_logo_url'] }}" alt="" class="size-10 shrink-0 rounded-md object-contain">
@@ -50,7 +49,8 @@
             @endif
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
                 @if ($lcTheme)
-                    <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-8 max-w-[168px] object-contain object-left">
+                    <p class="truncate text-sm font-bold text-white">{{ config('libcontrol.product.name', 'LibControl') }}</p>
+                    <p class="text-[10px] font-medium text-white/70">Library admin</p>
                 @else
                     <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
                     <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
@@ -186,8 +186,8 @@
                 @endif
                 <div class="min-w-0 leading-tight">
                     @if ($lcTheme)
-                        <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="h-9 max-w-[190px] object-contain object-left">
-                        <p class="mt-1 truncate text-[11px] font-medium text-white/75">{{ $branding['display_name'] ?? config('app.name') }}</p>
+                        <p class="truncate text-sm font-bold text-white">{{ config('libcontrol.product.name', 'LibControl') }}</p>
+                        <p class="mt-0.5 truncate text-[11px] font-medium text-white/75">{{ $branding['display_name'] ?? config('app.name') }}</p>
                     @else
                         <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
                         <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>
