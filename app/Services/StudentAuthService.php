@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Addons\Attendance\Models\AttendanceRecord;
 use App\Models\FeePayment;
 use App\Models\SeatBooking;
 use App\Models\Student;
@@ -122,6 +123,8 @@ class StudentAuthService
             ? (int) Carbon::today()->diffInDays($expiry, false)
             : null;
 
+        $todayAttendance = $this->todayAttendanceRecord($student);
+
         return [
             'id' => $student->id,
             'student_code' => $student->student_code,
@@ -141,13 +144,69 @@ class StudentAuthService
             'booked_on' => $booking?->joining_date?->format('d M Y') ?? '',
             'fee_amount' => $booking ? (float) $booking->fee_amount : null,
             'amount_paid' => $booking ? (float) $booking->amount_paid : null,
-            'is_checked_in' => false,
-            'checked_in_at' => '',
+            'is_checked_in' => $todayAttendance !== null && $todayAttendance->check_out_at === null,
+            'checked_in_at' => $todayAttendance?->check_in_at?->format('h:i A') ?? '',
             'avatar_url' => $student->photoUrl() ?? '',
             'has_app_pin' => $student->hasAppPin(),
             'needs_pin_setup' => ! $student->hasAppPin(),
             'payment_history' => $this->paymentHistory($student),
+            'family_seats' => $this->familySeats($student),
         ];
+    }
+
+    private function todayAttendanceRecord(Student $student): ?AttendanceRecord
+    {
+        if (! class_exists(AttendanceRecord::class)) {
+            return null;
+        }
+
+        return AttendanceRecord::query()
+            ->where('student_id', $student->id)
+            ->whereDate('attendance_date', Carbon::today())
+            ->first();
+    }
+
+    /**
+     * @return list<array{name: string, relationship: string, seat_code: string, hall: string, floor: string, status: string, booked_on: string}>
+     */
+    private function familySeats(Student $student): array
+    {
+        if (! $student->family_group_id) {
+            return [];
+        }
+
+        $today = Carbon::today();
+
+        return $student->linkedSiblings()
+            ->with(['bookings' => function ($query) use ($today) {
+                $query->whereNull('cancelled_at')
+                    ->where('status', '!=', 'cancelled')
+                    ->where(function ($inner) use ($today) {
+                        $inner->whereDate('plan_expiry_date', '>=', $today)
+                            ->orWhere('status', 'on_trial');
+                    })
+                    ->with(['seat.hall'])
+                    ->latest('id');
+            }])
+            ->get()
+            ->map(function (Student $sibling) {
+                $booking = $sibling->bookings->first();
+                $seat = $booking?->seat;
+                $hall = $seat?->hall;
+
+                return [
+                    'name' => $sibling->name,
+                    'relationship' => $sibling->typeLabel(),
+                    'seat_code' => $seat?->seat_number ?? '',
+                    'hall' => $hall?->name ?? '',
+                    'floor' => '',
+                    'status' => $booking ? 'active' : 'inactive',
+                    'booked_on' => $booking?->joining_date?->format('d M Y') ?? '',
+                ];
+            })
+            ->filter(fn (array $row) => $row['seat_code'] !== '')
+            ->values()
+            ->all();
     }
 
     /**

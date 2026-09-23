@@ -3,6 +3,7 @@ import 'package:libcontrol_app/app/routes/app_routes.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
 import 'package:libcontrol_app/core/api/attendance_api.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/models/attendance_record.dart';
 import 'package:libcontrol_app/widgets/attendance/attendance_calendar.dart';
 import 'package:libcontrol_app/widgets/attendance/attendance_help_card.dart';
@@ -45,22 +46,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
 
     try {
+      await AuthService.instance.bootstrap(validateOnline: true);
       final dashboard = await _api.fetchDashboard();
       if (!mounted) return;
       setState(() {
         _dashboard = dashboard;
         _loading = false;
+        _error = null;
       });
     } on ApiException catch (error) {
       if (!mounted) return;
+      if (error.statusCode == 401) {
+        setState(() {
+          _error = error.message;
+          _loading = false;
+        });
+        return;
+      }
       setState(() {
-        _error = error.message;
+        _dashboard = AttendanceApi.empty();
+        _error = null;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not load attendance. Pull to refresh.';
+        _dashboard = AttendanceApi.empty();
+        _error = null;
         _loading = false;
       });
     }

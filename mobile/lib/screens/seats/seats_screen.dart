@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/auth/auth_service.dart';
-import 'package:libcontrol_app/data/dummy_data.dart';
 import 'package:libcontrol_app/models/allotted_seat.dart';
+import 'package:libcontrol_app/models/family_seat_member.dart';
 import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:libcontrol_app/widgets/seats/my_seat_card.dart';
 import 'package:libcontrol_app/widgets/seats/payment_history_section.dart';
-import 'package:libcontrol_app/widgets/seats/seat_expiry_marquee.dart';
 import 'package:libcontrol_app/widgets/seats/sibling_seat_card.dart';
 
 class SeatsScreen extends StatefulWidget {
@@ -28,30 +27,10 @@ class _SeatsScreenState extends State<SeatsScreen> {
     if (mounted) setState(() => _refreshing = false);
   }
 
-  String? _expiryMarqueeMessage() {
-    final student = AuthService.instance.student;
-    if (student == null || !student.seatExpiringSoon) {
-      return null;
-    }
-
-    final days = student.daysUntilPlanExpiry;
-    final till = student.planValidTill;
-
-    if (days == null || till.isEmpty) {
-      return 'Your seat plan is expiring soon. Please renew at the library desk.';
-    }
-
-    if (days == 0) {
-      return 'Your seat plan expires today ($till). Renew now to keep your seat.';
-    }
-
-    return 'Your seat plan expires in $days day${days == 1 ? '' : 's'} ($till). Renew at the library desk.';
-  }
-
   AllottedSeat? _seatFromStudent() {
     final student = AuthService.instance.student;
     if (student == null || student.currentSeat.isEmpty) {
-      return DummyData.myAllottedSeat;
+      return null;
     }
 
     final hallParts = student.currentHall.split(' — ');
@@ -99,12 +78,26 @@ class _SeatsScreenState extends State<SeatsScreen> {
     return DateTime.now();
   }
 
+  SiblingSeat _siblingFromFamily(FamilySeatMember member) {
+    return SiblingSeat(
+      name: member.name,
+      relationship: member.relationship,
+      seat: AllottedSeat(
+        seatCode: member.seatCode,
+        hall: member.hall,
+        floor: member.floor,
+        status: member.isActive ? SeatAllotmentStatus.active : SeatAllotmentStatus.inactive,
+        bookedOn: _parseBookedOn(member.bookedOn),
+        amountPaid: 0,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final allottedSeat = _seatFromStudent();
-    final siblings = DummyData.siblingSeats;
     final student = AuthService.instance.student;
-    final marquee = _expiryMarqueeMessage();
+    final siblings = student?.familySeats ?? const <FamilySeatMember>[];
 
     return SafeArea(
       bottom: false,
@@ -131,10 +124,6 @@ class _SeatsScreenState extends State<SeatsScreen> {
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                       children: [
-                        if (marquee != null) ...[
-                          SeatExpiryMarquee(message: marquee),
-                          const SizedBox(height: 14),
-                        ],
                         if (_refreshing)
                           const Padding(
                             padding: EdgeInsets.only(bottom: 12),
@@ -163,9 +152,9 @@ class _SeatsScreenState extends State<SeatsScreen> {
                           ),
                           const SizedBox(height: 12),
                           ...siblings.map(
-                            (sibling) => Padding(
+                            (member) => Padding(
                               padding: const EdgeInsets.only(bottom: 10),
-                              child: SiblingSeatCard(sibling: sibling),
+                              child: SiblingSeatCard(sibling: _siblingFromFamily(member)),
                             ),
                           ),
                         ],

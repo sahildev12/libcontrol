@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
 import 'package:libcontrol_app/core/api/attendance_api.dart';
+import 'package:libcontrol_app/core/attendance/scan_attendance_success_store.dart';
+import 'package:libcontrol_app/core/auth/auth_service.dart';
 import 'package:libcontrol_app/widgets/centered_page_header.dart';
 import 'package:libcontrol_app/widgets/scan/scan_mode_switch.dart';
 import 'package:libcontrol_app/widgets/scan/scan_success_panel.dart';
@@ -30,7 +34,18 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _checkingPermission = true;
   bool _handlingScan = false;
   String? _lastScannedCode;
-  _ScanSuccess? _success;
+  ScanAttendanceSuccess? _success;
+  Timer? _successExpiryTimer;
+
+  bool get _hasActiveSuccess => _success != null && _success!.isActive;
+
+  bool get _successMatchesMode {
+    if (!_hasActiveSuccess) {
+      return false;
+    }
+    final isCheckOutMode = _modeIndex == 1;
+    return _success!.isCheckOut == isCheckOutMode;
+  }
 
   @override
   void initState() {
@@ -40,6 +55,7 @@ class _ScanScreenState extends State<ScanScreen> {
       facing: CameraFacing.back,
     );
     _ensureCameraPermission();
+    _restoreSuccess();
   }
 
   @override
@@ -47,20 +63,56 @@ class _ScanScreenState extends State<ScanScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isActive != widget.isActive) {
       _syncCameraWithVisibility();
-      if (!widget.isActive) {
-        setState(() => _success = null);
-      }
     }
   }
 
   @override
   void dispose() {
+    _successExpiryTimer?.cancel();
     _scannerController.dispose();
     super.dispose();
   }
 
+  Future<void> _restoreSuccess() async {
+    final stored = await ScanAttendanceSuccessStore.load();
+    if (!mounted || stored == null) {
+      return;
+    }
+
+    setState(() => _success = stored);
+    _scheduleSuccessExpiry();
+    await _syncCameraWithVisibility();
+  }
+
+  void _scheduleSuccessExpiry() {
+    _successExpiryTimer?.cancel();
+    final success = _success;
+    if (success == null || !success.isActive) {
+      return;
+    }
+
+    final remaining = success.expiresAt.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      _clearSuccess();
+      return;
+    }
+
+    _successExpiryTimer = Timer(remaining, () {
+      if (mounted) {
+        _clearSuccess();
+      }
+    });
+  }
+
+  Future<void> _persistSuccess(ScanAttendanceSuccess success) async {
+    await ScanAttendanceSuccessStore.save(success);
+    setState(() => _success = success);
+    _scheduleSuccessExpiry();
+    await _syncCameraWithVisibility();
+  }
+
   Future<void> _syncCameraWithVisibility() async {
-    if (!widget.isActive || _success != null) {
+    if (!widget.isActive || _successMatchesMode) {
       await _scannerController.stop();
       return;
     }
@@ -79,13 +131,16 @@ class _ScanScreenState extends State<ScanScreen> {
     await _syncCameraWithVisibility();
   }
 
-  void _clearSuccess() {
+  Future<void> _clearSuccess() async {
+    _successExpiryTimer?.cancel();
+    await ScanAttendanceSuccessStore.clear();
+    if (!mounted) return;
     setState(() => _success = null);
-    _syncCameraWithVisibility();
+    await _syncCameraWithVisibility();
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_handlingScan || _success != null || !widget.isActive) return;
+    if (_handlingScan || _successMatchesMode || !widget.isActive) return;
 
     final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
@@ -100,30 +155,29 @@ class _ScanScreenState extends State<ScanScreen> {
 
     final isCheckOut = _modeIndex == 1;
 
-    if (isCheckOut) {
-      _showSnack('Check-out is not available yet. Use Check In to mark attendance.', AppColors.warning);
-      await Future<void>.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        _handlingScan = false;
-        _lastScannedCode = null;
-      }
-      return;
-    }
-
     try {
-      await _attendanceApi.checkInFromQr(value);
+      if (isCheckOut) {
+        await _attendanceApi.checkOutFromQr(value);
+      } else {
+        await _attendanceApi.checkInFromQr(value);
+      }
       if (!mounted) return;
-      await _scannerController.stop();
-      setState(() {
-        _success = _ScanSuccess(isCheckOut: false, at: DateTime.now());
-      });
+      await _persistSuccess(
+        ScanAttendanceSuccess(isCheckOut: isCheckOut, at: DateTime.now()),
+      );
+      await AuthService.instance.bootstrap(validateOnline: true);
     } on ApiException catch (error) {
       if (!mounted) return;
       final color = error.statusCode == 422 ? AppColors.warning : AppColors.danger;
       _showSnack(error.message, color);
     } catch (_) {
       if (!mounted) return;
-      _showSnack('Could not complete check-in. Try again.', AppColors.danger);
+      _showSnack(
+        isCheckOut
+            ? 'Could not complete check-out. Try again.'
+            : 'Could not complete check-in. Try again.',
+        AppColors.danger,
+      );
     }
 
     await Future<void>.delayed(const Duration(seconds: 1));
@@ -144,32 +198,13 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   void _onModeChanged(int index) {
-    if (_success != null) {
-      _clearSuccess();
-    }
     setState(() => _modeIndex = index);
+    _syncCameraWithVisibility();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_success != null) {
-      return SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Column(
-            children: [
-              Expanded(
-                child: ScanSuccessPanel(
-                  isCheckOut: _success!.isCheckOut,
-                  time: _success!.at,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final success = _successMatchesMode ? _success : null;
 
     return SafeArea(
       bottom: false,
@@ -189,19 +224,28 @@ class _ScanScreenState extends State<ScanScreen> {
               onChanged: _onModeChanged,
             ),
             const SizedBox(height: 12),
-            Expanded(child: _buildScanner()),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.qr_code_scanner_rounded, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  'Align the QR code within the frame',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+            Expanded(
+              child: success != null
+                  ? ScanSuccessPanel(
+                      isCheckOut: success.isCheckOut,
+                      time: success.at,
+                    )
+                  : _buildScanner(),
             ),
+            if (success == null) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.qr_code_scanner_rounded, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Align the QR code within the frame',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -284,11 +328,4 @@ class _ScanScreenState extends State<ScanScreen> {
       ),
     );
   }
-}
-
-class _ScanSuccess {
-  const _ScanSuccess({required this.isCheckOut, required this.at});
-
-  final bool isCheckOut;
-  final DateTime at;
 }

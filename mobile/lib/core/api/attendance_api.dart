@@ -28,6 +28,18 @@ class AttendanceApi {
 
   final ApiClient _client;
 
+  static AttendanceDashboard empty() {
+    return AttendanceDashboard(
+      rate: 0,
+      present: 0,
+      absent: 0,
+      late: 0,
+      recent: const [],
+      records: const [],
+      marks: const {},
+    );
+  }
+
   Future<AttendanceDashboard> fetchDashboard() async {
     final token = AuthService.instance.token;
     if (token == null) {
@@ -83,6 +95,29 @@ class AttendanceApi {
     );
 
     return data['message'] as String? ?? 'Check-in successful.';
+  }
+
+  Future<String> checkOutFromQr(String rawValue) async {
+    final token = AuthService.instance.token;
+    if (token == null) {
+      throw ApiException('Please sign in again.');
+    }
+
+    _client.setToken(token);
+
+    final body = <String, dynamic>{'qr_url': rawValue.trim()};
+    final qrToken = _extractToken(rawValue);
+    if (qrToken != null) {
+      body['qr_token'] = qrToken;
+    }
+
+    final data = await _client.postJson(
+      AppConfig.studentAttendanceCheckOutUrl,
+      body: body,
+      authenticated: true,
+    );
+
+    return data['message'] as String? ?? 'Check-out successful.';
   }
 
   AttendanceStatus _statusFromApi(String? value) {

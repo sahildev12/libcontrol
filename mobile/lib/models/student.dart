@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:libcontrol_app/models/family_seat_member.dart';
 import 'package:libcontrol_app/models/student_payment.dart';
 
 class Student {
@@ -23,6 +24,7 @@ class Student {
     this.amountPaid,
     this.feeAmount,
     this.paymentHistory = const [],
+    this.familySeats = const [],
   });
 
   final String name;
@@ -44,9 +46,11 @@ class Student {
   final double? amountPaid;
   final double? feeAmount;
   final List<StudentPayment> paymentHistory;
+  final List<FamilySeatMember> familySeats;
 
   factory Student.fromJson(Map<String, dynamic> json) {
     final historyJson = json['payment_history'] as List<dynamic>? ?? [];
+    final familyJson = json['family_seats'] as List<dynamic>? ?? [];
 
     return Student(
       name: json['name'] as String? ?? '',
@@ -69,6 +73,9 @@ class Student {
       feeAmount: (json['fee_amount'] as num?)?.toDouble(),
       paymentHistory: historyJson
           .map((item) => StudentPayment.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      familySeats: familyJson
+          .map((item) => FamilySeatMember.fromJson(item as Map<String, dynamic>))
           .toList(),
     );
   }
@@ -107,6 +114,19 @@ class Student {
               'payment_date': p.paymentDate,
               'payment_method': p.paymentMethod,
               'reference': p.reference,
+            },
+          )
+          .toList(),
+      'family_seats': familySeats
+          .map(
+            (seat) => {
+              'name': seat.name,
+              'relationship': seat.relationship,
+              'seat_code': seat.seatCode,
+              'hall': seat.hall,
+              'floor': seat.floor,
+              'status': seat.isActive ? 'active' : 'inactive',
+              'booked_on': seat.bookedOn,
             },
           )
           .toList(),

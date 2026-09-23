@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:libcontrol_app/app/theme/app_colors.dart';
 
-class SeatExpiryMarquee extends StatefulWidget {
+class SeatExpiryMarquee extends StatelessWidget {
   const SeatExpiryMarquee({
     super.key,
     required this.message,
@@ -10,72 +10,31 @@ class SeatExpiryMarquee extends StatefulWidget {
   final String message;
 
   @override
-  State<SeatExpiryMarquee> createState() => _SeatExpiryMarqueeState();
-}
-
-class _SeatExpiryMarqueeState extends State<SeatExpiryMarquee> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 14),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Container(
-      height: 40,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.warningBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
       ),
-      clipBehavior: Clip.hardEdge,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10),
+            padding: EdgeInsets.only(top: 1),
             child: Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
           ),
+          const SizedBox(width: 10),
           Expanded(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(-_controller.value * 200, 0),
-                  child: child,
-                );
-              },
-              child: Row(
-                children: [
-                  Text(
-                    widget.message,
-                    style: const TextStyle(
-                      color: Color(0xFF8A5A00),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                  Text(
-                    widget.message,
-                    style: const TextStyle(
-                      color: Color(0xFF8A5A00),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFF8A5A00),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                height: 1.35,
               ),
             ),
           ),
