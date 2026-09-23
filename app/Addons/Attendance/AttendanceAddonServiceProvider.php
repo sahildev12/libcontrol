@@ -43,6 +43,7 @@ class AttendanceAddonServiceProvider extends ServiceProvider
             Route::middleware(['auth:sanctum', 'student.api'])->group(function (): void {
                 Route::get('/attendance', [StudentAttendanceApiController::class, 'index']);
                 Route::post('/attendance/check-in', [StudentAttendanceApiController::class, 'checkIn']);
+                Route::post('/attendance/check-out', [StudentAttendanceApiController::class, 'checkOut']);
             });
         });
 

@@ -126,6 +126,61 @@ class StudentAttendanceApiController extends Controller
         ]);
     }
 
+    public function checkOut(Request $request, AttendanceService $attendance): JsonResponse
+    {
+        /** @var Student $student */
+        $student = $request->user();
+
+        $validated = $request->validate([
+            'qr_token' => ['nullable', 'string', 'max:120'],
+            'qr_url' => ['nullable', 'string', 'max:2048'],
+        ]);
+
+        $token = $validated['qr_token'] ?? $this->extractQrToken($validated['qr_url'] ?? null);
+
+        if (! $token) {
+            throw ValidationException::withMessages([
+                'qr_url' => 'Scan the attendance QR code displayed at your library.',
+            ]);
+        }
+
+        $settings = $attendance->settingsByToken($token);
+
+        abort_unless($settings && $settings->student_qr_enabled, 404, 'Attendance QR is not available.');
+
+        $settings->load('branch');
+        $branch = $settings->branch;
+        abort_unless($branch, 404);
+
+        abort_unless((int) $student->branch_id === (int) $branch->id, 403, 'This QR code belongs to a different branch.');
+
+        try {
+            $record = $attendance->checkOutStudent(
+                $student,
+                meta: [
+                    'source' => 'flutter_app',
+                    'device_name' => $request->input('device_name'),
+                ],
+            );
+        } catch (ValidationException $exception) {
+            $message = collect($exception->errors())->flatten()->first();
+
+            return response()->json([
+                'message' => is_string($message) && $message !== ''
+                    ? $message
+                    : 'Unable to check out.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Check-out successful.',
+            'record' => [
+                'check_out_at' => $record->check_out_at?->format('h:i A'),
+                'attendance_date' => $record->attendance_date?->toDateString(),
+            ],
+        ]);
+    }
+
     private function extractQrToken(?string $qrUrl): ?string
     {
         if (! $qrUrl) {
