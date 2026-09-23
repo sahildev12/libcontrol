@@ -182,6 +182,43 @@ class AttendanceService
         ]);
     }
 
+    /**
+     * @param  array<string, mixed>  $meta
+     */
+    public function checkOutStudent(
+        Student $student,
+        array $meta = [],
+        ?Carbon $at = null,
+    ): AttendanceRecord {
+        $tz = config('libcontrol.timezone', 'Asia/Kolkata');
+        $now = $at ?? Carbon::now($tz);
+        $date = $now->copy()->startOfDay();
+
+        $record = AttendanceRecord::query()
+            ->where('student_id', $student->id)
+            ->whereDate('attendance_date', $date->toDateString())
+            ->first();
+
+        if (! $record) {
+            throw ValidationException::withMessages([
+                'action' => 'You must check in before you can check out.',
+            ]);
+        }
+
+        if ($record->check_out_at !== null) {
+            throw ValidationException::withMessages([
+                'action' => 'You have already checked out for today.',
+            ]);
+        }
+
+        $record->update([
+            'check_out_at' => $now,
+            'device_meta' => array_merge($record->device_meta ?? [], $meta),
+        ]);
+
+        return $record->fresh();
+    }
+
     public function verifyStudentCredentials(Branch $branch, string $studentCode, string $phone): ?Student
     {
         $normalizedPhone = trim($phone);
@@ -695,9 +732,13 @@ class AttendanceService
             'status_label' => $this->statusLabel($status),
             'message' => null,
             'check_in_at' => $record?->check_in_at?->format('h:i A'),
-            'check_out_at' => null,
-            'study_time_label' => null,
-            'study_time_note' => 'Check-out is not recorded, so total study time cannot be calculated.',
+            'check_out_at' => $record?->check_out_at?->format('h:i A'),
+            'study_time_label' => ($record?->check_in_at && $record?->check_out_at)
+                ? $record->check_in_at->diffForHumans($record->check_out_at, true)
+                : null,
+            'study_time_note' => $record?->check_out_at === null
+                ? 'Check-out is not recorded, so total study time cannot be calculated.'
+                : null,
             'method' => $record?->method,
             'method_label' => $this->methodLabel($record?->method),
             'marked_by_name' => $record?->markedBy?->name,

@@ -26,6 +26,7 @@ class AttendanceRecord extends Model
         'student_id',
         'attendance_date',
         'check_in_at',
+        'check_out_at',
         'method',
         'marked_by_user_id',
         'latitude',
@@ -41,6 +42,7 @@ class AttendanceRecord extends Model
         return [
             'attendance_date' => 'date',
             'check_in_at' => 'datetime',
+            'check_out_at' => 'datetime',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'device_meta' => 'array',

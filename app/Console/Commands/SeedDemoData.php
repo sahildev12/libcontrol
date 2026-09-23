@@ -30,6 +30,10 @@ class SeedDemoData extends Command
         $this->call(LandingDemoSeeder::class);
 
         $this->newLine();
+        $this->info('Seeding mobile app test accounts…');
+        $this->call(\Database\Seeders\MobileAppTestSeeder::class);
+
+        $this->newLine();
         $this->info('Demo data ready.');
         $this->line('Platform logins: use your LIBCONTROL_DEVELOPER_* and LIBCONTROL_ADMIN_* credentials from .env');
         $this->line('Branch logins: admin@main.LibControl.test / 123456789 and admin@north.LibControl.test / 123456789');

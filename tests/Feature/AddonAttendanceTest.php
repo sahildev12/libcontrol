@@ -66,7 +66,10 @@ class AddonAttendanceTest extends AttendanceTestCase
 
     public function test_student_qr_check_in_records_attendance(): void
     {
-        $branch = Branch::factory()->create();
+        $branch = Branch::factory()->create([
+            'student_code_prefix' => 'LIB',
+            'student_code_padding' => 3,
+        ]);
         $student = Student::factory()->create([
             'branch_id' => $branch->id,
             'student_code' => 'LIB-001',
@@ -80,11 +83,13 @@ class AddonAttendanceTest extends AttendanceTestCase
 
         $this->get('/attendance/check-in/'.$settings->qr_token)
             ->assertOk()
-            ->assertSee('Attendance Check-in');
+            ->assertSee('Attendance')
+            ->assertSee('LIB-');
 
         $this->post('/attendance/check-in/'.$settings->qr_token, [
-            'student_code' => $student->student_code,
+            'student_code_suffix' => '1',
             'phone' => $student->phone,
+            'action' => 'check_in',
         ])->assertOk()->assertSee('Check-in Successful');
 
         $this->assertDatabaseHas('attendance_records', [
@@ -93,9 +98,35 @@ class AddonAttendanceTest extends AttendanceTestCase
         ]);
 
         $this->post('/attendance/check-in/'.$settings->qr_token, [
-            'student_code' => $student->student_code,
+            'student_code_suffix' => '1',
             'phone' => $student->phone,
+            'action' => 'check_in',
         ])->assertOk()->assertSee('Already Checked In');
+
+        $this->post('/attendance/check-in/'.$settings->qr_token, [
+            'student_code_suffix' => '1',
+            'phone' => $student->phone,
+            'action' => 'check_out',
+        ])->assertOk()->assertSee('Check-out Successful');
+
+        $this->assertNotNull(
+            AttendanceRecord::query()->where('student_id', $student->id)->value('check_out_at')
+        );
+    }
+
+    public function test_public_check_in_rejects_invalid_phone(): void
+    {
+        $branch = Branch::factory()->create();
+        $this->installAttendanceAddon();
+        $settings = BranchAttendanceSetting::forBranch($branch->id);
+
+        $this->from('/attendance/check-in/'.$settings->qr_token)
+            ->post('/attendance/check-in/'.$settings->qr_token, [
+                'student_code_suffix' => '1',
+                'phone' => '9896340591456356356456346534634563456345',
+                'action' => 'check_in',
+            ])
+            ->assertSessionHasErrors(['phone']);
     }
 
     public function test_staff_api_rejects_check_in_outside_geofence(): void

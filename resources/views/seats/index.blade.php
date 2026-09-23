@@ -10,7 +10,6 @@
             transferUrl: @js(route('seat-assignments.transfer')),
             availableSeatsUrl: @js(route('seat-assignments.available-seats')),
             dataUrl: @js(route('seats.data')),
-            feesRenewUrl: @js(route('fees.index')),
             storeStudentUrl: @js(route('students.store')),
             inviteStoreUrl: @js(route('students.registration-invites.store')),
             selectedHallId: 'all',
@@ -296,7 +295,7 @@
                             </template>
                         </div>
                     </div>
-                    <p x-show="canAddAnotherStudent()" class="mt-2 text-xs text-gray-500">This seat still has free hours. Use Add Student to assign another student to an open slot.</p>
+                    <p x-show="canAddAnotherStudent() && canRenewExpired()" class="mt-2 text-xs text-gray-500">This seat still has free hours. Use Assign New Student to fill an open slot.</p>
                 </div>
 
                     <form id="seat-assign-form" x-show="assignMode" novalidate @submit.prevent="submitAssign()" class="flex flex-col gap-3">
@@ -473,7 +472,6 @@
                 </div>
 
                 <div class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-200 px-5 py-4">
-                    <button type="button" @click="closeDetail()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
                     <button
                         type="button"
                         x-show="canEditStudent()"
@@ -497,15 +495,6 @@
                         class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
                     >
                         Assign New Student
-                    </button>
-                    <button
-                        type="button"
-                        x-show="canAddAnotherStudent()"
-                        @click="startAddStudent()"
-                        :disabled="saving"
-                        class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-60"
-                    >
-                        Add Student
                     </button>
                     <button
                         type="submit"
@@ -534,6 +523,7 @@
         <x-admin.student-create-modal />
         <x-admin.student-edit-modal />
         <x-admin.seat-schedule-modal />
+        <x-admin.fee-renew-modal />
 
         {{-- Transfer Seat modal --}}
         <div x-show="transferOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">

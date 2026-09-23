@@ -1691,6 +1691,37 @@ function createSeatScheduleMixin() {
 }
 
 Alpine.data('seatMap', (config) => ({
+    ...createFeeRenewMixin({
+        onSuccess: async function () {
+            await this.refreshSeats();
+            const seatId = this.selectedSeat?.id;
+            if (! seatId) {
+                return;
+            }
+
+            const updatedSeat = this.seats.find((seat) => seat.id === seatId);
+            if (updatedSeat) {
+                this.selectedSeat = updatedSeat;
+            }
+        },
+    }),
+
+    defaultFrequencyForFeeType(feeType) {
+        if (feeType === 'monthly') {
+            return 'quarterly';
+        }
+
+        return 'monthly';
+    },
+
+    isFrequencyDisabled(frequency) {
+        return this.renewForm.fee_type === 'monthly' && frequency === 'monthly';
+    },
+
+    lockedFieldClass() {
+        return 'mt-1 block w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm';
+    },
+
     halls: config.halls || [],
     seats: config.seats || [],
     students: config.students || [],
@@ -1704,7 +1735,6 @@ Alpine.data('seatMap', (config) => ({
     storeUrl: config.storeUrl,
     transferUrl: config.transferUrl || '/seat-assignments/transfer',
     availableSeatsUrl: config.availableSeatsUrl || '/seat-assignments/available-seats',
-    feesRenewUrl: config.feesRenewUrl || '/fees',
     dataUrl: config.dataUrl || '/seats/data',
     zoom: 100,
     detailOpen: false,
@@ -1940,13 +1970,17 @@ Alpine.data('seatMap', (config) => ({
         }
     },
 
-    openRenewExpired() {
+    async openRenewExpired() {
         const bookingId = this.selectedSeat?.booking_id;
         if (! bookingId) {
             return;
         }
 
-        window.location.href = `${this.feesRenewUrl}?renew=${bookingId}`;
+        try {
+            await this.openRenewById(bookingId);
+        } catch {
+            // Toast shown in openRenewById.
+        }
     },
 
     openSeat(seat) {
@@ -2787,13 +2821,21 @@ Alpine.data('trialSeatMap', (config) => ({
         }
     },
 
-    openRenewExpired() {
+    async openRenewExpired() {
         const bookingId = this.selectedSeat?.booking_id;
         if (! bookingId) {
             return;
         }
 
-        window.location.href = `${this.feesRenewUrl}?renew=${bookingId}`;
+        if (typeof this.openRenewById !== 'function') {
+            return;
+        }
+
+        try {
+            await this.openRenewById(bookingId);
+        } catch {
+            // Toast shown in openRenewById.
+        }
     },
 
     openSeat(seat) {
@@ -4340,7 +4382,7 @@ function suggestedInstallmentCount(firstDueIso, planEndIso, frequency) {
 }
 
 function createFeeRenewMixin(options = {}) {
-    const { updateRows = false, reloadOnSuccess = false } = options;
+    const { updateRows = false, reloadOnSuccess = false, onSuccess = null } = options;
 
     return {
         renewOpen: false,
@@ -4552,7 +4594,9 @@ function createFeeRenewMixin(options = {}) {
                 showToast(response.data.message);
                 this.closeRenew();
 
-                if (reloadOnSuccess) {
+                if (typeof onSuccess === 'function') {
+                    await onSuccess.call(this, updated);
+                } else if (reloadOnSuccess) {
                     window.setTimeout(() => window.location.reload(), 600);
                 }
             } catch (e) {
@@ -7208,9 +7252,18 @@ Alpine.data('attendanceSettingsPanel', (config) => ({
     },
 
     async rotateQr() {
-        if (! confirm('Regenerate the QR link? Old posters will stop working.')) {
+        const confirmed = await confirmDialog({
+            title: 'Regenerate QR link?',
+            message: 'Old posters and shared links will stop working. Students will need the new QR code or URL.',
+            confirmLabel: 'Regenerate',
+            cancelLabel: 'Cancel',
+            tone: 'danger',
+        });
+
+        if (! confirmed) {
             return;
         }
+
         this.saving = true;
         try {
             const response = await window.axios.post(this.rotateUrl, { branch_id: this.branchId });

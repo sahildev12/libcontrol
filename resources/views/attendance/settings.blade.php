@@ -82,9 +82,6 @@
                     <button type="button" @click="copyUrl()" class="inline-flex h-10 items-center rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                         Copy link
                     </button>
-                    <button type="button" @click="rotateQr()" :disabled="saving" class="inline-flex h-10 items-center rounded-lg border border-amber-200 bg-amber-50 px-3.5 text-sm font-semibold text-amber-800 hover:bg-amber-100">
-                        Regenerate QR
-                    </button>
                 </div>
 
                 <div class="mt-6 flex justify-center">

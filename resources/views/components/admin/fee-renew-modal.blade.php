@@ -1,4 +1,4 @@
-<div x-show="renewOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+<div x-show="renewOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-900/50" @click="closeRenew()"></div>
     <div class="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-xl" @click.stop>
         <div class="border-b border-gray-200 px-5 py-4">

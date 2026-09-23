@@ -63,6 +63,31 @@ class BranchStudentCodePrefixService
         return sprintf('%s-%0'.$padding.'d', $prefix, 1);
     }
 
+    public function resolvedPrefix(Branch $branch): string
+    {
+        $prefix = strtoupper(trim((string) $branch->student_code_prefix));
+        if ($prefix !== '') {
+            return $prefix;
+        }
+
+        return $this->ensureForBranch($branch);
+    }
+
+    public function formatStudentCode(Branch $branch, string $numericPart): string
+    {
+        $digits = preg_replace('/\D/', '', $numericPart) ?? '';
+        $number = (int) $digits;
+
+        if ($digits === '' || $number < 1) {
+            return '';
+        }
+
+        $prefix = $this->resolvedPrefix($branch);
+        $padding = $this->defaultPadding($branch);
+
+        return sprintf('%s-%0'.$padding.'d', $prefix, $number);
+    }
+
     /**
      * @return list<array{branch_id: int, branch_name: string, prefix: string, padding: int, sample_student_code: string}>
      */
