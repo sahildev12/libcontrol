@@ -23,4 +23,7 @@ class AppConfig {
 
   static String get studentAttendanceCheckInUrl =>
       '${ServerConfig.instance.apiBaseUrl}/api/v1/student/attendance/check-in';
+
+  static String get studentAttendanceCheckOutUrl =>
+      '${ServerConfig.instance.apiBaseUrl}/api/v1/student/attendance/check-out';
 }

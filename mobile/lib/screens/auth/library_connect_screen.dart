@@ -7,7 +7,7 @@ import 'package:libcontrol_app/core/config/library_student_styles.dart';
 import 'package:libcontrol_app/core/config/student_code_style.dart';
 import 'package:libcontrol_app/widgets/libcontrol_logo.dart';
 import 'package:libcontrol_app/widgets/primary_button.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:libcontrol_app/widgets/auth/library_qr_scanner_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LibraryConnectScreen extends StatefulWidget {
@@ -50,14 +50,22 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
       await _resolver.validateLibraryServer(apiBaseUrl);
 
       LibraryStudentStyles? styles = libraryStudentStyles;
-      try {
-        styles = await _resolver.fetchBranchStyles(apiBaseUrl);
-      } on LibraryResolverException {
-        if (styles == null && studentCodeStyle != null && studentCodeStyle.isConfigured) {
-          styles = LibraryStudentStyles(
-            multiBranchPrefixes: false,
-            branchStyles: [studentCodeStyle],
-          );
+
+      if (studentCodeStyle != null && studentCodeStyle.isConfigured) {
+        styles = LibraryStudentStyles.fromLoginStyle(studentCodeStyle);
+      } else {
+        try {
+          final fetched = await _resolver.fetchBranchStyles(apiBaseUrl);
+          final loginStyle = fetched.loginStyle;
+          styles = loginStyle != null
+              ? LibraryStudentStyles.fromLoginStyle(loginStyle)
+              : fetched;
+        } on LibraryResolverException {
+          if (styles == null &&
+              studentCodeStyle != null &&
+              studentCodeStyle.isConfigured) {
+            styles = LibraryStudentStyles.fromLoginStyle(studentCodeStyle);
+          }
         }
       }
 
@@ -116,13 +124,12 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
 
     await Navigator.of(context).push(
       MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => _LibraryQrScannerScreen(
+        builder: (_) => LibraryQrScannerScreen(
           onScanned: (value) async {
             final apiBaseUrl = ServerConfig.parseAttendanceQrUrl(value);
             if (apiBaseUrl == null) {
               _showMessage('Scan your library attendance QR code.');
-              return;
+              throw StateError('invalid_qr');
             }
 
             await _connect(apiBaseUrl: apiBaseUrl);
@@ -138,113 +145,76 @@ class _LibraryConnectScreenState extends State<LibraryConnectScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              const LibControlLogo(height: 52, wide: true),
-              const SizedBox(height: 16),
-              Text('Connect to your library', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter the 6-digit library code from your branch staff. Codes are looked up via libcontrol.phenomit.com.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _codeController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: false,
-                  signed: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const LibControlLogo(height: 52, wide: true),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Connect to your library',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Enter the 6-digit library code from your branch staff.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 32),
+                    TextField(
+                      controller: _codeController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: false,
+                        signed: false,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
+                      maxLength: 6,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        letterSpacing: 4,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Library code',
+                        hintText: '6 digits',
+                        counterText: '',
+                        border: OutlineInputBorder(),
+                      ),
+                      onSubmitted: (_) => _continueWithCode(),
+                    ),
+                    const SizedBox(height: 16),
+                    PrimaryButton(
+                      label: 'Continue',
+                      isLoading: _loading,
+                      onPressed: _loading ? null : _continueWithCode,
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _loading || _scanning ? null : _openQrScanner,
+                      icon: const Icon(Icons.qr_code_scanner_outlined),
+                      label: const Text('Scan to connect library'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
                 ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(6),
-                ],
-                maxLength: 6,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  letterSpacing: 4,
-                  fontWeight: FontWeight.w700,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Library code',
-                  hintText: '6 digits',
-                  counterText: '',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _continueWithCode(),
               ),
-              const SizedBox(height: 16),
-              PrimaryButton(
-                label: 'Continue',
-                isLoading: _loading,
-                onPressed: _loading ? null : _continueWithCode,
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _loading || _scanning ? null : _openQrScanner,
-                icon: const Icon(Icons.qr_code_scanner_outlined),
-                label: const Text('Scan to connect library'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
-      ),
-    );
-  }
-}
-
-class _LibraryQrScannerScreen extends StatefulWidget {
-  const _LibraryQrScannerScreen({required this.onScanned});
-
-  final Future<void> Function(String value) onScanned;
-
-  @override
-  State<_LibraryQrScannerScreen> createState() => _LibraryQrScannerScreenState();
-}
-
-class _LibraryQrScannerScreenState extends State<_LibraryQrScannerScreen> {
-  final _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-  );
-  bool _handling = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleScan(String? value) async {
-    if (_handling || value == null || value.isEmpty) return;
-
-    _handling = true;
-    await widget.onScanned(value);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Scan to connect library')),
-      body: MobileScanner(
-        controller: _controller,
-        onDetect: (capture) async {
-          final value = capture.barcodes.isNotEmpty
-              ? capture.barcodes.first.rawValue
-              : null;
-          await _handleScan(value);
-        },
       ),
     );
   }

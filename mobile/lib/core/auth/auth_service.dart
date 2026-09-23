@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:libcontrol_app/core/api/api_client.dart';
+import 'package:libcontrol_app/core/attendance/scan_attendance_success_store.dart';
 import 'package:libcontrol_app/core/config/app_config.dart';
 import 'package:libcontrol_app/models/student.dart';
 import 'package:libcontrol_app/models/student_lookup.dart';
@@ -282,6 +283,7 @@ class AuthService extends ChangeNotifier {
       await rememberStudentProfile(activeStudent);
     }
 
+    await ScanAttendanceSuccessStore.clear();
     await clearAuthSession();
     notifyListeners();
   }

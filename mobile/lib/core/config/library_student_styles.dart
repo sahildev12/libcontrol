@@ -12,6 +12,29 @@ class LibraryStudentStyles {
   bool get hasConfiguredStyles =>
       branchStyles.any((style) => style.isConfigured);
 
+  /// Prefix used on the student login screen (one style per library connection).
+  StudentCodeStyle? get loginStyle {
+    final single = singleStyle;
+    if (single != null) {
+      return single;
+    }
+
+    final configured =
+        branchStyles.where((style) => style.isConfigured).toList();
+    if (configured.length == 1) {
+      return configured.first;
+    }
+
+    return null;
+  }
+
+  static LibraryStudentStyles fromLoginStyle(StudentCodeStyle style) {
+    return LibraryStudentStyles(
+      multiBranchPrefixes: false,
+      branchStyles: [style],
+    );
+  }
+
   StudentCodeStyle? get singleStyle {
     if (!hasConfiguredStyles || multiBranchPrefixes) {
       return null;

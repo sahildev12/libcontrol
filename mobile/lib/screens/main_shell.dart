@@ -69,9 +69,12 @@ class _MainShellState extends State<MainShell> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (expiryMessage != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: SeatExpiryMarquee(message: expiryMessage),
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: SeatExpiryMarquee(message: expiryMessage),
+                  ),
                 ),
               Expanded(
                 child: IndexedStack(

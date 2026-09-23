@@ -42,7 +42,20 @@ class ServerConfig extends ChangeNotifier {
   String? get libraryName => _libraryName;
   String? get libraryCode => _libraryCode;
   LibraryStudentStyles? get libraryStudentStyles => _libraryStudentStyles;
-  StudentCodeStyle? get studentCodeStyle => _libraryStudentStyles?.singleStyle;
+  StudentCodeStyle? get studentCodeStyle => _libraryStudentStyles?.loginStyle;
+
+  Future<void> updateLoginStudentStyle(StudentCodeStyle style) async {
+    if (!isConfigured || !style.isConfigured) {
+      return;
+    }
+
+    await setLibrary(
+      apiBaseUrl: _apiBaseUrl!,
+      libraryName: _libraryName,
+      libraryCode: _libraryCode,
+      libraryStudentStyles: LibraryStudentStyles.fromLoginStyle(style),
+    );
+  }
 
   String get apiBaseUrl {
     final url = _apiBaseUrl;

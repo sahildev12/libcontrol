@@ -25,7 +25,7 @@ class FamilySeatMember {
       hall: json['hall'] as String? ?? '',
       floor: json['floor'] as String? ?? '',
       bookedOn: json['booked_on'] as String? ?? '',
-      isActive: json['status'] as String? == 'active',
+      isActive: (json['status'] as String?) == 'active',
     );
   }
 }
