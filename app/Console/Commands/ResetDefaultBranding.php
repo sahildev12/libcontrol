@@ -27,13 +27,16 @@ class ResetDefaultBranding extends Command
         $this->info('Platform branding paths cleared — defaults from public/logo/png-background/ will be used.');
 
         if ($this->option('branches')) {
-            Branch::query()->update([
-                'logo_path' => null,
-                'logo_with_text_path' => null,
-                'simple_logo_path' => null,
-                'favicon_path' => null,
-            ]);
-            $this->info('Branch logo overrides cleared.');
+            $columns = array_values(array_filter(
+                ['logo_path', 'logo_with_text_path', 'simple_logo_path', 'favicon_path'],
+                fn (string $column) => \Illuminate\Support\Facades\Schema::hasColumn('branches', $column),
+            ));
+
+            if ($columns !== []) {
+                $payload = array_fill_keys($columns, null);
+                Branch::query()->update($payload);
+                $this->info('Branch logo overrides cleared.');
+            }
         }
 
         return self::SUCCESS;
