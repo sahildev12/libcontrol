@@ -24,7 +24,7 @@ class LibControlLogo extends StatelessWidget {
     }
 
     return Image.asset(
-      'assets/brand/yellow-lc-logo.png',
+      'assets/brand/dark-icon-only.png',
       height: height,
       width: height,
       fit: BoxFit.contain,
