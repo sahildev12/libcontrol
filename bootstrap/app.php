@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/support/tickets/pull',
             'setup/install',
             'setup/test-database',
+            'send-demo.php',
         ]);
 
         $middleware->alias([

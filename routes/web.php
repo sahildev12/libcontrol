@@ -18,12 +18,27 @@ use App\Http\Controllers\PublicStudentRegistrationController;
 use App\Http\Controllers\StudentRegistrationInviteController;
 use App\Http\Controllers\TrialSeatController;
 use App\Http\Controllers\HelpSupportController;
+use App\Http\Controllers\LibcontrolMarketingSiteController;
 use App\Http\Controllers\LibraryWebsiteController;
+use App\Http\Controllers\PublicHomeController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [LibraryWebsiteController::class, 'home'])->name('home');
+Route::get('/', PublicHomeController::class)->name('home');
 Route::redirect('/library', '/');
+
+Route::post('/send-demo.php', [LibcontrolMarketingSiteController::class, 'sendDemo']);
+Route::get('/assets/{assetPath}', [LibcontrolMarketingSiteController::class, 'asset'])
+    ->where('assetPath', '.*');
+Route::get('/documentation.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'documentation.html');
+Route::get('/support-articles.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'support-articles.html');
+Route::get('/styles.css', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'styles.css');
+Route::get('/script.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'script.js');
+Route::get('/favicon.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'favicon.js');
+Route::get('/modules-data.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'modules-data.js');
+Route::get('/documentation-data.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'documentation-data.js');
+Route::get('/support-articles-data.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'support-articles-data.js');
+Route::get('/support-hub.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'support-hub.js');
 
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
@@ -78,6 +93,8 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/students/registration-invites', [StudentRegistrationInviteController::class, 'store'])->name('students.registration-invites.store');
     Route::get('/students/{student}/photo', [StudentController::class, 'photo'])->name('students.photo');
     Route::get('/students/{student}/id-proof', [StudentController::class, 'idProof'])->name('students.id-proof');
+    Route::get('/students/{student}/id-card/download', [StudentController::class, 'downloadIdCard'])->name('students.id-card.download');
+    Route::get('/students/{student}/id-card/print', [StudentController::class, 'printIdCard'])->name('students.id-card.print');
     Route::get('/students/{student}/id-card', [StudentController::class, 'idCard'])->name('students.id-card');
     Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
     Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');

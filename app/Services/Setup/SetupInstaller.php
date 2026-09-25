@@ -90,6 +90,8 @@ class SetupInstaller
             'LIBCONTROL_TENANCY_ENABLED' => $tenancyEnabled ? 'true' : 'false',
             'LIBCONTROL_TENANT_BASE_DOMAIN' => $baseDomain,
             'LIBCONTROL_TENANT_LANDLORD_HOSTS' => $landlordHosts,
+            'LIBCONTROL_MARKETING_SITE_ENABLED' => 'true',
+            'LIBCONTROL_MARKETING_SITE_HOSTS' => parse_url($appUrl, PHP_URL_HOST) ?: $landlordHosts,
             'LIBCONTROL_PRODUCT_NAME' => $appName,
             'LIBCONTROL_DEVELOPER_EMAIL' => $developerEmail,
             'LIBCONTROL_DEVELOPER_PASSWORD' => $developerPassword,

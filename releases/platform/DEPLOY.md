@@ -65,14 +65,20 @@ php artisan view:cache
 php artisan optimize
 ```
 
-### 5. Static website (optional, for Help links)
+### 5. LibControl marketing site (libcontrol.phenomit.com)
 
-Upload or sync `libcontrol-website/` to your Phenomit web root, e.g.:
+The hub serves the **`libcontrol-website/`** folder at the **root** of **`libcontrol.phenomit.com`** when the host is listed in `LIBCONTROL_MARKETING_SITE_HOSTS` (default: `libcontrol.phenomit.com`). You should see the product page (“Run every seat…”), **not** a library’s “Study Hub” website.
 
-- `https://phenomit.com/libcontrol/support-articles.html`
-- `https://phenomit.com/libcontrol/documentation.html`
+```env
+LIBCONTROL_MARKETING_SITE_ENABLED=true
+LIBCONTROL_MARKETING_SITE_HOSTS=libcontrol.phenomit.com
+```
 
-Match URLs in `config/libcontrol.php` or `.env`:
+After deploy: `php artisan config:cache`. Admin, developer portal, and API routes are unchanged (`/admin/login`, `/developer`, `/api/...`).
+
+Hosted client subdomains (e.g. `aims.phenomit.com`) continue to use each library’s **built-in public website** from settings.
+
+You can still mirror static files under `phenomit.com/libcontrol/` for Help link URLs if needed. Match URLs in `config/libcontrol.php` or `.env`:
 
 - `LIBCONTROL_SUPPORT_ARTICLES_URL`
 - `LIBCONTROL_SUPPORT_DOCUMENTATION_URL`

@@ -16,11 +16,20 @@ return [
 
     'brand' => [
         'public_path' => 'brand',
-        'default_favicon' => 'logo/png-background/yellow-lc-logo.png',
+        'default_favicon' => 'logo/png-background/light-favicon/favicon-32x32.png',
+        'default_favicon_light' => 'logo/png-background/light-favicon/favicon-32x32.png',
+        'default_favicon_light_16' => 'logo/png-background/light-favicon/favicon-16x16.png',
+        'default_favicon_light_ico' => 'logo/png-background/light-favicon/favicon.ico',
+        'default_favicon_light_apple' => 'logo/png-background/light-favicon/apple-touch-icon.png',
+        'default_favicon_dark' => 'logo/png-background/dark-favicon/favicon-32x32.png',
+        'default_favicon_dark_16' => 'logo/png-background/dark-favicon/favicon-16x16.png',
+        'default_favicon_dark_ico' => 'logo/png-background/dark-favicon/favicon.ico',
+        'default_favicon_dark_apple' => 'logo/png-background/dark-favicon/apple-touch-icon.png',
         'default_simple_logo' => 'logo/png-background/yellow-lc-logo.png',
         'default_logo_with_text' => 'logo/png-background/lc-logo-landscape.png',
         'dark_icon' => 'logo/png-background/white-icon-only.png',
         'dark_wide' => 'logo/png-background/white-icon-only.png',
+        'dark_wide_logo_with_text' => 'logo/png-background/white-lc-logo-landscape.png',
         'light_icon' => 'logo/png-background/yellow-lc-logo.png',
         'light_wide' => 'logo/png-background/lc-logo-landscape.png',
     ],
@@ -96,24 +105,51 @@ return [
         'landlord_connection' => env('LIBCONTROL_TENANT_LANDLORD_CONNECTION', 'mysql'),
     ],
 
+    /*
+    | LibControl product marketing site (libcontrol-website/) on landlord hosts only.
+    | Client libraries (e.g. aims.phenomit.com) keep the per-library public website.
+    */
+    'marketing_site' => [
+        'enabled' => filter_var(env('LIBCONTROL_MARKETING_SITE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+        'path' => env('LIBCONTROL_MARKETING_SITE_PATH', base_path('libcontrol-website')),
+        'hosts' => array_values(array_filter(array_map(
+            static fn (string $host) => strtolower(trim($host)),
+            explode(',', (string) env('LIBCONTROL_MARKETING_SITE_HOSTS', 'libcontrol.phenomit.com'))
+        ))),
+    ],
+
     'id_card_templates' => [
         'classic' => [
-            'label' => 'Classic Sidebar',
-            'description' => 'Purple sidebar with photo, student details, and barcode.',
+            'label' => 'LibControl Card 1',
+            'description' => 'Navy header with yellow accent, photo frame, and dotted detail lines.',
         ],
         'modern' => [
-            'label' => 'Modern Header',
-            'description' => 'Gradient header, photo, details, and QR code.',
+            'label' => 'LibControl Card 2',
+            'description' => 'Wave header and footer with LibControl branding.',
         ],
         'professional' => [
-            'label' => 'Professional',
-            'description' => 'Clean corporate layout with wave accent and validity strip.',
+            'label' => 'LibControl Card 3',
+            'description' => 'Curved navy bands top and bottom with centered student fields.',
+        ],
+    ],
+
+    'id_card_layouts' => [
+        'classic' => [
+            'background' => 'logo/id-cards/card-classic.jpeg',
+        ],
+        'modern' => [
+            'background' => 'logo/id-cards/card-modern.jpeg',
+        ],
+        'professional' => [
+            'background' => 'logo/id-cards/card-professional.jpeg',
         ],
     ],
 
     'id_card_preview_sample' => [
         'name' => 'Aarav Sharma',
-        'student_id' => 'STU00123',
+        'father_name' => 'Rajesh Sharma',
+        'date_of_birth' => '15-08-2002',
+        'student_id' => 'MLC-901',
         'course' => 'BCA',
         'branch' => 'Main Branch',
         'valid_till' => '31 Dec 2026',
