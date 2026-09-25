@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', PublicHomeController::class)->name('home');
 Route::redirect('/library', '/');
 
+Route::get('/index.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'index.html');
 Route::post('/send-demo.php', [LibcontrolMarketingSiteController::class, 'sendDemo']);
 Route::get('/assets/{assetPath}', [LibcontrolMarketingSiteController::class, 'asset'])
     ->where('assetPath', '.*');

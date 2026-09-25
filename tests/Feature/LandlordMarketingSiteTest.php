@@ -29,6 +29,13 @@ class LandlordMarketingSiteTest extends TestCase
             ->assertDontSee('A Quiet Place For Bigger Dreams', false);
     }
 
+    public function test_index_html_serves_marketing_home_for_contact_links(): void
+    {
+        $this->get('http://libcontrol.phenomit.com/index.html')
+            ->assertOk()
+            ->assertSee('id="support"', false);
+    }
+
     public function test_landlord_marketing_assets_are_available(): void
     {
         TenantContext::setLandlordMode();
