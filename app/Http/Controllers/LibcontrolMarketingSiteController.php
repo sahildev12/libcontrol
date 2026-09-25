@@ -67,7 +67,10 @@ class LibcontrolMarketingSiteController extends Controller
         if (! str_ends_with(strtolower($absolutePath), '.html')) {
             $response->setPublic();
             $response->setMaxAge(86400);
-            $response->setLastModified(File::lastModified($absolutePath));
+            $modifiedAt = File::lastModified($absolutePath);
+            if ($modifiedAt !== false) {
+                $response->setLastModified((new \DateTimeImmutable())->setTimestamp($modifiedAt));
+            }
         }
 
         return $response;
