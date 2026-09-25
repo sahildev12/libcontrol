@@ -43,6 +43,14 @@ class LandlordMarketingSiteTest extends TestCase
         $this->get('http://libcontrol.phenomit.com/styles.css')
             ->assertOk()
             ->assertHeader('content-type', 'text/css; charset=UTF-8');
+
+        $this->get('http://libcontrol.phenomit.com/assets/favicon-light-32x32.png')
+            ->assertOk()
+            ->assertHeader('content-type', 'image/png');
+
+        $this->get('http://libcontrol.phenomit.com/favicon.ico')
+            ->assertOk()
+            ->assertHeader('content-type', 'image/x-icon');
     }
 
     public function test_hub_host_serves_marketing_even_when_tenancy_is_disabled(): void

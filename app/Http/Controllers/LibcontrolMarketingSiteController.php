@@ -10,6 +10,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class LibcontrolMarketingSiteController extends Controller
 {
+    public function favicon(Request $request): Response|BinaryFileResponse
+    {
+        if (LibcontrolMarketingSite::shouldServe($request)) {
+            return $this->file($request, 'assets/favicon.ico');
+        }
+
+        $path = public_path('logo/png-background/light-favicon/favicon.ico');
+        if (! is_file($path)) {
+            abort(404);
+        }
+
+        return response()->file($path, ['Content-Type' => 'image/x-icon']);
+    }
+
     public function asset(Request $request, string $assetPath): Response|BinaryFileResponse
     {
         return $this->file($request, 'assets/'.$assetPath);
