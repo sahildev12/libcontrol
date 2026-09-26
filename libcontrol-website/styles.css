@@ -3428,3 +3428,38 @@ body {
     position: static;
   }
 }
+
+.legal-doc {
+  max-width: 780px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 28px 32px;
+  box-shadow: var(--shadow);
+}
+.legal-doc h2 {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+.legal-doc p,
+.legal-doc li {
+  color: #3d4a63;
+  line-height: 1.75;
+}
+.legal-doc ul,
+.legal-doc ol {
+  padding-left: 1.25rem;
+}
+.legal-doc a {
+  color: #002364;
+  text-decoration: underline;
+}
+.footer-copy a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: underline;
+}
+.footer-copy a:hover {
+  color: var(--accent);
+}

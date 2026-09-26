@@ -34,6 +34,10 @@ Route::get('/assets/{assetPath}', [LibcontrolMarketingSiteController::class, 'as
     ->where('assetPath', '.*');
 Route::get('/documentation.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'documentation.html');
 Route::get('/support-articles.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'support-articles.html');
+Route::get('/privacy-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'privacy-policy.html');
+Route::get('/terms-and-conditions.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'terms-and-conditions.html');
+Route::get('/refund-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'refund-policy.html');
+Route::get('/whatsapp.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'whatsapp.js');
 Route::get('/styles.css', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'styles.css');
 Route::get('/script.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'script.js');
 Route::get('/favicon.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'favicon.js');

@@ -82,7 +82,7 @@ if (str_starts_with($digits, '91') && strlen($digits) >= 12) {
 } else {
     $waDigits = $digits;
 }
-$waLink = 'https://wa.me/' . $waDigits;
+$waLink = 'https://web.whatsapp.com/send?phone=' . $waDigits;
 
 $htmlBody = <<<HTML
 <!DOCTYPE html>
