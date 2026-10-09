@@ -227,6 +227,7 @@
       demoError.hidden = true;
       demoError.textContent = '';
     }
+    clearDemoErrors();
     demoModal.hidden = false;
     document.body.style.overflow = 'hidden';
     var first = demoModal.querySelector('input');
@@ -257,28 +258,146 @@
     });
   }
 
+  var demoValidators = {
+    name: function (v) {
+      v = v.trim().replace(/\s+/g, ' ');
+      if (!v) return 'Please enter your name.';
+      if (v.length < 2) return 'Name must be at least 2 characters.';
+      if (v.length > 80) return 'Name must be 80 characters or fewer.';
+      if (!/^[\p{L}][\p{L}\s.'-]*$/u.test(v)) return 'Name can only contain letters, spaces, dots, apostrophes and hyphens.';
+      return '';
+    },
+    phone: function (v) {
+      v = v.replace(/\D/g, '');
+      if (!v) return 'Please enter your WhatsApp / phone number.';
+      if (v.length !== 10) return 'Enter a 10-digit mobile number.';
+      if (!/^[6-9]\d{9}$/.test(v)) return 'Enter a valid mobile number.';
+      return '';
+    },
+    institute: function (v) {
+      v = v.trim().replace(/\s+/g, ' ');
+      if (!v) return 'Please enter your library / institute name.';
+      if (v.length < 3) return 'Library name must be at least 3 characters.';
+      if (v.length > 120) return 'Library name must be 120 characters or fewer.';
+      if (!/^[\p{L}][\p{L}\s&.,'()-]*$/u.test(v)) return 'Library name can only contain letters, spaces and & . , \' ( ) -';
+      return '';
+    },
+    city: function (v) {
+      v = v.trim().replace(/\s+/g, ' ');
+      if (!v) return '';
+      if (v.length < 2) return 'City must be at least 2 characters.';
+      if (v.length > 60) return 'City must be 60 characters or fewer.';
+      if (!/^[\p{L}][\p{L}\s.'-]*$/u.test(v)) return 'City can only contain letters, spaces, dots and hyphens.';
+      return '';
+    },
+    message: function (v) {
+      if (v.trim().length > 1000) return 'Message must be 1000 characters or fewer.';
+      return '';
+    },
+    accept_legal: function (v, el) {
+      return el.checked ? '' : 'Please accept the Disclaimer, Terms, Privacy Policy and Refund Policy.';
+    }
+  };
+
+  function demoFieldWrap(key) {
+    return demoForm ? demoForm.querySelector('[data-demo-field="' + key + '"]') : null;
+  }
+
+  function demoFieldInput(key) {
+    var wrap = demoFieldWrap(key);
+    return wrap ? wrap.querySelector('input, textarea') : null;
+  }
+
+  function setDemoFieldError(key, message) {
+    var wrap = demoFieldWrap(key);
+    if (!wrap) return;
+    var slot = wrap.querySelector('[data-demo-error]');
+    var input = demoFieldInput(key);
+    wrap.classList.toggle('has-error', !!message);
+    if (slot) slot.textContent = message || '';
+    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+  }
+
+  function validateDemoField(key) {
+    var input = demoFieldInput(key);
+    if (!input || !demoValidators[key]) return true;
+    var message = demoValidators[key](input.value || '', input);
+    setDemoFieldError(key, message);
+    return !message;
+  }
+
+  function clearDemoErrors() {
+    Object.keys(demoValidators).forEach(function (key) { setDemoFieldError(key, ''); });
+  }
+
   if (demoForm) {
+    var demoPhoneInput = document.getElementById('demoPhone');
+    if (demoPhoneInput) {
+      demoPhoneInput.addEventListener('input', function () {
+        var digits = demoPhoneInput.value.replace(/\D/g, '');
+        if (digits.length > 10 && digits.indexOf('91') === 0) digits = digits.slice(2);
+        if (digits.length > 10 && digits.charAt(0) === '0') digits = digits.slice(1);
+        if (demoPhoneInput.value !== digits.slice(0, 10)) demoPhoneInput.value = digits.slice(0, 10);
+      });
+    }
+
+    var lettersOnlyFields = {
+      demoName: /[^\p{L}\s.'-]/gu,
+      demoCity: /[^\p{L}\s.'-]/gu,
+      demoInstitute: /[^\p{L}\s&.,'()-]/gu
+    };
+    Object.keys(lettersOnlyFields).forEach(function (id) {
+      var input = document.getElementById(id);
+      var disallowed = lettersOnlyFields[id];
+      if (!input) return;
+      var sanitize = function (text) {
+        return text.replace(disallowed, '').replace(/^[^\p{L}]+/u, '');
+      };
+      input.addEventListener('input', function () {
+        var value = input.value;
+        var clean = sanitize(value);
+        if (clean === value) return;
+        var caret = input.selectionStart || 0;
+        var cleanBefore = sanitize(value.slice(0, caret));
+        input.value = clean;
+        input.setSelectionRange(cleanBefore.length, cleanBefore.length);
+      });
+    });
+
+    Object.keys(demoValidators).forEach(function (key) {
+      var input = demoFieldInput(key);
+      if (!input) return;
+      var isCheckbox = input.type === 'checkbox';
+      input.addEventListener(isCheckbox ? 'change' : 'blur', function () { validateDemoField(key); });
+      if (!isCheckbox) {
+        input.addEventListener('input', function () {
+          if (demoFieldWrap(key).classList.contains('has-error')) validateDemoField(key);
+        });
+      }
+    });
+
     demoForm.addEventListener('submit', function (e) {
       e.preventDefault();
-      var name = (document.getElementById('demoName') || {}).value || '';
-      var phone = (document.getElementById('demoPhone') || {}).value || '';
-      var institute = (document.getElementById('demoInstitute') || {}).value || '';
-      var city = (document.getElementById('demoCity') || {}).value || '';
-      var message = (document.getElementById('demoMessage') || {}).value || '';
       var submitBtn = document.getElementById('demoFormSubmit');
-      name = name.trim();
-      phone = phone.trim();
-      institute = institute.trim();
-      city = city.trim();
-      message = message.trim();
 
-      if (!name || !phone || !institute) {
+      var firstInvalid = null;
+      Object.keys(demoValidators).forEach(function (key) {
+        if (!validateDemoField(key) && !firstInvalid) firstInvalid = demoFieldInput(key);
+      });
+      if (firstInvalid) {
         if (demoError) {
-          demoError.textContent = 'Please fill name, phone and library name.';
+          demoError.textContent = 'Please fix the highlighted fields.';
           demoError.hidden = false;
         }
+        firstInvalid.focus();
         return;
       }
+
+      var name = document.getElementById('demoName').value.trim().replace(/\s+/g, ' ');
+      var phone = document.getElementById('demoPhone').value.replace(/\D/g, '');
+      var institute = document.getElementById('demoInstitute').value.trim().replace(/\s+/g, ' ');
+      var city = document.getElementById('demoCity').value.trim().replace(/\s+/g, ' ');
+      var message = document.getElementById('demoMessage').value.trim();
 
       if (demoError) {
         demoError.hidden = true;
@@ -331,7 +450,7 @@
         .finally(function () {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Book a Demo';
+            submitBtn.textContent = 'Pre-Register';
           }
         });
     });

@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
 
         Broadcast::routes(['middleware' => ['web', 'auth', 'branch']]);
 
-        View::composer(['layouts.admin', 'layouts.partials.admin-topbar', 'layouts.partials.admin-sidebar'], function ($view) {
+        View::composer(['layouts.admin', 'layouts.partials.admin-topbar', 'layouts.partials.admin-sidebar', 'dashboard', 'dashboard.admin', 'dashboard.branch'], function ($view) {
             $user = auth()->user();
 
             if (! $user) {
@@ -79,6 +79,17 @@ class AppServiceProvider extends ServiceProvider
 
             $supportTicketUnreadCount = $notificationService->supportTicketUnreadCount($user);
 
+            $topbarProfileCompletionPct = null;
+            if (! $user->isDeveloperAdmin()) {
+                try {
+                    $completion = app(\App\Services\Profile\LibraryProfileCompletionService::class)
+                        ->scoreForLibrary($user);
+                    $topbarProfileCompletionPct = max(0, min(100, (int) ($completion['pct'] ?? 0)));
+                } catch (\Throwable) {
+                    $topbarProfileCompletionPct = null;
+                }
+            }
+
             $view->with([
                 'activeBranch' => $activeBranch,
                 'viewingAllBranches' => $viewingAll,
@@ -96,6 +107,7 @@ class AppServiceProvider extends ServiceProvider
                 'recentAlerts' => $recentAlerts,
                 'alertCount' => $alertCount,
                 'supportTicketUnreadCount' => $supportTicketUnreadCount,
+                'topbarProfileCompletionPct' => $topbarProfileCompletionPct,
             ]);
         });
     }

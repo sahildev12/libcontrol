@@ -48,11 +48,11 @@
         </form>
 
         <div class="flex flex-wrap gap-2">
-            <form method="POST" action="{{ route('developer.deployments.regenerate-key', $deployment) }}" onsubmit="return confirm('Issue a new license key? The old key will stop working.');">
+            <form method="POST" action="{{ route('developer.deployments.regenerate-key', $deployment) }}" x-data x-on:submit.prevent="if (await confirmDialog({ title: 'New license key', message: 'Issue a new license key? The old key will stop working.', confirmLabel: 'Issue key' })) $el.submit()">
                 @csrf
                 <button type="submit" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100">Regenerate license key</button>
             </form>
-            <form method="POST" action="{{ route('developer.deployments.destroy', $deployment) }}" onsubmit="return confirm('Delete this deployment?');">
+            <form method="POST" action="{{ route('developer.deployments.destroy', $deployment) }}" x-data x-on:submit.prevent="if (await confirmDialog({ title: 'Delete deployment', message: 'Delete this deployment?', confirmLabel: 'Delete' })) $el.submit()">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100">Delete</button>

@@ -1,3 +1,5 @@
+@import './student-id-cards.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -29,6 +31,15 @@
     --lc-yellow: #fecf25;
     --lc-blue: #243a8b;
     --lc-navy: #0c0048;
+    --lc-sidebar-active: #e8b61a;
+    --lc-sidebar-active-text: #082a67;
+}
+
+.lc-theme aside nav a.lc-sidebar-nav--active {
+    background-color: var(--lc-sidebar-active) !important;
+    color: var(--lc-sidebar-active-text) !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.22);
 }
 
 .lc-theme .bg-indigo-600 {
@@ -183,11 +194,15 @@
 }
 
 .lc-theme .lc-kpi-card__label {
-    color: rgb(255 255 255 / 0.78);
+    color: #ffffff;
 }
 
 .lc-kpi-card__value {
     @apply text-2xl font-bold leading-snug tabular-nums text-gray-900;
+}
+
+.lc-theme .lc-kpi-card__value {
+    color: #a8c4ff;
 }
 
 .lc-kpi-row--lg .lc-kpi-card {
@@ -219,8 +234,114 @@
     @apply text-xl;
 }
 
-.lc-theme .lc-kpi-card__value {
-    color: #a8c4ff;
+/* Admin dashboard stats — independent of .lc-kpi-card grid */
+.lc-dash-stats {
+    display: grid;
+    gap: 0.625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 1280px) {
+    .lc-dash-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.lc-dash-stat {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.625rem;
+    overflow: hidden;
+    border-radius: 0.875rem;
+    min-height: 7.25rem;
+    padding: 1.125rem 1.25rem;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: linear-gradient(135deg, #082a67 0%, #0c3a8a 100%);
+    box-shadow: 0 1px 2px rgb(8 42 103 / 0.18);
+}
+
+.lc-dash-stat__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.lc-dash-stat__label {
+    min-width: 0;
+    flex: 1 1 auto;
+    margin: 0;
+    color: #ffffff;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.lc-dash-stat__icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--lc-yellow);
+}
+
+.lc-dash-stat__icon svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.lc-dash-stat__value {
+    margin: 0;
+    min-width: 0;
+    color: #ffffff;
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lc-shine-btn {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.lc-shine-btn__glint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    display: block;
+    width: 45%;
+    height: 100%;
+    pointer-events: none;
+    will-change: transform;
+    transform: translateX(-160%) skewX(-18deg);
+    background: linear-gradient(
+        115deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.22) 35%,
+        rgba(255, 255, 255, 0.65) 50%,
+        rgba(255, 255, 255, 0.22) 65%,
+        transparent 100%
+    );
+    animation: lc-shine-sweep 2s ease-in-out infinite;
+}
+
+@keyframes lc-shine-sweep {
+    0% {
+        transform: translateX(-160%) skewX(-18deg);
+    }
+    35% {
+        transform: translateX(320%) skewX(-18deg);
+    }
+    100% {
+        transform: translateX(320%) skewX(-18deg);
+    }
 }
 
 .lc-kpi-card__badge {
@@ -464,3 +585,4 @@ select.admin-select:focus {
         @apply mt-1 text-xs text-red-600;
     }
 }
+

@@ -50,10 +50,102 @@
     </div>
 
     @if ($lcTheme)
+        @php
+            $impactText = config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered');
+            $profilePct = isset($topbarProfileCompletionPct) ? (int) $topbarProfileCompletionPct : null;
+            $profileHref = \Illuminate\Support\Facades\Route::has('profile-completion.index')
+                ? route('profile-completion.index')
+                : (\Illuminate\Support\Facades\Route::has('settings.index') ? route('settings.index') : null);
+            $navyFill = $profilePct !== null ? max(0, min(100, $profilePct)) : 0;
+        @endphp
         <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-16 items-center justify-center px-4 lg:flex">
-            <div class="pointer-events-auto inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-brand-yellow/40 bg-gradient-to-r from-brand-yellow/15 to-brand-yellow/5 px-4 py-1.5 shadow-sm">
-                <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-[10px] font-bold text-brand-navy">✓</span>
-                <p class="truncate text-sm font-semibold text-brand-navy">{{ config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered') }}</p>
+            <div
+                class="pointer-events-auto overflow-hidden"
+                style="perspective:900px;height:52px;width:min(42rem,calc(100vw - 34rem));"
+                @if ($profilePct !== null)
+                    x-data="{
+                        face: 0,
+                        timer: null,
+                        start() {
+                            this.stop();
+                            this.timer = setInterval(() => { this.face = this.face === 0 ? 1 : 0 }, 5000);
+                        },
+                        stop() {
+                            if (this.timer) { clearInterval(this.timer); this.timer = null; }
+                        },
+                        init() { this.start(); },
+                        destroy() { this.stop(); },
+                    }"
+                    @mouseenter="stop()"
+                    @mouseleave="start()"
+                @endif
+            >
+                <div
+                    class="relative h-full w-full"
+                    style="transform-style:preserve-3d;transition:transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);"
+                    @if ($profilePct !== null)
+                        :style="`transform: rotateX(${face * 180}deg); transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);`"
+                    @endif
+                >
+                    {{-- Face 0: Libraries registered --}}
+                    <div
+                        class="absolute inset-0 flex items-center justify-center"
+                        style="backface-visibility:hidden;-webkit-backface-visibility:hidden;"
+                    >
+                        <div class="inline-flex max-w-full items-center gap-2 rounded-full border border-brand-yellow/40 bg-gradient-to-r from-brand-yellow/15 to-brand-yellow/5 px-4 py-1.5 shadow-sm">
+                            <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-[10px] font-bold text-brand-navy">✓</span>
+                            <p class="truncate text-sm font-semibold text-brand-navy">{{ $impactText }}</p>
+                        </div>
+                    </div>
+
+                    @if ($profilePct !== null)
+                        {{-- Face 1: Profile completion --}}
+                        <div
+                            class="absolute inset-0 flex items-center justify-center"
+                            style="backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateX(180deg);"
+                        >
+                            <div
+                                class="flex w-full items-center gap-3 rounded-xl border px-3 shadow-sm"
+                                style="height:48px;background-color:#F4F8FF;border-color:#DCE6F5;"
+                            >
+                                <span
+                                    class="inline-flex shrink-0 items-center justify-center rounded-full"
+                                    style="width:34px;height:34px;background-color:#E8F0FE;color:#082a67;"
+                                    aria-hidden="true"
+                                >
+                                    <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                </span>
+
+                                <div class="min-w-0 shrink-0" style="max-width:11.5rem;">
+                                    <p class="truncate font-bold" style="margin:0;font-size:13px;line-height:1.2;color:#082a67;">Profile completion</p>
+                                    <p class="truncate" style="margin:2px 0 0;font-size:11px;line-height:1.25;color:#7B8BA5;">Complete your profile to unlock all features</p>
+                                </div>
+
+                                <span class="relative mx-1 h-2.5 min-w-0 flex-1 overflow-hidden rounded-full" style="background-color:#FFCC00;" aria-hidden="true">
+                                    <span
+                                        class="absolute inset-y-0 left-0 rounded-full"
+                                        style="width:{{ $navyFill }}%;background-color:#082a67;"
+                                    ></span>
+                                </span>
+
+                                <span class="shrink-0 font-bold tabular-nums" style="font-size:15px;color:#082a67;">{{ $profilePct }}%</span>
+
+                                <a
+                                    @if ($profileHref) href="{{ $profileHref }}" @endif
+                                    class="inline-flex shrink-0 items-center gap-1 rounded-lg border bg-white font-semibold transition hover:bg-slate-50"
+                                    style="height:30px;padding:0 10px;border-color:#D5DEEB;color:#082a67;font-size:12px;text-decoration:none;"
+                                >
+                                    Complete Profile
+                                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     @else

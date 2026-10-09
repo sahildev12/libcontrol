@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\ActivityLogger;
 use App\Services\LoginBrandingService;
+use App\Services\Profile\LibraryProfileCompletionService;
 use App\Support\InstallState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,6 +50,22 @@ class AuthenticatedSessionController extends Controller
                 : route('settings.index', ['tab' => 'developer'], absolute: false);
 
             return redirect()->intended($target);
+        }
+
+        if (
+            $request->user()
+            && ! $request->user()->isDeveloperAdmin()
+            && ! $request->session()->get('profile_completion_seen')
+            && Route::has('profile-completion.index')
+        ) {
+            try {
+                $completion = app(LibraryProfileCompletionService::class)->scoreForLibrary($request->user());
+                if (! ($completion['complete'] ?? false)) {
+                    return redirect()->route('profile-completion.index');
+                }
+            } catch (\Throwable) {
+                // Fall through to dashboard if scoring fails.
+            }
         }
 
         return redirect()->intended(route('dashboard', absolute: false));

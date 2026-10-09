@@ -111,3 +111,4 @@ mobile/**/build/
 /releases/**/*.zip
 /releases/**/*.sql
 /releases/**/SETUP-TOKEN.txt
+/mobile/*.apk

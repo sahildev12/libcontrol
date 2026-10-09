@@ -10,6 +10,7 @@ use App\Models\PlatformSetting;
 use App\Services\Addons\AddonRegistry;
 use App\Services\BranchBrandService;
 use App\Services\DatabaseMaintenanceService;
+use App\Services\Growth\LibraryBusinessPerformanceService;
 use App\Services\LibraryWebsiteService;
 use App\Services\MailDeliveryService;
 use App\Services\PlatformBrandService;
@@ -77,7 +78,11 @@ class SettingsController extends Controller
             ? (int) (Branch::query()->value('expiry_reminder_days') ?: config('libcontrol.defaults.expiry_reminder_days', 10))
             : null;
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isClientAdmin', 'isDeveloperAdmin', 'isHub', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'mailDeliveryStatus', 'globalExpiryReminderDays') + [
+        $businessPerformance = $isClientAdmin && config('growth.enabled', true)
+            ? app(LibraryBusinessPerformanceService::class)->scoreForLibrary($user, $branch?->id)
+            : null;
+
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isClientAdmin', 'isDeveloperAdmin', 'isHub', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'mailDeliveryStatus', 'globalExpiryReminderDays', 'businessPerformance') + [
             'portalContext' => false,
             'managedTenant' => null,
             'portalBranches' => [],

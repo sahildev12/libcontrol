@@ -2,7 +2,7 @@
 
 @php
     $class = 'size-[18px] shrink-0 ' . ($active
-        ? 'text-white'
+        ? ((($lcTheme ?? false)) ? 'text-inherit' : 'text-white')
         : (($lcTheme ?? false) ? 'text-white/70' : 'text-gray-500'));
 @endphp
 

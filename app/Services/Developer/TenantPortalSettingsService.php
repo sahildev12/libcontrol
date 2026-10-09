@@ -239,6 +239,8 @@ class TenantPortalSettingsService
         $this->ensureManageable($tenant);
         abort_unless($this->resolvedBranchId($request, $tenant) === null, 422, 'Switch to all branches to update website settings.');
 
+        \App\Services\LibraryWebsiteService::prepareContactInput($request);
+
         $validated = $request->validate([
             'website_enabled' => ['nullable', 'boolean'],
             'website_tagline' => ['nullable', 'string', 'max:255'],
@@ -246,19 +248,17 @@ class TenantPortalSettingsService
             'website_about' => ['nullable', 'string', 'max:5000'],
             'website_amenities' => ['nullable', 'array'],
             'website_amenities.*' => ['nullable', 'string', 'max:120'],
-            'website_social_links' => ['nullable', 'array'],
-            'website_social_links.facebook' => ['nullable', 'url', 'max:255'],
-            'website_social_links.instagram' => ['nullable', 'url', 'max:255'],
-            'website_social_links.youtube' => ['nullable', 'url', 'max:255'],
-            'website_social_links.twitter' => ['nullable', 'url', 'max:255'],
-            'website_social_links.website' => ['nullable', 'url', 'max:255'],
-            'website_whatsapp' => ['nullable', 'string', 'regex:/^[6-9]\d{9}$/'],
+            ...\App\Services\LibraryWebsiteService::contactRules(),
             'website_logo' => ['nullable', 'image', 'max:4096'],
-        ]);
+            'website_gallery' => ['nullable', 'array', 'max:'.\App\Services\LibraryWebsiteService::GALLERY_MAX],
+            'website_gallery.*' => ['nullable', 'image', 'max:4096'],
+            'website_gallery_remove' => ['nullable', 'array'],
+            'website_gallery_remove.*' => ['nullable', 'string', 'max:255'],
+        ], \App\Services\LibraryWebsiteService::contactMessages());
 
         $result = $this->connections->runOnTenant($tenant, function () use ($validated, $request) {
             $settings = PlatformSetting::current();
-            $data = collect($validated)->except(['website_logo'])->all();
+            $data = collect($validated)->except(['website_logo', 'website_gallery', 'website_gallery_remove'])->all();
             $data['website_enabled'] = $request->boolean('website_enabled');
 
             if (array_key_exists('website_amenities', $data)) {
@@ -270,6 +270,25 @@ class TenantPortalSettingsService
 
             if ($request->hasFile('website_logo')) {
                 $data['website_logo_path'] = $this->libraryWebsiteService->storeLogo($request->file('website_logo'));
+            }
+
+            $uploads = $request->file('website_gallery', []);
+            if (! is_array($uploads)) {
+                $uploads = $uploads ? [$uploads] : [];
+            }
+            $uploads = array_values(array_filter($uploads));
+
+            $remove = array_values(array_filter(array_map(
+                'strval',
+                $request->input('website_gallery_remove', []),
+            )));
+
+            if ($uploads !== [] || $remove !== []) {
+                $data['website_gallery'] = $this->libraryWebsiteService->syncGallery(
+                    is_array($settings->website_gallery) ? $settings->website_gallery : [],
+                    $remove,
+                    $uploads,
+                );
             }
 
             $settings->update($data);

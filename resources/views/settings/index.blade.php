@@ -56,6 +56,7 @@
             deploymentInfo: @js($deploymentInfo ?? []),
             syncRuntimeUrl: @js(route('settings.sync-runtime')),
             websiteSettings: @js($websiteSettings ?? []),
+            websiteAmenityCatalog: @js(config('website-amenities.categories', [])),
             websiteUpdateUrl: @js($settingsWebsiteUpdateUrl),
             emailNotificationSettings: @js($emailNotificationSettings ?? []),
             emailNotificationsUpdateUrl: @js($settingsEmailNotificationsUpdateUrl),
@@ -145,6 +146,14 @@
                     class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
                     :class="settingsTab === 'website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                 >Website</button>
+                @if (! empty($businessPerformance))
+                <button
+                    type="button"
+                    @click="settingsTab = 'business'"
+                    class="border-b-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    :class="settingsTab === 'business' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                >Business Performance</button>
+                @endif
                 @if ($viewingAll ?? false)
                 <button
                     type="button"
@@ -599,6 +608,9 @@
 
         @if ($isClientAdmin)
             @include('settings.partials.website-tab')
+            @if (! empty($businessPerformance))
+                @include('settings.partials.business-performance-tab')
+            @endif
             @if ($viewingAll ?? false)
                 @include('settings.partials.emails-tab')
             @endif

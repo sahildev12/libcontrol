@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/runtime/sync',
             'api/support/tickets',
             'api/support/tickets/pull',
+            'api/webhooks/razorpay/growth',
             'setup/install',
             'setup/test-database',
             'send-demo.php',

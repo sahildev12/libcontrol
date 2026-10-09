@@ -172,10 +172,34 @@ class HelpSupportAndWebsiteTest extends TestCase
         ]);
     }
 
-    public function test_home_shows_library_website_even_when_website_setting_disabled(): void
+    public function test_home_redirects_to_branch_login_when_website_disabled(): void
     {
         PlatformSetting::query()->firstOrCreate([], [
             'website_enabled' => false,
+            'display_name' => 'Demo Library',
+        ]);
+
+        $this->get(route('home'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_website_enquiries_are_rejected_when_website_disabled(): void
+    {
+        Branch::factory()->create();
+        PlatformSetting::query()->firstOrCreate([], ['website_enabled' => false]);
+
+        $this->postJson(route('website.enquiries.store'), [
+            'name' => 'Website Lead',
+            'phone' => '9876543210',
+        ])->assertNotFound();
+
+        $this->assertDatabaseMissing('enquiries', ['name' => 'Website Lead']);
+    }
+
+    public function test_home_shows_library_website_when_enabled(): void
+    {
+        PlatformSetting::query()->firstOrCreate([], [
+            'website_enabled' => true,
             'display_name' => 'Demo Library',
         ]);
 
@@ -216,6 +240,19 @@ class HelpSupportAndWebsiteTest extends TestCase
     public function test_legacy_library_url_redirects_to_home(): void
     {
         $this->get('/library')->assertRedirect(route('home'));
+    }
+
+    public function test_library_website_shows_enquiry_section(): void
+    {
+        PlatformSetting::query()->firstOrCreate([], [
+            'website_enabled' => true,
+            'display_name' => 'Demo Library',
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Pre-book your seat', false)
+            ->assertSee('Send enquiry', false);
     }
 
     public function test_platform_admin_can_update_email_notification_settings(): void

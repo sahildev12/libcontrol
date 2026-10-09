@@ -4,7 +4,8 @@ return [
     'timezone' => env('APP_TIMEZONE', 'Asia/Kolkata'),
 
     'modules' => [
-        'enquiries' => filter_var(env('LIBCONTROL_ENQUIRIES_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'enquiries' => filter_var(env('LIBCONTROL_ENQUIRIES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+        'growth' => filter_var(env('LIBCONTROL_GROWTH_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     'product' => [
@@ -133,15 +134,38 @@ return [
         ],
     ],
 
+    /*
+     * Positions are percentages of the card (width for left/width/radius, height for top/height),
+     * measured from the 1012×638 background artwork. Used by the HTML cards and the PNG export.
+     */
     'id_card_layouts' => [
         'classic' => [
             'background' => 'logo/id-cards/card-classic.jpeg',
+            'photo' => ['left' => 4.923, 'top' => 30.882, 'width' => 27.692, 'height' => 50.98, 'radius' => 2.46],
         ],
         'modern' => [
             'background' => 'logo/id-cards/card-modern.jpeg',
+            'photo' => ['left' => 4.84, 'top' => 34.33, 'width' => 21.15, 'height' => 40.28, 'radius' => 1.7],
         ],
         'professional' => [
             'background' => 'logo/id-cards/card-professional.jpeg',
+            'photo' => ['left' => 7.71, 'top' => 31.35, 'width' => 26.28, 'height' => 49.84, 'radius' => 0],
+        ],
+    ],
+
+    /*
+     * Student details on the dotted lines (same on every background). `line` is the dotted line's
+     * height on the card; text sits just above it, from `left` to `line_end`. Font size is % of card width.
+     */
+    'id_card_text' => [
+        'font_size' => 3.4,
+        'line_end' => 92.2,
+        'gap_above_line' => 0.9,
+        'rows' => [
+            'name' => ['left' => 52.2, 'line' => 37.22],
+            'father_name' => ['left' => 54.4, 'line' => 50.63],
+            'date_of_birth' => ['left' => 65.7, 'line' => 63.95],
+            'student_id' => ['left' => 60.3, 'line' => 76.96],
         ],
     ],
 

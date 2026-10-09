@@ -9,11 +9,11 @@ function initLibraryWebsite() {
     const lightbox = document.querySelector('[data-lw-lightbox]');
     const lightboxImage = document.querySelector('[data-lw-lightbox-image]');
     const lightboxClose = document.querySelector('[data-lw-lightbox-close]');
-    const testimonialTrack = document.querySelector('[data-lw-testimonial-track]');
-    const testimonialDots = document.querySelectorAll('[data-lw-testimonial-dot]');
+    const reviewsTrack = document.querySelector('[data-lw-reviews-track]');
+    const reviewsPrev = document.querySelector('[data-lw-reviews-prev]');
+    const reviewsNext = document.querySelector('[data-lw-reviews-next]');
 
-    let testimonialIndex = 0;
-    let testimonialTimer = null;
+    let reviewsTimer = null;
 
     const setHeaderState = () => {
         if (! header) {
@@ -45,8 +45,7 @@ function initLibraryWebsite() {
         let current = 'home';
 
         sections.forEach((section) => {
-            const rect = section.getBoundingClientRect();
-            if (rect.top <= 120 && rect.bottom > 120) {
+            if (section.getBoundingClientRect().top <= 120) {
                 current = section.id;
             }
         });
@@ -121,46 +120,67 @@ function initLibraryWebsite() {
         revealItems.forEach((item) => item.classList.add('is-visible'));
     }
 
-    const showTestimonial = (index) => {
-        if (! testimonialTrack) {
+    const scrollReviews = (direction) => {
+        if (! reviewsTrack) {
             return;
         }
 
-        const slides = testimonialTrack.querySelectorAll('[data-lw-testimonial-slide]');
-        if (slides.length === 0) {
-            return;
+        const card = reviewsTrack.querySelector('[data-lw-review]');
+        const step = card ? card.getBoundingClientRect().width + 16 : reviewsTrack.clientWidth;
+        const atEnd = reviewsTrack.scrollLeft + reviewsTrack.clientWidth >= reviewsTrack.scrollWidth - 4;
+        const atStart = reviewsTrack.scrollLeft <= 4;
+
+        if (direction > 0 && atEnd) {
+            reviewsTrack.scrollTo({ left: 0, behavior: 'smooth' });
+        } else if (direction < 0 && atStart) {
+            reviewsTrack.scrollTo({ left: reviewsTrack.scrollWidth, behavior: 'smooth' });
+        } else {
+            reviewsTrack.scrollBy({ left: step * direction, behavior: 'smooth' });
         }
-
-        testimonialIndex = (index + slides.length) % slides.length;
-
-        slides.forEach((slide, slideIndex) => {
-            slide.classList.toggle('hidden', slideIndex !== testimonialIndex);
-        });
-
-        testimonialDots.forEach((dot, dotIndex) => {
-            dot.classList.toggle('bg-blue-700', dotIndex === testimonialIndex);
-            dot.classList.toggle('bg-slate-300', dotIndex !== testimonialIndex);
-        });
     };
 
-    const startTestimonialCarousel = () => {
-        if (! testimonialTrack) {
+    const restartReviewsTimer = () => {
+        if (reviewsTimer) {
+            window.clearInterval(reviewsTimer);
+        }
+
+        if (! reviewsTrack || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             return;
         }
 
-        showTestimonial(0);
-        testimonialTimer = window.setInterval(() => {
-            showTestimonial(testimonialIndex + 1);
-        }, 6000);
+        reviewsTimer = window.setInterval(() => scrollReviews(1), 5000);
     };
 
-    testimonialDots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            if (testimonialTimer) {
-                window.clearInterval(testimonialTimer);
+    reviewsPrev?.addEventListener('click', () => {
+        scrollReviews(-1);
+        restartReviewsTimer();
+    });
+
+    reviewsNext?.addEventListener('click', () => {
+        scrollReviews(1);
+        restartReviewsTimer();
+    });
+
+    reviewsTrack?.addEventListener('pointerenter', () => reviewsTimer && window.clearInterval(reviewsTimer));
+    reviewsTrack?.addEventListener('pointerleave', restartReviewsTimer);
+
+    const syncReviewToggles = () => {
+        document.querySelectorAll('[data-lw-review]').forEach((card) => {
+            const text = card.querySelector('[data-lw-review-text]');
+            const toggle = card.querySelector('[data-lw-review-toggle]');
+            if (! text || ! toggle || card.classList.contains('is-expanded')) {
+                return;
             }
-            showTestimonial(index);
-            startTestimonialCarousel();
+
+            toggle.classList.toggle('is-hidden', text.scrollHeight <= text.clientHeight + 1);
+        });
+    };
+
+    document.querySelectorAll('[data-lw-review-toggle]').forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            const card = toggle.closest('[data-lw-review]');
+            const expanded = card?.classList.toggle('is-expanded');
+            toggle.textContent = expanded ? 'Hide' : 'Read more';
         });
     });
 
@@ -169,9 +189,12 @@ function initLibraryWebsite() {
         updateActiveNav();
     }, { passive: true });
 
+    window.addEventListener('resize', syncReviewToggles);
+
     setHeaderState();
     updateActiveNav();
-    startTestimonialCarousel();
+    syncReviewToggles();
+    restartReviewsTimer();
 }
 
 document.addEventListener('DOMContentLoaded', initLibraryWebsite);

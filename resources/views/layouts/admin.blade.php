@@ -25,9 +25,10 @@
 
         <title>{{ $branding['display_name'] ?? config('app.name') }}</title>
 
-        @if (! empty($branding['favicon_url']))
-            <link rel="icon" href="{{ $branding['favicon_url'] }}">
-        @endif
+        <x-favicon-links
+            :custom-url="$branding['favicon_url'] ?? null"
+            :custom="$branding['favicon_custom'] ?? false"
+        />
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600|plus-jakarta-sans:400,500,600,700&display=swap" rel="stylesheet" />
@@ -49,7 +50,7 @@
             >
                 @include('layouts.partials.admin-topbar')
 
-                <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 {{ ($isDeveloperAdmin ?? false) ? '' : 'lc-main' }}">
+                <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-4 {{ ($isDeveloperAdmin ?? false) ? '' : 'lc-main' }}">
                     <div class="mx-auto max-w-none space-y-6">
                         {{ $slot }}
                     </div>

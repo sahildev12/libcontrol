@@ -2,8 +2,13 @@
 
 use App\Http\Controllers\Api\MobileLibraryProfileController;
 use App\Http\Controllers\Api\MobileLibraryResolverController;
+use App\Http\Controllers\Api\RazorpayGrowthWebhookController;
 use App\Http\Controllers\Api\StudentAuthApiController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/webhooks/razorpay/growth', RazorpayGrowthWebhookController::class)
+    ->middleware('throttle:120,1')
+    ->name('api.webhooks.razorpay.growth');
 
 Route::get('/v1/mobile/library/styles', [MobileLibraryProfileController::class, 'styles'])
     ->middleware('throttle:60,1');

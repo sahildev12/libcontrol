@@ -25,28 +25,44 @@ if (!is_array($data)) {
     $data = $_POST;
 }
 
-$name      = trim((string) ($data['name'] ?? ''));
-$phone     = trim((string) ($data['phone'] ?? ''));
-$institute = trim((string) ($data['institute'] ?? ''));
-$city      = trim((string) ($data['city'] ?? ''));
+$squish = static fn ($value): string => trim((string) preg_replace('/\s+/u', ' ', (string) $value));
+
+$name      = $squish($data['name'] ?? '');
+$phone     = preg_replace('/\D+/', '', (string) ($data['phone'] ?? '')) ?? '';
+$institute = $squish($data['institute'] ?? '');
+$city      = $squish($data['city'] ?? '');
 $message   = trim((string) ($data['message'] ?? ''));
 
+if (strlen($phone) === 12 && str_starts_with($phone, '91')) {
+    $phone = substr($phone, 2);
+} elseif (strlen($phone) === 11 && str_starts_with($phone, '0')) {
+    $phone = substr($phone, 1);
+}
+
+$demoError = static function (string $message): void {
+    http_response_code(422);
+    echo json_encode(['ok' => false, 'message' => $message]);
+    exit;
+};
+
 if ($name === '' || $phone === '' || $institute === '') {
-    http_response_code(422);
-    echo json_encode(['ok' => false, 'message' => 'Please fill name, phone and library / institute name.']);
-    exit;
+    $demoError('Please fill name, phone and library / institute name.');
 }
-
-if (mb_strlen($name) > 120 || mb_strlen($phone) > 40 || mb_strlen($institute) > 180) {
-    http_response_code(422);
-    echo json_encode(['ok' => false, 'message' => 'One or more fields are too long.']);
-    exit;
+if (mb_strlen($name) < 2 || mb_strlen($name) > 80 || !preg_match("/^\\pL[\\pL\\s.'-]*$/u", $name)) {
+    $demoError('Please enter a valid name (letters only, 2–80 characters).');
 }
-
-if (mb_strlen($city) > 100 || mb_strlen($message) > 2000) {
-    http_response_code(422);
-    echo json_encode(['ok' => false, 'message' => 'City or message is too long.']);
-    exit;
+if (!preg_match('/^[6-9]\d{9}$/', $phone)) {
+    $demoError('Please enter a valid 10-digit Indian mobile number.');
+}
+if (mb_strlen($institute) < 3 || mb_strlen($institute) > 120
+    || !preg_match("/^\\pL[\\pL\\s&.,'()-]*$/u", $institute)) {
+    $demoError('Please enter a valid library / institute name.');
+}
+if ($city !== '' && (mb_strlen($city) < 2 || mb_strlen($city) > 60 || !preg_match("/^\\pL[\\pL\\s.'-]*$/u", $city))) {
+    $demoError('Please enter a valid city name.');
+}
+if (mb_strlen($message) > 1000) {
+    $demoError('Message must be 1000 characters or fewer.');
 }
 
 $phpmailerBase = __DIR__ . '/../kims_pro/lib/PHPMailer';

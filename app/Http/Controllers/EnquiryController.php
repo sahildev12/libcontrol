@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEnquiryRequest;
 use App\Http\Requests\UpdateEnquiryRequest;
 use App\Models\Enquiry;
-use App\Models\Student;
-use App\Services\StudentCodeService;
+use App\Services\Growth\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,6 +21,7 @@ class EnquiryController extends Controller
     {
         $enquiries = $this->constrainByActiveBranch(Enquiry::query(), $request)
             ->with(['student:id,student_code,name', 'branch:id,name'])
+            ->when(app(ReferralService::class)->tableReady(), fn ($query) => $query->with('referral.referrer:id,name,student_code'))
             ->orderByDesc('id')
             ->get()
             ->map(fn (Enquiry $enquiry) => $this->serializeEnquiry($enquiry));
@@ -32,7 +32,10 @@ class EnquiryController extends Controller
             : collect();
         $defaultBranchId = $this->optionalActiveBranchId($request);
 
-        return view('enquiries.index', compact('enquiries', 'viewingAll', 'branches', 'defaultBranchId'));
+        $statuses = Enquiry::STATUSES;
+        $followUpStatuses = Enquiry::FOLLOW_UP_STATUSES;
+
+        return view('enquiries.index', compact('enquiries', 'viewingAll', 'branches', 'defaultBranchId', 'statuses', 'followUpStatuses'));
     }
 
     public function store(StoreEnquiryRequest $request): JsonResponse
@@ -58,8 +61,13 @@ class EnquiryController extends Controller
         $this->authorizeEnquiry($request, $enquiry);
 
         $validated = $request->validated();
+        $wasConverted = $enquiry->status === Enquiry::STATUS_CONVERTED;
 
         $enquiry->update($validated);
+
+        if (! $wasConverted && $enquiry->status === Enquiry::STATUS_CONVERTED) {
+            app(ReferralService::class)->markEnquiryConverted($enquiry);
+        }
 
         return response()->json([
             'message' => 'Enquiry updated.',
@@ -100,31 +108,18 @@ class EnquiryController extends Controller
         ]);
     }
 
-    public function convert(Request $request, Enquiry $enquiry, StudentCodeService $studentCodeService): JsonResponse
+    public function convert(Request $request, Enquiry $enquiry): JsonResponse
     {
         $this->authorizeEnquiry($request, $enquiry);
 
-        abort_if($enquiry->student_id, 422, 'Enquiry is already converted.');
+        abort_if($enquiry->status === Enquiry::STATUS_CONVERTED, 422, 'Enquiry is already converted.');
 
-        $branch = \App\Models\Branch::query()->findOrFail($enquiry->branch_id);
-        $this->assertCanAccessBranch($request, $branch->id);
-
-        $student = Student::create([
-            'branch_id' => $branch->id,
-            'student_code' => $studentCodeService->generate($branch),
-            'name' => $enquiry->name,
-            'phone' => $enquiry->phone,
-            'email' => $enquiry->email,
-            'status' => 'active',
-        ]);
-
-        $enquiry->update([
-            'status' => 'converted',
-            'student_id' => $student->id,
-        ]);
+        $enquiry->update(['status' => Enquiry::STATUS_CONVERTED]);
+        app(ReferralService::class)->markEnquiryConverted($enquiry);
+        $this->logActivity($request, 'enquiry.converted', "Marked enquiry for {$enquiry->name} as converted.", $enquiry, $enquiry->branch_id);
 
         return response()->json([
-            'message' => "Enquiry converted to student {$student->student_code}.",
+            'message' => 'Enquiry marked as converted.',
             'enquiry' => $this->serializeEnquiry($enquiry->fresh()->load('student:id,student_code,name')),
         ]);
     }
@@ -139,6 +134,10 @@ class EnquiryController extends Controller
      */
     private function serializeEnquiry(Enquiry $enquiry): array
     {
+        $referrer = app(ReferralService::class)->tableReady()
+            ? $enquiry->loadMissing('referral.referrer:id,name,student_code')->referral?->referrer
+            : null;
+
         return [
             'id' => $enquiry->id,
             'name' => $enquiry->name,
@@ -146,12 +145,18 @@ class EnquiryController extends Controller
             'email' => $enquiry->email,
             'message' => $enquiry->message,
             'status' => $enquiry->status,
+            'status_label' => Enquiry::statusLabel($enquiry->status),
+            'follow_up_date' => $enquiry->follow_up_date?->format('Y-m-d'),
+            'follow_up_date_label' => $enquiry->follow_up_date?->format('d M Y'),
+            'follow_up_note' => $enquiry->follow_up_note,
             'student_id' => $enquiry->student_id,
             'student_code' => $enquiry->student?->student_code,
             'student_name' => $enquiry->student?->name,
+            'referred_by' => $referrer ? "{$referrer->name} ({$referrer->student_code})" : null,
             'branch_id' => $enquiry->branch_id,
             'branch_name' => $enquiry->branch?->name,
             'created_at' => $enquiry->created_at?->format('M d, Y'),
+            'created_month' => $enquiry->created_at?->format('Y-m'),
         ];
     }
 }

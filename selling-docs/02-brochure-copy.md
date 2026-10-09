@@ -135,7 +135,7 @@ Built for how Indian libraries actually work
 Ready to run your library without the paperwork?
 
 ### CTA buttons
-**Book a Demo** · **WhatsApp: +91 8076 105 181** · **info@phenomit.com**
+**Pre-Register** · **WhatsApp: +91 8076 105 181** · **info@phenomit.com**
 
 ### Support line
 We help you launch — real setup support so your staff use LibControl from day one.  
@@ -150,7 +150,7 @@ PhenomIT, Rishi Nagar, Hisar 125001 (Haryana)
 ## Short blurbs (for ads / social)
 
 **50 words**  
-LibControl helps reading libraries manage seats, students, trials, and fees in one system. Live seat maps, renewal tracking, and branch dashboards — built by Phenomit.com for Indian study centres. Plans from ₹299/month. Book a demo today.
+LibControl helps reading libraries manage seats, students, trials, and fees in one system. Live seat maps, renewal tracking, and branch dashboards — built by Phenomit.com for Indian study centres. Plans from ₹299/month. Pre-Register today.
 
 **25 words**  
 Stop juggling registers. LibControl gives your library a live seat map, fee tracking, and renewals in one app. By Phenomit.com.

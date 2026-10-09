@@ -127,7 +127,7 @@
                     <h2 class="text-sm font-semibold text-gray-900">Restore database</h2>
                     <p class="mt-1 text-xs text-red-800">Destructive — replaces the tenant database with a backup.</p>
                 </div>
-                <form method="POST" action="{{ route('developer.tenants.manage.action', $tenant) }}" class="space-y-4 p-5" onsubmit="return confirm('Restore this database? All current data will be replaced.');">
+                <form method="POST" action="{{ route('developer.tenants.manage.action', $tenant) }}" class="space-y-4 p-5" x-data x-on:submit.prevent="if (await confirmDialog({ title: 'Restore database', message: 'Restore this database? All current data will be replaced.', confirmLabel: 'Restore' })) $el.submit()">
                     @csrf
                     <input type="hidden" name="action" value="database_restore">
                     <div class="grid gap-4 md:grid-cols-2">

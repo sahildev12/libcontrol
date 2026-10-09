@@ -39,9 +39,10 @@ return [
         ['label' => 'Home', 'href' => '#home'],
         ['label' => 'About', 'href' => '#about'],
         ['label' => 'Facilities', 'href' => '#facilities'],
+        ['label' => 'Plans', 'href' => '#membership'],
         ['label' => 'Gallery', 'href' => '#gallery'],
-        ['label' => 'Membership', 'href' => '#membership'],
-        ['label' => 'Rules', 'href' => '#rules'],
+        ['label' => 'Reviews', 'href' => '#testimonials'],
+        ['label' => 'FAQ', 'href' => '#faq'],
         ['label' => 'Contact', 'href' => '#contact'],
     ],
 
@@ -149,33 +150,40 @@ return [
         ],
     ],
 
-    'testimonials' => [
-        'heading' => 'Loved by Learners',
+    'steps' => [
+        'heading' => 'From enquiry to your seat',
+        'heading_highlight' => 'in four simple steps',
         'items' => [
-            [
-                'name' => 'Priya Sharma',
-                'role' => 'Student',
-                'avatar' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-                'quote' => 'The best library in the city. Peaceful environment and great facilities. It really helps me stay focused.',
-            ],
-            [
-                'name' => 'Rahul Verma',
-                'role' => 'Student',
-                'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-                'quote' => 'Clean, quiet, and well maintained. I come here every day during my exam preparation.',
-            ],
-            [
-                'name' => 'Ananya Patel',
-                'role' => 'Student',
-                'avatar' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
-                'quote' => 'The staff is supportive and the seating is very comfortable. Highly recommended for serious learners.',
-            ],
-            [
-                'name' => 'Karan Mehta',
-                'role' => 'Student',
-                'avatar' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
-                'quote' => 'Great Wi-Fi, AC halls, and a disciplined atmosphere. Exactly what I needed for competitive exams.',
-            ],
+            ['title' => 'Send an enquiry', 'description' => 'Fill the short form or message us on WhatsApp with your preferred plan.'],
+            ['title' => 'Visit the library', 'description' => 'Walk in any day, see the halls and pick a seat that suits you.'],
+            ['title' => 'Choose your plan', 'description' => 'Monthly, quarterly or yearly — pay at the desk and get your seat confirmed.'],
+            ['title' => 'Start studying', 'description' => 'Get your member ID card and settle into a quiet, focused routine.'],
+        ],
+    ],
+
+    'testimonials' => [
+        'heading' => 'Testimonials & Reviews',
+        'rating_label' => 'EXCELLENT',
+        'rating' => 5,
+        'review_count' => 41,
+        'items' => [
+            ['name' => 'Priya Sharma', 'time' => '2 months ago', 'rating' => 5, 'quote' => 'The best library in the city. Peaceful environment and great facilities. It really helps me stay focused during long study sessions before exams.'],
+            ['name' => 'Rahul Verma', 'time' => '3 months ago', 'rating' => 5, 'quote' => 'Clean, quiet, and well maintained. I come here every day during my exam preparation and the staff always keeps the hall disciplined.'],
+            ['name' => 'Ananya Patel', 'time' => '5 months ago', 'rating' => 5, 'quote' => 'The staff is supportive and the seating is very comfortable. Highly recommended for serious learners preparing for competitive exams.'],
+            ['name' => 'Karan Mehta', 'time' => '6 months ago', 'rating' => 5, 'quote' => 'Great Wi-Fi, AC halls, and a disciplined atmosphere. Exactly what I needed for my UPSC preparation.'],
+            ['name' => 'Sneha Gupta', 'time' => '8 months ago', 'rating' => 5, 'quote' => 'Very peaceful place with comfortable chairs and proper lighting. The washrooms are clean and drinking water is always available.'],
+            ['name' => 'Aman Singh', 'time' => '1 year ago', 'rating' => 5, 'quote' => 'Affordable plans and a great study environment. Joined for a month and ended up taking the yearly membership.'],
+        ],
+    ],
+
+    'faq' => [
+        'heading' => 'Questions before you join',
+        'items' => [
+            ['question' => 'Can I visit before joining?', 'answer' => 'Yes. Walk in any day during opening hours and we will show you the halls and the seats that are available. No appointment needed.'],
+            ['question' => 'Is my seat reserved only for me?', 'answer' => 'Yes. Once your plan is active, your seat is held for you for the full membership period.'],
+            ['question' => 'Do you offer a trial?', 'answer' => 'Send us an enquiry and ask about a trial seat — we will confirm availability and timing with you.'],
+            ['question' => 'What are the opening hours?', 'answer' => 'We are open every day. See the contact section below for today\'s timings.'],
+            ['question' => 'How do I pay and renew?', 'answer' => 'Pay at the front desk when you join. We remind you before your plan expires so you can renew without losing your seat.'],
         ],
     ],
 

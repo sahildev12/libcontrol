@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\Concerns\AuthenticatesSupportTicketRequests;
 use App\Http\Controllers\Controller;
+use App\Models\GrowthOrder;
 use App\Models\SupportTicket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class SupportTicketController extends Controller
 {
@@ -55,11 +58,58 @@ class SupportTicketController extends Controller
         ]);
         $ticket->save();
 
+        $this->mirrorGrowthOrderFromTicket($ticket, $licenseKeyHash, $domain);
+
         return response()->json([
             'id' => $ticket->id,
             'uuid' => $ticket->uuid,
             'status' => $ticket->status,
         ]);
+    }
+
+    private function mirrorGrowthOrderFromTicket(SupportTicket $ticket, string $licenseKeyHash, string $domain): void
+    {
+        if (! Schema::hasTable('growth_orders')) {
+            return;
+        }
+
+        if (! str_starts_with($ticket->subject, 'Growth order:')) {
+            return;
+        }
+
+        $itemName = trim(Str::after($ticket->subject, 'Growth order:')) ?: $ticket->subject;
+        $itemKey = 'unknown';
+        $orderType = 'package';
+        $orderUuid = $ticket->uuid;
+
+        if (preg_match('/Item:\s*(.+?)\s*\(([^)]+)\)/i', (string) $ticket->message, $m)) {
+            $itemName = trim($m[1]);
+            $itemKey = trim($m[2]);
+        }
+        if (preg_match('/Type:\s*(package|service)/i', (string) $ticket->message, $m)) {
+            $orderType = strtolower($m[1]);
+        }
+        if (preg_match('/Order UUID:\s*([0-9a-f-]{36})/i', (string) $ticket->message, $m)) {
+            $orderUuid = $m[1];
+        }
+
+        GrowthOrder::query()->updateOrCreate(
+            ['uuid' => $orderUuid],
+            [
+                'order_type' => $orderType,
+                'item_key' => $itemKey,
+                'item_name' => $itemName,
+                'status' => GrowthOrder::STATUS_NEW,
+                'message' => $ticket->message,
+                'contact_name' => $ticket->reporter_name,
+                'contact_email' => $ticket->reporter_email,
+                'library_name' => $ticket->library_name,
+                'library_code' => $ticket->library_code,
+                'deployment_domain' => $domain !== '' ? $domain : $ticket->deployment_domain,
+                'deployment_license_key_hash' => $licenseKeyHash,
+                'support_ticket_id' => $ticket->id,
+            ]
+        );
     }
 
     public function pull(Request $request): JsonResponse

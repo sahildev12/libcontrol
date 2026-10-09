@@ -104,7 +104,7 @@ See `07-ideal-customer-profile.md` for full ICP.
 
 ## Call-to-action options
 
-1. **Book a demo** — live walkthrough of seat map + fees  
+1. **Pre-Register** — live walkthrough of seat map + fees  
 2. **WhatsApp** — +91 8076 105 181  
 3. **Email** — info@phenomit.com  
 4. **Custom quote** — networks with 3+ branches or special workflows

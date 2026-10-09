@@ -5,6 +5,7 @@
             storeUrl: @js(route('students.store')),
             inviteStoreUrl: @js(route('students.registration-invites.store')),
             bulkDeleteUrl: @js(route('students.bulk-destroy')),
+            importUrl: @js(route('students.import.store')),
             studentSearchUrl: @js(route('students.search')),
             requireStudentContact: @js($requireStudentContact ?? false),
             csrf: @js(csrf_token()),
@@ -19,13 +20,19 @@
                 <h1 class="text-2xl font-bold text-gray-900">Students</h1>
                 <p class="mt-1 text-sm text-gray-600">Manage students{{ !empty($branchName) ? ' for '.$branchName : '' }}.</p>
             </div>
-            <button type="button" @click="openCreate()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
-                Add Student
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" @click="openImport()" class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Import
+                </button>
+                <button type="button" @click="openCreate()" class="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
+                    Add Student
+                </button>
+            </div>
         </header>
 
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <x-admin.data-table-toolbar search-placeholder="Search by code, name, phone..." :show-bulk-delete="true" />
+            <x-admin.data-table-toolbar search-placeholder="Search by code, name, phone..." :show-bulk-delete="true" :show-export="false" />
 
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[860px]">
@@ -83,7 +90,6 @@
                                             <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
                                         </a>
                                         <x-admin.action-icon icon="edit" tone="indigo" @click="openEdit(row)" />
-                                        <x-admin.action-icon icon="delete" tone="red" @click="deleteOne(row)" />
                                     </div>
                                 </td>
                             </tr>
@@ -101,5 +107,6 @@
         <x-admin.student-create-modal />
         <x-admin.student-edit-modal />
         <x-admin.student-view-modal />
+        <x-admin.student-import-modal />
     </div>
 </x-admin-layout>

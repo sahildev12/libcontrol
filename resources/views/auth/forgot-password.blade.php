@@ -5,6 +5,7 @@
     :name="$name"
     :logo-url="$logo_url"
     :favicon-url="$favicon_url"
+    :favicon-custom="$favicon_custom"
 >
     <p class="mb-4 text-sm text-gray-600">
         Enter the email for your account. We will send a reset link if it matches.

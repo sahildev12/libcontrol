@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 class PlatformBrandService
 {
     /**
-     * @return array{display_name: string, favicon_url: string|null, simple_logo_url: string|null, logo_with_text_url: string|null}
+     * @return array{display_name: string, favicon_url: string|null, favicon_custom: bool, simple_logo_url: string|null, logo_with_text_url: string|null}
      */
     public function branding(): array
     {
@@ -18,6 +18,7 @@ class PlatformBrandService
         return [
             'display_name' => $settings->displayName(),
             'favicon_url' => $settings->faviconUrl(),
+            'favicon_custom' => $settings->hasCustomFavicon(),
             'simple_logo_url' => $settings->simpleLogoUrl(),
             'logo_with_text_url' => $settings->logoWithTextUrl(),
         ];

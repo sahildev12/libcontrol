@@ -20,7 +20,7 @@ Not a native app. The interface is mobile-responsive in the browser.
 Data is stored on Phenomit-hosted cloud. Access is login-protected; branch users only see their branch. Pro includes activity logs for audit.
 
 ### Can we try before buying?
-Yes — book a demo. Offer a guided walkthrough with their real workflow (seat map → assign → fee). Try Demo (https://libcontrol.phenomit.com/)
+Yes — Pre-Register. Offer a guided walkthrough with their real workflow (seat map → assign → fee). Try Demo (https://libcontrol.phenomit.com/)
 
 ---
 

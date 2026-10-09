@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SendStudentOfferRequest;
+use App\Models\Branch;
+use App\Models\LibraryGrowthProfile;
 use App\Models\Student;
 use App\Services\MailDeliveryService;
 use App\Services\StudentOfferService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class StudentOfferController extends Controller
@@ -58,6 +61,16 @@ class StudentOfferController extends Controller
         );
 
         if ($result['sent'] > 0) {
+            if (Schema::hasTable('library_growth_profiles')) {
+                Branch::query()
+                    ->when($branchId, fn ($query) => $query->whereKey($branchId))
+                    ->pluck('id')
+                    ->each(fn ($id) => LibraryGrowthProfile::query()->updateOrCreate(
+                        ['branch_id' => $id],
+                        ['last_whatsapp_campaign_at' => now()],
+                    ));
+            }
+
             $this->logActivity(
                 $request,
                 'offers.sent',

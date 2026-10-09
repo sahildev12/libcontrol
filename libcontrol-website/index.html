@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=40">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -107,7 +107,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#library-growth">Growth</a>
         <a href="#support">Support</a>
-        <button type="button" class="nav-demo-btn open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+        <button type="button" class="nav-demo-btn open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Pre-Register</button>
       </div>
     </div>
   </nav>
@@ -117,25 +117,45 @@
     <div class="hero-waves" aria-hidden="true"></div>
     <div class="container-xl hero-product">
       <div class="hero-copy">
-        <h1>Run every seat. <br> See every branch. <br> Collect every fee.</h1>
-        <p class="libcontrol-byline">A library management product by Phenomit.com</p>
-        <p class="hero-lead">Manage seats, students, fees, renewals, and multiple branches from one system — and get started quickly.</p>
+        <span class="hero-ai-badge">
+          <span class="hero-ai-badge-spark" aria-hidden="true">✨</span>
+          Now with AI Assistant
+        </span>
+        <h1>
+          <span class="hero-line-white">Run Every Seat.</span><br>
+          <span class="hero-line-white">See Every Branch.</span><br>
+          <span class="hero-line-accent">Grow with AI ✨</span>
+        </h1>
+        <p class="hero-lead">A complete library management system to manage seats, students, fees, renewals and multiple branches — now powered with AI to give you insights, suggestions and growth opportunities.</p>
         <div class="hero-cta-bar">
           <div class="hero-actions">
-            <button type="button" class="btn-main btn-primary-lg btn-shine open-demo-form" id="openDemoForm"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
-            <a class="btn-ghost" href="#showcase">See How It Works</a>
+            <button type="button" class="btn-main btn-primary-lg btn-shine open-demo-form" id="openDemoForm"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Pre-Register</button>
+            <a class="btn-ghost" href="#showcase"><i class="fa-solid fa-play" aria-hidden="true"></i> See How It Works</a>
           </div>
         </div>
         <ul class="hero-proof" aria-label="What LibControl covers">
           <li><i class="fa-solid fa-building" aria-hidden="true"></i> Multi-branch</li>
           <li><i class="fa-solid fa-chair" aria-hidden="true"></i> Seat maps &amp; trials</li>
           <li><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Fees &amp; renewals</li>
+          <li class="hero-proof-ai"><span class="hero-proof-shine" aria-hidden="true"></span><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> AI insights</li>
+          <li class="hero-proof-ai"><span class="hero-proof-shine" aria-hidden="true"></span><i class="fa-solid fa-chart-column" aria-hidden="true"></i> Business reports</li>
+          <li class="hero-proof-ai"><span class="hero-proof-shine" aria-hidden="true"></span><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i> Growth tips</li>
         </ul>
       </div>
-      <div class="hero-visual browser-frame">
-        <button type="button" class="section-shot" data-full="assets/screenshots/admin-dashboard.png" aria-label="View full-size admin dashboard screenshot">
-          <img src="assets/screenshots/admin-dashboard.png" width="1920" height="1080" fetchpriority="high" decoding="async" alt="LibControl platform admin dashboard showing branch performance and occupancy KPIs">
-        </button>
+      <div class="hero-visual-wrap">
+        <div class="hero-visual-glow" aria-hidden="true"></div>
+        <div class="hero-visual hero-visual-ai">
+          <button type="button" class="section-shot" data-full="assets/screenshots/hero-ai-dashboard.jpg" aria-label="View full-size LibControl AI dashboard illustration">
+            <img
+              src="assets/screenshots/hero-ai-dashboard.jpg"
+              width="1400"
+              height="1100"
+              fetchpriority="high"
+              decoding="async"
+              alt="LibControl dashboard with AI Assistant — smart insights, growth suggestions, and opportunities to attract more students"
+            >
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -448,7 +468,7 @@
             <li><i class="fa-solid fa-check" aria-hidden="true"></i> Branch dashboard &amp; reports</li>
           </ul>
           <div class="plan-cta">
-            <button type="button" class="plan-choose plan-choose-primary open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+            <button type="button" class="plan-choose plan-choose-primary open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Pre-Register</button>
           </div>
         </article>
         <article class="plan-card plan-pro plan-recommended">
@@ -480,7 +500,7 @@
             <li><i class="fa-solid fa-check" aria-hidden="true"></i> Priority onboarding support</li>
           </ul>
           <div class="plan-cta">
-            <button type="button" class="plan-choose plan-choose-primary open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+            <button type="button" class="plan-choose plan-choose-primary open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Pre-Register</button>
           </div>
         </article>
         <article class="plan-card plan-custom">
@@ -514,31 +534,83 @@
     </div>
   </section>
 
-  <section class="section section-alt" id="library-growth">
-    <div class="container-xl">
-      <div class="section-head reveal">
+  <section class="section growth-packs" id="library-growth">
+    <div class="growth-packs-bg" aria-hidden="true"></div>
+    <div class="growth-packs-deco" aria-hidden="true">
+      <svg class="growth-packs-flight" viewBox="0 0 420 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 150 C 120 150, 180 40, 300 55 C 360 62, 390 40, 400 28" stroke="#7BA3D4" stroke-width="1.5" stroke-dasharray="5 7" stroke-linecap="round"/>
+        <g transform="translate(392 14)">
+          <path d="M0 12 L22 0 L10 22 L8 13 Z" fill="#4A7DB8"/>
+        </g>
+      </svg>
+    </div>
+    <div class="container-xl growth-packs-inner">
+      <div class="section-head growth-packs-head reveal">
         <p class="eyebrow">Library Growth</p>
-        <h2>Get more enquiries. Get more memberships.</h2>
-        <p>Inside LibControl, <strong>Grow My Library</strong> scores your visibility and offers productized Phenomit packages — WhatsApp campaigns, Google Maps, ads, and reviews — without leaving your admin panel.</p>
+        <h2>Get more enquiries.<br>Get more <span class="growth-packs-mark">memberships</span>.</h2>
+        <p>Inside LibControl, <strong>Grow My Library</strong> helps improve your visibility and offers managed PhenomIT marketing services, including WhatsApp campaigns, Google Maps, ads and reviews.</p>
       </div>
-      <div class="pain-grid reveal" style="margin-top:1.5rem">
-        <article class="pain-card">
-          <h3>Starter · ₹2,999/mo</h3>
-          <p>WhatsApp campaigns, creatives, GBP posts, review drives, and a monthly report.</p>
+
+      <div class="growth-pack-grid reveal">
+        <article class="growth-pack-card growth-pack-starter">
+          <span class="growth-pack-badge">Get started</span>
+          <div class="growth-pack-top">
+            <span class="growth-pack-icon" aria-hidden="true"><i class="fa-brands fa-whatsapp"></i></span>
+            <div>
+              <h3>Starter</h3>
+              <p class="growth-pack-price">₹2,999<span>/mo</span></p>
+            </div>
+          </div>
+          <p class="growth-pack-summary">Essential visibility for libraries getting started with managed outreach.</p>
+          <ul class="growth-pack-list">
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> WhatsApp campaigns</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Promotional creatives</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Google Business Profile posts</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Review campaigns</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Monthly performance report</li>
+          </ul>
+          <a class="growth-pack-go" href="https://wa.me/918076105181?text=I%20want%20the%20LibControl%20Starter%20Growth%20package" target="_blank" rel="noopener" aria-label="Ask about Starter package"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </article>
-        <article class="pain-card">
-          <h3>Grow · ₹7,999/mo</h3>
-          <p>More creatives &amp; reels, local SEO, Google Business optimization, and lead tracking.</p>
+
+        <article class="growth-pack-card growth-pack-grow">
+          <span class="growth-pack-badge">Most popular</span>
+          <div class="growth-pack-top">
+            <span class="growth-pack-icon" aria-hidden="true"><i class="fa-solid fa-chart-column"></i></span>
+            <div>
+              <h3>Grow</h3>
+              <p class="growth-pack-price">₹7,999<span>/mo</span></p>
+            </div>
+          </div>
+          <p class="growth-pack-summary">Stronger local presence with SEO, optimisation and lead tracking.</p>
+          <ul class="growth-pack-list">
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> More promotional creatives and reels</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Local SEO</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Google Business optimization</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Lead tracking</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> WhatsApp campaigns</li>
+          </ul>
+          <a class="growth-pack-go" href="https://wa.me/918076105181?text=I%20want%20the%20LibControl%20Grow%20package" target="_blank" rel="noopener" aria-label="Ask about Grow package"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </article>
-        <article class="pain-card">
-          <h3>Dominate · ₹14,999/mo</h3>
-          <p>Full Google &amp; Meta ads management plus admission campaigns. Ad spend billed separately.</p>
+
+        <article class="growth-pack-card growth-pack-dominate">
+          <span class="growth-pack-badge">For max growth</span>
+          <div class="growth-pack-top">
+            <span class="growth-pack-icon" aria-hidden="true"><i class="fa-solid fa-bullhorn"></i></span>
+            <div>
+              <h3>Dominate</h3>
+              <p class="growth-pack-price">₹14,999<span>/mo</span></p>
+            </div>
+          </div>
+          <p class="growth-pack-summary">Full ads and admission campaigns. Ad spend billed separately.</p>
+          <ul class="growth-pack-list">
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Google and Meta Ads management</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Admission campaigns</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Social media marketing</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Lead generation</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Dedicated support</li>
+          </ul>
+          <a class="growth-pack-go" href="https://wa.me/918076105181?text=I%20want%20the%20LibControl%20Dominate%20package" target="_blank" rel="noopener" aria-label="Ask about Dominate package"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </article>
-      </div>
-      <p class="pricing-footnote" style="margin-top:1.25rem">Request packages from <strong>Grow My Library</strong> after login — or talk to us on WhatsApp. Prices exclude GST.</p>
-      <div class="cta-actions" style="margin-top:1rem">
-        <a class="btn-main btn-primary-lg" href="/login">Open LibControl</a>
-        <a class="btn-pain-wa" href="https://wa.me/918076105181?text=I%20want%20LibControl%20Library%20Growth%20packages" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Ask about Growth</a>
       </div>
     </div>
   </section>
@@ -549,7 +621,7 @@
         <h3>Ready to run your library without the paperwork?</h3>
         <p class="mb-2 callout-lead">Seats, students, fees, and renewals in one system — stop juggling registers and&nbsp;WhatsApp.</p>
         <div class="cta-actions">
-          <button type="button" class="btn-main btn-primary-lg btn-shine open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Book a Demo</button>
+          <button type="button" class="btn-main btn-primary-lg btn-shine open-demo-form"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Pre-Register</button>
           <a class="btn-pain-wa" href="https://wa.me/918076105181?text=I%20want%20to%20know%20about%20LibControl" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Chat On WhatsApp</a>
         </div>
       </div>
@@ -649,6 +721,7 @@
         <div class="footer-col">
           <h3>Legal</h3>
           <ul class="footer-links">
+            <li><a href="disclaimer.html">Disclaimer</a></li>
             <li><a href="privacy-policy.html">Privacy Policy</a></li>
             <li><a href="terms-and-conditions.html">Terms &amp; Conditions</a></li>
             <li><a href="refund-policy.html">Refund Policy</a></li>
@@ -664,8 +737,15 @@
           </ul>
         </div>
       </div>
-      <div class="footer-copy">
-        <p>© 2026 Phenomit.com · LibControl is a product by Phenomit.com · <a href="privacy-policy.html">Privacy</a> · <a href="terms-and-conditions.html">Terms</a> · <a href="refund-policy.html">Refunds</a></p>
+      <div class="lc-trust-bar" role="region" aria-label="Security and trust">
+        <img
+          src="assets/trust-payment-badge-bar.png?v=4"
+          class="lc-trust-bar__img"
+          width="1024"
+          height="72"
+          loading="lazy"
+          decoding="async"
+          alt="Secure SSL encryption, Trustindex, guaranteed safe checkout, and accepted payment methods">
       </div>
     </div>
   </footer>
@@ -687,33 +767,45 @@
       <button type="button" class="demo-modal-close" id="demoModalClose" aria-label="Close">&times;</button>
       <div class="demo-modal-head">
         <h2 id="demoModalTitle">Book a LibControl Demo</h2>
-        <p>Tell us about your library — we&rsquo;ll show seats, fees, and dashboards on a live walkthrough.</p>
+        <p>See LibControl in action and discover a smarter way to manage your library.</p>
       </div>
       <form class="demo-form" id="demoForm" novalidate>
         <div class="demo-form-grid">
-          <div class="demo-form-row">
+          <div class="demo-form-row" data-demo-field="name">
             <label for="demoName">Full name *</label>
-            <input type="text" id="demoName" name="name" required placeholder="Your name" autocomplete="name">
+            <input type="text" id="demoName" name="name" required maxlength="80" placeholder="Your name" autocomplete="name" aria-describedby="demoNameError">
+            <p class="demo-field-error" id="demoNameError" data-demo-error></p>
           </div>
-          <div class="demo-form-row">
+          <div class="demo-form-row" data-demo-field="phone">
             <label for="demoPhone">WhatsApp / Phone *</label>
-            <input type="tel" id="demoPhone" name="phone" required placeholder="10-digit mobile" autocomplete="tel">
+            <input type="tel" id="demoPhone" name="phone" required maxlength="10" inputmode="numeric" placeholder="10-digit mobile" autocomplete="tel-national" aria-describedby="demoPhoneError">
+            <p class="demo-field-error" id="demoPhoneError" data-demo-error></p>
           </div>
-          <div class="demo-form-row">
+          <div class="demo-form-row" data-demo-field="institute">
             <label for="demoInstitute">Library / institute name *</label>
-            <input type="text" id="demoInstitute" name="institute" required placeholder="Your library name">
+            <input type="text" id="demoInstitute" name="institute" required maxlength="120" placeholder="Your library name" autocomplete="organization" aria-describedby="demoInstituteError">
+            <p class="demo-field-error" id="demoInstituteError" data-demo-error></p>
           </div>
-          <div class="demo-form-row">
+          <div class="demo-form-row" data-demo-field="city">
             <label for="demoCity">City</label>
-            <input type="text" id="demoCity" name="city" placeholder="City">
+            <input type="text" id="demoCity" name="city" maxlength="60" placeholder="City" autocomplete="address-level2" aria-describedby="demoCityError">
+            <p class="demo-field-error" id="demoCityError" data-demo-error></p>
           </div>
         </div>
-        <div class="demo-form-row">
+        <div class="demo-form-row" data-demo-field="message">
           <label for="demoMessage">Message</label>
-          <textarea id="demoMessage" name="message" rows="2" placeholder="What do you want to see in the demo?"></textarea>
+          <textarea id="demoMessage" name="message" rows="2" maxlength="1000" placeholder="What do you want to see in the demo?" aria-describedby="demoMessageError"></textarea>
+          <p class="demo-field-error" id="demoMessageError" data-demo-error></p>
+        </div>
+        <div class="demo-form-legal-wrap" data-demo-field="accept_legal">
+          <label class="demo-form-legal">
+            <input type="checkbox" id="demoAcceptLegal" name="accept_legal" value="1" required aria-describedby="demoAcceptLegalError">
+            <span>I agree to the <a href="disclaimer.html" target="_blank" rel="noopener">Disclaimer</a>, <a href="terms-and-conditions.html" target="_blank" rel="noopener">Terms &amp; Conditions</a>, <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>, and <a href="refund-policy.html" target="_blank" rel="noopener">Refund Policy</a>.</span>
+          </label>
+          <p class="demo-field-error" id="demoAcceptLegalError" data-demo-error></p>
         </div>
         <p class="demo-form-error" id="demoFormError" hidden></p>
-        <button type="submit" class="demo-form-submit" id="demoFormSubmit">Book a Demo</button>
+        <button type="submit" class="demo-form-submit" id="demoFormSubmit">Pre-Register</button>
       </form>
       <div class="demo-form-success" id="demoFormSuccess" hidden>
         <i class="fa-solid fa-circle-check"></i>
@@ -725,6 +817,6 @@
 
   <script src="modules-data.js?v=10"></script>
   <script src="/whatsapp.js"></script>
-  <script src="script.js?v=12"></script>
+  <script src="script.js?v=16"></script>
 </body>
 </html>

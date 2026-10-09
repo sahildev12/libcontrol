@@ -59,7 +59,7 @@ Reading libraries still run on **registers, Excel, and WhatsApp**. Seat disputes
 ✉️ **info@phenomit.com**  
 🌐 **phenomit.com**
 
-**Book a demo** — see your hall on the seat map in 30 minutes.
+**Pre-Register** — see your hall on the seat map in 30 minutes.
 
 ---
 

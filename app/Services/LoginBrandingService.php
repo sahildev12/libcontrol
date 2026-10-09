@@ -20,7 +20,7 @@ class LoginBrandingService
     ) {}
 
     /**
-     * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null}
+     * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null, favicon_custom: bool}
      */
     public function forPasswordReset(): array
     {
@@ -33,11 +33,12 @@ class LoginBrandingService
             'name' => $settings->displayName(),
             'logo_url' => $settings->logoUrl(),
             'favicon_url' => $settings->faviconUrl(),
+            'favicon_custom' => $settings->hasCustomFavicon(),
         ];
     }
 
     /**
-     * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null}
+     * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null, favicon_custom: bool}
      */
     public function forPortal(string $portal, ?Request $request = null): array
     {
@@ -51,6 +52,7 @@ class LoginBrandingService
                 'name' => $settings->displayName(),
                 'logo_url' => $settings->logoUrl(),
                 'favicon_url' => $settings->faviconUrl(),
+                'favicon_custom' => $settings->hasCustomFavicon(),
             ];
         }
 
@@ -62,6 +64,7 @@ class LoginBrandingService
                 'name' => $settings->displayName(),
                 'logo_url' => $settings->logoUrl(),
                 'favicon_url' => $settings->faviconUrl(),
+                'favicon_custom' => $settings->hasCustomFavicon(),
             ];
         }
 
@@ -74,6 +77,7 @@ class LoginBrandingService
             'name' => $branch ? $this->branchBrandService->displayName($branch) : $settings->displayName(),
             'logo_url' => $settings->logoUrl(),
             'favicon_url' => $settings->faviconUrl(),
+            'favicon_custom' => $settings->hasCustomFavicon(),
         ];
     }
 

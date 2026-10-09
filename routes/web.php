@@ -17,10 +17,14 @@ use App\Http\Controllers\StudentOfferController;
 use App\Http\Controllers\PublicStudentRegistrationController;
 use App\Http\Controllers\StudentRegistrationInviteController;
 use App\Http\Controllers\TrialSeatController;
+use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\HelpSupportController;
 use App\Http\Controllers\LibcontrolMarketingSiteController;
 use App\Http\Controllers\LibraryWebsiteController;
+use App\Http\Controllers\ProfileCompletionController;
 use App\Http\Controllers\PublicHomeController;
+use App\Http\Controllers\PublicWebsiteEnquiryController;
+use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +41,7 @@ Route::get('/support-articles.html', [LibcontrolMarketingSiteController::class, 
 Route::get('/privacy-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'privacy-policy.html');
 Route::get('/terms-and-conditions.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'terms-and-conditions.html');
 Route::get('/refund-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'refund-policy.html');
+Route::get('/disclaimer.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'disclaimer.html');
 Route::get('/whatsapp.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'whatsapp.js');
 Route::get('/styles.css', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'styles.css');
 Route::get('/script.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'script.js');
@@ -48,6 +53,10 @@ Route::get('/support-hub.js', [LibcontrolMarketingSiteController::class, 'file']
 
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
+
+Route::post('/website/enquiries', [PublicWebsiteEnquiryController::class, 'store'])
+    ->middleware('throttle:12,1')
+    ->name('website.enquiries.store');
 
 Route::get('/setup', [\App\Http\Controllers\SetupController::class, 'show'])->name('setup.show');
 Route::post('/setup/test-database', [\App\Http\Controllers\SetupController::class, 'testDatabase'])->name('setup.test-database');
@@ -94,6 +103,8 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
 
     Route::post('/students/bulk-delete', [StudentController::class, 'bulkDestroy'])->name('students.bulk-destroy');
     Route::get('/students/search', [StudentController::class, 'search'])->name('students.search');
+    Route::get('/students/import/sample', [StudentImportController::class, 'template'])->name('students.import.template');
+    Route::post('/students/import', [StudentImportController::class, 'store'])->name('students.import.store');
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
     Route::post('/students/registration-invites', [StudentRegistrationInviteController::class, 'store'])->name('students.registration-invites.store');
@@ -149,6 +160,17 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::redirect('/offers', '/promotion');
     Route::get('/promotion', [StudentOfferController::class, 'index'])->name('promotion.index');
     Route::post('/promotion/send', [StudentOfferController::class, 'send'])->name('promotion.send');
+
+    Route::get('/growth', [GrowthController::class, 'index'])->name('growth.index');
+    Route::post('/growth/profile', [GrowthController::class, 'updateProfile'])->name('growth.profile.update');
+    Route::post('/growth/packages/request', [GrowthController::class, 'requestPackage'])->name('growth.packages.request');
+    Route::post('/growth/services/request', [GrowthController::class, 'requestService'])->name('growth.services.request');
+    Route::post('/growth/referral-campaign', [GrowthController::class, 'startReferralCampaign'])->name('growth.referral-campaign');
+    Route::post('/growth/referral-campaign/stop', [GrowthController::class, 'stopReferralCampaign'])->name('growth.referral-campaign.stop');
+    Route::post('/growth/referrals/{referral}/reward', [GrowthController::class, 'markReferralRewardGiven'])->name('growth.referrals.reward');
+
+    Route::get('/profile-completion', [ProfileCompletionController::class, 'index'])->name('profile-completion.index');
+    Route::post('/profile-completion/continue', [ProfileCompletionController::class, 'continue'])->name('profile-completion.continue');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');

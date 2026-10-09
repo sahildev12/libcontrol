@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Branch;
+use App\Services\Growth\ReferralService;
 use App\Services\StudentContactValidator;
 use App\Support\ValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,6 +37,7 @@ class StoreStudentRequest extends FormRequest
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'family_group_id' => ['nullable', 'integer', 'exists:family_groups,id'],
             'link_to_student_id' => ['nullable', 'integer', 'exists:students,id'],
+            'referred_by' => ['nullable', 'string', 'max:40', app(ReferralService::class)->codeRule()],
         ];
     }
 

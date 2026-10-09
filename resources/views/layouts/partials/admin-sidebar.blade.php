@@ -9,13 +9,13 @@
     $addonRegistry = app(AddonRegistry::class);
     $lcTheme = ! ($isDeveloperAdmin ?? false);
     $navActiveClass = $lcTheme
-        ? 'bg-brand-navy text-white shadow-md'
+        ? 'lc-sidebar-nav--active'
         : 'bg-indigo-600 text-white shadow-sm';
     $navInactiveClass = $lcTheme
         ? 'text-white/75 hover:bg-white/10 hover:text-white'
         : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700';
     $sidebarBorderClass = $lcTheme ? 'border-white/10' : 'border-gray-200';
-    $sidebarBgClass = $lcTheme ? 'bg-brand-blue' : 'bg-white border-gray-200';
+    $sidebarBgClass = $lcTheme ? 'bg-[#082a67]' : 'bg-white border-gray-200';
     $collapseBtnClass = $lcTheme
         ? 'text-white/70 hover:bg-white/10 hover:text-white'
         : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800';
@@ -98,6 +98,15 @@
                     if (! empty($item['addon']) && ! $addonRegistry->isEnabled((string) $item['addon'])) {
                         continue;
                     }
+                    if (! empty($item['module'])) {
+                        $moduleKey = (string) $item['module'];
+                        $moduleEnabled = $moduleKey === 'growth'
+                            ? (bool) config('growth.enabled', true)
+                            : (bool) config('libcontrol.modules.'.$moduleKey, false);
+                        if (! $moduleEnabled) {
+                            continue;
+                        }
+                    }
                     if (! empty($item['route']) && ! \Illuminate\Support\Facades\Route::has($item['route'])) {
                         continue;
                     }
@@ -171,7 +180,7 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="translate-x-0"
         x-transition:leave-end="-translate-x-full"
-        class="absolute inset-y-0 left-0 flex w-[min(300px,88vw)] flex-col border-r shadow-xl {{ $lcTheme ? 'border-brand-navy/20 bg-brand-blue' : 'border-gray-200 bg-white' }}"
+        class="absolute inset-y-0 left-0 flex w-[min(300px,88vw)] flex-col border-r shadow-xl {{ $lcTheme ? 'border-white/10 bg-[#082a67]' : 'border-gray-200 bg-white' }}"
         aria-label="Mobile navigation"
         @click.stop
     >
@@ -220,6 +229,15 @@
                         }
                         if (! empty($item['addon']) && ! $addonRegistry->isEnabled((string) $item['addon'])) {
                             continue;
+                        }
+                        if (! empty($item['module'])) {
+                            $moduleKey = (string) $item['module'];
+                            $moduleEnabled = $moduleKey === 'growth'
+                                ? (bool) config('growth.enabled', true)
+                                : (bool) config('libcontrol.modules.'.$moduleKey, false);
+                            if (! $moduleEnabled) {
+                                continue;
+                            }
                         }
                         if (! empty($item['route']) && ! \Illuminate\Support\Facades\Route::has($item['route'])) {
                             continue;

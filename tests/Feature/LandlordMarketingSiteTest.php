@@ -60,4 +60,5 @@ class LandlordMarketingSiteTest extends TestCase
         $this->get('http://libcontrol.phenomit.com/documentation.html')
             ->assertOk();
     }
+
 }

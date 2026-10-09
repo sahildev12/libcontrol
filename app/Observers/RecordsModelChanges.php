@@ -71,12 +71,13 @@ class RecordsModelChanges
     {
         $changes = [];
 
-        foreach ($model->getChanges() as $key => $newValue) {
+        foreach (array_keys($model->getChanges()) as $key) {
             if (in_array($key, $this->ignore, true)) {
                 continue;
             }
 
             $oldValue = $model->getOriginal($key);
+            $newValue = $model->getAttribute($key);
 
             if ($this->sameValue($oldValue, $newValue)) {
                 continue;
@@ -94,15 +95,28 @@ class RecordsModelChanges
 
     private function sameValue(mixed $old, mixed $new): bool
     {
-        if ($old instanceof Carbon) {
-            $old = $old->toDateTimeString();
+        return $this->comparable($old) === $this->comparable($new);
+    }
+
+    private function comparable(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value)->toDateTimeString();
         }
 
-        if ($new instanceof Carbon) {
-            $new = $new->toDateTimeString();
+        if ($value instanceof \BackedEnum) {
+            return (string) $value->value;
         }
 
-        return (string) $old === (string) $new;
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return (string) json_encode($value);
+        }
+
+        return (string) $value;
     }
 
     private function displayValue(string $key, mixed $value): string
@@ -131,6 +145,14 @@ class RecordsModelChanges
             return $value ? 'Yes' : 'No';
         }
 
+        if (is_array($value)) {
+            $value = $this->listText($value);
+        }
+
+        if ($value instanceof \BackedEnum) {
+            $value = $value->value;
+        }
+
         if ($value === null || $value === '') {
             return 'empty';
         }
@@ -139,9 +161,35 @@ class RecordsModelChanges
             return '₹'.$value;
         }
 
-        $text = is_scalar($value) ? (string) $value : json_encode($value);
+        if (! is_scalar($value)) {
+            return Str::limit((string) json_encode($value), 80, '…');
+        }
 
-        return Str::limit(str_replace('_', ' ', $text), 80, '…');
+        $text = (string) $value;
+
+        return Str::limit(str_contains($text, '://') ? $text : str_replace('_', ' ', $text), 80, '…');
+    }
+
+    /**
+     * @param  array<mixed>  $value
+     */
+    private function listText(array $value): string
+    {
+        $parts = [];
+
+        foreach ($value as $itemKey => $item) {
+            if (is_array($item)) {
+                $item = $item['path'] ?? $item['name'] ?? null;
+            }
+
+            if (! is_scalar($item) || (string) $item === '') {
+                continue;
+            }
+
+            $parts[] = is_string($itemKey) ? ucfirst($itemKey).': '.$item : (string) $item;
+        }
+
+        return implode(', ', $parts);
     }
 
     private function fieldLabel(string $key): string
@@ -180,7 +228,7 @@ class RecordsModelChanges
             'Student' => 'student',
             'Enquiry' => 'enquiry',
             'SeatBooking' => 'fee / seat plan',
-            'PlatformSetting' => 'student ID settings',
+            'PlatformSetting' => 'library settings',
             'User' => 'profile',
             'FeeInstallment' => 'installment',
             default => strtolower(class_basename($model)),

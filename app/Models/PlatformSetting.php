@@ -32,6 +32,7 @@ class PlatformSetting extends Model
         'website_social_links',
         'website_whatsapp',
         'website_logo_path',
+        'website_gallery',
         'email_welcome_enabled',
         'email_birthday_enabled',
         'email_offers_enabled',
@@ -51,6 +52,7 @@ class PlatformSetting extends Model
             'website_enabled' => 'boolean',
             'website_amenities' => 'array',
             'website_social_links' => 'array',
+            'website_gallery' => 'array',
             'email_welcome_enabled' => 'boolean',
             'email_birthday_enabled' => 'boolean',
             'email_offers_enabled' => 'boolean',
@@ -109,6 +111,11 @@ class PlatformSetting extends Model
     public function faviconUrl(): ?string
     {
         return $this->assetUrl($this->favicon_path, config('libcontrol.brand.default_favicon'));
+    }
+
+    public function hasCustomFavicon(): bool
+    {
+        return filled($this->favicon_path);
     }
 
     public function idCardTemplate(): string

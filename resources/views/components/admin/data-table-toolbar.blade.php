@@ -2,6 +2,7 @@
     'searchPlaceholder' => 'Search...',
     'showBulkDelete' => false,
     'showBulkCancel' => false,
+    'showExport' => true,
     'colspan' => 6,
 ])
 
@@ -38,13 +39,15 @@
                 Cancel Selected (<span x-text="selectedIds.length"></span>)
             </button>
         @endif
-        <button
-            type="button"
-            @click="exportRows()"
-            class="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
-        >
-            Export CSV
-        </button>
+        @if ($showExport)
+            <button
+                type="button"
+                @click="exportRows()"
+                class="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+            >
+                Export CSV
+            </button>
+        @endif
         <label class="text-xs font-medium text-gray-600">Rows</label>
         <x-admin.select wrapper-class="relative inline-flex" class="h-9 pl-3 pr-9" x-model.number="perPage">
             <option value="5">5</option>

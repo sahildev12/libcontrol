@@ -14,15 +14,31 @@
                 <button
                     type="button"
                     @click="openRegistrationQrPreview()"
-                    class="shrink-0 rounded bg-white p-0.5 ring-1 ring-sky-200 transition hover:ring-sky-400"
+                    :disabled="! registrationInvite?.url"
+                    class="shrink-0 rounded bg-white p-0.5 ring-1 ring-sky-200 transition hover:ring-sky-400 disabled:cursor-default disabled:opacity-70"
                     title="Click to enlarge QR"
                 >
-                    <canvas x-ref="registrationQr" width="48" height="48" class="size-12 cursor-pointer rounded"></canvas>
+                    <canvas
+                        x-show="registrationInvite?.url"
+                        x-ref="registrationQr"
+                        width="48"
+                        height="48"
+                        class="size-12 cursor-pointer rounded"
+                    ></canvas>
+                    <span
+                        x-show="! registrationInvite?.url"
+                        class="flex size-12 items-center justify-center text-[10px] font-medium leading-tight text-sky-700"
+                        x-text="shouldShowStudentBranchField() && ! studentForm.branch_id ? 'Branch?' : '…'"
+                    ></span>
                 </button>
                 <div class="min-w-0 flex-1">
                     <p class="text-xs font-semibold text-sky-900">Self-register link</p>
+                    <p
+                        x-show="shouldShowStudentBranchField() && ! studentForm.branch_id"
+                        class="text-[11px] text-sky-700"
+                    >Select a branch below to generate the QR and link.</p>
                     <p class="text-[11px] text-sky-700" x-show="registrationInvite?.expires_label" x-text="`Expires ${registrationInvite?.expires_label}`"></p>
-                    <p class="text-[11px] text-sky-600">Click QR to enlarge</p>
+                    <p class="text-[11px] text-sky-600" x-show="registrationInvite?.url">Click QR to enlarge</p>
                 </div>
                 <button type="button" @click="copyRegistrationLink()" :disabled="! registrationInvite?.url" class="shrink-0 rounded-md border border-sky-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-50">Copy</button>
             </div>
@@ -68,7 +84,6 @@
                         </template>
                     </select>
                     <p x-show="selectedSeat?.branch_id" class="mt-1 text-xs text-gray-500">Locked to this seat’s branch.</p>
-                    <p x-show="isStudentBranchLocked() && ! selectedSeat?.branch_id" class="mt-1 text-xs text-gray-500">Locked to the branch selected in the header.</p>
                     <p x-show="studentFormErrors.branch_id" x-text="studentFormErrors.branch_id" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
@@ -150,6 +165,10 @@
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-gray-700">Address</label>
                     <input type="text" x-model="studentForm.address" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Referred by <span class="text-gray-400">(Student ID, optional)</span></label>
+                    <input type="text" x-model="studentForm.referred_by" @input="studentForm.referred_by = $event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')" maxlength="40" placeholder="e.g. SUN-001" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm uppercase placeholder:normal-case">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Photo</label>

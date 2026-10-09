@@ -8,12 +8,17 @@ use App\Models\FamilyGroup;
 use App\Models\PlatformSetting;
 use App\Models\Student;
 use App\Services\FeeService;
+use App\Services\Growth\ReferralService;
 use App\Services\StudentCreator;
 use App\Services\StudentFamilyService;
+use App\Services\StudentIdCardImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use RuntimeException;
 
 class StudentController extends Controller
 {
@@ -171,12 +176,20 @@ class StudentController extends Controller
 
         $student = $studentCreator->create(
             $branch,
-            $request->safe()->except(['id_proof', 'photo', 'branch_id']),
+            $request->safe()->except(['id_proof', 'photo', 'branch_id', 'referred_by']),
             $request->file('photo'),
             $request->file('id_proof'),
         );
 
         $this->logActivity($request, 'student.created', "Created student {$student->student_code} ({$student->name}).", $student, $student->branch_id);
+
+        if ($request->filled('referred_by')) {
+            $referrals = app(ReferralService::class);
+            $referrer = $referrals->findReferrer($request->string('referred_by')->toString());
+            if ($referrer) {
+                $referrals->recordForNewStudent($student, $referrer);
+            }
+        }
 
         return response()->json([
             'message' => "Student \"{$student->name}\" created.",
@@ -237,6 +250,38 @@ class StudentController extends Controller
 
     public function idCard(Request $request, Student $student): View
     {
+        return view('students.id-card', $this->idCardPageContext($request, $student));
+    }
+
+    public function printIdCard(Request $request, Student $student): View
+    {
+        return view('students.id-cards.print-only', $this->idCardPageContext($request, $student));
+    }
+
+    public function downloadIdCard(Request $request, Student $student, StudentIdCardImageService $idCardImages): Response
+    {
+        $context = $this->idCardPageContext($request, $student);
+
+        try {
+            $png = $idCardImages->renderPng($student, (string) $context['template']);
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        $filename = Str::slug($student->student_code).'-id-card.png';
+
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function idCardPageContext(Request $request, Student $student): array
+    {
         $this->authorizeStudent($request, $student);
         $student->load(['branch', 'bookings' => fn ($query) => $query
             ->whereNull('cancelled_at')
@@ -248,17 +293,28 @@ class StudentController extends Controller
         $booking = $student->bookings->first();
         $feeService = app(FeeService::class);
         $feeType = $booking ? $feeService->normalizeFeeType((string) $booking->fee_type) : 'monthly';
+        $template = $platformSettings->idCardTemplate();
+        $layoutKey = array_key_exists($template, config('libcontrol.id_card_layouts', [])) ? $template : 'classic';
 
-        return view('students.id-card', [
+        return [
             'student' => $student,
             'branchName' => $student->branch?->display_name ?: $student->branch?->name,
-            'template' => $platformSettings->idCardTemplate(),
+            'template' => $template,
+            'layoutKey' => $layoutKey,
+            'backgroundUrl' => asset(config('libcontrol.id_card_layouts.'.$layoutKey.'.background')),
+            'name' => $student->name,
+            'fatherName' => $student->father_name ?: '—',
+            'dateOfBirth' => $student->date_of_birth?->format('d-m-Y') ?? '—',
+            'studentId' => $student->student_code,
+            'photoUrl' => $student->photoUrl(),
+            'photoInitials' => $student->initials(),
             'logoUrl' => $platformSettings->idCardLogoUrl(),
             'validTill' => $booking?->plan_expiry_date?->format('d M Y') ?? '—',
             'membershipPlan' => $student->isTrialStudent()
                 ? 'Trial'
                 : ($booking ? $feeService->feeTypeLabel($feeType).' Plan' : 'Regular Plan'),
-        ]);
+            'canDownloadImage' => array_key_exists($layoutKey, config('libcontrol.id_card_layouts', [])),
+        ];
     }
 
     public function destroy(Request $request, Student $student): JsonResponse

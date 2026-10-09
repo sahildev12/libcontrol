@@ -5,6 +5,7 @@
     :name="$name"
     :logo-url="$logo_url"
     :favicon-url="$favicon_url"
+    :favicon-custom="$favicon_custom"
 >
     <x-auth-session-status class="mb-4" :status="session('status')" />
 

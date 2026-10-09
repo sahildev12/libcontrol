@@ -5,6 +5,7 @@
     :name="$name"
     :logo-url="$logo_url"
     :favicon-url="$favicon_url"
+    :favicon-custom="$favicon_custom"
 >
     <form method="POST" action="{{ route('password.store') }}">
         @csrf

@@ -11,7 +11,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $pageTitle }}@if ($branchName) — {{ $branchName }}@endif</title>
-        <link rel="icon" href="{{ asset('logo/png-background/yellow-lc-logo.png') }}">
+        <x-favicon-links />
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600|plus-jakarta-sans:400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css'])

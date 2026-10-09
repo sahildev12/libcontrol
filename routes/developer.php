@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Developer\DeploymentController;
+use App\Http\Controllers\Developer\GrowthOrderController;
 use App\Http\Controllers\Developer\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,15 @@ Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host']
         Route::get('/', [SupportTicketController::class, 'index'])->name('index');
         Route::get('/{supportTicket}', [SupportTicketController::class, 'show'])->name('show');
         Route::patch('/{supportTicket}', [SupportTicketController::class, 'update'])->name('update');
+    });
+
+Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host'])
+    ->prefix('developer/growth-orders')
+    ->name('developer.growth-orders.')
+    ->group(function () {
+        Route::get('/', [GrowthOrderController::class, 'index'])->name('index');
+        Route::get('/{growthOrder}', [GrowthOrderController::class, 'show'])->name('show');
+        Route::patch('/{growthOrder}', [GrowthOrderController::class, 'update'])->name('update');
     });
 
 Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host'])

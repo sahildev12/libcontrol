@@ -20,7 +20,7 @@ class AdminSeeder extends Seeder
             [
                 'admin_type' => Admin::TYPE_CLIENT,
                 'name' => 'Client Admin',
-                'email' => 'client@LibControl.test',
+                'email' => 'admin@gmail.com',
             ],
         ];
 

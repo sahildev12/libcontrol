@@ -11,6 +11,11 @@
             <p class="mt-1 text-sm text-gray-500">{{ $scopeLabel }} · Overview</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            @if (config('growth.enabled', true) && \Illuminate\Support\Facades\Route::has('growth.index'))
+                <a href="{{ route('growth.index') }}" class="inline-flex h-10 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-800 hover:bg-indigo-100">
+                    Grow My Library
+                </a>
+            @endif
             <a href="{{ route('seats.index') }}" class="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700">
                 <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.382V6.618a2 2 0 011.553-1.894L9 2m0 18l6-3m-6 3V2m6 15l5.447 2.724A2 2 0 0021 17.382V8.618a2 2 0 00-1.553-1.894L15 4m0 13V4m0 0L9 7"/></svg>
                 Open Seat Map

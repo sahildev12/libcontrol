@@ -5,10 +5,11 @@
 @layer base {
     html {
         scroll-behavior: smooth;
+        scroll-padding-top: 5rem;
     }
 
     body.library-website {
-        @apply bg-stone-50 text-slate-800 antialiased;
+        @apply bg-white text-slate-700 antialiased;
     }
 }
 
@@ -21,20 +22,68 @@
         @apply py-16 sm:py-20 lg:py-24;
     }
 
-    .lw-btn-primary {
-        @apply inline-flex items-center justify-center gap-2 rounded-full bg-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 hover:shadow-md;
+    .lw-display {
+        @apply font-extrabold tracking-tight text-slate-900;
     }
 
-    .lw-btn-outline {
-        @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/70 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20;
+    .lw-eyebrow {
+        @apply inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 ring-1 ring-blue-100;
+    }
+
+    .lw-section-head {
+        @apply mx-auto max-w-2xl text-center;
+    }
+
+    .lw-section-title {
+        @apply lw-display mt-4 text-3xl leading-tight sm:text-4xl;
+    }
+
+    .lw-section-lead {
+        @apply mt-4 text-base leading-relaxed text-slate-500 sm:text-lg;
+    }
+
+    .lw-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-700/20 transition hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-md hover:shadow-blue-700/25;
     }
 
     .lw-btn-secondary {
-        @apply inline-flex items-center justify-center gap-2 rounded-full border border-blue-200 bg-white px-6 py-3 text-sm font-semibold text-blue-800 transition hover:border-blue-300 hover:bg-blue-50;
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50;
+    }
+
+    .lw-btn-light {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50;
+    }
+
+    .lw-btn-ghost-light {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10;
     }
 
     .lw-card {
-        @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80;
+        @apply rounded-2xl border border-slate-200/80 bg-white;
+    }
+
+    .lw-icon-tile {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700;
+    }
+
+    .lw-input {
+        @apply w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-blue-500;
+    }
+
+    .lw-field-error {
+        @apply mt-1.5 hidden text-xs font-medium text-red-600;
+    }
+
+    .has-error .lw-field-error {
+        @apply block;
+    }
+
+    .has-error .lw-input {
+        @apply border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500;
+    }
+
+    .lw-btn-whatsapp {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-[#25D366]/30 transition hover:-translate-y-0.5 hover:bg-[#1EBE5A];
     }
 
     .lw-reveal {
@@ -46,11 +95,11 @@
     }
 
     .lw-nav-link {
-        @apply text-sm font-medium text-slate-600 transition hover:text-blue-800;
+        @apply rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900;
     }
 
     .lw-nav-link.is-active {
-        @apply text-blue-800 underline decoration-blue-700 decoration-2 underline-offset-8;
+        @apply bg-blue-50 text-blue-700;
     }
 
     .lw-gallery-item img {
@@ -60,10 +109,38 @@
     .lw-gallery-item:hover img {
         @apply scale-105;
     }
-}
 
-@layer utilities {
-    .lw-hero-overlay {
-        background: linear-gradient(120deg, rgba(15, 23, 42, 0.78) 0%, rgba(30, 58, 138, 0.55) 55%, rgba(15, 23, 42, 0.35) 100%);
+    /* Google-reviews style testimonials */
+    .lw-reviews-track {
+        @apply flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2;
+        scrollbar-width: none;
+    }
+
+    .lw-reviews-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .lw-review-card {
+        @apply flex w-[260px] shrink-0 snap-start flex-col rounded-xl bg-slate-100/80 p-4 sm:w-[280px];
+    }
+
+    .lw-review-text {
+        @apply mt-3 line-clamp-4 text-sm leading-relaxed text-slate-700;
+    }
+
+    .lw-review-card.is-expanded .lw-review-text {
+        @apply line-clamp-none;
+    }
+
+    .lw-review-card [data-lw-review-toggle].is-hidden {
+        visibility: hidden;
+    }
+
+    .lw-review-arrow {
+        @apply absolute top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-md ring-1 ring-slate-200 transition hover:bg-slate-50 sm:flex;
+    }
+
+    .lw-faq-item[open] .lw-faq-icon {
+        @apply rotate-45;
     }
 }

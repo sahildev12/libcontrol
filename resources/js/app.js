@@ -217,7 +217,7 @@ function createDataTableMixin() {
                 return;
             }
 
-            if (! confirm(`Delete ${this.selectedIds.length} selected items?`)) {
+            if (! await confirmDialog({ message: `Delete ${this.selectedIds.length} selected items?` })) {
                 return;
             }
 
@@ -300,6 +300,7 @@ function createStudentFormMixin({
             photo: null,
             student_type: defaultStudentType,
             branch_id: null,
+            referred_by: '',
         },
 
         sanitizeDigits(value, maxLength = 10) {
@@ -325,6 +326,7 @@ function createStudentFormMixin({
                 photo: null,
                 student_type: defaultStudentType,
                 branch_id: this.defaultStudentBranchId(),
+                referred_by: '',
             };
         },
 
@@ -468,7 +470,9 @@ function createStudentFormMixin({
             this.registrationQrPreviewOpen = false;
 
             await this.$nextTick();
-            await this.createRegistrationInvite();
+            if (this.studentForm.branch_id) {
+                await this.createRegistrationInvite();
+            }
         },
 
         closeStudentCreate() {
@@ -484,8 +488,13 @@ function createStudentFormMixin({
                 return;
             }
 
+            if (! this.studentForm.branch_id) {
+                this.registrationInvite = null;
+                return;
+            }
+
             try {
-                const payload = this.studentForm.branch_id ? { branch_id: this.studentForm.branch_id } : {};
+                const payload = { branch_id: this.studentForm.branch_id };
                 const response = await window.axios.post(this.inviteStoreUrl, payload);
                 this.registrationInvite = response.data.invite;
                 await this.renderRegistrationQr(this.registrationInvite.url);
@@ -546,7 +555,7 @@ function createStudentFormMixin({
 
         buildStudentFormData() {
             const data = new FormData();
-            ['name', 'gender', 'date_of_birth', 'phone', 'email', 'father_name', 'address', 'id_proof_type', 'student_type', 'branch_id'].forEach((key) => {
+            ['name', 'gender', 'date_of_birth', 'phone', 'email', 'father_name', 'address', 'id_proof_type', 'student_type', 'branch_id', 'referred_by'].forEach((key) => {
                 if (this.studentForm[key]) {
                     data.append(key, this.studentForm[key]);
                 }
@@ -1643,7 +1652,7 @@ function createSeatScheduleMixin() {
                 return;
             }
 
-            if (! confirm(`Cancel booking for ${booking.student_name || 'this student'}?`)) {
+            if (! await confirmDialog({ message: `Cancel booking for ${booking.student_name || 'this student'}?` })) {
                 return;
             }
 
@@ -1670,7 +1679,7 @@ function createSeatScheduleMixin() {
                 return;
             }
 
-            if (! confirm(`Convert ${booking.student_name || 'this trial student'} to a regular student?`)) {
+            if (! await confirmDialog({ title: 'Convert to regular student', message: `Convert ${booking.student_name || 'this trial student'} to a regular student?`, confirmLabel: 'Convert', tone: 'primary' })) {
                 return;
             }
 
@@ -2219,7 +2228,7 @@ Alpine.data('seatMap', (config) => ({
             return;
         }
 
-        if (! confirm('Cancel this seat assignment?')) {
+        if (! await confirmDialog({ message: 'Cancel this seat assignment?' })) {
             return;
         }
 
@@ -3383,7 +3392,7 @@ Alpine.data('hallTable', (config) => ({
     },
 
     async deleteOne(hall) {
-        if (! confirm(`Delete hall "${hall.name}"?`)) return;
+        if (! await confirmDialog({ message: `Delete hall "${hall.name}"?` })) return;
 
         try {
             const response = await window.axios.delete(`/halls/${hall.id}`);
@@ -3397,7 +3406,7 @@ Alpine.data('hallTable', (config) => ({
 
     async bulkDelete() {
         if (this.selectedIds.length <= 1) return;
-        if (! confirm(`Delete ${this.selectedIds.length} selected hall(s)?`)) return;
+        if (! await confirmDialog({ message: `Delete ${this.selectedIds.length} selected hall(s)?` })) return;
 
         try {
             const response = await window.axios.post(this.bulkDeleteUrl, { ids: this.selectedIds });
@@ -3699,7 +3708,7 @@ Alpine.data('platformBranchesPage', (config) => ({
             return;
         }
 
-        if (! confirm(`Delete branch "${branch.name}"?`)) {
+        if (! await confirmDialog({ message: `Delete branch "${branch.name}"?` })) {
             return;
         }
 
@@ -3773,7 +3782,7 @@ Alpine.data('platformBranchesPage', (config) => ({
     },
 
     async deleteHall(hall) {
-        if (! confirm(`Delete hall "${hall.name}"?`)) {
+        if (! await confirmDialog({ message: `Delete hall "${hall.name}"?` })) {
             return;
         }
 
@@ -3849,6 +3858,87 @@ Alpine.data('studentTable', (config) => ({
 
     openCreate() {
         this.openStudentCreate();
+    },
+
+    importUrl: config.importUrl,
+    importOpen: false,
+    importFile: null,
+    importing: false,
+    importDragging: false,
+    importResult: null,
+    importBranchId: '',
+
+    openImport() {
+        this.importFile = null;
+        this.importResult = null;
+        this.importDragging = false;
+        this.importBranchId = String(this.defaultBranchId || this.branches?.[0]?.id || '');
+        if (this.$refs.importInput) {
+            this.$refs.importInput.value = '';
+        }
+        this.importOpen = true;
+    },
+
+    closeImport() {
+        if (this.importing) {
+            return;
+        }
+        this.importOpen = false;
+    },
+
+    pickImportFile(file) {
+        this.importResult = null;
+        if (! file) {
+            return;
+        }
+        if (! /\.(xlsx|xls|csv)$/i.test(file.name)) {
+            this.importFile = null;
+            this.importResult = { ok: false, message: 'Choose an .xlsx, .xls or .csv file.' };
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            this.importFile = null;
+            this.importResult = { ok: false, message: 'The file must be 5 MB or smaller.' };
+            return;
+        }
+        this.importFile = file;
+    },
+
+    async submitImport() {
+        if (! this.importFile || this.importing) {
+            return;
+        }
+
+        this.importing = true;
+        this.importResult = null;
+
+        const data = new FormData();
+        data.append('file', this.importFile);
+        if (this.viewingAll && this.importBranchId) {
+            data.append('branch_id', this.importBranchId);
+        }
+
+        try {
+            const response = await window.axios.post(this.importUrl, data, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            this.importResult = { ok: true, message: response.data.message };
+            showToast(response.data.message);
+            window.setTimeout(() => window.location.reload(), 900);
+        } catch (e) {
+            const body = e.response?.data || {};
+            const rowErrors = Array.isArray(body.errors) ? body.errors : [];
+            const fieldError = body.errors && ! Array.isArray(body.errors)
+                ? Object.values(body.errors)[0]?.[0]
+                : null;
+            this.importResult = {
+                ok: false,
+                message: fieldError || body.message || 'Could not import students. Please try again.',
+                errors: rowErrors,
+            };
+        } finally {
+            this.importing = false;
+        }
     },
 
     async openView(row) {
@@ -3933,6 +4023,36 @@ Alpine.data('studentTable', (config) => ({
     },
 }));
 
+Alpine.data('growthRequestTable', (config) => ({
+    rows: config.rows || [],
+    statusFilter: 'all',
+    ...createDataTableMixin(),
+    perPage: 5,
+    searchKeys: ['item_name', 'type_label', 'status_label', 'price_label', 'requested_by', 'created_at'],
+    exportFileName: 'growth-requests',
+    exportColumns: [
+        { label: 'Request', key: 'item_name' },
+        { label: 'Type', key: 'type_label' },
+        { label: 'Price', key: 'price_label' },
+        { label: 'Status', key: 'status_label' },
+        { label: 'Requested by', key: 'requested_by' },
+        { label: 'Requested on', key: 'created_at' },
+    ],
+
+    init() {
+        this.initDataTable();
+        this.$watch('statusFilter', () => { this.page = 1; });
+    },
+
+    extraFilter(row) {
+        return this.statusFilter === 'all' || row.status === this.statusFilter;
+    },
+
+    statusCount(status) {
+        return this.rows.filter((row) => row.status === status).length;
+    },
+}));
+
 Alpine.data('enquiryTable', (config) => ({
     rows: config.rows || [],
     flash: '',
@@ -3940,38 +4060,68 @@ Alpine.data('enquiryTable', (config) => ({
     formOpen: false,
     formMode: 'create',
     saving: false,
-    form: { id: null, name: '', phone: '', email: '', message: '', status: 'new' },
+    form: { id: null, name: '', phone: '', email: '', message: '', status: 'new', follow_up_date: '', follow_up_note: '' },
     storeUrl: config.storeUrl,
     branches: config.branches || [],
     defaultBranchId: config.defaultBranchId || null,
     viewingAll: config.viewingAll || false,
-    searchKeys: ['name', 'phone', 'email', 'status', 'student_code', 'message', 'branch_name'],
-    exportFileName: 'enquiries',
-    exportColumns: [
-        { label: 'Name', key: 'name' },
-        { label: 'Phone', key: 'phone' },
-        { label: 'Email', key: 'email' },
-        { label: 'Status', key: 'status' },
-        { label: 'Student Code', key: 'student_code' },
-        { label: 'Created At', key: 'created_at' },
-    ],
+    statuses: config.statuses || {},
+    followUpStatuses: config.followUpStatuses || [],
+    statusFilter: 'all',
     ...createDataTableMixin(),
+    searchKeys: ['name', 'phone', 'email', 'status_label', 'student_code', 'message', 'branch_name', 'follow_up_note'],
     bulkDeleteUrl: config.bulkDeleteUrl,
 
     init() {
         this.initDataTable();
+        this.$watch('statusFilter', () => { this.page = 1; });
+    },
+
+    extraFilter(row) {
+        return this.statusFilter === 'all' || row.status === this.statusFilter;
+    },
+
+    isFollowUp(status) {
+        return this.followUpStatuses.includes(status);
+    },
+
+    statusCount(status) {
+        if (status === 'follow_up') return this.rows.filter((row) => this.isFollowUp(row.status)).length;
+        return this.rows.filter((row) => row.status === status).length;
+    },
+
+    statusTagClass(status) {
+        if (this.isFollowUp(status)) return 'bg-amber-50 text-amber-700 ring-amber-200';
+        return {
+            new: 'bg-sky-50 text-sky-700 ring-sky-200',
+            contacted: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+            converted: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+            declined: 'bg-red-50 text-red-700 ring-red-200',
+            closed: 'bg-gray-100 text-gray-600 ring-gray-200',
+        }[status] || 'bg-gray-100 text-gray-600 ring-gray-200';
+    },
+
+    thisMonthCount() {
+        const now = new Date();
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        return this.rows.filter((row) => row.created_month === month).length;
+    },
+
+    conversionRate() {
+        if (this.rows.length === 0) return 0;
+        return Math.round((this.statusCount('converted') / this.rows.length) * 100);
     },
 
     openCreate() {
         this.formMode = 'create';
-        this.form = { id: null, name: '', phone: '', email: '', message: '', status: 'new', branch_id: this.defaultBranchId || this.branches[0]?.id || '' };
+        this.form = { id: null, name: '', phone: '', email: '', message: '', status: 'new', follow_up_date: '', follow_up_note: '', branch_id: this.defaultBranchId || this.branches[0]?.id || '' };
         this.formOpen = true;
         this.error = '';
     },
 
     openEdit(row) {
         this.formMode = 'edit';
-        this.form = { ...row };
+        this.form = { ...row, follow_up_date: row.follow_up_date || '', follow_up_note: row.follow_up_note || '' };
         this.formOpen = true;
         this.error = '';
     },
@@ -3999,7 +4149,7 @@ Alpine.data('enquiryTable', (config) => ({
     },
 
     async convert(row) {
-        if (! confirm(`Convert enquiry "${row.name}" to student?`)) return;
+        if (! await confirmDialog({ title: 'Mark as converted', message: `Mark enquiry "${row.name}" as converted?`, confirmLabel: 'Mark converted', tone: 'primary' })) return;
         try {
             const response = await window.axios.post(`/enquiries/${row.id}/convert`);
             const index = this.rows.findIndex((item) => item.id === row.id);
@@ -4011,7 +4161,7 @@ Alpine.data('enquiryTable', (config) => ({
     },
 
     async deleteOne(row) {
-        if (! confirm(`Delete enquiry "${row.name}"?`)) return;
+        if (! await confirmDialog({ message: `Delete enquiry "${row.name}"?` })) return;
         try {
             const response = await window.axios.delete(`/enquiries/${row.id}`);
             this.rows = this.rows.filter((item) => item.id !== row.id);
@@ -4153,7 +4303,7 @@ Alpine.data('assignmentPage', (config) => ({
     },
 
     async cancel(row) {
-        if (! confirm('Cancel this seat assignment?')) return;
+        if (! await confirmDialog({ message: 'Cancel this seat assignment?' })) return;
         try {
             const response = await window.axios.post(`/seat-assignments/${row.id}/cancel`);
             this.rows = this.rows.filter((item) => item.id !== row.id);
@@ -4193,7 +4343,7 @@ Alpine.data('assignmentPage', (config) => ({
             return;
         }
 
-        if (! confirm('Cancel this seat assignment?')) {
+        if (! await confirmDialog({ message: 'Cancel this seat assignment?' })) {
             return;
         }
 
@@ -4213,7 +4363,7 @@ Alpine.data('assignmentPage', (config) => ({
             return;
         }
 
-        if (! confirm(`Cancel ${this.selectedIds.length} selected assignment(s)?`)) {
+        if (! await confirmDialog({ message: `Cancel ${this.selectedIds.length} selected assignment(s)?` })) {
             return;
         }
 
@@ -5554,7 +5704,7 @@ Alpine.data('profitLossPanel', (config) => ({
     },
 
     async deleteOne(row) {
-        if (! confirm(`Delete expense "${row.title}"?`)) {
+        if (! await confirmDialog({ message: `Delete expense "${row.title}"?` })) {
             return;
         }
 
@@ -6114,7 +6264,7 @@ Alpine.data('branchSwitcher', (config) => ({
             await window.axios.post(this.switchUrl, payload);
             window.location.reload();
         } catch (e) {
-            window.alert(e.response?.data?.message || 'Could not switch branch.');
+            showToast(e.response?.data?.message || 'Could not switch branch.', 'error');
         }
     },
 }));
@@ -6185,6 +6335,7 @@ Alpine.data('settingsPage', (config) => ({
     websiteUpdateUrl: config.websiteUpdateUrl || '',
     websiteForm: {
         website_enabled: Boolean(config.websiteSettings?.website_enabled),
+        display_name: config.websiteSettings?.display_name || config.platformSettings?.display_name || '',
         website_tagline: config.websiteSettings?.website_tagline || '',
         website_hero_title: config.websiteSettings?.website_hero_title || '',
         website_about: config.websiteSettings?.website_about || '',
@@ -6198,10 +6349,21 @@ Alpine.data('settingsPage', (config) => ({
         },
         website_whatsapp: config.websiteSettings?.website_whatsapp || '',
         website_logo_url: config.websiteSettings?.website_logo_url || '',
+        website_gallery: Array.isArray(config.websiteSettings?.website_gallery) ? [...config.websiteSettings.website_gallery] : [],
         public_url: config.websiteSettings?.public_url || '',
     },
     websiteLogoFile: null,
+    websiteGalleryPending: [],
+    websiteGalleryRemove: [],
+    galleryError: '',
     websiteSaving: false,
+    websiteErrors: {},
+    amenityCatalog: Array.isArray(config.websiteAmenityCatalog) ? config.websiteAmenityCatalog : [],
+    amenitySearch: '',
+    amenityOpenCategories: {},
+    showCustomAmenityInput: false,
+    customAmenityInput: '',
+    customAmenityError: '',
     emailNotificationsUpdateUrl: config.emailNotificationsUpdateUrl || '',
     globalUpdateUrl: config.globalUpdateUrl || '',
     globalExpiryReminderDays: config.globalExpiryReminderDays ?? null,
@@ -6216,7 +6378,7 @@ Alpine.data('settingsPage', (config) => ({
 
     init() {
         const tab = new URLSearchParams(window.location.search).get('tab');
-        const adminTabs = ['general', 'website'];
+        const adminTabs = ['general', 'website', 'business'];
         if (this.viewingAll) {
             adminTabs.push('id-cards', 'emails');
         }
@@ -6236,6 +6398,295 @@ Alpine.data('settingsPage', (config) => ({
         } else if (! allowedTabs.includes(this.settingsTab)) {
             this.settingsTab = 'general';
         }
+
+        this.normalizeWebsiteAmenities();
+        this.normalizeWebsiteGallery();
+        if (this.amenityCatalog.length > 0) {
+            this.amenityOpenCategories = {
+                [this.amenityCatalog[0].key]: true,
+            };
+        }
+    },
+
+    predefinedAmenityLabels() {
+        return this.amenityCatalog.flatMap((category) => category.items || []);
+    },
+
+    normalizeAmenityLabel(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ');
+    },
+
+    amenityKey(value) {
+        return this.normalizeAmenityLabel(value).toLowerCase();
+    },
+
+    normalizeWebsiteAmenities() {
+        const predefined = this.predefinedAmenityLabels();
+        const predefinedByKey = new Map(predefined.map((label) => [this.amenityKey(label), label]));
+        const aliases = {
+            wifi: 'Wi-Fi',
+            'wi fi': 'Wi-Fi',
+            ac: 'Full AC',
+            'full ac': 'Full AC',
+            cctv: 'CCTV',
+        };
+
+        const seen = new Set();
+        const normalized = [];
+
+        (this.websiteForm.website_amenities || []).forEach((raw) => {
+            const trimmed = this.normalizeAmenityLabel(raw);
+            if (! trimmed) {
+                return;
+            }
+
+            const key = this.amenityKey(trimmed);
+            const mapped = predefinedByKey.get(key) || aliases[key] || trimmed;
+            const mappedKey = this.amenityKey(mapped);
+            if (seen.has(mappedKey)) {
+                return;
+            }
+            seen.add(mappedKey);
+            normalized.push(mapped);
+        });
+
+        this.websiteForm.website_amenities = normalized;
+    },
+
+    isAmenitySelected(label) {
+        const key = this.amenityKey(label);
+        return (this.websiteForm.website_amenities || []).some((item) => this.amenityKey(item) === key);
+    },
+
+    toggleAmenity(label) {
+        const normalized = this.normalizeAmenityLabel(label);
+        if (! normalized) {
+            return;
+        }
+
+        const key = this.amenityKey(normalized);
+        const current = [...(this.websiteForm.website_amenities || [])];
+        const index = current.findIndex((item) => this.amenityKey(item) === key);
+
+        if (index >= 0) {
+            current.splice(index, 1);
+        } else {
+            current.push(normalized);
+        }
+
+        this.websiteForm.website_amenities = current;
+        this.customAmenityError = '';
+    },
+
+    clearAmenities() {
+        this.websiteForm.website_amenities = [];
+        this.customAmenityError = '';
+    },
+
+    isAmenityCategoryOpen(key) {
+        if (this.amenitySearch.trim() !== '') {
+            return true;
+        }
+
+        return Boolean(this.amenityOpenCategories[key]);
+    },
+
+    toggleAmenityCategory(key) {
+        if (this.amenitySearch.trim() !== '') {
+            return;
+        }
+
+        this.amenityOpenCategories = {
+            ...this.amenityOpenCategories,
+            [key]: ! this.amenityOpenCategories[key],
+        };
+    },
+
+    selectedCountInCategory(category) {
+        return (category.items || []).filter((item) => this.isAmenitySelected(item)).length;
+    },
+
+    filteredAmenityCategories() {
+        const query = this.amenitySearch.trim().toLowerCase();
+
+        return this.amenityCatalog
+            .map((category) => {
+                const items = (category.items || []).filter((item) => {
+                    if (! query) {
+                        return true;
+                    }
+
+                    return String(item).toLowerCase().includes(query)
+                        || String(category.label).toLowerCase().includes(query);
+                });
+
+                return { ...category, items };
+            })
+            .filter((category) => category.items.length > 0);
+    },
+
+    addCustomAmenity() {
+        const value = this.normalizeAmenityLabel(this.customAmenityInput);
+        this.customAmenityError = '';
+
+        if (! value) {
+            this.customAmenityError = 'Enter a custom amenity name.';
+            return;
+        }
+
+        if (this.isAmenitySelected(value)) {
+            this.customAmenityError = 'That amenity is already selected.';
+            return;
+        }
+
+        const predefinedMatch = this.predefinedAmenityLabels().find((item) => this.amenityKey(item) === this.amenityKey(value));
+        this.toggleAmenity(predefinedMatch || value);
+        this.customAmenityInput = '';
+        this.showCustomAmenityInput = false;
+    },
+
+    galleryMax() {
+        return 10;
+    },
+
+    galleryRemainingSlots() {
+        try {
+            const kept = (this.websiteForm.website_gallery || []).filter(
+                (photo) => photo && photo.path && ! (this.websiteGalleryRemove || []).includes(photo.path),
+            ).length;
+
+            return Math.max(0, this.galleryMax() - kept - (this.websiteGalleryPending || []).length);
+        } catch (e) {
+            return 0;
+        }
+    },
+
+    gallerySlotLabel() {
+        const used = this.galleryMax() - this.galleryRemainingSlots();
+        return `${used} / ${this.galleryMax()} photos`;
+    },
+
+    normalizeWebsiteGallery() {
+        const items = Array.isArray(this.websiteForm.website_gallery)
+            ? this.websiteForm.website_gallery
+            : [];
+
+        this.websiteForm.website_gallery = items
+            .map((item) => {
+                if (typeof item === 'string') {
+                    const path = item.replace(/^\/+/, '');
+                    return path ? { path, url: '/storage/' + path } : null;
+                }
+                if (item && item.path) {
+                    return {
+                        path: String(item.path),
+                        url: String(item.url || ('/storage/' + item.path)),
+                    };
+                }
+                return null;
+            })
+            .filter(Boolean);
+    },
+
+    queueGalleryFiles(event) {
+        try {
+            this.galleryError = '';
+            const input = event?.target;
+            const files = input?.files ? Array.from(input.files) : [];
+            if (input) {
+                input.value = '';
+            }
+
+            if (files.length === 0) {
+                return;
+            }
+
+            let remaining = this.galleryRemainingSlots();
+            if (remaining <= 0) {
+                this.galleryError = 'You already have 10 gallery photos. Remove one to add more.';
+                return;
+            }
+
+            if (! window.__lcWebsiteGalleryFiles) {
+                window.__lcWebsiteGalleryFiles = {};
+            }
+
+            const additions = [];
+            for (const file of files) {
+                if (remaining <= 0) {
+                    this.galleryError = 'Only 10 photos are allowed. Extra files were skipped.';
+                    break;
+                }
+                if (! String(file.type || '').startsWith('image/')) {
+                    this.galleryError = 'Only image files can be added to the gallery.';
+                    continue;
+                }
+                if (file.size > 4 * 1024 * 1024) {
+                    this.galleryError = 'Each photo must be 4 MB or smaller.';
+                    continue;
+                }
+
+                const id = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                additions.push({
+                    id,
+                    preview: URL.createObjectURL(file),
+                });
+                window.__lcWebsiteGalleryFiles[id] = file;
+                remaining -= 1;
+            }
+
+            if (additions.length > 0) {
+                this.websiteGalleryPending = [...(this.websiteGalleryPending || []), ...additions];
+            }
+        } catch (e) {
+            console.error(e);
+            this.galleryError = 'Could not add that photo. Try a smaller JPG or PNG.';
+        }
+    },
+
+    removeGalleryPhoto(photo) {
+        try {
+            this.galleryError = '';
+            if (! photo) {
+                return;
+            }
+
+            if (photo.pending) {
+                const pending = [...(this.websiteGalleryPending || [])];
+                const index = pending.findIndex((item) => item.id === photo.id);
+                if (index >= 0) {
+                    if (pending[index].preview) {
+                        URL.revokeObjectURL(pending[index].preview);
+                    }
+                    pending.splice(index, 1);
+                    this.websiteGalleryPending = pending;
+                }
+                if (window.__lcWebsiteGalleryFiles && photo.id) {
+                    delete window.__lcWebsiteGalleryFiles[photo.id];
+                }
+            } else if (photo.path && ! (this.websiteGalleryRemove || []).includes(photo.path)) {
+                this.websiteGalleryRemove = [...(this.websiteGalleryRemove || []), photo.path];
+            }
+        } catch (e) {
+            console.error(e);
+            this.galleryError = 'Could not remove that photo.';
+        }
+    },
+
+    resetGalleryQueue() {
+        (this.websiteGalleryPending || []).forEach((item) => {
+            if (item.preview) {
+                URL.revokeObjectURL(item.preview);
+            }
+        });
+        this.websiteGalleryPending = [];
+        this.websiteGalleryRemove = [];
+        window.__lcWebsiteGalleryFiles = {};
+        this.galleryError = '';
+    },
+
+    setWebsiteLogoFile(event) {
+        this.websiteLogoFile = event?.target?.files?.[0] || null;
     },
 
     showGeneralSettingsForm() {
@@ -6345,7 +6796,7 @@ Alpine.data('settingsPage', (config) => ({
             return;
         }
 
-        if (! confirm('Run pending database migrations now? Make sure you already created a backup.')) {
+        if (! await confirmDialog({ title: 'Run migrations', message: 'Run pending database migrations now? Make sure you already created a backup.', confirmLabel: 'Run now', tone: 'primary' })) {
             return;
         }
 
@@ -6368,7 +6819,7 @@ Alpine.data('settingsPage', (config) => ({
             return;
         }
 
-        if (! confirm('This will replace the current database with the selected backup. Continue?')) {
+        if (! await confirmDialog({ message: 'This will replace the current database with the selected backup. Continue?' })) {
             return;
         }
 
@@ -6393,7 +6844,7 @@ Alpine.data('settingsPage', (config) => ({
             return;
         }
 
-        if (! confirm('Delete this backup file from the server?')) {
+        if (! await confirmDialog({ message: 'Delete this backup file from the server?' })) {
             return;
         }
 
@@ -6617,7 +7068,7 @@ Alpine.data('settingsPage', (config) => ({
     },
 
     async disableAddon(slug) {
-        if (! confirm('Disable this addon? Its menu and features will be hidden.')) {
+        if (! await confirmDialog({ message: 'Disable this addon? Its menu and features will be hidden.' })) {
             return;
         }
         this.addonBusy = true;
@@ -6635,7 +7086,7 @@ Alpine.data('settingsPage', (config) => ({
     },
 
     async uninstallAddon(slug) {
-        if (! confirm('Uninstall this addon? Data may remain in the database.')) {
+        if (! await confirmDialog({ message: 'Uninstall this addon? Data may remain in the database.' })) {
             return;
         }
         this.addonBusy = true;
@@ -6654,8 +7105,100 @@ Alpine.data('settingsPage', (config) => ({
         }
     },
 
+    sanitizeWebsiteWhatsapp() {
+        let digits = String(this.websiteForm.website_whatsapp || '').replace(/\D/g, '');
+        if (digits.length > 10 && digits.startsWith('91')) {
+            digits = digits.slice(2);
+        }
+        if (digits.length > 10 && digits.startsWith('0')) {
+            digits = digits.slice(1);
+        }
+        this.websiteForm.website_whatsapp = digits.slice(0, 10);
+    },
+
+    validateWebsiteField(field) {
+        const socialRules = {
+            facebook: ['Facebook', /^https?:\/\/(www\.|m\.|web\.)?(facebook\.com|fb\.com|fb\.me)\/\S+$/i],
+            instagram: ['Instagram', /^https?:\/\/(www\.)?instagram\.com\/\S+$/i],
+            youtube: ['YouTube', /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\/\S+$/i],
+            twitter: ['Twitter / X', /^https?:\/\/(www\.|mobile\.)?(twitter\.com|x\.com)\/\S+$/i],
+            website: ['Website', null],
+        };
+        let message = '';
+
+        if (field === 'website_whatsapp') {
+            const phone = String(this.websiteForm.website_whatsapp || '');
+            if (phone !== '' && phone.length !== 10) {
+                message = 'Enter a 10-digit mobile number.';
+            } else if (phone !== '' && ! /^[6-9]\d{9}$/.test(phone)) {
+                message = 'Enter a valid mobile number starting with 6, 7, 8 or 9.';
+            }
+        } else if (field.startsWith('website_social_links.')) {
+            const key = field.split('.')[1];
+            const [label, pattern] = socialRules[key] || ['Link', null];
+            let value = String(this.websiteForm.website_social_links[key] || '').trim();
+            if (value !== '' && ! /^[a-z][a-z0-9+.-]*:\/\//i.test(value)) {
+                value = `https://${value.replace(/^\/+/, '')}`;
+            }
+            this.websiteForm.website_social_links[key] = value;
+
+            if (value !== '') {
+                let url = null;
+                try {
+                    url = new URL(value);
+                } catch (e) {
+                    url = null;
+                }
+                if (! url || ! ['http:', 'https:'].includes(url.protocol) || ! /\.[a-z]{2,}$/i.test(url.hostname) || /\s/.test(value)) {
+                    message = `Enter a valid ${label} link, e.g. https://…`;
+                } else if (pattern && ! pattern.test(value)) {
+                    message = `This must be a ${label} link.`;
+                } else if (value.length > 255) {
+                    message = `${label} link must be 255 characters or fewer.`;
+                }
+            }
+        }
+
+        if (message) {
+            this.websiteErrors = { ...this.websiteErrors, [field]: message };
+        } else if (this.websiteErrors[field]) {
+            const next = { ...this.websiteErrors };
+            delete next[field];
+            this.websiteErrors = next;
+        }
+
+        return ! message;
+    },
+
+    validateWebsiteContactFields() {
+        const fields = ['website_whatsapp', ...Object.keys(this.websiteForm.website_social_links || {}).map((key) => `website_social_links.${key}`)];
+        const invalid = fields.filter((field) => ! this.validateWebsiteField(field));
+        if (invalid.length) {
+            this.focusWebsiteField(invalid[0]);
+        }
+
+        return invalid.length === 0;
+    },
+
+    focusWebsiteField(field) {
+        const id = field === 'website_whatsapp' ? 'website-whatsapp' : `website-social-${field.split('.')[1]}`;
+        this.$nextTick(() => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                input.focus({ preventScroll: true });
+            }
+        });
+    },
+
     async saveWebsiteSettings() {
         if (! this.websiteUpdateUrl || this.websiteSaving) {
+            return;
+        }
+
+        this.sanitizeWebsiteWhatsapp();
+        if (! this.validateWebsiteContactFields()) {
+            showToast('Please fix the highlighted fields.', 'error');
             return;
         }
 
@@ -6663,19 +7206,32 @@ Alpine.data('settingsPage', (config) => ({
         try {
             const data = new FormData();
             data.append('website_enabled', this.websiteForm.website_enabled ? '1' : '0');
+            data.append('display_name', this.websiteForm.display_name || '');
             data.append('website_tagline', this.websiteForm.website_tagline || '');
             data.append('website_hero_title', this.websiteForm.website_hero_title || '');
             data.append('website_about', this.websiteForm.website_about || '');
             data.append('website_whatsapp', this.websiteForm.website_whatsapp || '');
-            (this.websiteForm.website_amenities || []).forEach((amenity, index) => {
-                data.append(`website_amenities[${index}]`, amenity || '');
-            });
+            (this.websiteForm.website_amenities || [])
+                .map((amenity) => String(amenity || '').trim())
+                .filter(Boolean)
+                .forEach((amenity, index) => {
+                    data.append(`website_amenities[${index}]`, amenity);
+                });
             Object.entries(this.websiteForm.website_social_links || {}).forEach(([key, value]) => {
                 data.append(`website_social_links[${key}]`, value || '');
             });
             if (this.websiteLogoFile) {
                 data.append('website_logo', this.websiteLogoFile);
             }
+            Object.keys(window.__lcWebsiteGalleryFiles || {}).forEach((id, index) => {
+                const file = window.__lcWebsiteGalleryFiles[id];
+                if (file) {
+                    data.append(`website_gallery[${index}]`, file);
+                }
+            });
+            (this.websiteGalleryRemove || []).forEach((path, index) => {
+                data.append(`website_gallery_remove[${index}]`, path);
+            });
 
             const response = await window.axios.post(this.websiteUpdateUrl, data, {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -6683,11 +7239,29 @@ Alpine.data('settingsPage', (config) => ({
 
             if (response.data.website) {
                 Object.assign(this.websiteForm, response.data.website);
+                if (! Array.isArray(this.websiteForm.website_gallery)) {
+                    this.websiteForm.website_gallery = [];
+                }
+                this.normalizeWebsiteAmenities();
+                this.normalizeWebsiteGallery();
             }
 
             this.websiteLogoFile = null;
+            this.resetGalleryQueue();
+            this.websiteErrors = {};
             showToast(response.data.message || 'Website settings saved.');
         } catch (e) {
+            const fieldErrors = e?.response?.status === 422 ? (e.response.data?.errors || {}) : {};
+            const contactErrors = {};
+            Object.entries(fieldErrors).forEach(([field, messages]) => {
+                if (field === 'website_whatsapp' || field.startsWith('website_social_links.')) {
+                    contactErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
+                }
+            });
+            if (Object.keys(contactErrors).length) {
+                this.websiteErrors = { ...this.websiteErrors, ...contactErrors };
+                this.focusWebsiteField(Object.keys(contactErrors)[0]);
+            }
             showToast(extractAxiosError(e), 'error');
         } finally {
             this.websiteSaving = false;

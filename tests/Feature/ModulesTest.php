@@ -78,10 +78,53 @@ class ModulesTest extends TestCase
         $enquiryId = $create->json('enquiry.id');
 
         $convert = $this->actingAs($user)->postJson(route('enquiries.convert', $enquiryId));
-        $convert->assertOk()->assertJsonPath('enquiry.status', 'converted');
+        $convert->assertOk()
+            ->assertJsonPath('enquiry.status', 'converted')
+            ->assertJsonPath('enquiry.student_code', null);
 
-        $this->assertDatabaseHas('students', ['name' => 'Lead Person']);
-        $this->assertDatabaseHas('enquiries', ['id' => $enquiryId, 'status' => 'converted']);
+        $this->assertDatabaseMissing('students', ['name' => 'Lead Person']);
+        $this->assertDatabaseHas('enquiries', ['id' => $enquiryId, 'status' => 'converted', 'student_id' => null]);
+
+        $this->actingAs($user)->postJson(route('enquiries.convert', $enquiryId))->assertStatus(422);
+    }
+
+    public function test_enquiry_follow_up_and_declined_statuses(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $enquiry = \App\Models\Enquiry::query()->create([
+            'branch_id' => $branch->id,
+            'name' => 'Follow Lead',
+            'phone' => '9876543210',
+            'status' => 'new',
+        ]);
+
+        $payload = ['name' => 'Follow Lead', 'phone' => '9876543210'];
+
+        $this->actingAs($user)->patchJson(route('enquiries.update', $enquiry), $payload + [
+            'status' => 'followed_up_2',
+            'follow_up_date' => '2026-10-15',
+            'follow_up_note' => 'Visiting with parents on Thursday',
+        ])->assertOk()
+            ->assertJsonPath('enquiry.status_label', 'Followed up 2')
+            ->assertJsonPath('enquiry.follow_up_date', '2026-10-15')
+            ->assertJsonPath('enquiry.follow_up_note', 'Visiting with parents on Thursday');
+
+        $this->actingAs($user)->patchJson(route('enquiries.update', $enquiry), $payload + ['status' => 'followed_up_1'])
+            ->assertOk();
+
+        $this->actingAs($user)->patchJson(route('enquiries.update', $enquiry), $payload + ['status' => 'declined'])
+            ->assertOk()
+            ->assertJsonPath('enquiry.status_label', 'Declined');
+
+        $this->actingAs($user)->patchJson(route('enquiries.update', $enquiry), $payload + ['status' => 'maybe_later'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->actingAs($user)->get(route('enquiries.index'))
+            ->assertOk()
+            ->assertSee('Followed up 3')
+            ->assertDontSee('Export CSV');
     }
 
     public function test_seat_assignment_rejects_conflicting_slot(): void
