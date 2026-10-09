@@ -71,9 +71,9 @@ return [
         'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@phenomit.com'),
         'phone' => env('LIBCONTROL_SUPPORT_PHONE', '8076105181'),
         'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8076105181'),
-        'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://phenomit.com/libcontrol/support-articles.html'),
-        'articles_url' => env('LIBCONTROL_SUPPORT_ARTICLES_URL', 'https://phenomit.com/libcontrol/support-articles.html'),
-        'documentation_url' => env('LIBCONTROL_SUPPORT_DOCUMENTATION_URL', 'https://phenomit.com/libcontrol/documentation.html'),
+        'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://libcontrol.in/support-articles.html'),
+        'articles_url' => env('LIBCONTROL_SUPPORT_ARTICLES_URL', 'https://libcontrol.in/support-articles.html'),
+        'documentation_url' => env('LIBCONTROL_SUPPORT_DOCUMENTATION_URL', 'https://libcontrol.in/documentation.html'),
         'whatsapp_button_image' => env(
             'LIBCONTROL_SUPPORT_WHATSAPP_IMAGE',
             'https://renprints.com/p_assets/img/footer/renprints-whatsapp-us-.png',
@@ -101,7 +101,7 @@ return [
         'base_domain' => env('LIBCONTROL_TENANT_BASE_DOMAIN', 'phenomit.com'),
         'landlord_hosts' => array_values(array_filter(array_map(
             static fn (string $host) => strtolower(trim($host)),
-            explode(',', (string) env('LIBCONTROL_TENANT_LANDLORD_HOSTS', 'libcontrol.phenomit.com,localhost,127.0.0.1'))
+            explode(',', (string) env('LIBCONTROL_TENANT_LANDLORD_HOSTS', 'libcontrol.in,www.libcontrol.in,localhost,127.0.0.1'))
         ))),
         'landlord_connection' => env('LIBCONTROL_TENANT_LANDLORD_CONNECTION', 'mysql'),
     ],
@@ -115,8 +115,19 @@ return [
         'path' => env('LIBCONTROL_MARKETING_SITE_PATH', base_path('libcontrol-website')),
         'hosts' => array_values(array_filter(array_map(
             static fn (string $host) => strtolower(trim($host)),
-            explode(',', (string) env('LIBCONTROL_MARKETING_SITE_HOSTS', 'libcontrol.phenomit.com'))
+            explode(',', (string) env('LIBCONTROL_MARKETING_SITE_HOSTS', 'libcontrol.in,www.libcontrol.in'))
         ))),
+    ],
+
+    /*
+    | Public demo install (demo.libcontrol.in): shows these logins on the sign-in page.
+    */
+    'demo' => [
+        'enabled' => filter_var(env('LIBCONTROL_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN),
+        'admin_email' => env('LIBCONTROL_DEMO_ADMIN_EMAIL', 'admin@demo.libcontrol.in'),
+        'admin_password' => env('LIBCONTROL_DEMO_ADMIN_PASSWORD', 'Demo@1234'),
+        'branch_email' => env('LIBCONTROL_DEMO_BRANCH_EMAIL', 'branch@demo.libcontrol.in'),
+        'branch_password' => env('LIBCONTROL_DEMO_BRANCH_PASSWORD', 'Demo@1234'),
     ],
 
     'id_card_templates' => [

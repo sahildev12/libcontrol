@@ -97,7 +97,7 @@ return [
         'help_support_tab' => [
             'label' => 'Help / Support tab',
             'status' => 'custom',
-            'notes' => 'Help & Support nav with ticket creation synced to libcontrol.phenomit.com.',
+            'notes' => 'Help & Support nav with ticket creation synced to libcontrol.in.',
         ],
         'client_public_website' => [
             'label' => 'Client public website',
@@ -142,7 +142,7 @@ return [
         [
             'area' => 'Mobile',
             'summary' => 'Single APK with library code resolver',
-            'detail' => 'Connect via 6-digit code through libcontrol.phenomit.com.',
+            'detail' => 'Connect via 6-digit code through libcontrol.in.',
             'since' => '2026-09',
         ],
         [

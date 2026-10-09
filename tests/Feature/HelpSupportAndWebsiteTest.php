@@ -97,7 +97,7 @@ class HelpSupportAndWebsiteTest extends TestCase
             'priority' => 'normal',
         ])
             ->assertStatus(502)
-            ->assertJsonFragment(['message' => 'Phenomit rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.phenomit.com.']);
+            ->assertJsonFragment(['message' => 'Phenomit rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.in.']);
 
         $this->assertDatabaseMissing('support_tickets', [
             'subject' => 'Need help with fees',

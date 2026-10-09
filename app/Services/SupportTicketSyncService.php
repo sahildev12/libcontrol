@@ -40,7 +40,7 @@ class SupportTicketSyncService
 
         if (LicensedDeployment::isPlaceholderLicenseKey($licenseKey)) {
             return SupportTicketSyncResult::failure(
-                'Support tickets require a real license key. Set LIBCONTROL_LICENSE_KEY in this installation\'s .env file (copy it from Dev & Domains on libcontrol.phenomit.com).',
+                'Support tickets require a real license key. Set LIBCONTROL_LICENSE_KEY in this installation\'s .env file (copy it from Dev & Domains on libcontrol.in).',
             );
         }
 
@@ -109,7 +109,7 @@ class SupportTicketSyncService
             ]);
 
             return SupportTicketSyncResult::failure(
-                'Could not reach Phenomit support server at '.$endpoint.'. Check LIBCONTROL_SYNC_ENDPOINT and that libcontrol.phenomit.com is online.',
+                'Could not reach Phenomit support server at '.$endpoint.'. Check LIBCONTROL_SYNC_ENDPOINT and that libcontrol.in is online.',
             );
         }
     }
@@ -260,8 +260,8 @@ class SupportTicketSyncService
     private function failureMessage(int $status, string $endpoint): string
     {
         return match ($status) {
-            401 => 'Phenomit rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.phenomit.com.',
-            404 => 'Support API not found at '.$endpoint.'. On libcontrol.phenomit.com set LIBCONTROL_LICENSE_SERVER=true and run php artisan migrate --force.',
+            401 => 'Phenomit rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.in.',
+            404 => 'Support API not found at '.$endpoint.'. On libcontrol.in set LIBCONTROL_LICENSE_SERVER=true and run php artisan migrate --force.',
             422 => 'Phenomit rejected the ticket data. Check subject, message, and reporter email.',
             429 => 'Too many support requests. Please wait a few minutes and try again.',
             default => 'Phenomit could not accept this ticket (HTTP '.$status.').',
