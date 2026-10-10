@@ -131,13 +131,6 @@
     } else {
       showBanner();
     }
-
-    document.addEventListener('click', function (event) {
-      var link = event.target.closest('[data-cookie-settings]');
-      if (!link) return;
-      event.preventDefault();
-      showBanner();
-    });
   }
 
   window.LibControlCookies = {
