@@ -3953,6 +3953,20 @@ body {
   font-size: 1.2rem;
   color: var(--ink);
 }
+.legal-doc h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.02rem;
+  color: var(--ink);
+}
+.legal-doc .legal-meta {
+  margin-bottom: 1.5rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--paper);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  font-size: 0.92rem;
+}
+.legal-doc .legal-meta strong { color: var(--ink); }
 .legal-doc p,
 .legal-doc li {
   color: #3d4a63;
@@ -4015,4 +4029,82 @@ body {
   color: #002364;
   font-weight: 600;
   text-decoration: underline;
+}
+
+.cookie-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(760px, calc(100% - 24px));
+  padding: 1rem 1.25rem;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid rgba(255, 200, 0, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0, 17, 49, 0.35);
+  animation: fadeUp 0.35s ease both;
+}
+.cookie-banner[hidden] { display: none; }
+.cookie-banner__text { flex: 1; min-width: 0; }
+.cookie-banner__text p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+.cookie-banner__text .cookie-banner__title {
+  margin-bottom: 0.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+.cookie-banner__title i { color: var(--accent); margin-right: 0.35rem; }
+.cookie-banner__text a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+.cookie-banner__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.6rem;
+}
+.cookie-banner__btn {
+  min-width: 96px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.cookie-banner__btn--reject {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+}
+.cookie-banner__btn--reject:hover { border-color: #fff; background: rgba(255, 255, 255, 0.08); }
+.cookie-banner__btn--accept {
+  background: var(--accent);
+  color: var(--primary);
+  border: 1.5px solid var(--accent);
+}
+.cookie-banner__btn--accept:hover { background: #ffd633; border-color: #ffd633; }
+.cookie-banner__btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .cookie-banner {
+    bottom: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+  .cookie-banner__actions .cookie-banner__btn { flex: 1; }
 }
