@@ -6,7 +6,7 @@
         <header class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="text-2xl font-bold text-gray-900">Support Tickets</h1>
+                    <h1 class="lc-page-title">Support Tickets</h1>
                     @if ($stats['unread'] > 0)
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-800 ring-1 ring-orange-200">
                             <span class="size-2 rounded-full bg-orange-500"></span>
@@ -18,23 +18,23 @@
             </div>
         </header>
 
-        <section class="mt-4 flex gap-3 overflow-x-auto pb-1 md:overflow-visible">
-            <div class="min-w-[200px] flex-1 rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-700">Total tickets</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ number_format($stats['total']) }}</p>
-            </div>
-            <div class="min-w-[200px] flex-1 rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">Open</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-sky-900">{{ number_format($stats['open']) }}</p>
-            </div>
-            <div class="min-w-[200px] flex-1 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700">In progress</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-amber-900">{{ number_format($stats['in_progress']) }}</p>
-            </div>
-            <div class="min-w-[200px] flex-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Resolved</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-900">{{ number_format($stats['resolved']) }}</p>
-            </div>
+        <section class="lc-dash-stats mt-4">
+            @foreach ([
+                ['Total tickets', $stats['total'], 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z'],
+                ['Open', $stats['open'], 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+                ['In progress', $stats['in_progress'], 'M13 10V3L4 14h7v7l9-11h-7z'],
+                ['Resolved', $stats['resolved'], 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ] as [$label, $value, $icon])
+                <article class="lc-dash-stat">
+                    <div class="lc-dash-stat__head">
+                        <p class="lc-dash-stat__label">{{ $label }}</p>
+                        <span class="lc-dash-stat__icon" aria-hidden="true">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="{{ $icon }}"/></svg>
+                        </span>
+                    </div>
+                    <p class="lc-dash-stat__value">{{ number_format($value) }}</p>
+                </article>
+            @endforeach
         </section>
 
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

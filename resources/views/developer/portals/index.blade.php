@@ -1,7 +1,7 @@
 <x-admin-layout>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Portal Settings</h1>
+            <h1 class="lc-page-title">Portal Settings</h1>
             <p class="mt-1 text-sm text-gray-600">
                 Manage settings for libraries <strong>hosted on Phenomit</strong> (one database per client, managed from this hub).
                 Separate client installations such as <code class="rounded bg-gray-100 px-1">aims.phenomit.com</code> are listed under

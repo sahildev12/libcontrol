@@ -1,7 +1,7 @@
 <x-admin-layout>
     <div class="mx-auto max-w-2xl space-y-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Edit deployment</h1>
+            <h1 class="lc-page-title">Edit deployment</h1>
             <p class="mt-1 text-sm text-gray-600">{{ $deployment->client_name }}</p>
         </div>
 

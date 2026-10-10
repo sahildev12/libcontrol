@@ -29,6 +29,8 @@ class EnsureLibraryOperationsAccess
             'developer/*',
             'profile',
             'profile/*',
+            'notifications',
+            'notifications/*',
         )) {
             return $next($request);
         }

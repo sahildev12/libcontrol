@@ -77,7 +77,7 @@ class DeploymentRemoteManageService
         ]);
 
         $this->commands->queue($deployment, 'set_plan', [
-            'plan_tier' => $deployment->plan_tier(),
+            'plan_tier' => $deployment->planTier(),
             'max_seats_override' => $deployment->max_seats_override,
             'max_halls_override' => $deployment->max_halls_override,
             'max_branches_override' => $deployment->max_branches_override,

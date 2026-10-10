@@ -26,7 +26,7 @@
     }
 }
 
-/* LibControl client admin theme — developer portal keeps legacy styles */
+/* LibControl admin theme (client and developer panels) */
 .lc-theme {
     --lc-yellow: #fecf25;
     --lc-blue: #243a8b;

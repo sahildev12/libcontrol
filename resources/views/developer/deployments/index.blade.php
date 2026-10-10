@@ -22,7 +22,7 @@
     >
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="max-w-3xl">
-                <h1 class="text-2xl font-bold text-gray-900">Dev &amp; Domains</h1>
+                <h1 class="lc-page-title">Dev &amp; Domains</h1>
                 <p class="mt-1 text-sm leading-relaxed text-gray-600">
                     Authorize self-hosted LibControl installs from one place. Issue a license key, whitelist domains, and manage clients without leaving this page.
                 </p>

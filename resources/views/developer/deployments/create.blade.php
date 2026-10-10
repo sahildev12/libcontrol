@@ -1,7 +1,7 @@
 <x-admin-layout>
     <div class="mx-auto max-w-2xl space-y-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Authorize client</h1>
+            <h1 class="lc-page-title">Authorize client</h1>
             <p class="mt-1 text-sm text-gray-600">Whitelist the client&rsquo;s domain and issue a license key they paste into their <code class="rounded bg-gray-100 px-1">.env</code> file.</p>
         </div>
 

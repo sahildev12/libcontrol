@@ -93,9 +93,9 @@ class DeveloperSupportTicketsTest extends TestCase
         $this->createTicket(['read_at' => null]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('developer.support-tickets.index'))
             ->assertOk()
-            ->assertSee(route('notifications.feed'), false)
+            ->assertSee(str_replace('/', '\/', route('notifications.feed')), false)
             ->assertSee('enableSound: true', false);
     }
 

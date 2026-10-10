@@ -2,7 +2,7 @@
     <div class="mx-auto max-w-5xl space-y-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Remote manage — {{ $tenant->client_name }}</h1>
+                <h1 class="lc-page-title">Remote manage — {{ $tenant->client_name }}</h1>
                 <p class="mt-1 text-sm text-gray-600">
                     Hosted tenant at
                     <a href="{{ $tenant->url() }}" target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-700">{{ $tenant->host() }}</a>

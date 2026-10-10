@@ -458,6 +458,7 @@
                                     <td class="whitespace-nowrap px-4 py-3 text-gray-500" x-text="row.created_at"></td>
                                     <td class="px-4 py-3">
                                         <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset" :class="@js(collect($requestStatuses)->map(fn ($s) => $s[1]))[row.status] || 'bg-gray-100 text-gray-600'" x-text="row.status_label"></span>
+                                        <p x-show="row.team_note" x-cloak class="mt-1.5 max-w-xs whitespace-pre-line text-xs text-gray-600"><span class="font-semibold text-[#082D70]">Phenomit:</span> <span x-text="row.team_note"></span></p>
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="inline-flex flex-wrap justify-end gap-1.5">

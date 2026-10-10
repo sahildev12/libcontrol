@@ -15,10 +15,10 @@ return [
         ['label' => 'Grow My Library', 'route' => 'growth.index', 'icon' => 'chart', 'module' => 'growth', 'client_admin_only' => true, 'branch_staff_only' => true, 'active_prefix' => 'growth.'],
         ['label' => 'Enquiries', 'route' => 'enquiries.index', 'icon' => 'inbox', 'module' => 'enquiries', 'client_admin_only' => true, 'branch_staff_only' => true],
         ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart', 'client_admin_only' => true],
-        ['label' => 'Support Tickets', 'route' => 'developer.support-tickets.index', 'icon' => 'ticket', 'developer_admin_only' => true, 'license_server_only' => true],
-        ['label' => 'Growth Orders', 'route' => 'developer.growth-orders.index', 'icon' => 'chart', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.growth-orders.'],
+        ['label' => 'Support Tickets', 'route' => 'developer.support-tickets.index', 'icon' => 'ticket', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.support-tickets.'],
+        ['label' => 'Service Requests', 'route' => 'developer.growth-orders.index', 'icon' => 'chart', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.growth-orders.'],
         ['label' => 'Portal Settings', 'route' => 'developer.portals.index', 'icon' => 'settings', 'developer_admin_only' => true, 'tenancy_only' => true],
         ['label' => 'Client Libraries', 'route' => 'developer.tenants.index', 'icon' => 'branch', 'developer_admin_only' => true, 'tenancy_only' => true],
-        ['label' => 'Dev & Domains', 'route' => 'developer.deployments.index', 'icon' => 'branch', 'developer_admin_only' => true, 'license_server_only' => true],
+        ['label' => 'Dev & Domains', 'route' => 'developer.deployments.index', 'icon' => 'branch', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.deployments.'],
     ],
 ];

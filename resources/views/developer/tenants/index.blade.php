@@ -2,7 +2,7 @@
     <div x-data="clientLibraryTable({ rows: @js($rows) })" x-init="init()">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="max-w-3xl">
-                <h1 class="text-2xl font-bold text-gray-900">Client Libraries</h1>
+                <h1 class="lc-page-title">Client Libraries</h1>
                 <p class="mt-1 text-sm leading-relaxed text-gray-600">
                     Libraries <strong>hosted on Phenomit</strong> — each client gets a subdomain and its own database on this server.
                     For separate installs with their own server (e.g. Aims), use

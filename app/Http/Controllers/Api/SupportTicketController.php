@@ -93,23 +93,22 @@ class SupportTicketController extends Controller
             $orderUuid = $m[1];
         }
 
-        GrowthOrder::query()->updateOrCreate(
-            ['uuid' => $orderUuid],
-            [
-                'order_type' => $orderType,
-                'item_key' => $itemKey,
-                'item_name' => $itemName,
-                'status' => GrowthOrder::STATUS_NEW,
-                'message' => $ticket->message,
-                'contact_name' => $ticket->reporter_name,
-                'contact_email' => $ticket->reporter_email,
-                'library_name' => $ticket->library_name,
-                'library_code' => $ticket->library_code,
-                'deployment_domain' => $domain !== '' ? $domain : $ticket->deployment_domain,
-                'deployment_license_key_hash' => $licenseKeyHash,
-                'support_ticket_id' => $ticket->id,
-            ]
-        );
+        $order = GrowthOrder::query()->firstOrNew(['uuid' => $orderUuid]);
+        $order->fill([
+            'order_type' => $orderType,
+            'item_key' => $itemKey,
+            'item_name' => $itemName,
+            'status' => $order->exists ? $order->status : GrowthOrder::STATUS_NEW,
+            'message' => $ticket->message,
+            'contact_name' => $ticket->reporter_name,
+            'contact_email' => $ticket->reporter_email,
+            'library_name' => $ticket->library_name,
+            'library_code' => $ticket->library_code,
+            'deployment_domain' => $domain !== '' ? $domain : $ticket->deployment_domain,
+            'deployment_license_key_hash' => $licenseKeyHash,
+            'support_ticket_id' => $ticket->id,
+        ]);
+        $order->save();
     }
 
     public function pull(Request $request): JsonResponse
@@ -135,7 +134,11 @@ class SupportTicketController extends Controller
             $query->whereIn('uuid', $uuids);
         }
 
-        $tickets = $query->get(['uuid', 'status', 'admin_notes', 'updated_at']);
+        $tickets = $query->get(['id', 'uuid', 'status', 'admin_notes', 'updated_at']);
+
+        $serviceRequests = Schema::hasTable('growth_orders')
+            ? GrowthOrder::query()->whereIn('support_ticket_id', $tickets->pluck('id'))->get()->keyBy('support_ticket_id')
+            : collect();
 
         return response()->json([
             'tickets' => $tickets->map(fn (SupportTicket $ticket) => [
@@ -143,6 +146,15 @@ class SupportTicketController extends Controller
                 'status' => $ticket->status,
                 'admin_notes' => $ticket->admin_notes,
                 'updated_at' => $ticket->updated_at?->toIso8601String(),
+                'service_request' => ($order = $serviceRequests->get($ticket->id)) ? [
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'admin_notes' => $order->admin_notes,
+                    'monthly_report_url' => $order->monthly_report_url,
+                    'quoted_at' => $order->quoted_at?->toIso8601String(),
+                    'activated_at' => $order->activated_at?->toIso8601String(),
+                    'completed_at' => $order->completed_at?->toIso8601String(),
+                ] : null,
             ])->values()->all(),
         ]);
     }

@@ -1,7 +1,7 @@
 <x-admin-layout>
     <div class="flex items-center justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ $ticket->subject }}</h1>
+            <h1 class="lc-page-title">{{ $ticket->subject }}</h1>
             <p class="mt-1 text-sm text-gray-600">{{ $ticket->library_name }} · {{ $ticket->library_code ?: $ticket->deployment_domain }}</p>
         </div>
         <a href="{{ route('developer.support-tickets.index') }}" class="text-sm font-semibold text-indigo-600 hover:underline">Back to tickets</a>

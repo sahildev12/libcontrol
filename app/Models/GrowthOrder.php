@@ -85,6 +85,36 @@ class GrowthOrder extends Model
         return $this->belongsTo(User::class, 'requested_by');
     }
 
+    public function supportTicket(): BelongsTo
+    {
+        return $this->belongsTo(SupportTicket::class);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_NEW,
+            self::STATUS_QUOTED,
+            self::STATUS_ACTIVE,
+            self::STATUS_PAUSED,
+            self::STATUS_COMPLETED,
+            self::STATUS_CANCELLED,
+        ];
+    }
+
+    public function ticketStatus(): string
+    {
+        return match ($this->status) {
+            self::STATUS_NEW => SupportTicket::STATUS_OPEN,
+            self::STATUS_COMPLETED => SupportTicket::STATUS_RESOLVED,
+            self::STATUS_CANCELLED => SupportTicket::STATUS_CLOSED,
+            default => SupportTicket::STATUS_IN_PROGRESS,
+        };
+    }
+
     public function statusLabel(): string
     {
         return match ($this->status) {

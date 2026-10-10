@@ -14,6 +14,7 @@ use App\Services\Growth\RazorpayGrowthBillingService;
 use App\Services\Growth\ReferralService;
 use App\Services\LibraryWebsiteService;
 use App\Services\Profile\LibraryProfileCompletionService;
+use App\Services\SupportTicketSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class GrowthController extends Controller
         RazorpayGrowthBillingService $billing,
         ReferralService $referrals,
         LibraryWebsiteService $website,
+        SupportTicketSyncService $ticketSync,
     ): View {
         $branch = $this->resolveGrowthBranch($request);
         $settings = PlatformSetting::current();
@@ -43,6 +45,7 @@ class GrowthController extends Controller
         $score = $combinedGrowth['action_progress'];
         $recommendations = $combinedGrowth['recommendations'];
         $profileCompletionScore = $profileCompletion->scoreForLibrary($request->user());
+        $ticketSync->pullUpdates($request->user());
         $orders = GrowthOrder::query()
             ->with('requester:id,name')
             ->when($branch->id, fn ($q) => $q->where('branch_id', $branch->id))
@@ -61,6 +64,7 @@ class GrowthController extends Controller
                 'requested_by' => $order->requester?->name ?? $order->contact_name,
                 'created_at' => $order->created_at?->format('d M Y, h:i A'),
                 'monthly_report_url' => $order->monthly_report_url,
+                'team_note' => $order->admin_notes,
             ])
             ->values();
 

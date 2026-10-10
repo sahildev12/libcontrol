@@ -7,7 +7,7 @@
     $navItems = config('admin-nav.primary', []);
     $currentRoute = request()->route()?->getName();
     $addonRegistry = app(AddonRegistry::class);
-    $lcTheme = ! ($isDeveloperAdmin ?? false);
+    $lcTheme = true;
     $navActiveClass = $lcTheme
         ? 'lc-sidebar-nav--active'
         : 'bg-indigo-600 text-white shadow-sm';
@@ -50,7 +50,7 @@
             <div x-show="!collapsed" x-cloak class="min-w-0 leading-tight">
                 @if ($lcTheme)
                     <p class="truncate text-sm font-bold text-white">{{ config('libcontrol.product.name', 'LibControl') }}</p>
-                    <p class="text-[10px] font-medium text-white/70">Library admin</p>
+                    <p class="text-[10px] font-medium text-white/70">{{ ($isDeveloperAdmin ?? false) ? 'Developer panel' : 'Library admin' }}</p>
                 @else
                     <p class="truncate text-sm font-bold text-gray-900">{{ $branding['display_name'] ?? config('app.name') }}</p>
                     <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">{{ strtoupper(($adminTypeLabel ?? 'Admin').' Panel') }}</p>

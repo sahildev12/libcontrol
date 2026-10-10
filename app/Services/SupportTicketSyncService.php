@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\GrowthOrder;
 use App\Models\LicensedDeployment;
 use App\Models\SupportTicket;
 use App\Models\User;
+use App\Services\Growth\GrowthOrderService;
 use App\Support\Runtime\SyncCoordinator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -204,6 +207,10 @@ class SupportTicketSyncService
                     $remoteStatus = $localTicket->status;
                 }
 
+                if (is_array($remoteTicket['service_request'] ?? null)) {
+                    $this->applyServiceRequestUpdate($localTicket, $remoteTicket['service_request']);
+                }
+
                 $statusChanged = $localTicket->status !== $remoteStatus;
                 $notesChanged = (string) $localTicket->admin_notes !== $remoteNotes;
 
@@ -230,6 +237,44 @@ class SupportTicketSyncService
 
             return 0;
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $remote
+     */
+    private function applyServiceRequestUpdate(SupportTicket $ticket, array $remote): void
+    {
+        if (! Schema::hasTable('growth_orders')) {
+            return;
+        }
+
+        $order = GrowthOrder::query()->where('support_ticket_id', $ticket->id)->first();
+        $status = (string) ($remote['status'] ?? '');
+
+        if (! $order || ! in_array($status, GrowthOrder::statuses(), true)) {
+            return;
+        }
+
+        $paymentStatus = $remote['payment_status'] ?? null;
+        $order->fill([
+            'status' => $status,
+            'payment_status' => in_array($paymentStatus, ['pending', 'paid', 'failed'], true) ? $paymentStatus : $order->payment_status,
+            'admin_notes' => filled($remote['admin_notes'] ?? null) ? (string) $remote['admin_notes'] : null,
+            'monthly_report_url' => filled($remote['monthly_report_url'] ?? null) ? (string) $remote['monthly_report_url'] : null,
+        ]);
+
+        foreach (['quoted_at', 'activated_at', 'completed_at'] as $column) {
+            if (! $order->{$column} && filled($remote[$column] ?? null)) {
+                $order->{$column} = Carbon::parse((string) $remote[$column]);
+            }
+        }
+
+        if (! $order->isDirty()) {
+            return;
+        }
+
+        $order->save();
+        app(GrowthOrderService::class)->applyStatusToProfile($order);
     }
 
     public function push(SupportTicket $ticket): SupportTicketSyncResult

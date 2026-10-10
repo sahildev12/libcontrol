@@ -1,7 +1,7 @@
 <x-admin-layout>
     <div class="mx-auto max-w-3xl space-y-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Manage {{ $tenant->client_name }}</h1>
+            <h1 class="lc-page-title">Manage {{ $tenant->client_name }}</h1>
             <p class="mt-1 text-sm text-gray-600">
                 <a href="{{ $tenant->url() }}" target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-700">{{ $tenant->host() }}</a>
                 · Database: {{ $tenant->database_name }}
