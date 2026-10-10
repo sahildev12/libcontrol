@@ -42,7 +42,7 @@ class MarketingCookieConsentTest extends TestCase
             $html = $this->servedHtml($page);
 
             $this->assertStringContainsString('cookie-consent.js', $html);
-            $this->assertStringNotContainsString('refund-policy.html', $html);
+            $this->assertDoesNotMatchRegularExpression('/refund/i', $html);
         }
 
         $this->get('http://libcontrol.in/refund-policy.html')->assertRedirect('/');
