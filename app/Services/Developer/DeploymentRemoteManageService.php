@@ -55,6 +55,10 @@ class DeploymentRemoteManageService
             'isOnline' => $lastHeartbeat?->last_seen_at?->gt(now()->subDay()) ?? false,
             'planTiers' => array_keys(config('libcontrol.plans', [])),
             'planSnapshot' => $this->planSnapshotForDeployment($deployment),
+            'planSetFromHub' => DeploymentCommand::query()
+                ->where('licensed_deployment_id', $deployment->id)
+                ->where('action', 'set_plan')
+                ->exists(),
             'availableAddons' => $this->addonRegistry->catalogForSettings(),
             'commands' => DeploymentCommand::query()
                 ->where('licensed_deployment_id', $deployment->id)

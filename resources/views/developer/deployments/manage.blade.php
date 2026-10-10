@@ -53,7 +53,7 @@
                 </div>
                 <div>
                     <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Current plan (hub)</dt>
-                    <dd class="mt-1 text-sm text-gray-900">{{ $planSnapshot['plan_label'] }}</dd>
+                    <dd class="mt-1 text-sm text-gray-900">{{ $planSetFromHub ? $planSnapshot['plan_label'] : 'Not set from hub (client keeps its own plan)' }}</dd>
                 </div>
             </dl>
         </section>
@@ -67,11 +67,14 @@
                 @csrf
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Plan tier</label>
-                    <select name="plan_tier" class="admin-select mt-1 block w-full px-3 py-2">
+                    <select name="plan_tier" required class="admin-select mt-1 block w-full px-3 py-2">
+                        @php($selectedTier = old('plan_tier', $planSetFromHub ? $deployment->plan_tier : null))
+                        <option value="" disabled @selected(! $selectedTier)>Choose a plan…</option>
                         @foreach ($planTiers as $tier)
-                            <option value="{{ $tier }}" @selected(old('plan_tier', $deployment->plan_tier ?: $planSnapshot['plan_tier']) === $tier)>{{ ucfirst($tier) }}</option>
+                            <option value="{{ $tier }}" @selected($selectedTier === $tier)>{{ ucfirst($tier) }}</option>
                         @endforeach
                     </select>
+                    @error('plan_tier')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Custom seat limit</label>

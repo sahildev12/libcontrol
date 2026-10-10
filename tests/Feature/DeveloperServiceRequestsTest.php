@@ -55,8 +55,15 @@ class DeveloperServiceRequestsTest extends TestCase
     public function test_saving_a_deployment_plan_queues_the_update(): void
     {
         $deployment = $this->createDeployment();
+        $developer = $this->developerAdmin();
 
-        $this->actingAs($this->developerAdmin())
+        $this->actingAs($developer)
+            ->get(route('developer.deployments.manage', $deployment))
+            ->assertOk()
+            ->assertSee('Not set from hub')
+            ->assertSee('Choose a plan');
+
+        $this->actingAs($developer)
             ->post(route('developer.deployments.manage.plan', $deployment), [
                 'plan_tier' => 'pro',
                 'max_seats_override' => 120,

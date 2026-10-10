@@ -57,22 +57,25 @@
             </div>
         </template>
 
-        <section class="grid gap-3 sm:grid-cols-3">
-            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Unauthorized domains</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-amber-950">{{ number_format($stats['unauthorized']) }}</p>
-                <p class="mt-1 text-xs text-amber-900/80">Using LibControl without a valid license</p>
-            </div>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">Authorized clients</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-950">{{ number_format($stats['licenses']) }}</p>
-                <p class="mt-1 text-xs text-emerald-900/80">License keys you have issued</p>
-            </div>
-            <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-sky-800">Domains online now</p>
-                <p class="mt-1 text-2xl font-bold tabular-nums text-sky-950">{{ number_format($stats['online']) }}</p>
-                <p class="mt-1 text-xs text-sky-900/80">Recently synced with a valid license</p>
-            </div>
+        <section class="grid gap-2.5 sm:grid-cols-3">
+            @foreach ([
+                ['Unauthorized domains', $stats['unauthorized'], 'Using LibControl without a valid license', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'],
+                ['Authorized clients', $stats['licenses'], 'License keys you have issued', 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'],
+                ['Domains online now', $stats['online'], 'Recently synced with a valid license', 'M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z'],
+            ] as [$label, $value, $hint, $icon])
+                <article class="lc-dash-stat">
+                    <div class="lc-dash-stat__head">
+                        <p class="lc-dash-stat__label">{{ $label }}</p>
+                        <span class="lc-dash-stat__icon" aria-hidden="true">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="{{ $icon }}"/></svg>
+                        </span>
+                    </div>
+                    <div>
+                        <p class="lc-dash-stat__value">{{ number_format($value) }}</p>
+                        <p class="mt-1 text-xs text-white/60">{{ $hint }}</p>
+                    </div>
+                </article>
+            @endforeach
         </section>
 
         <div class="flex flex-wrap gap-2 border-b border-gray-200">
