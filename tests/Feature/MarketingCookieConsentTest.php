@@ -47,6 +47,20 @@ class MarketingCookieConsentTest extends TestCase
         $this->assertStringContainsString('<h1>Refund Policy</h1>', $this->servedHtml('refund-policy.html'));
     }
 
+    public function test_every_page_uses_the_full_site_footer(): void
+    {
+        $pages = ['index.html', 'documentation.html', 'support-articles.html', 'privacy-policy.html', 'terms-and-conditions.html', 'disclaimer.html', 'refund-policy.html'];
+
+        foreach ($pages as $page) {
+            $html = $this->servedHtml($page);
+
+            $this->assertStringContainsString('<h3>Guide</h3>', $html, $page);
+            $this->assertStringContainsString('href="disclaimer.html', $html, $page);
+            $this->assertStringContainsString('Mon – Sat 9.00 – 18.00', $html, $page);
+            $this->assertStringContainsString('lc-trust-bar', $html, $page);
+        }
+    }
+
     private function servedHtml(string $page): string
     {
         $response = $this->get('http://libcontrol.in/'.$page)->assertOk();
