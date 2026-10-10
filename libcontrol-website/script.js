@@ -295,7 +295,7 @@
       return '';
     },
     accept_legal: function (v, el) {
-      return el.checked ? '' : 'Please accept the Disclaimer, Terms and Privacy Policy.';
+      return el.checked ? '' : 'Please accept the Disclaimer, Terms, Privacy Policy and Refund Policy.';
     }
   };
 

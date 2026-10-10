@@ -33,19 +33,18 @@ class MarketingCookieConsentTest extends TestCase
         $this->assertStringContainsString('/cookie-consent.js', $html);
         $this->assertStringNotContainsString('googletagmanager.com/gtag/js', $html);
         $this->assertStringNotContainsString('fbevents.js', $html);
-        $this->assertStringNotContainsString('refund-policy', $html);
     }
 
-    public function test_legal_pages_load_and_refund_policy_redirects_home(): void
+    public function test_legal_pages_load_with_consent_script_and_refund_policy_link(): void
     {
-        foreach (['privacy-policy.html', 'terms-and-conditions.html', 'disclaimer.html'] as $page) {
+        foreach (['privacy-policy.html', 'terms-and-conditions.html', 'disclaimer.html', 'refund-policy.html'] as $page) {
             $html = $this->servedHtml($page);
 
             $this->assertStringContainsString('cookie-consent.js', $html);
-            $this->assertDoesNotMatchRegularExpression('/refund/i', $html);
+            $this->assertStringContainsString('href="refund-policy.html"', $html);
         }
 
-        $this->get('http://libcontrol.in/refund-policy.html')->assertRedirect('/');
+        $this->assertStringContainsString('<h1>Refund Policy</h1>', $this->servedHtml('refund-policy.html'));
     }
 
     private function servedHtml(string $page): string
