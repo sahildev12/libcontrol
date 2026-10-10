@@ -38,6 +38,7 @@
   100% { transform: translateX(220%) skewX(-18deg); }
 }
 html { scroll-behavior: smooth; }
+[id] { scroll-margin-top: calc(var(--nav-height) + 20px); }
 body {
   margin: 0;
   font-family: var(--font);
