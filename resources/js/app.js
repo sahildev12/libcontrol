@@ -5907,6 +5907,7 @@ Alpine.data('deploymentHubPage', (config) => ({
         active: true,
         manage_url: '',
         regenerate_url: '',
+        set_license_url: '',
         update_url: '',
         saving: false,
         error: '',
@@ -5941,14 +5942,27 @@ Alpine.data('deploymentHubPage', (config) => ({
     },
 
     openAuthorize(row) {
+        const linkedId = row.linked_deployment_id ? Number(row.linked_deployment_id) : null;
+        const defaultClient = linkedId
+            ? this.clients.find((entry) => entry.id === linkedId)
+            : this.clients[0];
+
         this.authorizeForm = {
             domain: row.domain || '',
-            mode: this.clients.length > 0 ? 'existing' : 'new',
-            deployment_id: this.clients[0]?.id ? String(this.clients[0].id) : '',
-            client_name: row.suggested_client_name || '',
+            mode: defaultClient ? 'existing' : 'new',
+            deployment_id: defaultClient?.id ? String(defaultClient.id) : '',
+            client_name: row.suggested_client_name || row.linked_client_name || '',
         };
         this.tab = 'unauthorized';
         this.modal = 'authorize';
+    },
+
+    openManageForDeployment(deploymentId) {
+        const row = this.licenseRows.find((entry) => entry.id === Number(deploymentId));
+
+        if (row) {
+            this.openManage(row);
+        }
     },
 
     openManage(row) {
@@ -5959,6 +5973,7 @@ Alpine.data('deploymentHubPage', (config) => ({
             active: Boolean(row.active),
             manage_url: row.manage_url,
             regenerate_url: row.regenerate_url,
+            set_license_url: row.set_license_url,
             update_url: row.update_url,
             saving: false,
             error: '',

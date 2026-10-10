@@ -40,4 +40,5 @@ Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host']
         Route::patch('/{deployment}', [DeploymentController::class, 'update'])->name('update');
         Route::delete('/{deployment}', [DeploymentController::class, 'destroy'])->name('destroy');
         Route::post('/{deployment}/regenerate-key', [DeploymentController::class, 'regenerateKey'])->name('regenerate-key');
+        Route::post('/{deployment}/set-license-key', [DeploymentController::class, 'setLicenseKey'])->name('set-license-key');
     });

@@ -19,6 +19,7 @@
         x-init="init()"
         @authorize-domain.window="openAuthorize($event.detail)"
         @manage-client.window="openManage($event.detail)"
+        @manage-linked-deployment.window="openManageForDeployment($event.detail)"
     >
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="max-w-3xl">
@@ -141,13 +142,24 @@
                                         <td class="px-4 py-3 tabular-nums text-gray-600" x-text="row.hits"></td>
                                         <td class="px-4 py-3 whitespace-nowrap text-gray-600" x-text="row.last_seen"></td>
                                         <td class="px-4 py-3 text-right">
-                                            <button
-                                                type="button"
-                                                @click="$dispatch('authorize-domain', row)"
-                                                class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                                            >
-                                                Authorize
-                                            </button>
+                                            <template x-if="row.linked_deployment_id">
+                                                <button
+                                                    type="button"
+                                                    @click="$dispatch('manage-linked-deployment', row.linked_deployment_id)"
+                                                    class="inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+                                                >
+                                                    Update license key
+                                                </button>
+                                            </template>
+                                            <template x-if="! row.linked_deployment_id">
+                                                <button
+                                                    type="button"
+                                                    @click="$dispatch('authorize-domain', row)"
+                                                    class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                                                >
+                                                    Authorize
+                                                </button>
+                                            </template>
                                         </td>
                                     </tr>
                                 </template>
@@ -271,7 +283,7 @@
                                 Add to existing client
                             </label>
                             <div x-show="authorizeForm.mode === 'existing'">
-                                <select name="deployment_id" x-model="authorizeForm.deployment_id" :disabled="authorizeForm.mode !== 'existing'" class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <select :name="authorizeForm.mode === 'existing' ? 'deployment_id' : null" x-model="authorizeForm.deployment_id" :disabled="authorizeForm.mode !== 'existing'" class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <template x-for="client in clients" :key="client.id">
                                         <option :value="client.id" x-text="client.client_name"></option>
                                     </template>
@@ -330,13 +342,33 @@
 
                     <p x-show="manageForm.error" x-text="manageForm.error" class="text-sm text-red-600"></p>
 
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-4">
-                        <form :action="manageForm.regenerate_url" method="POST" class="inline">
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <p class="text-sm font-semibold text-gray-900">License key</p>
+                        <p class="mt-1 text-xs text-gray-600">Regenerate a new key, paste one you already have, or queue it to update <code class="rounded bg-white px-1">LIBCONTROL_LICENSE_KEY</code> on the client install.</p>
+                        <form :action="manageForm.regenerate_url" method="POST" class="mt-3 inline">
                             @csrf
                             <button type="submit" class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100">
-                                Regenerate license key
+                                Regenerate &amp; push to client
                             </button>
                         </form>
+                        <form :action="manageForm.set_license_url" method="POST" class="mt-3 space-y-2">
+                            @csrf
+                            <label class="block text-xs font-medium text-gray-700">Or paste license key (starts with <code>ls_</code>)</label>
+                            <input
+                                type="text"
+                                name="license_key"
+                                required
+                                autocomplete="off"
+                                placeholder="ls_..."
+                                class="w-full rounded-lg border-gray-300 font-mono text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                            <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">
+                                Save &amp; push to client
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-4">
                         <div class="flex gap-2">
                             <button type="button" @click="closeModal()" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Close</button>
                             <button

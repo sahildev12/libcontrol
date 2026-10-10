@@ -119,7 +119,7 @@ class DeploymentController extends Controller
 
             return redirect()
                 ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
-                ->with('status', "Domain {$domain} is now authorized for {$deployment->client_name}.");
+                ->with('status', "Domain {$domain} is now whitelisted for {$deployment->client_name}. Open Domains & key to regenerate or set the license key if the install still shows as unauthorized.");
         }
 
         $licenseKey = LicensedDeployment::generateKey();
@@ -274,6 +274,26 @@ class DeploymentController extends Controller
             ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
             ->with('issued_license_key', $licenseKey)
             ->with('status', 'New license key issued. It will be pushed to the client .env on the next sync.');
+    }
+
+    public function setLicenseKey(Request $request, LicensedDeployment $deployment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'license_key' => ['required', 'string', 'min:12', 'max:120', 'regex:/^ls_[A-Za-z0-9_]+$/'],
+        ]);
+
+        $licenseKey = trim($validated['license_key']);
+
+        $deployment->update([
+            'license_key_hash' => LicensedDeployment::hashKey($licenseKey),
+        ]);
+
+        $this->deploymentCommands->queueLicenseKeyUpdate($deployment, $licenseKey);
+
+        return redirect()
+            ->route('developer.deployments.index', ['tab' => 'authorized', 'client' => $deployment->id])
+            ->with('issued_license_key', $licenseKey)
+            ->with('status', 'License key saved on the hub and queued to update the client .env on the next sync.');
     }
 
     /**

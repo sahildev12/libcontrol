@@ -30,22 +30,32 @@ class DeploymentIndexService
      */
     public function unauthorizedDomainRows(): array
     {
-        return InstallationEvent::query()
-            ->where('is_authorized', false)
-            ->orderByDesc('last_seen_at')
-            ->get()
-            ->unique('domain')
+        $events = InstallationEvent::query()->get();
+
+        return $events
+            ->groupBy(fn (InstallationEvent $event) => LicensedDeployment::normalizeDomain($event->domain))
+            ->filter(fn ($group, string $domain) => $domain !== '')
+            ->map(fn ($group) => $group->sortByDesc(fn (InstallationEvent $event) => $event->last_seen_at?->getTimestamp() ?? 0)->first())
+            ->filter(fn (InstallationEvent $event) => ! $event->is_authorized)
+            ->sortByDesc(fn (InstallationEvent $event) => $event->last_seen_at?->getTimestamp() ?? 0)
             ->values()
-            ->map(fn (InstallationEvent $event) => [
-                'id' => $event->id,
-                'domain' => $event->domain,
-                'app_url' => $event->app_url ?: '—',
-                'app_url_link' => $event->app_url,
-                'hits' => $event->hit_count,
-                'reason' => $this->unauthorizedReason($event),
-                'last_seen' => $event->last_seen_at?->format('d M Y, h:i A') ?: '—',
-                'suggested_client_name' => $this->suggestedClientName($event),
-            ])
+            ->map(function (InstallationEvent $event) {
+                $domain = LicensedDeployment::normalizeDomain($event->domain);
+                $deployment = LicensedDeployment::findActiveByDomain($domain);
+
+                return [
+                    'id' => $event->id,
+                    'domain' => $domain,
+                    'app_url' => $event->app_url ?: '—',
+                    'app_url_link' => $event->app_url,
+                    'hits' => $event->hit_count,
+                    'reason' => $this->unauthorizedReason($event, $deployment),
+                    'last_seen' => $event->last_seen_at?->format('d M Y, h:i A') ?: '—',
+                    'suggested_client_name' => $this->suggestedClientName($event),
+                    'linked_deployment_id' => $deployment?->id,
+                    'linked_client_name' => $deployment?->client_name,
+                ];
+            })
             ->all();
     }
 
@@ -102,14 +112,23 @@ class DeploymentIndexService
                     'manage_url' => route('developer.deployments.manage', $deployment),
                     'update_url' => route('developer.deployments.update-domains', $deployment),
                     'regenerate_url' => route('developer.deployments.regenerate-key', $deployment),
+                    'set_license_url' => route('developer.deployments.set-license-key', $deployment),
                 ];
             })
             ->values()
             ->all();
     }
 
-    private function unauthorizedReason(InstallationEvent $event): string
+    private function unauthorizedReason(InstallationEvent $event, ?LicensedDeployment $deployment): string
     {
+        if ($deployment !== null) {
+            if ($event->license_key_hash === LicensedDeployment::discoveryKeyHash()) {
+                return 'Whitelisted on '.$deployment->client_name.' — install is still using the placeholder license key';
+            }
+
+            return 'Whitelisted on '.$deployment->client_name.' — license key on the install does not match the hub';
+        }
+
         if ($event->license_key_hash === LicensedDeployment::discoveryKeyHash()) {
             return 'Discovery ping (no license key configured)';
         }

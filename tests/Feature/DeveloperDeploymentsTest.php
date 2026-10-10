@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\InstallationEvent;
 use App\Models\LicensedDeployment;
 use App\Models\User;
+use App\Services\Developer\DeploymentIndexService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
@@ -54,6 +55,80 @@ class DeveloperDeploymentsTest extends TestCase
         $this->actingAs($user)
             ->get(route('developer.deployments.index'))
             ->assertForbidden();
+    }
+
+    public function test_domain_is_not_listed_unauthorized_when_latest_sync_is_authorized(): void
+    {
+        $user = $this->developerAdmin();
+        $domain = 'demo.libcontrol.in';
+        $fingerprint = hash('sha256', 'install-demo');
+
+        LicensedDeployment::query()->create([
+            'client_name' => 'LibControl Demo',
+            'license_key_hash' => LicensedDeployment::hashKey('ls_test_demo_key'),
+            'allowed_domains' => [$domain],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        InstallationEvent::query()->create([
+            'license_key_hash' => LicensedDeployment::discoveryKeyHash(),
+            'domain' => $domain,
+            'app_url' => 'https://demo.libcontrol.in',
+            'fingerprint' => $fingerprint.'-discovery',
+            'is_authorized' => false,
+            'first_seen_at' => now()->subHour(),
+            'last_seen_at' => now()->subMinutes(5),
+            'hit_count' => 3,
+        ]);
+
+        InstallationEvent::query()->create([
+            'license_key_hash' => LicensedDeployment::hashKey('ls_test_demo_key'),
+            'domain' => $domain,
+            'app_url' => 'https://demo.libcontrol.in',
+            'fingerprint' => $fingerprint,
+            'is_authorized' => true,
+            'first_seen_at' => now()->subHour(),
+            'last_seen_at' => now(),
+            'hit_count' => 10,
+        ]);
+
+        $unauthorized = collect(app(DeploymentIndexService::class)->unauthorizedDomainRows())
+            ->pluck('domain');
+
+        $this->assertFalse($unauthorized->contains($domain));
+    }
+
+    public function test_developer_admin_can_set_license_key_on_client(): void
+    {
+        $user = $this->developerAdmin();
+
+        $deployment = LicensedDeployment::query()->create([
+            'client_name' => 'Aims',
+            'license_key_hash' => LicensedDeployment::hashKey('ls_old_key_value_here_abcdefghij'),
+            'allowed_domains' => ['aims.phenomit.com'],
+            'grace_days' => 7,
+            'active' => true,
+        ]);
+
+        $newKey = 'ls_new_key_value_here_abcdefghijkl';
+
+        $this->actingAs($user)
+            ->post(route('developer.deployments.set-license-key', $deployment), [
+                'license_key' => $newKey,
+            ])
+            ->assertRedirect(route('developer.deployments.index', [
+                'tab' => 'authorized',
+                'client' => $deployment->id,
+            ]));
+
+        $deployment->refresh();
+
+        $this->assertTrue($deployment->matchesKey($newKey));
+        $this->assertDatabaseHas('deployment_commands', [
+            'licensed_deployment_id' => $deployment->id,
+            'action' => 'update_license_key',
+        ]);
     }
 
     public function test_unauthorized_domain_can_be_prefilled_when_authorizing(): void
