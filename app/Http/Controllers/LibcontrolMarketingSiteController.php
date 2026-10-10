@@ -24,6 +24,17 @@ class LibcontrolMarketingSiteController extends Controller
         return response()->file($path, ['Content-Type' => 'image/x-icon']);
     }
 
+    public function robots(Request $request): Response|BinaryFileResponse
+    {
+        if (LibcontrolMarketingSite::shouldServe($request)) {
+            return $this->file($request, 'robots.txt');
+        }
+
+        return response("User-agent: *\nDisallow:\n", Response::HTTP_OK, [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+        ]);
+    }
+
     public function asset(Request $request, string $assetPath): Response|BinaryFileResponse
     {
         return $this->file($request, 'assets/'.$assetPath);

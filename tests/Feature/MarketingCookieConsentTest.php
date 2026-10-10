@@ -61,6 +61,41 @@ class MarketingCookieConsentTest extends TestCase
         }
     }
 
+    public function test_marketing_host_serves_robots_with_sitemap(): void
+    {
+        $response = $this->get('http://libcontrol.in/robots.txt')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
+
+        $this->assertStringContainsString(
+            'Sitemap: https://libcontrol.in/sitemap.xml',
+            file_get_contents($response->baseResponse->getFile()->getPathname())
+        );
+    }
+
+    public function test_other_hosts_get_plain_robots_without_sitemap(): void
+    {
+        $response = $this->get('http://demo.libcontrol.in/robots.txt')->assertOk();
+
+        $this->assertStringNotContainsString('Sitemap:', $response->getContent());
+    }
+
+    public function test_sitemap_lists_every_public_page(): void
+    {
+        $response = $this->get('http://libcontrol.in/sitemap.xml')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/xml; charset=UTF-8');
+
+        $xml = file_get_contents($response->baseResponse->getFile()->getPathname());
+        $this->assertNotFalse(simplexml_load_string($xml));
+
+        foreach (['', 'documentation.html', 'support-articles.html', 'privacy-policy.html', 'terms-and-conditions.html', 'refund-policy.html', 'disclaimer.html'] as $page) {
+            $this->assertStringContainsString('<loc>https://libcontrol.in/'.$page.'</loc>', $xml);
+        }
+
+        $this->get('http://demo.libcontrol.in/sitemap.xml')->assertNotFound();
+    }
+
     private function servedHtml(string $page): string
     {
         $response = $this->get('http://libcontrol.in/'.$page)->assertOk();

@@ -78,6 +78,8 @@ class LibcontrolMarketingSite
             'css' => 'text/css; charset=UTF-8',
             'js' => 'application/javascript; charset=UTF-8',
             'json' => 'application/json; charset=UTF-8',
+            'xml' => 'application/xml; charset=UTF-8',
+            'txt' => 'text/plain; charset=UTF-8',
             'png' => 'image/png',
             'jpg', 'jpeg' => 'image/jpeg',
             'webp' => 'image/webp',

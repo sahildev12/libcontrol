@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /send-demo.php
+
+Sitemap: https://libcontrol.in/sitemap.xml

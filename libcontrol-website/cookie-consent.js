@@ -101,7 +101,7 @@
         '<p class="cookie-banner__title"><i class="fa-solid fa-cookie-bite" aria-hidden="true"></i> We use cookies</p>' +
         '<p>We use essential cookies to run this site. With your permission we also use analytics and marketing cookies ' +
         '(Google Analytics, Meta Pixel) to understand visits and improve LibControl. ' +
-        '<a href="/privacy-policy.html#cookies">Learn more</a></p>' +
+        '<a href="/privacy-policy.html#cookies">Read our cookie policy</a></p>' +
       '</div>' +
       '<div class="cookie-banner__actions">' +
         '<button type="button" class="cookie-banner__btn cookie-banner__btn--reject" data-cookie-choice="rejected">Reject</button>' +
