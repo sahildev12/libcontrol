@@ -2824,6 +2824,10 @@ body {
   border: 1px dashed var(--line);
   border-radius: 16px;
 }
+.hub-empty p { margin: 0 0 6px; }
+.hub-empty p:last-child { margin-bottom: 0; }
+.hub-empty strong { color: var(--navy, #002364); }
+.hub-empty a { color: #002364; font-weight: 600; }
 .doc-sidebar {
   position: sticky;
   top: calc(var(--nav-height) + 16px);
