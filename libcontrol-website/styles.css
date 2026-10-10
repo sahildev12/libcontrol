@@ -2953,6 +2953,10 @@ body {
   height: 36px;
   max-width: 200px;
 }
+.footer-brand .brand {
+  display: inline-block;
+  padding-bottom: 14px;
+}
 .footer-brand p {
   margin: 0;
   max-width: 320px;
