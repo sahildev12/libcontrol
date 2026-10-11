@@ -500,7 +500,8 @@
                     await this.submit(config.requestServiceUrl, { item_key: key });
                 },
                 whatsappFor(name) {
-                    return 'https://web.whatsapp.com/send?phone=' + @js($whatsappPhone) + '&text=' + encodeURIComponent('Hi Phenomit, I want LibControl Growth: ' + name);
+                    const text = encodeURIComponent('Hi Phenomit, I want LibControl Growth: ' + name);
+                    return 'https://wa.me/' + @js($whatsappPhone) + '?text=' + text;
                 },
                 async submit(url, body) {
                     if (this.busy) return;
@@ -524,7 +525,7 @@
                         if (target && tab) {
                             tab.location.href = target;
                         } else if (target) {
-                            window.open(target, '_blank');
+                            window.location.assign(target);
                         } else {
                             tab?.close();
                         }

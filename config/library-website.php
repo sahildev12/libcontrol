@@ -6,6 +6,8 @@
  * Override identity fields via Platform Settings where noted.
  */
 return [
+    'demo_host' => env('LIBCONTROL_DEMO_WEBSITE_HOST', 'demo.libcontrol.in'),
+
     'library_name' => 'THE STUDY HUB',
     'subtitle' => 'Library & Study Center',
     'tagline' => 'A Quiet Place for Bigger Dreams.',

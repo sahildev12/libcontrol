@@ -65,24 +65,5 @@
         });
     }
 
-    document.addEventListener('click', function (event) {
-        var link = event.target.closest('a[href*="wa.me/"], a[data-wa-phone], a[href*="web.whatsapp.com/send"]');
-        if (! link) {
-            return;
-        }
-
-        var details = resolveLink(link);
-        if (! details && link.href.indexOf('web.whatsapp.com/send') !== -1) {
-            return;
-        }
-
-        if (! details) {
-            return;
-        }
-
-        event.preventDefault();
-        window.open(buildWhatsAppUrl(details.phone, details.text), '_blank', 'noopener,noreferrer');
-    });
-
     applyWhatsAppLinks();
 })();

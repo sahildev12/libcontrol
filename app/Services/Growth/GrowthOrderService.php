@@ -10,6 +10,7 @@ use App\Models\PlatformSetting;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Services\SupportTicketSyncService;
+use App\Support\WhatsAppLink;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -201,7 +202,7 @@ class GrowthOrderService
         }
         $text .= '. Please share next steps.';
 
-        return 'https://web.whatsapp.com/send?phone='.$phone.'&text='.rawurlencode($text);
+        return WhatsAppLink::url($phone, $text);
     }
 
     /**

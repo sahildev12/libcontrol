@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PlatformSetting;
+use App\Support\WhatsAppLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -156,7 +157,7 @@ class LibraryWebsiteService
 
         $whatsapp = $settings->website_whatsapp ?: ($config['whatsapp'] ?? null);
 
-        return [
+        $payload = [
             'enabled' => true,
             'library_name' => $settings->display_name ?: ($config['library_name'] ?? 'Library'),
             'subtitle' => $config['subtitle'] ?? 'Library & Study Center',
@@ -194,6 +195,12 @@ class LibraryWebsiteService
             'referral_offer' => app(\App\Services\Growth\ReferralService::class)
                 ->offerText(\App\Models\Branch::query()->orderBy('id')->value('id')),
         ];
+
+        if ($this->isDemoLibraryWebsite()) {
+            $payload = array_merge($payload, $this->phenomitPublicContact());
+        }
+
+        return $payload;
     }
 
     /**
@@ -459,16 +466,40 @@ class LibraryWebsiteService
 
     private function whatsappUrl(?string $phone): ?string
     {
-        $digits = preg_replace('/\D+/', '', (string) $phone);
+        $url = WhatsAppLink::url((string) $phone);
 
-        if ($digits === '') {
-            return null;
-        }
+        return $url !== '' ? $url : null;
+    }
+
+    private function isDemoLibraryWebsite(): bool
+    {
+        $host = strtolower((string) parse_url((string) config('app.url'), PHP_URL_HOST));
+        $demoHost = strtolower((string) config('library-website.demo_host', 'demo.libcontrol.in'));
+
+        return $host !== '' && $host === $demoHost;
+    }
+
+    /**
+     * @return array{phone: string, phone_href: string, email: string, whatsapp: string, whatsapp_url: string|null}
+     */
+    private function phenomitPublicContact(): array
+    {
+        $digits = preg_replace('/\D+/', '', (string) config('libcontrol.support.whatsapp', '')) ?? '';
 
         if (strlen($digits) === 10) {
-            $digits = '91'.$digits;
+            $e164 = '91'.$digits;
+            $display = '+91 '.substr($digits, 0, 4).' '.substr($digits, 4, 3).' '.substr($digits, 7);
+        } else {
+            $e164 = $digits;
+            $display = $digits !== '' ? '+'.$digits : '';
         }
 
-        return 'https://wa.me/'.$digits;
+        return [
+            'phone' => $display,
+            'phone_href' => $e164 !== '' ? 'tel:+'.$e164 : '',
+            'email' => (string) config('libcontrol.support.public_email', 'info@phenomit.com'),
+            'whatsapp' => $digits,
+            'whatsapp_url' => $this->whatsappUrl($digits),
+        ];
     }
 }

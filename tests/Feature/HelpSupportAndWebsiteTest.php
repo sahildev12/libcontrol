@@ -252,7 +252,24 @@ class HelpSupportAndWebsiteTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Pre-book your seat', false)
-            ->assertSee('Send enquiry', false);
+            ->assertSee('Send enquiry', false)
+            ->assertSee('Book a slot', false);
+    }
+
+    public function test_demo_library_website_uses_phenomit_contact_details(): void
+    {
+        config(['app.url' => 'https://demo.libcontrol.in']);
+
+        PlatformSetting::query()->firstOrCreate([], [
+            'website_enabled' => true,
+            'display_name' => 'LibControl Demo Library',
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('info@phenomit.com', false)
+            ->assertSee('+91 8076 105 181', false)
+            ->assertSee('wa.me/918076105181', false);
     }
 
     public function test_platform_admin_can_update_email_notification_settings(): void

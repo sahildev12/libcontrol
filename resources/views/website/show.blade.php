@@ -334,7 +334,7 @@
         <section id="enquiry" data-lw-section class="lw-section">
             <div class="lw-container grid items-start gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
                 <div data-lw-reveal>
-                    <span class="lw-eyebrow">Enquire now</span>
+                    <span class="lw-eyebrow">Book a slot</span>
                     <h2 class="lw-section-title">Pre-book your seat or ask a question</h2>
                     <p class="mt-4 text-base leading-relaxed text-slate-500">Tell us what you need — we will call you back to confirm membership, trial, or seat availability.</p>
                     <ul class="mt-8 space-y-4">

@@ -69,6 +69,7 @@ return [
 
     'support' => [
         'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@phenomit.com'),
+        'public_email' => env('LIBCONTROL_PUBLIC_EMAIL', 'info@phenomit.com'),
         'phone' => env('LIBCONTROL_SUPPORT_PHONE', '8076105181'),
         'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8076105181'),
         'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://libcontrol.in/support-articles.html'),
