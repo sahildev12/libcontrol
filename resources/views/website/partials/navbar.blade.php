@@ -23,7 +23,7 @@
 
         <div class="hidden items-center gap-2 lg:flex">
             <a href="{{ $site['branch_login_url'] }}" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900">Branch login</a>
-            <a href="#enquiry" class="lw-btn-primary !px-5 !py-2.5">Book a slot</a>
+            <a href="#enquiry" class="lw-btn-primary !px-5 !py-2.5">Book a Seat</a>
         </div>
 
         <button type="button" data-lw-menu-toggle class="inline-flex items-center justify-center rounded-xl border border-slate-200 p-2 text-slate-700 lg:hidden" aria-expanded="false" aria-label="Open menu">
@@ -37,7 +37,7 @@
                 <a href="{{ $item['href'] }}" data-lw-nav-link class="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-800">{{ $item['label'] }}</a>
             @endforeach
             <a href="{{ $site['branch_login_url'] }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">Branch login</a>
-            <a href="#enquiry" class="lw-btn-primary mt-2 w-full">Book a slot</a>
+            <a href="#enquiry" class="lw-btn-primary mt-2 w-full">Book a Seat</a>
         </nav>
     </div>
 </header>

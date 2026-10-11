@@ -198,6 +198,12 @@ class LibraryWebsiteService
 
         if ($this->isDemoLibraryWebsite()) {
             $payload = array_merge($payload, $this->phenomitPublicContact());
+            $payload['rules'] = array_merge($payload['rules'] ?? [], ['items' => []]);
+            $payload['navigation'] = array_values(array_filter(
+                $payload['navigation'] ?? [],
+                fn (array $item): bool => ($item['href'] ?? '') !== '#rules'
+                    && ! in_array(strtolower(trim((string) ($item['label'] ?? ''))), ['house rules', 'rules'], true),
+            ));
         }
 
         return $payload;

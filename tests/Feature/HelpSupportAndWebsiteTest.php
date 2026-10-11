@@ -253,7 +253,7 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertOk()
             ->assertSee('Pre-book your seat', false)
             ->assertSee('Send enquiry', false)
-            ->assertSee('Book a slot', false);
+            ->assertSee('Book a Seat', false);
     }
 
     public function test_demo_library_website_uses_phenomit_contact_details(): void
@@ -269,7 +269,8 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertOk()
             ->assertSee('info@phenomit.com', false)
             ->assertSee('+91 8076 105 181', false)
-            ->assertSee('wa.me/918076105181', false);
+            ->assertSee('wa.me/918076105181', false)
+            ->assertDontSee('House rules', false);
     }
 
     public function test_platform_admin_can_update_email_notification_settings(): void
