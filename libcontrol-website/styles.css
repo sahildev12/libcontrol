@@ -3134,6 +3134,10 @@ body {
     gap: 28px 36px;
     align-items: center;
   }
+  .hero-copy,
+  .hero-visual-wrap {
+    order: initial;
+  }
   .hero-copy {
     width: max-content;
     max-width: min(680px, 46vw);
@@ -3390,6 +3394,12 @@ body {
   .workflow-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+  .hero-visual-wrap {
+    order: 1;
+  }
+  .hero-copy {
+    order: 2;
   }
   .footer-grid {
     grid-template-columns: 1fr 1fr;
