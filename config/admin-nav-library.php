@@ -11,6 +11,6 @@ return [
         ['label' => 'Fee Management', 'route' => 'fees.index', 'icon' => 'currency'],
         ['label' => 'Profit-Loss Manage', 'route' => 'profit-loss.index', 'icon' => 'chart'],
         ['label' => 'Attendance', 'route' => 'attendance.index', 'icon' => 'clock', 'addon' => 'attendance'],
-        ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart'],
+        ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'activity'],
     ],
 ];

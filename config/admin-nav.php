@@ -14,7 +14,7 @@ return [
         ['label' => 'Promotion', 'route' => 'promotion.index', 'icon' => 'mail', 'client_admin_only' => true, 'branch_staff_only' => true],
         ['label' => 'Grow My Library', 'route' => 'growth.index', 'icon' => 'chart', 'module' => 'growth', 'client_admin_only' => true, 'branch_staff_only' => true, 'active_prefix' => 'growth.'],
         ['label' => 'Enquiries', 'route' => 'enquiries.index', 'icon' => 'inbox', 'module' => 'enquiries', 'client_admin_only' => true, 'branch_staff_only' => true],
-        ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart', 'client_admin_only' => true],
+        ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'activity', 'client_admin_only' => true],
         ['label' => 'Support Tickets', 'route' => 'developer.support-tickets.index', 'icon' => 'ticket', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.support-tickets.'],
         ['label' => 'Service Requests', 'route' => 'developer.growth-orders.index', 'icon' => 'chart', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.growth-orders.'],
         ['label' => 'Payments', 'route' => 'developer.payments.index', 'icon' => 'currency', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.payments.'],
