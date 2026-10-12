@@ -9,7 +9,7 @@
 
 **Logo:** LibControl  
 **Tagline:** Run every seat. See every branch. Collect every fee.  
-**Subline:** Library & study-seat management software by Phenomit.com  
+**Subline:** Library & study-seat management software by katsindia.com  
 **Footer strip:** Seats · Students · Fees · Trials · Multi-branch
 
 ---
@@ -135,25 +135,25 @@ Built for how Indian libraries actually work
 Ready to run your library without the paperwork?
 
 ### CTA buttons
-**Pre-Register** · **WhatsApp: +91 8076 105 181** · **info@phenomit.com**
+**Pre-Register** · **WhatsApp: +91 8076 105 181** · **info@katsindia.com**
 
 ### Support line
 We help you launch — real setup support so your staff use LibControl from day one.  
 Mon–Sat, 9:00–18:00 IST
 
 ### Legal footer
-© Phenomit.com · LibControl is a product by Phenomit.com  
-PhenomIT, Rishi Nagar, Hisar 125001 (Haryana)
+© katsindia.com · LibControl is a product by katsindia.com  
+Katsindia, Rishi Nagar, Hisar 125001 (Haryana)
 
 ---
 
 ## Short blurbs (for ads / social)
 
 **50 words**  
-LibControl helps reading libraries manage seats, students, trials, and fees in one system. Live seat maps, renewal tracking, and branch dashboards — built by Phenomit.com for Indian study centres. Plans from ₹299/month. Pre-Register today.
+LibControl helps reading libraries manage seats, students, trials, and fees in one system. Live seat maps, renewal tracking, and branch dashboards — built by katsindia.com for Indian study centres. Plans from ₹299/month. Pre-Register today.
 
 **25 words**  
-Stop juggling registers. LibControl gives your library a live seat map, fee tracking, and renewals in one app. By Phenomit.com.
+Stop juggling registers. LibControl gives your library a live seat map, fee tracking, and renewals in one app. By katsindia.com.
 
 **10 words**  
 One system for seats, students, and fees.

@@ -10,7 +10,7 @@
 | Item | Detail |
 |------|--------|
 | **Product name** | LibControl |
-| **Vendor** | Phenomit.com |
+| **Vendor** | katsindia.com |
 | **Type** | Web application (browser-based, responsive) |
 | **Primary users** | Library owners, branch managers, front-desk staff |
 | **Timezone default** | Asia/Kolkata |

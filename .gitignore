@@ -112,3 +112,5 @@ mobile/**/build/
 /releases/**/*.sql
 /releases/**/SETUP-TOKEN.txt
 /mobile/*.apk
+
+/libcontrol_docs

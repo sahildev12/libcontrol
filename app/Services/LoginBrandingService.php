@@ -48,7 +48,7 @@ class LoginBrandingService
             return [
                 'portal' => self::PORTAL_DEVELOPER,
                 'title' => 'Developer login',
-                'subtitle' => 'Phenomit platform access for client libraries',
+                'subtitle' => 'Katsindia platform access for client libraries',
                 'name' => $settings->displayName(),
                 'logo_url' => $settings->logoUrl(),
                 'favicon_url' => $settings->faviconUrl(),

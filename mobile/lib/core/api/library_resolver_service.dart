@@ -66,13 +66,13 @@ class LibraryResolverService {
       if (response.statusCode == 404) {
         throw LibraryResolverException(
           data['message'] as String? ??
-              'Library not found on libcontrol.phenomit.com. Ask staff to sync the library code.',
+              'Library not found on libcontrol.katsindia.com. Ask staff to sync the library code.',
         );
       }
 
       if (response.statusCode >= 500) {
         throw LibraryResolverException(
-          'libcontrol.phenomit.com is temporarily unavailable. Try again later.',
+          'libcontrol.katsindia.com is temporarily unavailable. Try again later.',
         );
       }
 
@@ -82,7 +82,7 @@ class LibraryResolverService {
           throw LibraryResolverException(message);
         }
 
-        throw LibraryResolverException('Could not look up your library on libcontrol.phenomit.com.');
+        throw LibraryResolverException('Could not look up your library on libcontrol.katsindia.com.');
       }
 
       return LibraryConnection.fromJson(data);
@@ -90,11 +90,11 @@ class LibraryResolverService {
       rethrow;
     } on SocketException {
       throw LibraryResolverException(
-        'Could not reach libcontrol.phenomit.com. Check your internet connection.',
+        'Could not reach libcontrol.katsindia.com. Check your internet connection.',
       );
     } on http.ClientException {
       throw LibraryResolverException(
-        'Could not reach libcontrol.phenomit.com. Check your internet connection.',
+        'Could not reach libcontrol.katsindia.com. Check your internet connection.',
       );
     }
   }
@@ -111,7 +111,7 @@ class LibraryResolverService {
       }
     } catch (_) {
       throw LibraryResolverException(
-        'Invalid response from libcontrol.phenomit.com.',
+        'Invalid response from libcontrol.katsindia.com.',
       );
     }
 
@@ -157,7 +157,7 @@ class LibraryResolverService {
 
     if (host == '127.0.0.1' || host == 'localhost' || host == '::1') {
       throw LibraryResolverException(
-        'This library is not reachable from your phone yet. Ask your library admin to set the public website URL in LibControl settings and sync with Phenomit.',
+        'This library is not reachable from your phone yet. Ask your library admin to set the public website URL in LibControl settings and sync with Katsindia.',
       );
     }
 

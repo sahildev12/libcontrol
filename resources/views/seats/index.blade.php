@@ -17,8 +17,17 @@
             defaultBranchId: @js($defaultBranchId ?? null),
             viewingAll: @js($viewingAll ?? false),
             requireStudentContact: @js($requireStudentContact ?? false),
+            planSnapshot: @js($planSnapshot),
         })"
     >
+        <div class="px-4 pt-4">
+            <div class="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-950" x-show="planSnapshot">
+                Plan: <span class="font-semibold" x-text="planSnapshot.limits.plan_label"></span>
+                · Seats <span x-text="planSnapshot.usage.seats"></span>/<span x-text="planSnapshot.limits.max_seats ?? '∞'"></span>
+            </div>
+            <x-admin.plan-limit-upgrade focus="seats" />
+        </div>
+
         <header class="flex flex-wrap items-start justify-between gap-4 p-4">
             <div class="flex items-center gap-2">
                 <button

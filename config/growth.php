@@ -153,7 +153,7 @@ return [
     'whatsapp_phone' => env('LIBCONTROL_GROWTH_WHATSAPP', env('LIBCONTROL_SUPPORT_WHATSAPP', '8076105181')),
 
     // Inbox that receives an email for every package / service request (comma-separate for several).
-    'notify_email' => env('LIBCONTROL_GROWTH_NOTIFY_EMAIL', 'contact@phenomit.com'),
+    'notify_email' => env('LIBCONTROL_GROWTH_NOTIFY_EMAIL', 'contact@katsindia.com'),
 
     'razorpay' => [
         'enabled' => filter_var(env('LIBCONTROL_GROWTH_RAZORPAY_ENABLED', false), FILTER_VALIDATE_BOOLEAN),

@@ -44,7 +44,7 @@ class Tenant extends Model
 
     public function host(): string
     {
-        $base = (string) config('libcontrol.tenancy.base_domain', 'phenomit.com');
+        $base = (string) config('libcontrol.tenancy.base_domain', 'katsindia.com');
 
         return $this->subdomain.'.'.$base;
     }

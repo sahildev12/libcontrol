@@ -1,4 +1,4 @@
-# LibControl hub — deploy guide (libcontrol.phenomit.com)
+# LibControl hub — deploy guide (libcontrol.katsindia.com)
 
 **No release zip required.** Deploy directly from the master LibControl codebase (git pull, FTP, or rsync).
 
@@ -15,7 +15,7 @@ Recent hub-focused changes in this codebase:
 - **Client Libraries** — hosted client registry + remote manage
 - **Dev & Domains** — self-hosted licensed deployments + queued remote commands
 - **Runtime sync API** — client installations (e.g. Aims) push metrics and support tickets here
-- **Static support site** — `libcontrol-website/` (articles, documentation) — host under phenomit.com if not already
+- **Static support site** — `libcontrol-website/` (articles, documentation) — host under katsindia.com if not already
 
 ---
 
@@ -23,7 +23,7 @@ Recent hub-focused changes in this codebase:
 
 - [ ] Backup landlord MySQL database
 - [ ] Backup `storage/` and `.env`
-- [ ] Confirm DNS: `libcontrol.phenomit.com` → this host
+- [ ] Confirm DNS: `libcontrol.katsindia.com` → this host
 
 ---
 
@@ -65,20 +65,20 @@ php artisan view:cache
 php artisan optimize
 ```
 
-### 5. LibControl marketing site (libcontrol.phenomit.com)
+### 5. LibControl marketing site (libcontrol.katsindia.com)
 
-The hub serves the **`libcontrol-website/`** folder at the **root** of **`libcontrol.phenomit.com`** when the host is listed in `LIBCONTROL_MARKETING_SITE_HOSTS` (default: `libcontrol.phenomit.com`). You should see the product page (“Run every seat…”), **not** a library’s “Study Hub” website.
+The hub serves the **`libcontrol-website/`** folder at the **root** of **`libcontrol.katsindia.com`** when the host is listed in `LIBCONTROL_MARKETING_SITE_HOSTS` (default: `libcontrol.katsindia.com`). You should see the product page (“Run every seat…”), **not** a library’s “Study Hub” website.
 
 ```env
 LIBCONTROL_MARKETING_SITE_ENABLED=true
-LIBCONTROL_MARKETING_SITE_HOSTS=libcontrol.phenomit.com
+LIBCONTROL_MARKETING_SITE_HOSTS=libcontrol.katsindia.com
 ```
 
 After deploy: `php artisan config:cache`. Admin, developer portal, and API routes are unchanged (`/admin/login`, `/developer`, `/api/...`).
 
-Hosted client subdomains (e.g. `aims.phenomit.com`) continue to use each library’s **built-in public website** from settings.
+Hosted client subdomains (e.g. `aims.katsindia.com`) continue to use each library’s **built-in public website** from settings.
 
-You can still mirror static files under `phenomit.com/libcontrol/` for Help link URLs if needed. Match URLs in `config/libcontrol.php` or `.env`:
+You can still mirror static files under `katsindia.com/libcontrol/` for Help link URLs if needed. Match URLs in `config/libcontrol.php` or `.env`:
 
 - `LIBCONTROL_SUPPORT_ARTICLES_URL`
 - `LIBCONTROL_SUPPORT_DOCUMENTATION_URL`
@@ -88,12 +88,12 @@ You can still mirror static files under `phenomit.com/libcontrol/` for Help link
 ## Production `.env` highlights
 
 ```env
-APP_URL=https://libcontrol.phenomit.com
+APP_URL=https://libcontrol.katsindia.com
 
 LIBCONTROL_LICENSE_SERVER=true
 LIBCONTROL_TENANCY_ENABLED=true
-LIBCONTROL_TENANT_BASE_DOMAIN=phenomit.com
-LIBCONTROL_TENANT_LANDLORD_HOSTS=libcontrol.phenomit.com
+LIBCONTROL_TENANT_BASE_DOMAIN=katsindia.com
+LIBCONTROL_TENANT_LANDLORD_HOSTS=libcontrol.katsindia.com
 ```
 
 Use a dedicated **landlord** MySQL database (not a client library DB).
@@ -115,7 +115,7 @@ Use a dedicated **landlord** MySQL database (not a client library DB).
 
 ## Do you need a “platform release zip”?
 
-**No** — for libcontrol.phenomit.com you deploy the same repo you develop in. Use this `DEPLOY.md` as the checklist.
+**No** — for libcontrol.katsindia.com you deploy the same repo you develop in. Use this `DEPLOY.md` as the checklist.
 
 Use `scripts/build-platform-release.ps1` only when you need a **portable zip** for a fresh host (not required for your current workflow).
 

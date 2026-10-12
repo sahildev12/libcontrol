@@ -139,7 +139,7 @@ class SettingsController extends Controller
         $code = PlatformSetting::current()->library_code;
 
         return response()->json([
-            'message' => "Library {$code} synced to Phenomit with student app URL {$appUrl}.",
+            'message' => "Library {$code} synced to Katsindia with student app URL {$appUrl}.",
         ]);
     }
 

@@ -326,7 +326,7 @@ class NotificationService
     {
         $date = $ticket->updated_at?->format('M d, Y');
         $message = $ticket->admin_notes
-            ? "Status is now {$ticket->statusLabel()}. Phenomit left a reply."
+            ? "Status is now {$ticket->statusLabel()}. Katsindia left a reply."
             : "Status is now {$ticket->statusLabel()}.";
 
         return [

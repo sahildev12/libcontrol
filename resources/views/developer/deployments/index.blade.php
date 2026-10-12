@@ -249,7 +249,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Allowed domains</label>
-                        <textarea name="allowed_domains" x-model="createForm.allowed_domains" required rows="3" placeholder="aims.phenomit.com&#10;www.aims.phenomit.com" class="mt-1 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        <textarea name="allowed_domains" x-model="createForm.allowed_domains" required rows="3" placeholder="aims.katsindia.com&#10;www.aims.katsindia.com" class="mt-1 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                         <p class="mt-1 text-xs text-gray-500">One domain per line or comma-separated.</p>
                     </div>
                     <input type="hidden" name="grace_days" value="7">

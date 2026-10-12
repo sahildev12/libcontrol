@@ -90,7 +90,7 @@ class HelpSupportController extends Controller
             $reporterEmail = trim((string) ($user?->email ?: $request->string('reporter_email')->toString()));
 
             if ($reporterEmail === '') {
-                $reporterEmail = (string) config('libcontrol.support.email', 'support@phenomit.com');
+                $reporterEmail = (string) config('libcontrol.support.email', 'support@katsindia.com');
             }
 
             $uuid = (string) Str::uuid();
@@ -204,7 +204,7 @@ class HelpSupportController extends Controller
             $digits = '91'.$digits;
         }
 
-        return 'https://wa.me/'.$digits.'?text='.urlencode('Hi Phenomit, I need help with LibControl.');
+        return 'https://wa.me/'.$digits.'?text='.urlencode('Hi Katsindia, I need help with LibControl.');
     }
 
     private function canViewTicket(?\App\Models\User $user, SupportTicket $ticket): bool

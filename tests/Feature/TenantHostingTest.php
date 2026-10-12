@@ -16,8 +16,8 @@ class TenantHostingTest extends TestCase
         parent::setUp();
 
         Config::set('libcontrol.tenancy.enabled', true);
-        Config::set('libcontrol.tenancy.base_domain', 'phenomit.com');
-        Config::set('libcontrol.tenancy.landlord_hosts', ['libcontrol.phenomit.com']);
+        Config::set('libcontrol.tenancy.base_domain', 'katsindia.com');
+        Config::set('libcontrol.tenancy.landlord_hosts', ['libcontrol.katsindia.com']);
         Config::set('libcontrol.tenancy.landlord_connection', 'sqlite');
     }
 
@@ -31,7 +31,7 @@ class TenantHostingTest extends TestCase
             'active' => true,
         ]);
 
-        $this->get('http://libcontrol.phenomit.com/up')->assertOk();
+        $this->get('http://libcontrol.katsindia.com/up')->assertOk();
         $this->assertDatabaseHas('tenants', ['subdomain' => 'dise']);
     }
 }

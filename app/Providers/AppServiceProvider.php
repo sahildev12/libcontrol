@@ -13,6 +13,8 @@ use App\Models\User;
 use App\Observers\RecordsModelChanges;
 use App\Services\BranchContext;
 use App\Services\NotificationService;
+use App\Services\PlanLimitService;
+use App\Support\PlanLimitPresentation;
 use App\Support\InstallState;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\File;
@@ -90,6 +92,30 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
 
+            $planSnapshot = null;
+            $planLimitCapped = [];
+
+            if (
+                ! $user->isDeveloperAdmin()
+                && ! (bool) config('libcontrol.license_server.enabled')
+                && ($user->isClientAdmin() || $user->isBranchStaff())
+            ) {
+                try {
+                    $planSnapshot = app(PlanLimitService::class)->snapshot();
+                    $planLimitCapped = PlanLimitPresentation::cappedDimensions($planSnapshot);
+
+                    if (! $user->isClientAdmin()) {
+                        $planLimitCapped = array_values(array_filter(
+                            $planLimitCapped,
+                            static fn (string $dimension): bool => $dimension !== 'branches',
+                        ));
+                    }
+                } catch (\Throwable) {
+                    $planSnapshot = null;
+                    $planLimitCapped = [];
+                }
+            }
+
             $view->with([
                 'activeBranch' => $activeBranch,
                 'viewingAllBranches' => $viewingAll,
@@ -108,6 +134,8 @@ class AppServiceProvider extends ServiceProvider
                 'alertCount' => $alertCount,
                 'supportTicketUnreadCount' => $supportTicketUnreadCount,
                 'topbarProfileCompletionPct' => $topbarProfileCompletionPct,
+                'planSnapshot' => $planSnapshot,
+                'planLimitCapped' => $planLimitCapped,
             ]);
         });
     }

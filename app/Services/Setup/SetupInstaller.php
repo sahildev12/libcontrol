@@ -68,7 +68,7 @@ class SetupInstaller
         $appUrl = rtrim((string) ($input['app_url'] ?? ''), '/');
         $timezone = (string) ($input['timezone'] ?? 'Asia/Kolkata');
         $tenancyEnabled = filter_var($input['tenancy_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
-        $baseDomain = (string) ($input['tenant_base_domain'] ?? 'phenomit.com');
+        $baseDomain = (string) ($input['tenant_base_domain'] ?? 'katsindia.com');
         $landlordHosts = (string) ($input['tenant_landlord_hosts'] ?? parse_url($appUrl, PHP_URL_HOST) ?: 'localhost');
         $appName = (string) ($input['app_name'] ?? 'LibControl');
         $developerEmail = 'developer@'.(parse_url($appUrl, PHP_URL_HOST) ?: 'localhost');

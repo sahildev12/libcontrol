@@ -422,7 +422,7 @@
                 ok: false,
                 message: res.status >= 500
                   ? 'Server error while sending email. Please try again.'
-                  : 'Mail service is not available. Open via XAMPP: http://localhost/libcontrol/phenomit.com/libcontrol/'
+                  : 'Mail service is not available. Open via XAMPP: http://localhost/libcontrol/katsindia.com/libcontrol/'
               };
             }
             return { ok: res.ok && data.ok, message: data.message || '' };

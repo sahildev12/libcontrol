@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -53,3 +54,29 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });
+
+Route::get('admin', function (Request $request) {
+    if ($request->user()) {
+        return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    return redirect()->route('admin.login');
+})->name('portal.admin');
+
+Route::get('developer', function (Request $request) {
+    if (! config('libcontrol.license_server.enabled')) {
+        return $request->user()
+            ? redirect()->route('dashboard')
+            : redirect()->route('admin.login');
+    }
+
+    if ($request->user()?->isDeveloperAdmin()) {
+        return redirect()->route('developer.deployments.index');
+    }
+
+    if ($request->user()) {
+        return redirect()->route('dashboard');
+    }
+
+    return redirect()->route('developer.login');
+})->name('portal.developer');

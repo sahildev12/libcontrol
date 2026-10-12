@@ -1,7 +1,7 @@
 # LibControl client release packager
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1 -ClientSlug aims
-#   powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1 -ClientSlug aims -ClientName "Aims Library" -AppUrl "https://aims.phenomit.com"
+#   powershell -ExecutionPolicy Bypass -File scripts/build-client-release.ps1 -ClientSlug aims -ClientName "Aims Library" -AppUrl "https://aims.katsindia.com"
 
 param(
     [Parameter(Mandatory = $true)]
@@ -18,7 +18,7 @@ param(
     [string]$DbUser = "",
     [string]$DbPassword = "",
     [string]$MailFrom = "",
-    [string]$LicenseKey = "your_license_key_from_phenomit",
+    [string]$LicenseKey = "your_license_key_from_katsindia",
     [switch]$SkipZip,
     [switch]$SkipSql
 )
@@ -49,7 +49,7 @@ if ([string]::IsNullOrWhiteSpace($ClientName)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($AppUrl)) {
-    $AppUrl = "https://$Slug.phenomit.com"
+    $AppUrl = "https://$Slug.katsindia.com"
 }
 
 if ([string]::IsNullOrWhiteSpace($StudentCodePrefix)) {
@@ -63,7 +63,7 @@ if ([string]::IsNullOrWhiteSpace($StudentCodePrefix)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($AdminEmail)) {
-    $AdminEmail = "admin@$Slug.phenomit.com"
+    $AdminEmail = "admin@$Slug.katsindia.com"
 }
 
 if ([string]::IsNullOrWhiteSpace($DbName)) {
@@ -173,19 +173,19 @@ MAIL_REPLY_TO_NAME="`${APP_NAME}"
 VITE_APP_NAME="`${APP_NAME}"
 
 LIBCONTROL_PRODUCT_NAME="$ClientName"
-LIBCONTROL_COMPANY_NAME=Phenomit
-LIBCONTROL_COMPANY_URL=https://phenomit.com
-LIBCONTROL_PRODUCT_BYLINE="LibControl is a product by Phenomit.com"
+LIBCONTROL_COMPANY_NAME=Katsindia
+LIBCONTROL_COMPANY_URL=https://katsindia.com
+LIBCONTROL_PRODUCT_BYLINE="LibControl is a product by katsindia.com"
 
 LIBCONTROL_CLIENT_NAME="$ClientName"
 LIBCONTROL_DEPLOYMENT_SLUG=$Slug
 LIBCONTROL_LIBRARY_STYLE=standard
 LIBCONTROL_BASELINE_VERSION=$Version
-LIBCONTROL_CLIENT_MAINTAINER=Phenomit
+LIBCONTROL_CLIENT_MAINTAINER=Katsindia
 LIBCONTROL_INSTALL_STUDENT_CODE_PREFIX=$StudentCodePrefix
 
 LIBCONTROL_LICENSE_KEY=$LicenseKey
-LIBCONTROL_SYNC_ENDPOINT=https://libcontrol.phenomit.com/api/runtime/sync
+LIBCONTROL_SYNC_ENDPOINT=https://libcontrol.katsindia.com/api/runtime/sync
 LIBCONTROL_PUBLIC_URL=$AppUrl
 LIBCONTROL_LICENSE_GRACE_DAYS=7
 LIBCONTROL_SYNC_INTERVAL=0
@@ -193,7 +193,7 @@ LIBCONTROL_LICENSE_SERVER=false
 LIBCONTROL_TENANCY_ENABLED=false
 LIBCONTROL_SEED_DEMO=false
 
-LIBCONTROL_SUPPORT_EMAIL=support@phenomit.com
+LIBCONTROL_SUPPORT_EMAIL=support@katsindia.com
 LIBCONTROL_SUPPORT_PHONE=
 
 LIBCONTROL_SETUP_TOKEN=$setupToken
@@ -317,7 +317,7 @@ LIBCONTROL_ADMIN_NAME=$AdminName
 1. Create MySQL database ``$DbName`` on Hostinger.
 2. Edit ``.env`` after upload:
    - ``DB_USERNAME`` / ``DB_PASSWORD``
-   - ``LIBCONTROL_LICENSE_KEY`` from Phenomit
+   - ``LIBCONTROL_LICENSE_KEY`` from Katsindia
    - ``MAIL_USERNAME`` / ``MAIL_PASSWORD`` (quote passwords containing ``#``)
 3. Import ``database/LibControl-install.sql`` in phpMyAdmin **or** open the browser installer.
 
@@ -337,7 +337,7 @@ Token is also in ``LIBCONTROL_SETUP_TOKEN`` inside ``.env``.
 ## After install
 
 - Run **Settings → Database → Run migrations** when updating an existing install.
-- Sync library to Phenomit: **Settings → Developer → Sync library to Phenomit**
+- Sync library to Katsindia: **Settings → Developer → Sync library to Katsindia**
 - Do **not** enable ``LIBCONTROL_LICENSE_SERVER`` on client servers.
 "@
 

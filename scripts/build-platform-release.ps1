@@ -31,7 +31,7 @@ APP_NAME=LibControl
 APP_ENV=production
 APP_KEY=$appKey
 APP_DEBUG=false
-APP_URL=https://libcontrol.phenomit.com
+APP_URL=https://libcontrol.katsindia.com
 APP_TIMEZONE=Asia/Kolkata
 
 APP_LOCALE=en
@@ -65,8 +65,8 @@ MAIL_FROM_NAME="`${APP_NAME}"
 
 LIBCONTROL_LICENSE_SERVER=true
 LIBCONTROL_TENANCY_ENABLED=true
-LIBCONTROL_TENANT_BASE_DOMAIN=phenomit.com
-LIBCONTROL_TENANT_LANDLORD_HOSTS=libcontrol.phenomit.com
+LIBCONTROL_TENANT_BASE_DOMAIN=katsindia.com
+LIBCONTROL_TENANT_LANDLORD_HOSTS=libcontrol.katsindia.com
 
 LIBCONTROL_ADMIN_EMAIL=developer@your-domain.com
 LIBCONTROL_ADMIN_PASSWORD=123456789
@@ -139,15 +139,15 @@ LIBCONTROL_ADMIN_NAME=Admin
 
 ## What this is
 
-This zip is for your **main LibControl server** (landlord), e.g. libcontrol.phenomit.com.
-It supports subdomain multi-tenancy: each client gets clientname.phenomit.com with its own database.
+This zip is for your **main LibControl server** (landlord), e.g. libcontrol.katsindia.com.
+It supports subdomain multi-tenancy: each client gets clientname.katsindia.com with its own database.
 
 ## Upload steps
 
 1. Upload and extract this zip on your hosting.
-2. Point libcontrol.phenomit.com to the ``public`` folder.
-3. Point wildcard DNS ``*.phenomit.com`` to the same hosting.
-4. Open ``https://libcontrol.phenomit.com/setup`` if not installed yet.
+2. Point libcontrol.katsindia.com to the ``public`` folder.
+3. Point wildcard DNS ``*.katsindia.com`` to the same hosting.
+4. Open ``https://libcontrol.katsindia.com/setup`` if not installed yet.
 5. Enter landlord database details and click **Prepare database (auto-migrate)**.
 6. Finish setup and log in at ``/admin/login``.
 
@@ -159,7 +159,7 @@ It supports subdomain multi-tenancy: each client gets clientname.phenomit.com wi
 4. Click **Prepare database (auto-migrate)**.
 5. Submit the form to create the client admin login.
 
-Client URL example: ``https://dise.phenomit.com/admin/login``
+Client URL example: ``https://dise.katsindia.com/admin/login``
 
 ## Do not use for
 

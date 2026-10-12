@@ -107,11 +107,11 @@ class GrowthHubTest extends TestCase
         ]);
     }
 
-    public function test_service_request_emails_phenomit_with_client_details(): void
+    public function test_service_request_emails_katsindia_with_client_details(): void
     {
         Http::fake(['*' => Http::response(['id' => 99], 201)]);
         \Illuminate\Support\Facades\Mail::fake();
-        config(['growth.notify_email' => 'contact@phenomit.com, sales@phenomit.com']);
+        config(['growth.notify_email' => 'contact@katsindia.com, sales@katsindia.com']);
 
         $branch = Branch::factory()->create(['name' => 'Sunrise Study Hall', 'phone' => '9876500000']);
         $user = User::factory()->create(['branch_id' => $branch->id, 'name' => 'Ravi Owner', 'email' => 'ravi@example.com']);
@@ -119,13 +119,13 @@ class GrowthHubTest extends TestCase
         $this->actingAs($user)
             ->postJson(route('growth.services.request'), ['item_key' => 'gbp_boost'])
             ->assertCreated()
-            ->assertJsonPath('message', 'Request sent to Phenomit. Our team will contact you shortly.');
+            ->assertJsonPath('message', 'Request sent to Katsindia. Our team will contact you shortly.');
 
         \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\GrowthOrderRequestedMail::class, function ($mail) {
             $html = $mail->render();
 
-            return $mail->hasTo('contact@phenomit.com')
-                && $mail->hasTo('sales@phenomit.com')
+            return $mail->hasTo('contact@katsindia.com')
+                && $mail->hasTo('sales@katsindia.com')
                 && $mail->hasReplyTo('ravi@example.com')
                 && str_contains($html, 'Google Business Profile Boost')
                 && str_contains($html, 'Ravi Owner')

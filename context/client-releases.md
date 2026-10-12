@@ -26,7 +26,7 @@ All client release zips **must** include a root `.htaccess` so shared hosting ca
 - Release notes: `releases/client/aims/v2.1.5/RELEASE.md`
 - Hub deploy checklist: `releases/platform/DEPLOY.md`
 - Bump `scripts/build-aims-release.ps1` to `2.1.5` for future zip builds
-- Upload master codebase to aims.phenomit.com; keep live `.env`; run `migrate --force` and enable attendance addon if needed
+- Upload master codebase to aims.katsindia.com; keep live `.env`; run `migrate --force` and enable attendance addon if needed
 
 ## 2026-09-19 — Fresh install must open `/setup`
 

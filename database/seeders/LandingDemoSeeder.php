@@ -37,7 +37,7 @@ class LandingDemoSeeder extends Seeder
                 'prefix' => 'MLC',
                 'contact_person' => 'Rajesh Verma',
                 'phone' => '9876543210',
-                'email' => 'main@phenomitlibrary.test',
+                'email' => 'main@katsindialibrary.test',
                 'address' => '12 MG Road, Pune, Maharashtra 411001',
                 'admin' => [
                     'name' => 'Main Center Admin',
@@ -58,7 +58,7 @@ class LandingDemoSeeder extends Seeder
                 'prefix' => 'NBR',
                 'contact_person' => 'Sunita Desai',
                 'phone' => '9123456780',
-                'email' => 'north@phenomitlibrary.test',
+                'email' => 'north@katsindialibrary.test',
                 'address' => '45 Civil Lines, Nagpur, Maharashtra 440001',
                 'admin' => [
                     'name' => 'North Branch Admin',

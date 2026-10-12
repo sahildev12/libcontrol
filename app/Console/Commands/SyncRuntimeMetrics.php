@@ -19,7 +19,7 @@ class SyncRuntimeMetrics extends Command
         $appUrl = $publicUrl !== '' ? $publicUrl : rtrim((string) config('app.url'), '/');
         $code = \App\Models\PlatformSetting::current()->library_code;
 
-        $this->info('Synced library to Phenomit.');
+        $this->info('Synced library to Katsindia.');
         $this->line("  Library code: {$code}");
         $this->line("  Student app URL: {$appUrl}");
 

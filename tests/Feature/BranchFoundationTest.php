@@ -20,6 +20,12 @@ class BranchFoundationTest extends TestCase
         $response->assertRedirect(route('login', absolute: false));
     }
 
+    public function test_guest_branch_url_redirects_to_branch_login(): void
+    {
+        $this->get('/branch')
+            ->assertRedirect(route('login', absolute: false));
+    }
+
     public function test_authenticated_branch_user_can_access_dashboard(): void
     {
         $branch = Branch::factory()->create(['name' => 'Test Branch Center']);

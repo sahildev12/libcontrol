@@ -3,8 +3,8 @@
         <div>
             <h1 class="lc-page-title">Portal Settings</h1>
             <p class="mt-1 text-sm text-gray-600">
-                Manage settings for libraries <strong>hosted on Phenomit</strong> (one database per client, managed from this hub).
-                Separate client installations such as <code class="rounded bg-gray-100 px-1">aims.phenomit.com</code> are listed under
+                Manage settings for libraries <strong>hosted on Katsindia</strong> (one database per client, managed from this hub).
+                Separate client installations such as <code class="rounded bg-gray-100 px-1">aims.katsindia.com</code> are listed under
                 <a href="{{ route('developer.deployments.index') }}" class="font-medium text-indigo-600 hover:text-indigo-700">Dev &amp; Domains</a>
                 and are edited on that site&rsquo;s own admin panel.
             </p>

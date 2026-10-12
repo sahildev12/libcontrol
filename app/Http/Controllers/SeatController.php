@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Seat;
 use App\Models\SeatBooking;
 use App\Models\Student;
+use App\Services\PlanLimitService;
 use App\Services\SeatAvailabilityService;
 use App\Services\SeatMapService;
 use App\Services\SeatStatusService;
@@ -36,9 +37,12 @@ class SeatController extends Controller
             ? \App\Models\Branch::query()->orderBy('name')->get(['id', 'name'])
             : collect();
 
+        $planSnapshot = app(PlanLimitService::class)->snapshot();
+
         return view('seats.index', [
             'halls' => $payload['halls'],
             'seats' => $seats,
+            'planSnapshot' => $planSnapshot,
             'students' => $students,
             'assignedStudents' => $this->assignedStudentsForTransfer($request),
             'timeSlotOptions' => $payload['time_slot_options'],

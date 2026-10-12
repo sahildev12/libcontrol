@@ -16,7 +16,7 @@
     <div class="card">
         <h1>Installation not licensed</h1>
         <p>This LibControl installation is not authorized for the current domain, or the evaluation period has ended.</p>
-        <p>Please contact <a href="https://phenomit.com/">Phenomit</a> to renew or register this deployment.</p>
+        <p>Please contact <a href="https://katsindia.com/">Katsindia</a> to renew or register this deployment.</p>
     </div>
 </body>
 </html>

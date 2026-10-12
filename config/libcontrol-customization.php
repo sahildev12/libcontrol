@@ -12,7 +12,7 @@ return [
         'deployment_slug' => env('LIBCONTROL_DEPLOYMENT_SLUG', 'libspace'),
         'library_style' => env('LIBCONTROL_LIBRARY_STYLE', 'standard'),
         'baseline_version' => env('LIBCONTROL_BASELINE_VERSION', '2.1.3'),
-        'maintainer' => env('LIBCONTROL_CLIENT_MAINTAINER', 'Phenomit'),
+        'maintainer' => env('LIBCONTROL_CLIENT_MAINTAINER', 'Katsindia'),
         'summary' => 'Primary development copy for LibControl product work and client demos.',
     ],
 

@@ -105,7 +105,7 @@ class SetupController extends Controller
         $host = parse_url($this->detectedUrl(), PHP_URL_HOST);
 
         if (! is_string($host) || $host === '') {
-            return 'phenomit.com';
+            return 'katsindia.com';
         }
 
         $parts = explode('.', $host);

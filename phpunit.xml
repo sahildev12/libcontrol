@@ -33,5 +33,7 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="LIBCONTROL_TENANCY_ENABLED" value="false"/>
+        <env name="LIBCONTROL_TENANT_LANDLORD_CONNECTION" value="sqlite"/>
+        <env name="LIBCONTROL_LICENSE_SERVER" value="false"/>
     </php>
 </phpunit>

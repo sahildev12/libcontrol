@@ -31,20 +31,20 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertSee('support-agent.png', false)
             ->assertSee('Support Articles', false)
             ->assertSee('Support Documentation', false)
-            ->assertSee('libcontrol/support-articles.html', false)
-            ->assertSee('libcontrol/documentation.html', false)
+            ->assertSee('libcontrol.in/support-articles.html', false)
+            ->assertSee('libcontrol.in/documentation.html', false)
             ->assertSee('wa.me/918076105181', false);
     }
 
-    public function test_user_can_create_support_ticket_when_phenomit_accepts_it(): void
+    public function test_user_can_create_support_ticket_when_katsindia_hub_accepts_it(): void
     {
         config([
             'libcontrol.deployment.license_key' => 'ls_test_license_key_for_support_ticket',
-            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.phenomit.com/api/runtime/sync',
+            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.katsindia.com/api/runtime/sync',
         ]);
 
         Http::fake([
-            'https://libcontrol.phenomit.com/api/support/tickets' => Http::response([
+            'https://libcontrol.katsindia.com/api/support/tickets' => Http::response([
                 'id' => 42,
                 'uuid' => '00000000-0000-4000-8000-000000000001',
                 'status' => 'open',
@@ -74,15 +74,15 @@ class HelpSupportAndWebsiteTest extends TestCase
         Http::assertSentCount(1);
     }
 
-    public function test_support_ticket_is_not_saved_when_phenomit_rejects_it(): void
+    public function test_support_ticket_is_not_saved_when_katsindia_hub_rejects_it(): void
     {
         config([
             'libcontrol.deployment.license_key' => 'ls_test_license_key_for_support_ticket',
-            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.phenomit.com/api/runtime/sync',
+            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.katsindia.com/api/runtime/sync',
         ]);
 
         Http::fake([
-            'https://libcontrol.phenomit.com/api/support/tickets' => Http::response([
+            'https://libcontrol.katsindia.com/api/support/tickets' => Http::response([
                 'message' => 'Unauthorized.',
             ], 401),
         ]);
@@ -97,22 +97,22 @@ class HelpSupportAndWebsiteTest extends TestCase
             'priority' => 'normal',
         ])
             ->assertStatus(502)
-            ->assertJsonFragment(['message' => 'Phenomit rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.in.']);
+            ->assertJsonFragment(['message' => 'Katsindia rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.in.']);
 
         $this->assertDatabaseMissing('support_tickets', [
             'subject' => 'Need help with fees',
         ]);
     }
 
-    public function test_client_pulls_ticket_updates_from_phenomit_hub(): void
+    public function test_client_pulls_ticket_updates_from_katsindia_hub(): void
     {
         config([
             'libcontrol.deployment.license_key' => 'ls_test_license_key_for_support_ticket',
-            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.phenomit.com/api/runtime/sync',
+            'libcontrol.deployment.sync_endpoint' => 'https://libcontrol.katsindia.com/api/runtime/sync',
         ]);
 
         Http::fake([
-            'https://libcontrol.phenomit.com/api/support/tickets/pull' => Http::response([
+            'https://libcontrol.katsindia.com/api/support/tickets/pull' => Http::response([
                 'tickets' => [[
                     'uuid' => '00000000-0000-4000-8000-000000000099',
                     'status' => 'in_progress',
@@ -153,7 +153,7 @@ class HelpSupportAndWebsiteTest extends TestCase
     public function test_support_ticket_is_not_saved_without_real_license_key(): void
     {
         config([
-            'libcontrol.deployment.license_key' => 'your_license_key_from_phenomit',
+            'libcontrol.deployment.license_key' => 'your_license_key_from_katsindia',
         ]);
 
         $branch = Branch::factory()->create();
@@ -256,7 +256,7 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertSee('Book a Seat', false);
     }
 
-    public function test_demo_library_website_uses_phenomit_contact_details(): void
+    public function test_demo_library_website_uses_katsindia_contact_details(): void
     {
         config(['app.url' => 'https://demo.libcontrol.in']);
 
@@ -267,7 +267,7 @@ class HelpSupportAndWebsiteTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('info@phenomit.com', false)
+            ->assertSee('info@katsindia.com', false)
             ->assertSee('+91 8076 105 181', false)
             ->assertSee('wa.me/918076105181', false)
             ->assertDontSee('House rules', false);

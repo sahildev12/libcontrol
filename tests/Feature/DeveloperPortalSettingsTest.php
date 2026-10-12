@@ -29,7 +29,7 @@ class DeveloperPortalSettingsTest extends TestCase
 
         Config::set('libcontrol.tenancy.enabled', true);
         Config::set('libcontrol.tenancy.landlord_connection', 'sqlite');
-        Config::set('libcontrol.tenancy.landlord_hosts', ['libcontrol.phenomit.com']);
+        Config::set('libcontrol.tenancy.landlord_hosts', ['libcontrol.katsindia.com']);
     }
 
     public function test_developer_can_view_portal_settings_picker(): void
@@ -44,7 +44,7 @@ class DeveloperPortalSettingsTest extends TestCase
         ]);
 
         $this->actingAs($this->developerAdmin())
-            ->get('http://libcontrol.phenomit.com/developer/portals')
+            ->get('http://libcontrol.katsindia.com/developer/portals')
             ->assertOk()
             ->assertSee('Portal Settings', false)
             ->assertSee($tenant->client_name, false);
@@ -143,7 +143,7 @@ class DeveloperPortalSettingsTest extends TestCase
 
     private function landlordUrl(string $path): string
     {
-        return 'http://libcontrol.phenomit.com'.(str_starts_with($path, '/') ? $path : '/'.$path);
+        return 'http://libcontrol.katsindia.com'.(str_starts_with($path, '/') ? $path : '/'.$path);
     }
 
     private function developerAdmin(): User

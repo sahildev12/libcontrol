@@ -296,7 +296,7 @@
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <h2 class="lc-growth-section-title">Growth actions</h2>
-                    <p class="lc-growth-section-sub">DIY tools to raise your score. PhenomIT can handle the rest for you.</p>
+                    <p class="lc-growth-section-sub">DIY tools to raise your score. Katsindia can handle the rest for you.</p>
                 </div>
                 <a href="#individual-services" class="lc-growth-link">
                     View all actions
@@ -407,7 +407,7 @@
             @endphp
             <section id="growth-requests" x-data="growthRequestTable({ rows: @js($orders) })">
                 <h2 class="lc-growth-section-title">Your growth requests</h2>
-                <p class="lc-growth-section-sub">Track everything you have asked Phenomit for. Our team is notified by email for every request.</p>
+                <p class="lc-growth-section-sub">Track everything you have asked Katsindia for. Our team is notified by email for every request.</p>
 
                 <div class="lc-growth-card mt-4 overflow-hidden">
                     <div class="lc-table-toolbar flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
@@ -458,7 +458,7 @@
                                     <td class="whitespace-nowrap px-4 py-3 text-gray-500" x-text="row.created_at"></td>
                                     <td class="px-4 py-3">
                                         <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset" :class="@js(collect($requestStatuses)->map(fn ($s) => $s[1]))[row.status] || 'bg-gray-100 text-gray-600'" x-text="row.status_label"></span>
-                                        <p x-show="row.team_note" x-cloak class="mt-1.5 max-w-xs whitespace-pre-line text-xs text-gray-600"><span class="font-semibold text-[#082D70]">Phenomit:</span> <span x-text="row.team_note"></span></p>
+                                        <p x-show="row.team_note" x-cloak class="mt-1.5 max-w-xs whitespace-pre-line text-xs text-gray-600"><span class="font-semibold text-[#082D70]">Katsindia:</span> <span x-text="row.team_note"></span></p>
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="inline-flex flex-wrap justify-end gap-1.5">
@@ -500,7 +500,7 @@
                     await this.submit(config.requestServiceUrl, { item_key: key });
                 },
                 whatsappFor(name) {
-                    const text = encodeURIComponent('Hi Phenomit, I want LibControl Growth: ' + name);
+                    const text = encodeURIComponent('Hi Katsindia, I want LibControl Growth: ' + name);
                     return 'https://wa.me/' + @js($whatsappPhone) + '?text=' + text;
                 },
                 async submit(url, body) {

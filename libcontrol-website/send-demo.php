@@ -123,7 +123,7 @@ $htmlBody = <<<HTML
           <tr>
             <td style="padding:28px 32px 8px;">
               <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#3d4a63;">
-                Someone requested a live walkthrough of LibControl — library &amp; study seat management by Phenomit.
+                Someone requested a live walkthrough of LibControl — library &amp; study seat management by Katsindia.
               </p>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
                 <tr>
@@ -171,7 +171,7 @@ $htmlBody = <<<HTML
           <tr>
             <td style="background:#001131;padding:18px 32px;border-top:3px solid #ffc800;">
               <p style="margin:0;font-size:12px;line-height:1.5;color:rgba(255,255,255,0.72);">
-                LibControl is a product by Phenomit.com · Sent from the LibControl demo form
+                LibControl is a product by katsindia.com · Sent from the LibControl demo form
               </p>
             </td>
           </tr>

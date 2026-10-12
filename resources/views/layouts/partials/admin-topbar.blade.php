@@ -28,7 +28,7 @@
 
     <div class="hidden min-w-0 flex-1 lg:block" x-data="branchSwitcher({ switchUrl: @js(route('active-branch.switch')) })" @if (($isAnyAdmin ?? false) && ! ($isDeveloperAdmin ?? false)) x-init="init()" @endif>
         @if ($isDeveloperAdmin ?? false)
-            <p class="text-[11px] font-medium uppercase tracking-wide text-gray-400">Phenomit hub</p>
+            <p class="text-[11px] font-medium uppercase tracking-wide text-gray-400">Katsindia hub</p>
             <p class="truncate text-sm font-semibold text-brand-navy">Developer panel</p>
         @elseif ($isAnyAdmin ?? false)
             <!-- <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">{{ $adminTypeLabel }}</p> -->

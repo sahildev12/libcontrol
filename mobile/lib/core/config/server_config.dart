@@ -24,7 +24,7 @@ class ServerConfig extends ChangeNotifier {
 
   static const String resolverBaseUrl = String.fromEnvironment(
     'RESOLVER_BASE_URL',
-    defaultValue: 'https://libcontrol.phenomit.com',
+    defaultValue: 'https://libcontrol.katsindia.com',
   );
 
   final _storage = const FlutterSecureStorage(

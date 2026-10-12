@@ -168,7 +168,7 @@
                         if (data.packages_url) { window.location.href = data.packages_url; return; }
                         throw new Error(data.message || 'Could not send request');
                     }
-                    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: data.message || 'Request sent to Phenomit.', type: 'success' } }));
+                    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: data.message || 'Request sent to Katsindia.', type: 'success' } }));
                 } catch (e) {
                     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: e.message || 'Could not send request', type: 'error' } }));
                 } finally {

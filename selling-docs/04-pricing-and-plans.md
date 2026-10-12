@@ -59,7 +59,7 @@
 - Cloud or on-premise deployment options
 - Dedicated onboarding & training
 
-**Sales rule:** Never quote a custom price without Phenomit approval.
+**Sales rule:** Never quote a custom price without Katsindia approval.
 
 ---
 
@@ -112,6 +112,6 @@ Billing: [Monthly / Yearly]
 Amount: ₹[X] + GST
 Includes: up to [N] seats, [N] halls, [N] branch(es)
 Setup: Guided onboarding included [Pro: priority]
-Support: Mon–Sat 9–6 IST · info@phenomit.com · +91 8076 105 181
+Support: Mon–Sat 9–6 IST · info@katsindia.com · +91 8076 105 181
 Valid for: 30 days
 ```

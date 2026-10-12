@@ -29,6 +29,8 @@
             · Halls <span x-text="planSnapshot.usage.halls"></span>/<span x-text="planSnapshot.limits.max_halls ?? '∞'"></span>
         </div>
 
+        <x-admin.plan-limit-upgrade focus="halls_and_seats" />
+
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <x-admin.data-table-toolbar :show-bulk-delete="true" search-placeholder="Search halls..." />
 

@@ -19,6 +19,20 @@ class AuthenticationTest extends TestCase
             ->assertOk();
     }
 
+    public function test_portal_shortcuts_redirect_guests_to_the_right_login_screen(): void
+    {
+        $this->get('/admin')
+            ->assertRedirect(route('admin.login', absolute: false));
+
+        $this->get('/branch')
+            ->assertRedirect(route('login', absolute: false));
+
+        config(['libcontrol.license_server.enabled' => true]);
+
+        $this->get('/developer')
+            ->assertRedirect(route('developer.login', absolute: false));
+    }
+
     public function test_branch_login_url_does_not_redirect_loop(): void
     {
         $this->get('/branch/login')

@@ -18,7 +18,7 @@
         <div class="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
             This installation runs on the client&rsquo;s own server. Website and branch settings must be changed in that library&rsquo;s admin panel.
             @if (config('libcontrol.tenancy.enabled'))
-                Use <a href="{{ route('developer.portals.index') }}" class="font-semibold text-sky-800 hover:underline">Portal Settings</a> for libraries hosted on Phenomit.
+                Use <a href="{{ route('developer.portals.index') }}" class="font-semibold text-sky-800 hover:underline">Portal Settings</a> for libraries hosted on Katsindia.
             @endif
         </div>
 

@@ -29,7 +29,7 @@
         summary: 'Find your login link, email, and password after onboarding.',
         keywords: ['login', 'sign in', 'admin login', 'branch login', 'url'],
         body: [
-          'After setup, your Phenomit contact shares your LibControl login link. Bookmark it for daily use.',
+          'After setup, your Katsindia contact shares your LibControl login link. Bookmark it for daily use.',
           'Library owners use the Admin log in; branch managers use the Branch log in with the email and password set for their branch.',
           'If you forget your password, click “Forgot password?” on the login page to get a reset link by email.',
         ],
@@ -258,7 +258,7 @@
         body: [
           'Owners turn emails on or off in Settings → Emails (Welcome, Birthday, Promotion, and Recovery). Plan expiry reminder days are set in Settings → General.',
           'Emails go only to students who have an email address on file.',
-          'If emails do not send, email (SMTP) may not be configured — contact Phenomit support.',
+          'If emails do not send, email (SMTP) may not be configured — contact Katsindia support.',
         ],
       },
       {
@@ -270,7 +270,7 @@
         body: [
           'Open the account menu (top right) → Help & Support. Choose category and priority, then add a subject and clear description.',
           'Attach screenshots if helpful (up to 5 files). Click “Submit Ticket” and track it under “Your recent tickets”.',
-          'For urgent login or billing issues, also email or WhatsApp Phenomit using the contact details on this site.',
+          'For urgent login or billing issues, also email or WhatsApp Katsindia using the contact details on this site.',
         ],
       },
       {
@@ -289,7 +289,7 @@
         id: 'sync-license',
         category: 'troubleshooting',
         title: 'Why do I see a license or sync warning?',
-        summary: 'Usually connectivity or an expired plan — contact Phenomit if it persists.',
+        summary: 'Usually connectivity or an expired plan — contact Katsindia if it persists.',
         keywords: ['license', 'sync', 'warning', 'expired subscription'],
         body: [
           'Licensed installations check in periodically to validate the deployment. A temporary network issue can show a grace-period message.',

@@ -214,9 +214,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
 Route::post('/webhooks/LibControl/seat-map', [WebhookController::class, 'refreshSeatMap'])
     ->name('webhooks.seat-map');
 
-if (config('libcontrol.license_server.enabled')) {
-    require __DIR__.'/license-server.php';
-}
+require __DIR__.'/license-server.php';
 require __DIR__.'/developer.php';
 require __DIR__.'/tenants.php';
 

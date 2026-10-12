@@ -10,9 +10,9 @@ return [
 
     'product' => [
         'name' => env('LIBCONTROL_PRODUCT_NAME', 'LibControl'),
-        'company' => env('LIBCONTROL_COMPANY_NAME', 'Phenomit'),
-        'company_url' => env('LIBCONTROL_COMPANY_URL', 'https://phenomit.com'),
-        'byline' => env('LIBCONTROL_PRODUCT_BYLINE', 'LibControl is a product by Phenomit.com'),
+        'company' => env('LIBCONTROL_COMPANY_NAME', 'Katsindia'),
+        'company_url' => env('LIBCONTROL_COMPANY_URL', 'https://katsindia.com'),
+        'byline' => env('LIBCONTROL_PRODUCT_BYLINE', 'LibControl is a product by Katsindia'),
     ],
 
     'brand' => [
@@ -68,8 +68,8 @@ return [
     ],
 
     'support' => [
-        'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@phenomit.com'),
-        'public_email' => env('LIBCONTROL_PUBLIC_EMAIL', 'info@phenomit.com'),
+        'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@katsindia.com'),
+        'public_email' => env('LIBCONTROL_PUBLIC_EMAIL', 'info@katsindia.com'),
         'phone' => env('LIBCONTROL_SUPPORT_PHONE', '8076105181'),
         'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8076105181'),
         'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://libcontrol.in/support-articles.html'),
@@ -83,23 +83,23 @@ return [
 
     'deployment' => [
         'license_key' => env('LIBCONTROL_LICENSE_KEY'),
-        // URL sent to Phenomit for the student app (must be reachable from phones, not 127.0.0.1).
+        // URL sent to Katsindia for the student app (must be reachable from phones, not 127.0.0.1).
         'public_url' => env('LIBCONTROL_PUBLIC_URL'),
         'sync_endpoint' => env('LIBCONTROL_SYNC_ENDPOINT'),
         'support_endpoint' => env('LIBCONTROL_SUPPORT_ENDPOINT'),
-        'sync_endpoint_encoded' => env('LIBCONTROL_SYNC_ENDPOINT_ENCODED', 'aHR0cHM6Ly9saWJjb250cm9sLnBoZW5vbWl0LmNvbS9hcGkvcnVudGltZS9zeW5j'),
+        'sync_endpoint_encoded' => env('LIBCONTROL_SYNC_ENDPOINT_ENCODED', 'aHR0cHM6Ly9saWJjb250cm9sLmluL2FwaS9ydW50aW1lL3N5bmM='),
         'grace_days' => (int) env('LIBCONTROL_LICENSE_GRACE_DAYS', 7),
         // 0 = ping on every eligible page load. Higher values throttle background syncs.
         'sync_interval' => (int) env('LIBCONTROL_SYNC_INTERVAL', 3600),
     ],
 
     'discovery' => [
-        'secret' => env('LIBCONTROL_DISCOVERY_SECRET', 'libcontrol-discovery-v1-phenomit-8f3c2a9e1b4d7e6f5a0c8b2d1e9f4a7'),
+        'secret' => env('LIBCONTROL_DISCOVERY_SECRET', 'libcontrol-discovery-v1-katsindia-8f3c2a9e1b4d7e6f5a0c8b2d1e9f4a7'),
     ],
 
     'tenancy' => [
         'enabled' => filter_var(env('LIBCONTROL_TENANCY_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
-        'base_domain' => env('LIBCONTROL_TENANT_BASE_DOMAIN', 'phenomit.com'),
+        'base_domain' => env('LIBCONTROL_TENANT_BASE_DOMAIN', 'katsindia.com'),
         'landlord_hosts' => array_values(array_filter(array_map(
             static fn (string $host) => strtolower(trim($host)),
             explode(',', (string) env('LIBCONTROL_TENANT_LANDLORD_HOSTS', 'libcontrol.in,www.libcontrol.in,localhost,127.0.0.1'))
@@ -109,7 +109,7 @@ return [
 
     /*
     | LibControl product marketing site (libcontrol-website/) on landlord hosts only.
-    | Client libraries (e.g. aims.phenomit.com) keep the per-library public website.
+    | Client libraries (e.g. aims.katsindia.com) keep the per-library public website.
     */
     'marketing_site' => [
         'enabled' => filter_var(env('LIBCONTROL_MARKETING_SITE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),

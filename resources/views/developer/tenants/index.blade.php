@@ -4,7 +4,7 @@
             <div class="max-w-3xl">
                 <h1 class="lc-page-title">Client Libraries</h1>
                 <p class="mt-1 text-sm leading-relaxed text-gray-600">
-                    Libraries <strong>hosted on Phenomit</strong> — each client gets a subdomain and its own database on this server.
+                    Libraries <strong>hosted on Katsindia</strong> — each client gets a subdomain and its own database on this server.
                     For separate installs with their own server (e.g. Aims), use
                     <a href="{{ route('developer.deployments.index') }}" class="font-medium text-indigo-600 hover:text-indigo-700">Dev &amp; Domains</a>.
                 </p>
@@ -54,7 +54,7 @@
                             <tr>
                                 <td colspan="7" class="px-4 py-12 text-center text-gray-500">
                                     <p class="font-medium text-gray-900">No hosted libraries yet.</p>
-                                    <p class="mt-1 text-sm">Create one for each business that runs on a Phenomit subdomain.</p>
+                                    <p class="mt-1 text-sm">Create one for each business that runs on a Katsindia subdomain.</p>
                                 </td>
                             </tr>
                         </template>

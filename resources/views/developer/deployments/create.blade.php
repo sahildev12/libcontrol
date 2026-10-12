@@ -14,7 +14,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700" for="allowed_domains">Allowed domains</label>
-                <textarea id="allowed_domains" name="allowed_domains" rows="4" required placeholder="aims.phenomit.com" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('allowed_domains', $prefillDomains ?? '') }}</textarea>
+                <textarea id="allowed_domains" name="allowed_domains" rows="4" required placeholder="aims.katsindia.com" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('allowed_domains', $prefillDomains ?? '') }}</textarea>
                 <p class="mt-1 text-xs text-gray-500">One domain per line or comma-separated.</p>
                 @error('allowed_domains') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>

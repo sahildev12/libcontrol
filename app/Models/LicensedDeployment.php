@@ -56,7 +56,7 @@ class LicensedDeployment extends Model
         return $this->hasMany(InstallationEvent::class, 'license_key_hash', 'license_key_hash');
     }
 
-    public const PLACEHOLDER_LICENSE_KEY = 'your_license_key_from_phenomit';
+    public const PLACEHOLDER_LICENSE_KEY = 'your_license_key_from_katsindia';
 
     public static function hashKey(string $licenseKey): string
     {

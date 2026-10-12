@@ -107,7 +107,7 @@ class DeploymentRemoteManageTest extends TestCase
         $deployment = LicensedDeployment::query()->create([
             'client_name' => 'Aims',
             'license_key_hash' => LicensedDeployment::hashKey($licenseKey),
-            'allowed_domains' => ['aims.phenomit.com'],
+            'allowed_domains' => ['aims.katsindia.com'],
             'grace_days' => 7,
             'active' => true,
         ]);
@@ -115,8 +115,8 @@ class DeploymentRemoteManageTest extends TestCase
         app(DeploymentCommandService::class)->queueLicenseKeyUpdate($deployment, $licenseKey);
 
         $payload = [
-            'domain' => 'aims.phenomit.com',
-            'app_url' => 'https://aims.phenomit.com',
+            'domain' => 'aims.katsindia.com',
+            'app_url' => 'https://aims.katsindia.com',
             'fingerprint' => hash('sha256', 'aims-install'),
             'meta' => ['php' => PHP_VERSION, 'app' => '1.0'],
         ];

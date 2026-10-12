@@ -88,7 +88,7 @@ class MobileLibraryResolverTest extends TestCase
     {
         LibraryRegistry::query()->create([
             'library_code' => '111222',
-            'domain' => 'aims.phenomit.com',
+            'domain' => 'aims.katsindia.com',
             'app_url' => 'http://127.0.0.1:8000',
             'client_name' => 'Aims Library',
             'last_seen_at' => now(),
@@ -96,7 +96,7 @@ class MobileLibraryResolverTest extends TestCase
 
         $this->getJson('/api/v1/mobile/libraries/111222')
             ->assertOk()
-            ->assertJsonPath('api_base_url', 'https://aims.phenomit.com');
+            ->assertJsonPath('api_base_url', 'https://aims.katsindia.com');
     }
 
     public function test_runtime_sync_updates_library_registry(): void
@@ -148,7 +148,7 @@ class MobileLibraryResolverTest extends TestCase
         Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
 
         $payload = [
-            'domain' => 'aims.phenomit.com',
+            'domain' => 'aims.katsindia.com',
             'app_url' => 'http://127.0.0.1:8000',
             'fingerprint' => hash('sha256', 'install-aims'),
             'meta' => [
@@ -175,7 +175,7 @@ class MobileLibraryResolverTest extends TestCase
 
         $this->assertDatabaseHas('library_registry', [
             'library_code' => '555666',
-            'app_url' => 'https://aims.phenomit.com',
+            'app_url' => 'https://aims.katsindia.com',
         ]);
     }
 }

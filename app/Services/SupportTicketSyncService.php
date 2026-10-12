@@ -36,7 +36,7 @@ class SupportTicketSyncService
     public function submit(array $ticketData): SupportTicketSyncResult
     {
         if (config('libcontrol.license_server.enabled')) {
-            return SupportTicketSyncResult::failure('Support tickets are submitted from client libraries, not the Phenomit hub.');
+            return SupportTicketSyncResult::failure('Support tickets are submitted from client libraries, not the Katsindia hub.');
         }
 
         $licenseKey = trim((string) config('libcontrol.deployment.license_key'));
@@ -100,7 +100,7 @@ class SupportTicketSyncService
                     'body' => $response->body(),
                 ]);
 
-                return SupportTicketSyncResult::failure('Phenomit accepted the request but returned an invalid response. Contact support.');
+                return SupportTicketSyncResult::failure('Katsindia accepted the request but returned an invalid response. Contact support.');
             }
 
             return SupportTicketSyncResult::success((int) $data['id']);
@@ -112,7 +112,7 @@ class SupportTicketSyncService
             ]);
 
             return SupportTicketSyncResult::failure(
-                'Could not reach Phenomit support server at '.$endpoint.'. Check LIBCONTROL_SYNC_ENDPOINT and that libcontrol.in is online.',
+                'Could not reach Katsindia support server at '.$endpoint.'. Check LIBCONTROL_SYNC_ENDPOINT and that libcontrol.in is online.',
             );
         }
     }
@@ -305,11 +305,11 @@ class SupportTicketSyncService
     private function failureMessage(int $status, string $endpoint): string
     {
         return match ($status) {
-            401 => 'Phenomit rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.in.',
+            401 => 'Katsindia rejected this ticket (unauthorized). Verify LIBCONTROL_LICENSE_KEY matches the deployment on libcontrol.in.',
             404 => 'Support API not found at '.$endpoint.'. On libcontrol.in set LIBCONTROL_LICENSE_SERVER=true and run php artisan migrate --force.',
-            422 => 'Phenomit rejected the ticket data. Check subject, message, and reporter email.',
+            422 => 'Katsindia rejected the ticket data. Check subject, message, and reporter email.',
             429 => 'Too many support requests. Please wait a few minutes and try again.',
-            default => 'Phenomit could not accept this ticket (HTTP '.$status.').',
+            default => 'Katsindia could not accept this ticket (HTTP '.$status.').',
         };
     }
 

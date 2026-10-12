@@ -106,7 +106,7 @@ class DeveloperDeploymentsTest extends TestCase
         $deployment = LicensedDeployment::query()->create([
             'client_name' => 'Aims',
             'license_key_hash' => LicensedDeployment::hashKey('ls_old_key_value_here_abcdefghij'),
-            'allowed_domains' => ['aims.phenomit.com'],
+            'allowed_domains' => ['aims.katsindia.com'],
             'grace_days' => 7,
             'active' => true,
         ]);
@@ -137,8 +137,8 @@ class DeveloperDeploymentsTest extends TestCase
 
         InstallationEvent::query()->create([
             'license_key_hash' => LicensedDeployment::discoveryKeyHash(),
-            'domain' => 'aims.phenomit.com',
-            'app_url' => 'https://aims.phenomit.com',
+            'domain' => 'aims.katsindia.com',
+            'app_url' => 'https://aims.katsindia.com',
             'fingerprint' => hash('sha256', 'install-aims'),
             'is_authorized' => false,
             'first_seen_at' => now(),
@@ -149,15 +149,15 @@ class DeveloperDeploymentsTest extends TestCase
         $this->actingAs($user)
             ->get(route('developer.deployments.index'))
             ->assertOk()
-            ->assertSee('aims.phenomit.com', false)
+            ->assertSee('aims.katsindia.com', false)
             ->assertSee('Authorize', false);
 
         $this->actingAs($user)
-            ->get(route('developer.deployments.create', ['domain' => 'aims.phenomit.com']))
+            ->get(route('developer.deployments.create', ['domain' => 'aims.katsindia.com']))
             ->assertRedirect(route('developer.deployments.index', [
                 'tab' => 'authorized',
                 'action' => 'create',
-                'domain' => 'aims.phenomit.com',
+                'domain' => 'aims.katsindia.com',
             ]));
     }
 
@@ -200,7 +200,7 @@ class DeveloperDeploymentsTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('developer.deployments.authorize-domain'), [
-                'domain' => 'aims.phenomit.com',
+                'domain' => 'aims.katsindia.com',
                 'deployment_id' => $deployment->id,
             ])
             ->assertRedirect(route('developer.deployments.index', [
@@ -210,7 +210,7 @@ class DeveloperDeploymentsTest extends TestCase
 
         $deployment->refresh();
 
-        $this->assertSame(['old.example.com', 'aims.phenomit.com'], $deployment->allowed_domains);
+        $this->assertSame(['old.example.com', 'aims.katsindia.com'], $deployment->allowed_domains);
     }
 
     public function test_edit_route_redirects_to_deployments_index(): void
@@ -220,7 +220,7 @@ class DeveloperDeploymentsTest extends TestCase
         $deployment = LicensedDeployment::query()->create([
             'client_name' => 'Aims',
             'license_key_hash' => LicensedDeployment::hashKey('ls_test_key'),
-            'allowed_domains' => ['aims.phenomit.com'],
+            'allowed_domains' => ['aims.katsindia.com'],
             'grace_days' => 7,
             'active' => true,
         ]);

@@ -196,7 +196,7 @@ class GrowthOrderService
             $phone = '91'.$phone;
         }
 
-        $text = 'Hi Phenomit, I want to request LibControl Growth: '.$itemName;
+        $text = 'Hi Katsindia, I want to request LibControl Growth: '.$itemName;
         if ($order) {
             $text .= ' (order '.$order->uuid.')';
         }

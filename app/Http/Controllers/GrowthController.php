@@ -278,7 +278,7 @@ class GrowthController extends Controller
 
         return response()->json([
             'message' => ($result['ticket_synced'] || $result['email_sent'])
-                ? 'Request sent to Phenomit. Our team will contact you shortly.'
+                ? 'Request sent to Katsindia. Our team will contact you shortly.'
                 : 'Request saved. '.($result['ticket_error'] ?: 'Use WhatsApp if you need a faster reply.'),
             'order' => [
                 'uuid' => $result['order']->uuid,

@@ -8,7 +8,7 @@
 
 **LibControl is library and study-seat management software that replaces registers, WhatsApp chaos, and spreadsheets with one live system for seats, students, fees, and renewals.**
 
-**By Phenomit.com** — built for reading libraries, study centres, and multi-branch networks in India.
+**By katsindia.com** — built for reading libraries, study centres, and multi-branch networks in India.
 
 ---
 
@@ -106,7 +106,7 @@ See `07-ideal-customer-profile.md` for full ICP.
 
 1. **Pre-Register** — live walkthrough of seat map + fees  
 2. **WhatsApp** — +91 8076 105 181  
-3. **Email** — info@phenomit.com  
+3. **Email** — info@katsindia.com  
 4. **Custom quote** — networks with 3+ branches or special workflows
 
 ---

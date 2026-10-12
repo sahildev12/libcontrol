@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureLibraryOperationsAccess
 {
     /**
-     * Developer accounts are limited to Phenomit support tools, not day-to-day library operations.
+     * Developer accounts are limited to Katsindia support tools, not day-to-day library operations.
      *
      * @param  Closure(Request): Response  $next
      */

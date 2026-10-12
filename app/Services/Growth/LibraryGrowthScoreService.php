@@ -149,7 +149,7 @@ class LibraryGrowthScoreService
             $waRecent ? 'ok' : 'missing',
             $waRecent
                 ? 'Promotion sent to students within the last 45 days.'
-                : 'Send an offer from the Promotion page or request Phenomit WhatsApp Marketing.',
+                : 'Send an offer from the Promotion page or request Katsindia WhatsApp Marketing.',
             $waRecent ? 10 : 0,
             10
         );
@@ -174,7 +174,7 @@ class LibraryGrowthScoreService
             $hasPackage
                 ? 'Active growth package: '.ucfirst((string) $profile->active_package).'.'
                 : ($packageRequested
-                    ? 'Managed package requested — Phenomit will activate it shortly.'
+                    ? 'Managed package requested — Katsindia will activate it shortly.'
                     : 'No active managed package — request Starter, Grow, or Dominate.'),
             $localSeoOk ? 10 : 0,
             10

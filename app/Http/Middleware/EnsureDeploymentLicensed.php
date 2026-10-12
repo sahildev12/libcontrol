@@ -46,7 +46,7 @@ class EnsureDeploymentLicensed
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'This installation is not licensed for this domain. Contact Phenomit for support.',
+                'message' => 'This installation is not licensed for this domain. Contact Katsindia for support.',
             ], 403);
         }
 

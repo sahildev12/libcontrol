@@ -197,7 +197,7 @@ class LibraryWebsiteService
         ];
 
         if ($this->isDemoLibraryWebsite()) {
-            $payload = array_merge($payload, $this->phenomitPublicContact());
+            $payload = array_merge($payload, $this->katsindiaPublicContact());
             $payload['rules'] = array_merge($payload['rules'] ?? [], ['items' => []]);
             $payload['navigation'] = array_values(array_filter(
                 $payload['navigation'] ?? [],
@@ -488,7 +488,7 @@ class LibraryWebsiteService
     /**
      * @return array{phone: string, phone_href: string, email: string, whatsapp: string, whatsapp_url: string|null}
      */
-    private function phenomitPublicContact(): array
+    private function katsindiaPublicContact(): array
     {
         $digits = preg_replace('/\D+/', '', (string) config('libcontrol.support.whatsapp', '')) ?? '';
 
@@ -503,7 +503,7 @@ class LibraryWebsiteService
         return [
             'phone' => $display,
             'phone_href' => $e164 !== '' ? 'tel:+'.$e164 : '',
-            'email' => (string) config('libcontrol.support.public_email', 'info@phenomit.com'),
+            'email' => (string) config('libcontrol.support.public_email', 'info@katsindia.com'),
             'whatsapp' => $digits,
             'whatsapp_url' => $this->whatsappUrl($digits),
         ];

@@ -453,7 +453,7 @@
             steps: [
               'Settings → Emails has switches for Welcome, Birthday, Promotion, and Recovery emails.',
               'Plan expiry reminders are sent the number of days before expiry set in Settings → General.',
-              'Emails go only to students with an email address and need email (SMTP) to be configured — ask Phenomit support if unsure.',
+              'Emails go only to students with an email address and need email (SMTP) to be configured — ask Katsindia support if unsure.',
             ],
           },
           {
@@ -499,7 +499,7 @@
         id: 'settings-support',
         title: 'Help & support',
         icon: 'fa-life-ring',
-        summary: 'Support tickets and contacting Phenomit.',
+        summary: 'Support tickets and contacting Katsindia.',
         topics: [
           {
             id: 'ss-ticket',
@@ -514,10 +514,10 @@
           },
           {
             id: 'ss-contact',
-            title: 'Contact Phenomit support',
+            title: 'Contact Katsindia support',
             keywords: ['contact', 'whatsapp', 'phone number', 'email support', 'support hours', 'call'],
             steps: [
-              'Email info@phenomit.com or WhatsApp / call +91 8076 105 181.',
+              'Email info@katsindia.com or WhatsApp / call +91 8076 105 181.',
               'Support hours: Monday to Saturday, 9 AM – 6 PM IST.',
               'Include your library name and a screenshot so we can help faster.',
             ],

@@ -346,7 +346,7 @@
 
                 <template x-if="viewingTicket?.admin_notes">
                     <div class="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/60 p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Reply from Phenomit support</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Reply from Katsindia support</p>
                         <p class="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-800" x-text="viewingTicket.admin_notes"></p>
                     </div>
                 </template>

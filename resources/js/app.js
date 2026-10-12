@@ -47,6 +47,10 @@ function sanitizeDigits(value, maxLength = 10) {
     return String(value || '').replace(/\D/g, '').slice(0, maxLength);
 }
 
+function planLimitUpgradeToastSuffix() {
+    return ' View upgrade options in Grow My Library or WhatsApp Katsindia.';
+}
+
 function showToast(message, type = 'success', duration = 5000) {
     if (! message) {
         return;
@@ -1731,6 +1735,8 @@ Alpine.data('seatMap', (config) => ({
         return 'mt-1 block w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm';
     },
 
+    planSnapshot: config.planSnapshot || null,
+
     halls: config.halls || [],
     seats: config.seats || [],
     students: config.students || [],
@@ -3260,7 +3266,7 @@ Alpine.data('hallTable', (config) => ({
 
     openCreate() {
         if (! this.canAddHall()) {
-            showToast('Your plan has reached the maximum number of halls.', 'error');
+            showToast('Your plan has reached the maximum number of halls.' + planLimitUpgradeToastSuffix(), 'error');
             return;
         }
 
@@ -3527,7 +3533,7 @@ Alpine.data('platformBranchesPage', (config) => ({
 
     openCreate() {
         if (! this.canAddBranch()) {
-            showToast('Your plan has reached the maximum number of branches.', 'error');
+            showToast('Your plan has reached the maximum number of branches.' + planLimitUpgradeToastSuffix(), 'error');
             return;
         }
 
@@ -6904,7 +6910,7 @@ Alpine.data('settingsPage', (config) => ({
         this.syncingRuntime = true;
         try {
             const response = await window.axios.post(this.syncRuntimeUrl);
-            showToast(response.data.message || 'Library synced to Phenomit.');
+            showToast(response.data.message || 'Library synced to Katsindia.');
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
@@ -8121,7 +8127,7 @@ Alpine.data('helpSupportPage', (config) => ({
             const nextPending = this.tickets.filter((ticket) => ticket.has_update).length;
 
             if (showToastOnUpdate && nextPending > previousPending) {
-                showToast('Your support ticket was updated by Phenomit.');
+                showToast('Your support ticket was updated by Katsindia.');
             }
         } catch (error) {
             // Ignore background sync failures.

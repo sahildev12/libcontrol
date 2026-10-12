@@ -17,10 +17,10 @@ No. Staff use a web browser on computer or phone. You need internet.
 Not a native app. The interface is mobile-responsive in the browser.
 
 ### Is our data safe?
-Data is stored on Phenomit-hosted cloud. Access is login-protected; branch users only see their branch. Pro includes activity logs for audit.
+Data is stored on Katsindia-hosted cloud. Access is login-protected; branch users only see their branch. Pro includes activity logs for audit.
 
 ### Can we try before buying?
-Yes — Pre-Register. Offer a guided walkthrough with their real workflow (seat map → assign → fee). Try Demo (https://libcontrol.phenomit.com/)
+Yes — Pre-Register. Offer a guided walkthrough with their real workflow (seat map → assign → fee). Try Demo (https://libcontrol.katsindia.com/)
 
 ---
 

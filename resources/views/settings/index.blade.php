@@ -452,7 +452,7 @@
             <section class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
                 <div class="border-b border-slate-200 bg-slate-50 px-5 py-4">
                     <h2 class="text-sm font-semibold text-gray-900">Developer tools</h2>
-                    <p class="mt-1 text-xs text-gray-600">Cache, Phenomit sync, and deployment registry (license server only).</p>
+                    <p class="mt-1 text-xs text-gray-600">Cache, Katsindia sync, and deployment registry (license server only).</p>
                 </div>
                 <div class="flex flex-wrap gap-3 p-5">
                     <button
@@ -467,7 +467,7 @@
                         @click="syncRuntimeMetrics()"
                         :disabled="syncingRuntime"
                         class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
-                        x-text="syncingRuntime ? 'Syncing...' : 'Sync library to Phenomit'"
+                        x-text="syncingRuntime ? 'Syncing...' : 'Sync library to Katsindia'"
                     ></button>
                     @if ($deploymentsUrl)
                         <a
