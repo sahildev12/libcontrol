@@ -1685,7 +1685,9 @@ body {
 }
 .pricing-billing-wrap {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   margin-bottom: 28px;
 }
 .pricing-billing-toggle {
@@ -1770,6 +1772,14 @@ body {
 }
 .pricing-onetime-banner i {
   font-size: 15px;
+}
+.plan-diwali-save {
+  margin: 8px 0 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c45a00;
 }
 .plan-summary {
   margin: 0;

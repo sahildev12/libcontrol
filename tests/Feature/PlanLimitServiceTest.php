@@ -24,14 +24,14 @@ class PlanLimitServiceTest extends TestCase
         $service = app(PlanLimitService::class);
 
         $this->assertSame(1, $service->limits()['max_branches']);
-        $this->assertSame(5, $service->limits()['max_halls']);
-        $this->assertSame(100, $service->limits()['max_seats']);
+        $this->assertSame(1, $service->limits()['max_halls']);
+        $this->assertSame(35, $service->limits()['max_seats']);
 
         Branch::factory()->create();
-        Hall::factory()->create(['seat_capacity' => 90]);
+        Hall::factory()->create(['seat_capacity' => 30]);
 
         $this->assertFalse($service->canAddBranch());
-        $this->assertTrue($service->canAddHall());
-        $this->assertSame(10, $service->maxSeatCapacityForHall(null));
+        $this->assertFalse($service->canAddHall());
+        $this->assertSame(5, $service->maxSeatCapacityForHall(null));
     }
 }

@@ -47,12 +47,10 @@ class PlanLimitUpgradeBannerTest extends TestCase
         ]);
 
         $branch = Branch::factory()->create();
-        for ($i = 0; $i < 5; $i++) {
-            Hall::factory()->create([
-                'branch_id' => $branch->id,
-                'seat_capacity' => 10,
-            ]);
-        }
+        Hall::factory()->create([
+            'branch_id' => $branch->id,
+            'seat_capacity' => 10,
+        ]);
 
         $user = User::factory()->create(['branch_id' => null]);
         Admin::query()->create([
@@ -78,7 +76,7 @@ class PlanLimitUpgradeBannerTest extends TestCase
         $branch = Branch::factory()->create();
         Hall::factory()->create([
             'branch_id' => $branch->id,
-            'seat_capacity' => 100,
+            'seat_capacity' => 35,
         ]);
 
         $user = User::factory()->create(['branch_id' => $branch->id]);

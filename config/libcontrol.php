@@ -45,14 +45,14 @@ return [
     'plans' => [
         'starter' => [
             'label' => 'Starter',
-            'max_seats' => 100,
-            'max_halls' => 5,
+            'max_seats' => 35,
+            'max_halls' => 1,
             'max_branches' => 1,
         ],
         'pro' => [
             'label' => 'Pro',
-            'max_seats' => 500,
-            'max_halls' => 10,
+            'max_seats' => 100,
+            'max_halls' => 3,
             'max_branches' => 2,
         ],
         'custom' => [
