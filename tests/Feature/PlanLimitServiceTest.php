@@ -34,4 +34,29 @@ class PlanLimitServiceTest extends TestCase
         $this->assertFalse($service->canAddHall());
         $this->assertSame(5, $service->maxSeatCapacityForHall(null));
     }
+
+    public function test_seat_limit_has_no_free_seat_once_full_and_over_limit_halls_can_only_shrink(): void
+    {
+        PlatformSetting::query()->delete();
+        PlatformSetting::query()->create(['plan_tier' => 'pro', 'student_code_padding' => 3]);
+        $service = app(PlanLimitService::class);
+
+        Branch::factory()->create();
+        $hall = Hall::factory()->create(['seat_capacity' => 60]);
+        Hall::factory()->create(['seat_capacity' => 48]);
+
+        $this->assertSame(0, $service->maxSeatCapacityForHall(null));
+
+        try {
+            $service->assertSeatCapacity(1);
+            $this->fail('A new hall must not get a seat when the plan is full.');
+        } catch (\Illuminate\Validation\ValidationException) {
+        }
+
+        $service->assertSeatCapacity(60, $hall->id);
+        $service->assertSeatCapacity(55, $hall->id);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $service->assertSeatCapacity(61, $hall->id);
+    }
 }

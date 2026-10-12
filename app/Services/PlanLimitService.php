@@ -104,7 +104,7 @@ class PlanLimitService
         $otherSeats = $this->usage()['seats'] - $currentHallCapacity;
         $remaining = max(0, $maxTotal - $otherSeats);
 
-        return max(1, min(500, $remaining));
+        return min(500, $remaining);
     }
 
     public function assertCanAddBranch(): void
@@ -139,6 +139,11 @@ class PlanLimitService
         $maxAllowed = $this->maxSeatCapacityForHall($hallId, $seatCapacity);
 
         if ($seatCapacity <= $maxAllowed) {
+            return;
+        }
+
+        // A library already over its limit (e.g. after a downgrade) may keep or shrink a hall, never grow it.
+        if ($hallId && $seatCapacity <= (int) Hall::query()->whereKey($hallId)->value('seat_capacity')) {
             return;
         }
 

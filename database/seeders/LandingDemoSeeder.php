@@ -44,7 +44,7 @@ class LandingDemoSeeder extends Seeder
                     'email' => 'admin@main.LibControl.test',
                 ],
                 'halls' => [
-                    ['name' => 'Reading Hall — Ground Floor', 'description' => 'Bright open study hall with natural light', 'capacity' => 48, 'cols' => 8],
+                    ['name' => 'Reading Hall — Ground Floor', 'description' => 'Bright open study hall with natural light', 'capacity' => 40, 'cols' => 8],
                     ['name' => 'Quiet Zone — First Floor', 'description' => 'Silent zone for focused preparation', 'capacity' => 24, 'cols' => 6],
                 ],
                 'student_count' => 22,
