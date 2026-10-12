@@ -4,12 +4,16 @@ namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 
 abstract class TestCase extends BaseTestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Installs sync to the live hub by default; tests must never reach it.
+        Http::preventStrayRequests();
 
         $lockPath = storage_path('app/install.lock');
 
