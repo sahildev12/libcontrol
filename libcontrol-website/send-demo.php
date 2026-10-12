@@ -171,7 +171,7 @@ $htmlBody = <<<HTML
           <tr>
             <td style="background:#001131;padding:18px 32px;border-top:3px solid #ffc800;">
               <p style="margin:0;font-size:12px;line-height:1.5;color:rgba(255,255,255,0.72);">
-                LibControl is a product by katsindia.com · Sent from the LibControl demo form
+                LibControl is powered by and marketed by Katsindia · Sent from the LibControl demo form
               </p>
             </td>
           </tr>
