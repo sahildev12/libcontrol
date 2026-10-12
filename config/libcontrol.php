@@ -129,6 +129,8 @@ return [
         'admin_password' => env('LIBCONTROL_DEMO_ADMIN_PASSWORD', 'Demo@1234'),
         'branch_email' => env('LIBCONTROL_DEMO_BRANCH_EMAIL', 'branch@demo.libcontrol.in'),
         'branch_password' => env('LIBCONTROL_DEMO_BRANCH_PASSWORD', 'Demo@1234'),
+        // Anyone with the public demo login can pay; only enable while the hub's PhonePe is in sandbox.
+        'payments_enabled' => filter_var(env('LIBCONTROL_DEMO_PAYMENTS', false), FILTER_VALIDATE_BOOLEAN),
     ],
 
     'id_card_templates' => [

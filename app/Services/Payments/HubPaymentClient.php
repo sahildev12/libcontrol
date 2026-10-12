@@ -22,13 +22,18 @@ class HubPaymentClient
     public function available(): bool
     {
         return ! config('libcontrol.license_server.enabled')
-            && ! config('libcontrol.demo.enabled')
+            && ! $this->blockedOnDemo()
             && ! LicensedDeployment::isPlaceholderLicenseKey((string) config('libcontrol.deployment.license_key'));
+    }
+
+    private function blockedOnDemo(): bool
+    {
+        return config('libcontrol.demo.enabled') && ! config('libcontrol.demo.payments_enabled');
     }
 
     public function unavailableReason(): ?string
     {
-        if (config('libcontrol.demo.enabled')) {
+        if ($this->blockedOnDemo()) {
             return 'Online payments are turned off on the demo site.';
         }
 

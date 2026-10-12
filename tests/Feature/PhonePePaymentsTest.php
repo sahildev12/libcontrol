@@ -373,6 +373,24 @@ class PhonePePaymentsTest extends TestCase
         Http::assertNotSent(fn (HttpRequest $r) => str_contains($r->url(), '/api/payments/'));
     }
 
+    public function test_demo_site_takes_payments_when_explicitly_enabled(): void
+    {
+        Config::set('libcontrol.license_server.enabled', false);
+        Config::set('libcontrol.demo.enabled', true);
+        Config::set('libcontrol.demo.payments_enabled', true);
+        Config::set('libcontrol.deployment.license_key', self::LICENSE_KEY);
+        Config::set('libcontrol.deployment.sync_endpoint', 'https://hub.test/api/runtime/sync');
+
+        Http::fake([
+            'hub.test/api/payments/checkout' => Http::response(['redirect_url' => 'https://mercury-uat.phonepe.com/transact/demo', 'payment' => []], 201),
+            '*' => Http::response([]),
+        ]);
+
+        $this->actingAs($this->admin(Admin::TYPE_CLIENT))
+            ->post(route('billing.pay'), ['plan' => 'pro', 'cycle' => 'monthly'])
+            ->assertRedirect('https://mercury-uat.phonepe.com/transact/demo');
+    }
+
     public function test_abandoned_checkout_resolves_when_the_library_opens_billing(): void
     {
         $deployment = $this->deployment();
