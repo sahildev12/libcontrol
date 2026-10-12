@@ -1,10 +1,12 @@
 @php
     $state = $payment->status;
     $pending = in_array($state, [\App\Models\Payment::STATUS_CREATED, \App\Models\Payment::STATUS_PENDING], true);
-    $title = match ($state) {
-        \App\Models\Payment::STATUS_COMPLETED => 'Payment successful',
-        \App\Models\Payment::STATUS_FAILED => 'Payment failed',
-        default => 'Confirming your payment…',
+    $stillWaiting = $pending && $payment->created_at?->gt(now()->subMinutes(10));
+    $title = match (true) {
+        $state === \App\Models\Payment::STATUS_COMPLETED => 'Payment successful',
+        $state === \App\Models\Payment::STATUS_FAILED => 'Payment failed',
+        $stillWaiting => 'Confirming your payment…',
+        default => 'Payment not completed yet',
     };
 @endphp
 <!DOCTYPE html>
@@ -13,7 +15,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    @if ($pending)
+    @if ($stillWaiting)
         <meta http-equiv="refresh" content="5">
     @elseif ($state === \App\Models\Payment::STATUS_COMPLETED && $backUrl)
         <meta http-equiv="refresh" content="6;url={{ $backUrl }}">
@@ -52,8 +54,10 @@
                 <div class="icon ok"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
             @elseif ($state === \App\Models\Payment::STATUS_FAILED)
                 <div class="icon fail"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>
-            @else
+            @elseif ($stillWaiting)
                 <div class="icon wait"><span class="spin"></span></div>
+            @else
+                <div class="icon wait"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v5m0 3h.01"/></svg></div>
             @endif
 
             <h1>{{ $title }}</h1>
@@ -62,8 +66,10 @@
                     Thank you! Your payment is confirmed and has been applied to your library.
                 @elseif ($state === \App\Models\Payment::STATUS_FAILED)
                     No money was taken, or any amount debited will be refunded automatically by your bank. You can try again from LibControl.
-                @else
+                @elseif ($stillWaiting)
                     We are waiting for PhonePe to confirm. This page refreshes automatically — please don't pay again.
+                @else
+                    PhonePe has not confirmed this payment. If you left without paying, nothing was charged and you can start again from LibControl. If money was debited, it will be applied automatically once PhonePe confirms — please don't pay twice.
                 @endif
             </p>
 
@@ -76,6 +82,9 @@
                 @endif
             </dl>
 
+            @if ($pending && ! $stillWaiting)
+                <a class="btn" style="background:#fff;border:1px solid #cbd5e1" href="{{ url()->current() }}">Check again</a>
+            @endif
             @if ($backUrl)
                 <a class="btn" href="{{ $backUrl }}">Back to LibControl</a>
                 @if ($state === \App\Models\Payment::STATUS_COMPLETED)

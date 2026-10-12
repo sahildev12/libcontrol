@@ -25,7 +25,7 @@
             @elseif ($rs === 'failed')
                 <strong>Payment failed.</strong> {{ $returnedPayment['item_name'] }} was not charged. You can try again below.
             @else
-                <strong>Payment is being confirmed.</strong> Refresh this page in a minute — please don't pay twice.
+                <strong>Payment not confirmed yet.</strong> If you paid, it will be applied automatically within a few minutes — please don't pay twice. If you left PhonePe without paying, nothing was charged.
             @endif
         </div>
     @endif
@@ -136,7 +136,12 @@
                                 <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ $p['amount_label'] }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-gray-500">{{ \Illuminate\Support\Carbon::parse($p['paid_at'] ?? $p['created_at'])->timezone(config('app.timezone'))->format('d M Y, h:i A') }}</td>
                                 <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ $p['reference'] }}</td>
-                                <td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset {{ $statusStyles[$p['status']] ?? $statusStyles['created'] }}">{{ $p['status_label'] }}</span></td>
+                                <td class="px-4 py-3">
+                                    <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset {{ $statusStyles[$p['status']] ?? $statusStyles['created'] }}">{{ $p['status_label'] }}</span>
+                                    @if (in_array($p['status'], ['pending', 'created'], true))
+                                        <p class="mt-1.5 max-w-[220px] text-[11px] leading-snug text-gray-500">Not confirmed by PhonePe yet. Nothing is charged if you didn't finish paying.</p>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">No online payments yet.</td></tr>

@@ -55,6 +55,13 @@
                     <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Current plan (hub)</dt>
                     <dd class="mt-1 text-sm text-gray-900">{{ $planSetFromHub ? $planSnapshot['plan_label'] : 'Not set from hub (client keeps its own plan)' }}</dd>
                 </div>
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Paid until</dt>
+                    <dd class="mt-1 text-sm {{ $deployment->plan_paid_until?->isPast() ? 'font-semibold text-red-600' : 'text-gray-900' }}">
+                        {{ $deployment->plan_paid_until?->format('d M Y') ?? '—' }}
+                        @if ($deployment->plan_paid_until?->isPast()) (expired) @endif
+                    </dd>
+                </div>
             </dl>
         </section>
 
@@ -88,10 +95,24 @@
                     <label class="block text-sm font-medium text-gray-700">Custom branch limit</label>
                     <input type="number" min="1" name="max_branches_override" value="{{ old('max_branches_override', $deployment->max_branches_override) }}" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Paid until</label>
+                    <input type="date" name="plan_paid_until" value="{{ old('plan_paid_until', $deployment->plan_paid_until?->format('Y-m-d')) }}" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    <p class="mt-1 text-xs text-gray-500">Set automatically by PhonePe payments. Edit only for offline payments; leave empty for no expiry.</p>
+                    @error('plan_paid_until')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
                 <div class="md:col-span-2 flex justify-end">
                     <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Queue plan update</button>
                 </div>
             </form>
+        </section>
+
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                <h2 class="text-sm font-semibold text-gray-900">Payments</h2>
+                <a href="{{ route('developer.payments.index', ['deployment' => $deployment->id]) }}" class="text-sm font-semibold text-indigo-600 hover:underline">All payments for this library</a>
+            </div>
+            @include('developer.payments.partials.table', ['payments' => $payments])
         </section>
 
         <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

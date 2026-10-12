@@ -22,6 +22,7 @@ class RemoteManagePlanRequest extends FormRequest
             'max_seats_override' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'max_halls_override' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'max_branches_override' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'plan_paid_until' => ['nullable', 'date'],
         ];
     }
 }

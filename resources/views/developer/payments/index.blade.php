@@ -31,18 +31,26 @@
         </div>
     </div>
 
+    @if ($deployment)
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            <span>Showing payments for <strong>{{ $deployment->client_name ?: ($deployment->allowed_domains[0] ?? 'library #'.$deployment->id) }}</strong></span>
+            <a href="{{ route('developer.payments.index') }}" class="font-semibold hover:underline">Show all libraries</a>
+        </div>
+    @endif
+
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <form method="GET" class="lc-table-toolbar flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
             <div class="flex flex-wrap items-center gap-1.5">
-                <a href="{{ route('developer.payments.index', array_filter(['q' => $search])) }}" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold {{ $status === '' ? 'is-active' : '' }}">All</a>
+                <a href="{{ route('developer.payments.index', array_filter(['q' => $search, 'deployment' => $deployment?->id])) }}" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold {{ $status === '' ? 'is-active' : '' }}">All</a>
                 @foreach ($statuses as $s)
-                    <a href="{{ route('developer.payments.index', array_filter(['status' => $s, 'q' => $search])) }}" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold {{ $status === $s ? 'is-active' : '' }}">
+                    <a href="{{ route('developer.payments.index', array_filter(['status' => $s, 'q' => $search, 'deployment' => $deployment?->id])) }}" class="lc-toolbar-filter rounded-full border px-3 py-1 text-xs font-semibold {{ $status === $s ? 'is-active' : '' }}">
                         {{ ucfirst($s) }} <span class="opacity-70">{{ number_format($counts[$s] ?? 0) }}</span>
                     </a>
                 @endforeach
             </div>
             <div class="flex items-center gap-2">
                 @if ($status !== '')<input type="hidden" name="status" value="{{ $status }}">@endif
+                @if ($deployment)<input type="hidden" name="deployment" value="{{ $deployment->id }}">@endif
                 <input type="search" name="q" value="{{ $search }}" placeholder="Reference, library, email..." class="w-full min-w-[220px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm sm:w-64">
                 <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">Search</button>
             </div>

@@ -24,10 +24,19 @@
                 <tr>
                     <td class="px-4 py-3">
                         <p class="font-semibold text-gray-900">{{ $payment->item_name }}</p>
-                        <p class="text-xs text-gray-500">{{ $payment->purposeLabel() }}</p>
+                        <p class="text-xs text-gray-500">
+                            {{ $payment->purposeLabel() }}
+                            @if ($payment->growthOrder)
+                                · <a href="{{ route('developer.growth-orders.show', $payment->growthOrder) }}" class="font-semibold text-indigo-600 hover:underline">Open order</a>
+                            @endif
+                        </p>
                     </td>
                     <td class="px-4 py-3">
-                        <p class="font-medium text-gray-900">{{ $payment->library_name ?: '—' }}</p>
+                        @if ($payment->licensed_deployment_id)
+                            <a href="{{ route('developer.deployments.manage', $payment->licensed_deployment_id) }}" class="font-medium text-indigo-600 hover:underline">{{ $payment->library_name ?: 'Library #'.$payment->licensed_deployment_id }}</a>
+                        @else
+                            <p class="font-medium text-gray-900">{{ $payment->library_name ?: '—' }}</p>
+                        @endif
                         <p class="text-xs text-gray-500">{{ $payment->deployment_domain ?: '—' }} · {{ $payment->payer_email ?: '' }}</p>
                     </td>
                     <td class="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">{{ $payment->amountLabel() }}</td>
@@ -40,6 +49,9 @@
                     <td class="px-4 py-3">
                         <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset {{ $paymentStatusStyles[$payment->status] ?? $paymentStatusStyles['created'] }}">{{ $payment->statusLabel() }}</span>
                         @if ($payment->error_code)<p class="mt-1 text-xs text-red-600">{{ $payment->error_code }}</p>@endif
+                        @if ($payment->webhookReceivedAt())
+                            <p class="mt-1 text-[11px] text-gray-400" title="{{ $payment->meta['webhook_event'] ?? '' }}">Webhook received</p>
+                        @endif
                     </td>
                     <td class="px-4 py-3 text-right">
                         @unless ($payment->isFinal())

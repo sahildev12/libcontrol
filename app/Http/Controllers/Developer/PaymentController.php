@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\LicensedDeployment;
 use App\Models\Payment;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\PhonePeClient;
@@ -18,8 +19,13 @@ class PaymentController extends Controller
         $status = $request->string('status')->toString();
         $search = trim($request->string('q')->toString());
         $statuses = [Payment::STATUS_COMPLETED, Payment::STATUS_PENDING, Payment::STATUS_FAILED, Payment::STATUS_CREATED];
+        $deployment = $request->filled('deployment')
+            ? LicensedDeployment::query()->find($request->integer('deployment'))
+            : null;
 
         $payments = Payment::query()
+            ->with('growthOrder:id,uuid')
+            ->when($deployment, fn (Builder $q) => $q->where('licensed_deployment_id', $deployment->id))
             ->when(in_array($status, $statuses, true), fn (Builder $q) => $q->where('status', $status))
             ->when($search !== '', function (Builder $q) use ($search) {
                 $like = '%'.$search.'%';
@@ -42,6 +48,7 @@ class PaymentController extends Controller
             'payments' => $payments,
             'status' => $status,
             'search' => $search,
+            'deployment' => $deployment,
             'statuses' => $statuses,
             'counts' => $counts,
             'collectedPaise' => (int) Payment::query()->where('status', Payment::STATUS_COMPLETED)->sum('amount_paise'),

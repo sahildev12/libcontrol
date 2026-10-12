@@ -175,6 +175,8 @@ class PaymentService
      */
     public function summaryFor(LicensedDeployment $deployment): array
     {
+        $this->refreshStalePending($deployment);
+        $deployment->refresh();
         $tier = $deployment->planTier();
 
         return [
@@ -197,6 +199,30 @@ class PaymentService
                 ->values()
                 ->all(),
         ];
+    }
+
+    /**
+     * Abandoned checkouts stay PENDING at PhonePe until the order expires, and a customer may pay
+     * then close the tab before the return page. Re-check a few when the library looks at billing.
+     */
+    private function refreshStalePending(LicensedDeployment $deployment): void
+    {
+        $stale = Payment::query()
+            ->where('licensed_deployment_id', $deployment->id)
+            ->whereIn('status', [Payment::STATUS_CREATED, Payment::STATUS_PENDING])
+            ->where('created_at', '<=', now()->subSeconds(30))
+            ->where(fn ($q) => $q->whereNull('last_checked_at')->orWhere('last_checked_at', '<=', now()->subMinute()))
+            ->orderByDesc('id')
+            ->limit(3)
+            ->get();
+
+        foreach ($stale as $payment) {
+            try {
+                $this->refreshStatus($payment);
+            } catch (\Throwable $e) {
+                Log::info('Pending payment re-check failed.', ['payment' => $payment->uuid, 'error' => $e->getMessage()]);
+            }
+        }
     }
 
     /**

@@ -373,6 +373,107 @@ class PhonePePaymentsTest extends TestCase
         Http::assertNotSent(fn (HttpRequest $r) => str_contains($r->url(), '/api/payments/'));
     }
 
+    public function test_abandoned_checkout_resolves_when_the_library_opens_billing(): void
+    {
+        $deployment = $this->deployment();
+        $this->signedPost('/api/payments/checkout', [
+            'purpose' => 'software_plan', 'item_key' => 'pro', 'billing_cycle' => 'monthly', 'domain' => 'client.test',
+        ])->assertCreated();
+
+        $this->signedPost('/api/payments/summary', ['domain' => 'client.test'])->assertOk();
+        $this->assertSame(Payment::STATUS_PENDING, Payment::query()->sole()->status, 'Fresh checkouts are left alone.');
+
+        $this->travel(2)->minutes();
+        $this->remoteState = 'FAILED';
+
+        $this->signedPost('/api/payments/summary', ['domain' => 'client.test'])
+            ->assertOk()
+            ->assertJsonPath('payments.0.status', Payment::STATUS_FAILED);
+
+        $this->assertNotSame('pro', $deployment->fresh()->plan_tier);
+    }
+
+    public function test_paid_then_closed_tab_is_applied_on_next_billing_visit(): void
+    {
+        $deployment = $this->deployment();
+        $this->signedPost('/api/payments/checkout', [
+            'purpose' => 'software_plan', 'item_key' => 'pro', 'billing_cycle' => 'monthly', 'domain' => 'client.test',
+        ])->assertCreated();
+
+        $this->travel(2)->minutes();
+        $this->remoteState = 'COMPLETED';
+
+        $this->signedPost('/api/payments/summary', ['domain' => 'client.test'])->assertOk();
+
+        $this->assertSame('pro', $deployment->fresh()->plan_tier);
+        $this->assertSame(Payment::STATUS_COMPLETED, Payment::query()->sole()->status);
+    }
+
+    public function test_webhook_arrival_is_recorded_on_the_payment(): void
+    {
+        $this->deployment();
+        $this->signedPost('/api/payments/checkout', [
+            'purpose' => 'software_plan', 'item_key' => 'pro', 'billing_cycle' => 'monthly', 'domain' => 'client.test',
+        ])->assertCreated();
+        $payment = Payment::query()->sole();
+
+        $this->remoteState = 'FAILED';
+        $this->postJson('/api/webhooks/phonepe', [
+            'event' => 'checkout.order.failed',
+            'payload' => ['merchantOrderId' => $payment->merchant_order_id, 'state' => 'FAILED'],
+        ], ['Authorization' => hash('sha256', 'hookuser:hookpass')])->assertOk();
+
+        $payment->refresh();
+        $this->assertSame(Payment::STATUS_FAILED, $payment->status);
+        $this->assertSame('checkout.order.failed', $payment->meta['webhook_event']);
+        $this->assertNotNull($payment->webhookReceivedAt());
+    }
+
+    public function test_return_page_stops_waiting_for_long_abandoned_payments(): void
+    {
+        $this->deployment();
+        $this->signedPost('/api/payments/checkout', [
+            'purpose' => 'software_plan', 'item_key' => 'pro', 'billing_cycle' => 'monthly', 'domain' => 'client.test',
+        ])->assertCreated();
+        $uuid = Payment::query()->sole()->uuid;
+
+        $this->get(route('payments.return', $uuid))->assertOk()->assertSee('http-equiv="refresh"', false);
+
+        $this->travel(11)->minutes();
+
+        $this->get(route('payments.return', $uuid))
+            ->assertOk()
+            ->assertSee('Payment not completed yet')
+            ->assertSee('Check again')
+            ->assertDontSee('http-equiv="refresh"', false);
+    }
+
+    public function test_developer_can_record_an_offline_paid_until_date(): void
+    {
+        $deployment = $this->deployment();
+        $developer = $this->admin(Admin::TYPE_DEVELOPER);
+
+        $this->actingAs($developer)
+            ->post(route('developer.deployments.manage.plan', $deployment), [
+                'plan_tier' => 'pro',
+                'plan_paid_until' => now()->addMonths(3)->toDateString(),
+            ])
+            ->assertRedirect();
+
+        $deployment->refresh();
+        $this->assertSame('pro', $deployment->plan_tier);
+        $this->assertSame(now()->addMonths(3)->toDateString(), $deployment->plan_paid_until->toDateString());
+
+        $command = DeploymentCommand::query()->where('action', 'set_plan')->sole();
+        $this->assertNotEmpty($command->payload['plan_paid_until']);
+
+        $this->actingAs($developer)
+            ->get(route('developer.deployments.manage', $deployment))
+            ->assertOk()
+            ->assertSee('Paid until')
+            ->assertSee(now()->addMonths(3)->format('d M Y'));
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      */

@@ -86,6 +86,16 @@ class Payment extends Model
         return $this->belongsTo(LicensedDeployment::class, 'licensed_deployment_id');
     }
 
+    public function growthOrder(): BelongsTo
+    {
+        return $this->belongsTo(GrowthOrder::class, 'growth_order_uuid', 'uuid');
+    }
+
+    public function webhookReceivedAt(): ?string
+    {
+        return $this->meta['webhook_at'] ?? null;
+    }
+
     public function isFinal(): bool
     {
         return in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_FAILED], true);

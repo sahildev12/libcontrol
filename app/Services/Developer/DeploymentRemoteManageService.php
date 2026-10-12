@@ -6,10 +6,12 @@ use App\Models\DeploymentCommand;
 use App\Models\InstallationEvent;
 use App\Models\LibraryRegistry;
 use App\Models\LicensedDeployment;
+use App\Models\Payment;
 use App\Services\Addons\AddonRegistry;
 use App\Services\ActivityLogger;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class DeploymentRemoteManageService
 {
@@ -60,6 +62,11 @@ class DeploymentRemoteManageService
                 ->where('action', 'set_plan')
                 ->exists(),
             'availableAddons' => $this->addonRegistry->catalogForSettings(),
+            'payments' => Payment::query()
+                ->where('licensed_deployment_id', $deployment->id)
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get(),
             'commands' => DeploymentCommand::query()
                 ->where('licensed_deployment_id', $deployment->id)
                 ->orderByDesc('created_at')
@@ -73,18 +80,27 @@ class DeploymentRemoteManageService
      */
     public function updatePlan(LicensedDeployment $deployment, array $planData, ?User $user, ?Request $request): LicensedDeployment
     {
-        $deployment->update([
+        $attributes = [
             'plan_tier' => $planData['plan_tier'],
             'max_seats_override' => $planData['max_seats_override'] ?? null,
             'max_halls_override' => $planData['max_halls_override'] ?? null,
             'max_branches_override' => $planData['max_branches_override'] ?? null,
-        ]);
+        ];
+
+        if (array_key_exists('plan_paid_until', $planData)) {
+            $attributes['plan_paid_until'] = filled($planData['plan_paid_until'])
+                ? Carbon::parse((string) $planData['plan_paid_until'])->endOfDay()
+                : null;
+        }
+
+        $deployment->update($attributes);
 
         $this->commands->queue($deployment, 'set_plan', [
             'plan_tier' => $deployment->planTier(),
             'max_seats_override' => $deployment->max_seats_override,
             'max_halls_override' => $deployment->max_halls_override,
             'max_branches_override' => $deployment->max_branches_override,
+            'plan_paid_until' => $deployment->plan_paid_until?->toIso8601String(),
         ]);
 
         app(ActivityLogger::class)->record(

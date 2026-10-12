@@ -12,7 +12,7 @@ return [
         'client_secret' => env('PHONEPE_CLIENT_SECRET'),
         'webhook_username' => env('PHONEPE_WEBHOOK_USERNAME'),
         'webhook_password' => env('PHONEPE_WEBHOOK_PASSWORD'),
-        'order_expire_seconds' => (int) env('PHONEPE_ORDER_EXPIRE_SECONDS', 1200),
+        'order_expire_seconds' => (int) env('PHONEPE_ORDER_EXPIRE_SECONDS', 900),
         'timeout' => 20,
         'endpoints' => [
             'sandbox' => [

@@ -37,6 +37,11 @@ class PhonePeWebhookController extends Controller
             return response()->json(['message' => 'Ignored.']);
         }
 
+        $payment->forceFill(['meta' => array_merge($payment->meta ?? [], [
+            'webhook_event' => $event,
+            'webhook_at' => now()->toIso8601String(),
+        ])])->save();
+
         try {
             // The webhook body is only a hint; the Order Status API is the source of truth.
             $payment = $payments->refreshStatus($payment);
