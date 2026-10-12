@@ -3,7 +3,7 @@
     $snapshot = $planSnapshot ?? null;
 @endphp
 
-@if ($snapshot && $capped !== [] && ! ($licenseServerEnabled ?? false) && ! ($isDeveloperAdmin ?? false))
+@if ($snapshot && $capped !== [] && ! ($licenseServerEnabled ?? false) && ! ($isDeveloperAdmin ?? false) && ! request()->routeIs('billing.*'))
     @php
         $planLabel = $snapshot['limits']['plan_label'] ?? 'Your plan';
         $ownerView = ($isClientAdmin ?? false);

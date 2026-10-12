@@ -13,7 +13,7 @@
         body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: #f1f5f9; color: #0f172a; }
         .card { width: 100%; max-width: 460px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 45px rgba(8, 42, 103, .12); }
         .head { background: #082a67; padding: 28px 28px 24px; color: #fff; }
-        .logo { height: 32px; margin-bottom: 18px; background: #fff; border-radius: 8px; padding: 4px 8px; }
+        .logo { display: block; height: 32px; margin-bottom: 18px; background: #fff; border-radius: 8px; padding: 4px 8px; }
         .badge { display: inline-flex; align-items: center; gap: 6px; background: #FFCC00; color: #082a67; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
         h1 { margin: 12px 0 6px; font-size: 22px; line-height: 1.25; }
         .head p { margin: 0; color: rgba(255, 255, 255, .82); font-size: 14px; line-height: 1.5; }
