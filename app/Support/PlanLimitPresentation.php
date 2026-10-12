@@ -64,12 +64,4 @@ class PlanLimitPresentation
 
         return 'https://libcontrol.in/#pricing';
     }
-
-    public static function upgradeWhatsAppUrl(): string
-    {
-        return WhatsAppLink::url(
-            (string) config('libcontrol.support.whatsapp'),
-            'Hi Katsindia, I need to upgrade my LibControl subscription plan (more seats, halls, or branches).',
-        );
-    }
 }

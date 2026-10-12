@@ -63,6 +63,12 @@ return [
         ],
     ],
 
+    'subscription' => [
+        // Days after plan_paid_until before the library panel is locked; renewal stays open.
+        'grace_days' => (int) env('LIBCONTROL_SUBSCRIPTION_GRACE_DAYS', 3),
+        'warn_days' => (int) env('LIBCONTROL_SUBSCRIPTION_WARN_DAYS', 7),
+    ],
+
     'license_server' => [
         'enabled' => filter_var(env('LIBCONTROL_LICENSE_SERVER', false), FILTER_VALIDATE_BOOLEAN),
     ],

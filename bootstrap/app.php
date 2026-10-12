@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\EnsureLibraryOperationsAccess::class,
+            \App\Http\Middleware\EnsureSubscriptionActive::class,
             \App\Http\Middleware\RuntimeProbe::class,
         ]);
     })

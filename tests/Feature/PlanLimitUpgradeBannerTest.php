@@ -36,7 +36,7 @@ class PlanLimitUpgradeBannerTest extends TestCase
             ->assertSee('LibControl plan limit reached', false)
             ->assertSee('Upgrade plan', false)
             ->assertSee(route('billing.index'), false)
-            ->assertSee('WhatsApp Katsindia', false);
+            ->assertDontSee('WhatsApp Katsindia', false);
     }
 
     public function test_halls_page_shows_upgrade_banner_when_hall_cap_reached(): void
