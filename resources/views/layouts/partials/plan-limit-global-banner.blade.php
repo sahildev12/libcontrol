@@ -5,7 +5,6 @@
 
 @if ($snapshot && $capped !== [] && ! ($licenseServerEnabled ?? false) && ! ($isDeveloperAdmin ?? false) && ! request()->routeIs('billing.*'))
     @php
-        $planLabel = $snapshot['limits']['plan_label'] ?? 'Your plan';
         $ownerView = ($isClientAdmin ?? false);
         $usageChips = collect($capped)->map(fn (string $dimension) => [
             'label' => ucfirst($dimension),
@@ -26,10 +25,7 @@
                     </svg>
                 </span>
                 <div class="min-w-0">
-                    <div class="flex flex-wrap items-center" style="gap:8px;">
-                        <p class="font-bold text-white" style="font-size:15px;line-height:1.3;margin:0;">LibControl plan limit reached</p>
-                        <span class="inline-flex items-center font-bold uppercase" style="background-color:rgba(255,204,0,0.18);color:#FFCC00;border-radius:999px;padding:3px 8px;font-size:10px;letter-spacing:0.05em;">{{ $planLabel }}</span>
-                    </div>
+                    <p class="font-bold text-white" style="font-size:15px;line-height:1.3;margin:0;">LibControl plan limit reached</p>
                     <p style="margin:4px 0 0;font-size:13px;line-height:1.5;color:rgba(255,255,255,0.82);">
                         @if ($ownerView)
                             Upgrade your subscription to add more branches, halls, or seats.
@@ -47,8 +43,8 @@
                     </div>
                 </div>
             </div>
-            <div class="flex shrink-0 flex-wrap items-center" style="gap:8px;">
-                @if ($ownerView)
+            @if ($ownerView)
+                <div class="flex shrink-0">
                     <a
                         href="{{ route('billing.index') }}"
                         class="inline-flex items-center font-bold shadow-sm transition hover:brightness-95 active:scale-[0.98]"
@@ -59,15 +55,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
                         </svg>
                     </a>
-                @endif
-                <a
-                    href="{{ route('growth.index') }}"
-                    class="inline-flex items-center font-semibold text-white transition hover:bg-white/10"
-                    style="height:38px;border-radius:10px;padding:0 14px;border:1px solid rgba(255,255,255,0.35);font-size:12.5px;"
-                >
-                    Grow My Library
-                </a>
-            </div>
+                </div>
+            @endif
         </div>
     </div>
 @endif
