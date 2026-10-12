@@ -18,13 +18,6 @@
             </button>
         </header>
 
-        <div class="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-950" x-show="planSnapshot">
-            Plan: <span class="font-semibold" x-text="planSnapshot.limits.plan_label"></span>
-            · Branches <span x-text="planSnapshot.usage.branches"></span>/<span x-text="planSnapshot.limits.max_branches ?? '∞'"></span>
-        </div>
-
-        <x-admin.plan-limit-upgrade focus="branches" />
-
         <div class="mt-4 flex gap-1 border-b border-gray-200">
             <button
                 type="button"

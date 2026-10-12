@@ -23,14 +23,6 @@
             </button>
         </header>
 
-        <div class="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-950" x-show="planSnapshot">
-            Plan: <span class="font-semibold" x-text="planSnapshot.limits.plan_label"></span>
-            · Seats <span x-text="planSnapshot.usage.seats"></span>/<span x-text="planSnapshot.limits.max_seats ?? '∞'"></span>
-            · Halls <span x-text="planSnapshot.usage.halls"></span>/<span x-text="planSnapshot.limits.max_halls ?? '∞'"></span>
-        </div>
-
-        <x-admin.plan-limit-upgrade focus="halls_and_seats" />
-
         <section class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <x-admin.data-table-toolbar :show-bulk-delete="true" search-placeholder="Search halls..." />
 

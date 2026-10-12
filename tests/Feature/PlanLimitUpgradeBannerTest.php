@@ -59,11 +59,14 @@ class PlanLimitUpgradeBannerTest extends TestCase
             'admin_type' => Admin::TYPE_CLIENT,
         ]);
 
-        $this->actingAs($user)
+        $html = $this->actingAs($user)
             ->get(route('halls.index').'?branch='.$branch->id)
             ->assertOk()
             ->assertSee('LibControl plan limit reached', false)
-            ->assertSee('for halls or total seats', false);
+            ->assertDontSee('Plan: ', false)
+            ->getContent();
+
+        $this->assertSame(1, substr_count(strtolower($html), 'plan limit reached'), 'The plan limit notice must appear once per page.');
     }
 
     public function test_branch_staff_sees_global_banner_on_dashboard_when_seat_cap_reached(): void
