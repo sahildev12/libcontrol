@@ -40,5 +40,6 @@ Upload `public/build/` from local (`npm run build`) — npm is not available on 
 
 ## Last deploy
 
+- **2026-10-12:** `e465014` pushed to `origin/main` (Katsindia rebrand, plan-limit UX, terms notice). Run `scripts/deploy-libcontrol-in.ps1` on a machine with Hostinger SSH (syncs git + `public/build` to hub and demo).
 - **2026-10-09:** `d14811e` first deploy of libcontrol.in (main hub + marketing) and demo.libcontrol.in (demo data); Vite `public/build` synced via SCP.
 - **2026-09-22:** `11360a6` on libcontrol + aims; Vite `public/build` synced via SCP.
