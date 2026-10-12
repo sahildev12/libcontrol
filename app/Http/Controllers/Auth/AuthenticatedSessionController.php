@@ -87,6 +87,11 @@ class AuthenticatedSessionController extends Controller
             $loginRoute = 'admin.login';
         }
 
+        $renewing = $request->boolean('renew');
+        if ($renewing) {
+            $loginRoute = 'admin.login';
+        }
+
         app(ActivityLogger::class)->record(
             $user,
             'auth.logout',
@@ -101,6 +106,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($renewing) {
+            $request->session()->put('url.intended', route('billing.index').'#plans');
+
+            return redirect()->route($loginRoute)->with('status', 'Log in with the library owner account to renew LibControl.');
+        }
 
         return redirect()->route($loginRoute);
     }

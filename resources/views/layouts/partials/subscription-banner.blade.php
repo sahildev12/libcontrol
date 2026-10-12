@@ -15,7 +15,7 @@
             \App\Support\Subscription::LOCKED => [
                 'Subscription ended',
                 'LibControl is paused for your library',
-                'Your plan ended on '.$paidUntilLabel.'. Renew below to unlock every page again. Your data is safe.',
+                'Your plan ended on '.$paidUntilLabel.'. Pick a plan below and pay with UPI, card or net banking. Every page unlocks right after payment, and your data is safe.',
             ],
             \App\Support\Subscription::GRACE => [
                 'Payment due',
@@ -34,6 +34,8 @@
         };
         $urgent = $subscriptionState !== \App\Support\Subscription::ENDING_SOON;
         $onBilling = request()->routeIs('billing.*');
+        $supportPhone = (string) config('libcontrol.support.phone');
+        $supportEmail = (string) config('libcontrol.support.email');
     @endphp
     <div
         class="relative overflow-hidden shadow-sm"
@@ -58,8 +60,31 @@
                             Ask the library owner to renew it.
                         @endunless
                     </p>
+                    @if ($ownerView && $onBilling && ($supportPhone !== '' || $supportEmail !== ''))
+                        <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.65);">
+                            Paying offline (cash or bank transfer)? Contact Katsindia
+                            @if ($supportPhone !== '')
+                                &middot; <a href="tel:{{ preg_replace('/[^0-9+]/', '', $supportPhone) }}" class="font-semibold underline" style="color:#FFCC00;">{{ $supportPhone }}</a>
+                            @endif
+                            @if ($supportEmail !== '')
+                                &middot; <a href="mailto:{{ $supportEmail }}" class="font-semibold underline" style="color:#FFCC00;">{{ $supportEmail }}</a>
+                            @endif
+                        </p>
+                    @endif
                 </div>
             </div>
+            @if ($ownerView && $onBilling && $subscriptionState === \App\Support\Subscription::LOCKED)
+                <a
+                    href="#plans"
+                    class="inline-flex shrink-0 items-center font-bold shadow-sm transition hover:brightness-95 active:scale-[0.98]"
+                    style="height:38px;border-radius:10px;padding:0 14px;gap:8px;background-color:#FFCC00;color:#082a67;font-size:12.5px;width:fit-content;"
+                >
+                    Choose a plan
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                </a>
+            @endif
             @if ($ownerView && ! $onBilling)
                 <a
                     href="{{ route('billing.index') }}"

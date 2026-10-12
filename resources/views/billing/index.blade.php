@@ -61,7 +61,7 @@
         @endforeach
     </section>
 
-    <section class="mt-8">
+    <section id="plans" class="mt-8 scroll-mt-4">
         <h2 class="text-lg font-bold text-[#082D70]">Choose or renew your plan</h2>
         <p class="mt-1 text-sm text-gray-500">Renewing the same plan adds time to your current period. Upgrades apply immediately after payment.</p>
 

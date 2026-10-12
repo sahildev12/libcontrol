@@ -105,11 +105,36 @@ class SubscriptionExpiryTest extends TestCase
 
         $this->actingAs($staff)->get(route('dashboard'))
             ->assertStatus(402)
-            ->assertSee('LibControl is paused for this library')
+            ->assertSee('LibControl is paused')
+            ->assertSee('How to renew')
+            ->assertSee('Log in to renew')
             ->assertSee(route('logout'), false);
 
         $this->actingAs($staff)->post(route('logout'))->assertRedirect();
         $this->assertGuest();
+    }
+
+    public function test_staff_can_hand_over_to_the_owner_to_renew(): void
+    {
+        $this->paidUntil('-4 days');
+
+        $this->actingAs($this->staff())->post(route('logout'), ['renew' => 1])
+            ->assertRedirect(route('admin.login'))
+            ->assertSessionHas('status');
+        $this->assertGuest();
+
+        $owner = $this->owner();
+        $owner->forceFill(['password' => bcrypt('secret-pass')])->save();
+
+        $this->post(route('admin.login.store'), ['email' => $owner->email, 'password' => 'secret-pass']);
+        $this->assertAuthenticatedAs($owner);
+
+        $this->get(route('dashboard'))->assertRedirect(route('billing.index'));
+        $this->get(route('billing.index'))
+            ->assertOk()
+            ->assertSee('Choose a plan')
+            ->assertSee('id="plans"', false)
+            ->assertSee('Paying offline');
     }
 
     public function test_renewal_unlocks_the_library_immediately(): void
