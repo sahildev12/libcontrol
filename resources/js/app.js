@@ -3198,7 +3198,7 @@ Alpine.data('hallTable', (config) => ({
         const otherSeats = Number(usage?.seats || 0) - currentHallCapacity;
         const remaining = Math.max(0, Number(limits.max_seats) - otherSeats);
 
-        return Math.max(this.form.min_seat_capacity || 1, Math.min(500, remaining || 1));
+        return Math.min(500, Math.max(remaining, currentHallCapacity));
     },
 
     resolvedSeatNumberStart() {

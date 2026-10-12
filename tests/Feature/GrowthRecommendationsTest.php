@@ -164,12 +164,12 @@ class GrowthRecommendationsTest extends TestCase
             ->assertOk()
             ->assertSee('Recommendations', false)
             ->assertSee('More recommendations', false)
-            ->assertSee('Upgrade to Pro', false)
+            ->assertSee('View packages', false)
+            ->assertDontSee('Upgrade to Pro', false)
             ->assertDontSee('View more recommendations', false)
             ->assertDontSee('Locked recommendation', false)
             ->assertDontSee('Do it yourself', false)
-            ->assertSee('Hire an expert (Pro)', false)
-            ->assertDontSee('>Hire an expert</', false)
+            ->assertSee('lc-rec-hire-pro', false)
             ->assertDontSee($lockedTitle, false);
     }
 
@@ -188,7 +188,7 @@ class GrowthRecommendationsTest extends TestCase
         $this->actingAs($user)
             ->get(route('growth.index'))
             ->assertOk()
-            ->assertSee('More recommendations with Pro', false)
+            ->assertSee('More recommendations with a growth package', false)
             ->assertDontSee($lockedDetail, false);
     }
 

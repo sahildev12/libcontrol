@@ -118,7 +118,8 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Seat Capacity <span class="text-red-500">*</span></label>
                         <input type="number" :min="form.min_seat_capacity || 1" :max="maxSeatCapacityForForm()" x-model.number="form.seat_capacity" required class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm" :class="formErrors.seat_capacity ? 'border-red-400' : 'border-gray-300'">
-                        <p class="mt-1 text-xs text-gray-500" x-show="planSnapshot">Up to <span x-text="maxSeatCapacityForForm()"></span> seats allowed on your plan for this hall.</p>
+                        <p class="mt-1 text-xs text-gray-500" x-show="planSnapshot && maxSeatCapacityForForm() > 0">Up to <span x-text="maxSeatCapacityForForm()"></span> seats allowed on your plan for this hall.</p>
+                        <p class="mt-1 text-xs font-medium text-red-600" x-show="planSnapshot && maxSeatCapacityForForm() === 0">No seats left on your plan. Upgrade to add more.</p>
                         <p class="mt-1 text-xs text-gray-500" x-show="formMode === 'create' && !form.continue_seat_numbering">
                             Seats in this hall will be numbered starting from <span class="font-semibold">1</span>.
                         </p>

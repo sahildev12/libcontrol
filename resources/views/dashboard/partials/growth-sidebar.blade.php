@@ -243,7 +243,7 @@
                                         @elseif (! $recHasPackage && ! empty($rec['expert_available']))
                                             <a href="{{ $growthHubUrl }}#packages" class="lc-rec-hire-pro">
                                                 <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 10.5V7.5a4.5 4.5 0 10-9 0v3m-.75 0h10.5a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5H6.75a1.5 1.5 0 01-1.5-1.5v-6a1.5 1.5 0 011.5-1.5z"/></svg>
-                                                Hire an expert (Pro)
+                                                Hire an expert
                                             </a>
                                         @endif
                                     </div>
@@ -255,13 +255,13 @@
             </ul>
 
             @if ($recLocked !== [] && ! $recHasPackage)
-                <div class="lc-rec-more-panel" role="region" aria-label="Pro recommendations">
+                <div class="lc-rec-more-panel" role="region" aria-label="More recommendations">
                     <span class="lc-rec-more-panel__icon" aria-hidden="true">
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 10.5V7.5a4.5 4.5 0 10-9 0v3m-.75 0h10.5a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5H6.75a1.5 1.5 0 01-1.5-1.5v-6a1.5 1.5 0 011.5-1.5z"/></svg>
                     </span>
                     <div class="min-w-0">
                         <p class="lc-rec-more-panel__title">More recommendations</p>
-                        <p class="lc-rec-more-panel__sub">Unlock additional ideas with Pro.</p>
+                        <p class="lc-rec-more-panel__sub">Unlock more ideas with a growth package.</p>
                     </div>
                 </div>
 
@@ -276,7 +276,7 @@
                         </div>
                     </div>
                     <a href="{{ $growthHubUrl }}#packages" class="lc-rec-upgrade__btn">
-                        Upgrade to Pro
+                        View packages
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                     </a>
                 </div>

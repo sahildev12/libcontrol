@@ -292,12 +292,12 @@
                                 <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 10.5V7.5a4.5 4.5 0 10-9 0v3m-.75 0h10.5a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5H6.75a1.5 1.5 0 01-1.5-1.5v-6a1.5 1.5 0 011.5-1.5z"/></svg>
                             </span>
                             <div>
-                                <p class="text-sm font-bold text-[#082D70]">More recommendations with Pro</p>
+                                <p class="text-sm font-bold text-[#082D70]">More recommendations with a growth package</p>
                                 <p class="mt-1 text-xs leading-relaxed text-[#64748B]">Unlock additional growth ideas and earn more points.</p>
                             </div>
                         </div>
                         <a href="#packages" class="lc-growth-btn-navy w-full sm:w-auto">
-                            Upgrade to Pro
+                            View packages
                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                         </a>
                     </aside>
