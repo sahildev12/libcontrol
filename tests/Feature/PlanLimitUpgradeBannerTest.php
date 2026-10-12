@@ -33,7 +33,7 @@ class PlanLimitUpgradeBannerTest extends TestCase
         $this->actingAs($user)
             ->get(route('branch.index'))
             ->assertOk()
-            ->assertSee('LibControl plan limit reached', false)
+            ->assertSee('Plan limit reached', false)
             ->assertSee('Upgrade plan', false)
             ->assertSee(route('billing.index'), false)
             ->assertDontSee('WhatsApp Katsindia', false);
@@ -62,7 +62,7 @@ class PlanLimitUpgradeBannerTest extends TestCase
         $html = $this->actingAs($user)
             ->get(route('halls.index').'?branch='.$branch->id)
             ->assertOk()
-            ->assertSee('LibControl plan limit reached', false)
+            ->assertSee('Plan limit reached', false)
             ->assertDontSee('Plan: ', false)
             ->getContent();
 
@@ -88,8 +88,58 @@ class PlanLimitUpgradeBannerTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('LibControl plan limit reached', false)
-            ->assertSee('Ask the library owner', false)
+            ->assertSee('Plan limit reached', false)
+            ->assertSee('Ask the library owner to upgrade.', false)
             ->assertDontSee('Upgrade plan', false);
+    }
+
+    private function cappedStaff(): User
+    {
+        PlatformSetting::query()->delete();
+        PlatformSetting::query()->create([
+            'plan_tier' => 'starter',
+            'student_code_padding' => 3,
+        ]);
+
+        $branch = Branch::factory()->create();
+        Hall::factory()->create([
+            'branch_id' => $branch->id,
+            'seat_capacity' => 35,
+        ]);
+
+        return User::factory()->create(['branch_id' => $branch->id]);
+    }
+
+    public function test_subscription_notice_replaces_the_plan_limit_notice(): void
+    {
+        config(['libcontrol.license_server.enabled' => false]);
+        $user = $this->cappedStaff();
+        PlatformSetting::current()->forceFill(['plan_paid_until' => now()->subDay()])->save();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Your subscription has ended', false)
+            ->assertDontSee('Plan limit reached', false);
+    }
+
+    public function test_closed_plan_limit_notice_returns_after_three_hours_or_next_login(): void
+    {
+        $user = $this->cappedStaff();
+
+        $this->actingAs($user)->post(route('plan-limit.dismiss'))->assertNoContent();
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('Plan limit reached', false);
+
+        $this->travel(3)->hours();
+        $this->get(route('dashboard'))->assertOk()->assertSee('Plan limit reached', false);
+
+        $this->post(route('plan-limit.dismiss'))->assertNoContent();
+        $this->get(route('dashboard'))->assertDontSee('Plan limit reached', false);
+
+        $user->forceFill(['password' => bcrypt('secret-pass')])->save();
+        $this->post(route('logout'));
+        $this->post(route('login'), ['email' => $user->email, 'password' => 'secret-pass']);
+        $this->assertAuthenticatedAs($user);
+        $this->get(route('dashboard'))->assertOk()->assertSee('Plan limit reached', false);
     }
 }

@@ -179,6 +179,11 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
 
     Route::get('/profile-completion', [ProfileCompletionController::class, 'index'])->name('profile-completion.index');
     Route::post('/profile-completion/continue', [ProfileCompletionController::class, 'continue'])->name('profile-completion.continue');
+    Route::post('/plan-limit/dismiss', function () {
+        session(['plan_limit_dismissed_at' => now()->timestamp]);
+
+        return response()->noContent();
+    })->name('plan-limit.dismiss');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');

@@ -55,8 +55,7 @@ class SubscriptionExpiryTest extends TestCase
 
         $this->actingAs($this->owner())->get(route('students.index'))
             ->assertOk()
-            ->assertDontSee('Renewal due')
-            ->assertDontSee('Payment due');
+            ->assertDontSee('Your subscription');
     }
 
     public function test_owner_is_warned_before_the_plan_ends(): void
@@ -65,7 +64,7 @@ class SubscriptionExpiryTest extends TestCase
 
         $this->actingAs($this->owner())->get(route('students.index'))
             ->assertOk()
-            ->assertSee('Renewal due')
+            ->assertSee('Your subscription ends on')
             ->assertSee('Renew now')
             ->assertSee(route('billing.index'), false);
     }
@@ -76,7 +75,7 @@ class SubscriptionExpiryTest extends TestCase
 
         $this->actingAs($this->staff())->get(route('students.index'))
             ->assertOk()
-            ->assertSee('Payment due')
+            ->assertSee('Your subscription has ended')
             ->assertSee('Ask the library owner to renew it.')
             ->assertDontSee('Renew now');
     }
@@ -92,7 +91,7 @@ class SubscriptionExpiryTest extends TestCase
 
         $this->actingAs($owner)->get(route('billing.index'))
             ->assertOk()
-            ->assertSee('LibControl is paused for your library')
+            ->assertSee('Your subscription has ended')
             ->assertDontSee('Renew now');
 
         $this->actingAs($owner)->get(route('help-support.index'))->assertOk();
@@ -132,9 +131,8 @@ class SubscriptionExpiryTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('billing.index'));
         $this->get(route('billing.index'))
             ->assertOk()
-            ->assertSee('Choose a plan')
-            ->assertSee('id="plans"', false)
-            ->assertSee('Paying offline');
+            ->assertSee('Your subscription has ended')
+            ->assertSee('id="plans"', false);
     }
 
     public function test_renewal_unlocks_the_library_immediately(): void

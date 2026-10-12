@@ -52,8 +52,7 @@
 
                 <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-4 lc-main">
                     <div class="mx-auto max-w-none space-y-6">
-                        @include('layouts.partials.subscription-banner')
-                        @include('layouts.partials.plan-limit-global-banner')
+                        @include('layouts.partials.account-notice')
                         {{ $slot }}
                     </div>
                 </main>

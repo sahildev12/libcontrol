@@ -28,6 +28,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        $request->session()->forget('plan_limit_dismissed_at');
         $request->session()->put('login_portal', $request->portal());
 
         if ($request->user()?->isAnyAdmin()) {
