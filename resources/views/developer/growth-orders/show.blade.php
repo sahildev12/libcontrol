@@ -80,6 +80,14 @@
                     @endforeach
                 </select>
             </div>
+            @if ($order->order_type === 'service')
+                <div class="md:col-span-2">
+                    <label for="quote_amount" class="block text-sm font-medium text-gray-700">Quote amount (₹)</label>
+                    <input id="quote_amount" type="number" name="quote_amount" min="1" step="1" value="{{ old('quote_amount', $order->amount_paise ? $order->amount_paise / 100 : '') }}" @disabled($order->payment_status === 'paid') class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100" placeholder="e.g. 2500">
+                    <p class="mt-1 text-xs text-gray-500">Set an amount and status <strong>Quoted</strong> — the library then sees a “Pay” button (PhonePe) on their Growth page.</p>
+                    @error('quote_amount')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+            @endif
             <div class="md:col-span-2">
                 <label for="monthly_report_url" class="block text-sm font-medium text-gray-700">Report link</label>
                 <input id="monthly_report_url" type="url" name="monthly_report_url" value="{{ old('monthly_report_url', $order->monthly_report_url) }}" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="https://...">
@@ -94,4 +102,13 @@
             </div>
         </div>
     </form>
+
+    @if ($payments->isNotEmpty())
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 px-5 py-4">
+                <h2 class="text-sm font-semibold text-gray-900">PhonePe payments</h2>
+            </div>
+            @include('developer.payments.partials.table', ['payments' => $payments])
+        </section>
+    @endif
 </x-admin-layout>

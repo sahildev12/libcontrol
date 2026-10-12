@@ -6,6 +6,7 @@
 @php
     $pricingUrl = \App\Support\PlanLimitPresentation::libcontrolPricingUrl();
     $whatsappUrl = \App\Support\PlanLimitPresentation::upgradeWhatsAppUrl();
+    $canPayOnline = ! config('libcontrol.license_server.enabled') && (auth()->user()?->isClientAdmin() ?? false);
 
     $showExpr = match ($focus) {
         'branches' => 'planSnapshot && planSnapshot.limits.max_branches != null && planSnapshot.remaining.branches === 0',
@@ -40,14 +41,23 @@
             </p>
         </div>
         <div class="flex shrink-0 flex-wrap gap-2">
-            <a
-                href="{{ $pricingUrl }}"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
-            >
-                View LibControl plans
-            </a>
+            @if ($canPayOnline)
+                <a
+                    href="{{ route('billing.index') }}"
+                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
+                >
+                    Upgrade plan
+                </a>
+            @else
+                <a
+                    href="{{ $pricingUrl }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
+                >
+                    View LibControl plans
+                </a>
+            @endif
             @if ($whatsappUrl !== '')
                 <a
                     href="{{ $whatsappUrl }}"

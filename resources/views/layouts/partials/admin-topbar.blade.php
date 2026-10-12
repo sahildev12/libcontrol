@@ -261,6 +261,12 @@
                             <span>Branch Settings</span>
                         </a>
                     @endif
+                    @if (! ($licenseServerEnabled ?? false) && Auth::user()->isClientAdmin() && \Illuminate\Support\Facades\Route::has('billing.index'))
+                        <a href="{{ route('billing.index') }}" class="{{ $profileMenuLinkClass }}">
+                            <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            <span>Subscription &amp; Billing</span>
+                        </a>
+                    @endif
                     @if (! ($isDeveloperAdmin ?? false) && \Illuminate\Support\Facades\Route::has('help-support.index'))
                         <a href="{{ route('help-support.index') }}" class="{{ $profileMenuLinkClass }}">
                             <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>

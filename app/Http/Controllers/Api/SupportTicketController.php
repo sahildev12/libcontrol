@@ -149,6 +149,7 @@ class SupportTicketController extends Controller
                 'service_request' => ($order = $serviceRequests->get($ticket->id)) ? [
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
+                    'amount_paise' => $order->amount_paise,
                     'admin_notes' => $order->admin_notes,
                     'monthly_report_url' => $order->monthly_report_url,
                     'quoted_at' => $order->quoted_at?->toIso8601String(),

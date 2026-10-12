@@ -22,6 +22,7 @@ class LicensedDeployment extends Model
         'max_seats_override',
         'max_halls_override',
         'max_branches_override',
+        'plan_paid_until',
     ];
 
     /**
@@ -36,6 +37,7 @@ class LicensedDeployment extends Model
             'max_seats_override' => 'integer',
             'max_halls_override' => 'integer',
             'max_branches_override' => 'integer',
+            'plan_paid_until' => 'datetime',
         ];
     }
 

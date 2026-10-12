@@ -34,7 +34,8 @@ class PlanLimitUpgradeBannerTest extends TestCase
             ->get(route('branch.index'))
             ->assertOk()
             ->assertSee('LibControl plan limit reached', false)
-            ->assertSee('View LibControl plans', false)
+            ->assertSee('Upgrade plan', false)
+            ->assertSee(route('billing.index'), false)
             ->assertSee('WhatsApp Katsindia', false);
     }
 
@@ -86,6 +87,6 @@ class PlanLimitUpgradeBannerTest extends TestCase
             ->assertOk()
             ->assertSee('LibControl plan limit reached', false)
             ->assertSee('Ask the library owner', false)
-            ->assertDontSee('View LibControl plans', false);
+            ->assertDontSee('Upgrade plan', false);
     }
 }

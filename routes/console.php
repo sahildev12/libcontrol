@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\ReconcilePayments;
 use App\Console\Commands\SendPlanExpiryReminders;
 use App\Console\Commands\SendStudentBirthdayEmails;
 use App\Console\Commands\SendStudentRecoveryEmails;
@@ -26,6 +27,11 @@ Schedule::command(SendStudentBirthdayEmails::class)
     ->dailyAt('08:30')
     ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
     ->description('Send birthday emails to students');
+
+Schedule::command(ReconcilePayments::class)
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->description('Confirm pending PhonePe payments');
 
 Schedule::command(SendStudentRecoveryEmails::class)
     ->weeklyOn(1, '10:00')

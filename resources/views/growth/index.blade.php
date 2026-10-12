@@ -192,6 +192,19 @@
             </div>
         </header>
 
+        @if ($returnedPayment)
+            @php $rs = $returnedPayment['status']; @endphp
+            <div class="rounded-xl border px-4 py-3 text-sm {{ $rs === 'completed' ? 'border-green-200 bg-green-50 text-green-800' : ($rs === 'failed' ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-800') }}" role="status">
+                @if ($rs === 'completed')
+                    <strong>Payment successful.</strong> {{ $returnedPayment['item_name'] }} — {{ $returnedPayment['amount_label'] }} received. Katsindia's team will start shortly.
+                @elseif ($rs === 'failed')
+                    <strong>Payment failed.</strong> {{ $returnedPayment['item_name'] }} was not charged. You can try again from Your growth requests.
+                @else
+                    <strong>Payment is being confirmed.</strong> Refresh in a minute — please don't pay twice.
+                @endif
+            </div>
+        @endif
+
         @if (session('status'))
             <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" x-transition class="fixed bottom-6 right-6 z-50 flex max-w-sm items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 shadow-lg" role="status">
                 <span class="flex-1">{{ session('status') }}</span>
@@ -342,9 +355,11 @@
                             <p class="mt-3 text-xs text-amber-700">{{ $note }}</p>
                         @endforeach
                         <div class="mt-5 flex flex-col gap-2">
-                            <button type="button" class="lc-growth-btn-navy w-full" @click="requestPackage(@js($key), false)">Request {{ $package['name'] }}</button>
-                            @if ($razorpayEnabled)
-                                <button type="button" class="lc-growth-btn-outline w-full" @click="requestPackage(@js($key), true)">Request + Pay online</button>
+                            @if ($paymentsAvailable)
+                                <button type="button" class="lc-growth-btn-navy w-full" :disabled="busy" @click="requestPackage(@js($key), true)">Pay {{ $package['price_label'] }} &amp; start</button>
+                                <button type="button" class="lc-growth-btn-outline w-full" :disabled="busy" @click="requestPackage(@js($key), false)">Request a call first</button>
+                            @else
+                                <button type="button" class="lc-growth-btn-navy w-full" @click="requestPackage(@js($key), false)">Request {{ $package['name'] }}</button>
                             @endif
                             <a :href="whatsappFor(@js($package['name']))" target="_blank" rel="noopener" class="lc-growth-wa-link">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.11.547 4.091 1.505 5.82L0 24l6.335-1.662A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.82a9.78 9.78 0 01-4.978-1.357l-.357-.212-3.76.987 1.004-3.66-.233-.374A9.77 9.77 0 012.18 12C2.18 6.57 6.57 2.18 12 2.18S21.82 6.57 21.82 12 17.43 21.82 12 21.82z"/></svg>
@@ -462,6 +477,8 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="inline-flex flex-wrap justify-end gap-1.5">
+                                            <button type="button" x-show="row.pay_url" x-cloak @click="payOrder(row.pay_url)" class="rounded-lg bg-[#082D70] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#0b3a8f]" x-text="row.pay_label"></button>
+                                            <span x-show="row.payment_status === 'paid'" x-cloak class="rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-200">Paid</span>
                                             <a x-show="row.monthly_report_url" :href="row.monthly_report_url" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Report</a>
                                             <a :href="whatsappFor(`${row.item_name} (follow-up)`)" target="_blank" rel="noopener" class="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Follow up</a>
                                         </div>
@@ -499,6 +516,22 @@
                 async requestService(key) {
                     await this.submit(config.requestServiceUrl, { item_key: key });
                 },
+                async payOrder(url) {
+                    if (this.busy) return;
+                    this.busy = true;
+                    try {
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': config.csrf },
+                        });
+                        const data = await res.json();
+                        if (!res.ok || !data.checkout_url) throw new Error(data.message || 'Could not start payment');
+                        window.location.assign(data.checkout_url);
+                    } catch (e) {
+                        window.showToast(e.message || 'Could not start payment', 'error');
+                        this.busy = false;
+                    }
+                },
                 whatsappFor(name) {
                     const text = encodeURIComponent('Hi Katsindia, I want LibControl Growth: ' + name);
                     return 'https://wa.me/' + @js($whatsappPhone) + '?text=' + text;
@@ -507,7 +540,7 @@
                     if (this.busy) return;
                     this.busy = true;
                     // Opened during the click so the browser doesn't block it as a popup.
-                    const tab = window.open('about:blank', '_blank');
+                    const tab = body.with_checkout ? null : window.open('about:blank', '_blank');
                     try {
                         const res = await fetch(url, {
                             method: 'POST',
@@ -521,7 +554,17 @@
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.message || 'Request failed');
 
-                        const target = data.checkout_url || data.whatsapp_url;
+                        if (data.checkout_url) {
+                            window.location.assign(data.checkout_url);
+                            return;
+                        }
+                        if (data.checkout_error) {
+                            sessionStorage.setItem('growthToast', data.checkout_error);
+                            window.location.reload();
+                            return;
+                        }
+
+                        const target = data.whatsapp_url;
                         if (target && tab) {
                             tab.location.href = target;
                         } else if (target) {

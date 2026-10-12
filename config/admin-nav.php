@@ -17,6 +17,7 @@ return [
         ['label' => 'Activity Log', 'route' => 'activity-logs.index', 'icon' => 'chart', 'client_admin_only' => true],
         ['label' => 'Support Tickets', 'route' => 'developer.support-tickets.index', 'icon' => 'ticket', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.support-tickets.'],
         ['label' => 'Service Requests', 'route' => 'developer.growth-orders.index', 'icon' => 'chart', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.growth-orders.'],
+        ['label' => 'Payments', 'route' => 'developer.payments.index', 'icon' => 'currency', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.payments.'],
         ['label' => 'Portal Settings', 'route' => 'developer.portals.index', 'icon' => 'settings', 'developer_admin_only' => true, 'tenancy_only' => true],
         ['label' => 'Client Libraries', 'route' => 'developer.tenants.index', 'icon' => 'branch', 'developer_admin_only' => true, 'tenancy_only' => true],
         ['label' => 'Dev & Domains', 'route' => 'developer.deployments.index', 'icon' => 'branch', 'developer_admin_only' => true, 'license_server_only' => true, 'active_prefix' => 'developer.deployments.'],

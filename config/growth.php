@@ -155,25 +155,6 @@ return [
     // Inbox that receives an email for every package / service request (comma-separate for several).
     'notify_email' => env('LIBCONTROL_GROWTH_NOTIFY_EMAIL', 'contact@katsindia.com'),
 
-    'razorpay' => [
-        'enabled' => filter_var(env('LIBCONTROL_GROWTH_RAZORPAY_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
-        'key_id' => env('RAZORPAY_KEY_ID'),
-        'key_secret' => env('RAZORPAY_KEY_SECRET'),
-        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
-        'currency' => 'INR',
-        // Optional hosted subscription / payment-link IDs created in Razorpay Dashboard
-        'subscription_plan_ids' => [
-            'starter' => env('RAZORPAY_PLAN_GROWTH_STARTER'),
-            'grow' => env('RAZORPAY_PLAN_GROWTH_GROW'),
-            'dominate' => env('RAZORPAY_PLAN_GROWTH_DOMINATE'),
-        ],
-        'payment_page_urls' => [
-            'starter' => env('RAZORPAY_PAGE_GROWTH_STARTER'),
-            'grow' => env('RAZORPAY_PAGE_GROWTH_GROW'),
-            'dominate' => env('RAZORPAY_PAGE_GROWTH_DOMINATE'),
-        ],
-    ],
-
     'packages' => [
         'starter' => [
             'name' => 'Starter',

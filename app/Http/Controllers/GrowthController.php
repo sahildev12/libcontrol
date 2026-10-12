@@ -10,9 +10,9 @@ use App\Services\Growth\GrowthOrderService;
 use App\Services\Growth\LibraryCombinedGrowthScoreService;
 use App\Services\Growth\LibraryGrowthRecommendationService;
 use App\Services\Growth\LibraryGrowthScoreService;
-use App\Services\Growth\RazorpayGrowthBillingService;
 use App\Services\Growth\ReferralService;
 use App\Services\LibraryWebsiteService;
+use App\Services\Payments\HubPaymentClient;
 use App\Services\Profile\LibraryProfileCompletionService;
 use App\Services\SupportTicketSyncService;
 use Illuminate\Http\JsonResponse;
@@ -33,7 +33,7 @@ class GrowthController extends Controller
         LibraryCombinedGrowthScoreService $combinedGrowthScore,
         LibraryProfileCompletionService $profileCompletion,
         GrowthOrderService $orderService,
-        RazorpayGrowthBillingService $billing,
+        HubPaymentClient $hubPayments,
         ReferralService $referrals,
         LibraryWebsiteService $website,
         SupportTicketSyncService $ticketSync,
@@ -41,11 +41,20 @@ class GrowthController extends Controller
         $branch = $this->resolveGrowthBranch($request);
         $settings = PlatformSetting::current();
         $socialLinks = $website->settingsPayload($settings)['website_social_links'] ?? [];
+
+        $returnedPayment = null;
+        $paymentUuid = $request->query('payment');
+        if (is_string($paymentUuid) && $paymentUuid !== '') {
+            $summary = $hubPayments->summary($paymentUuid);
+            $returnedPayment = collect($summary['payments'] ?? [])->firstWhere('uuid', $paymentUuid);
+        }
+
+        $ticketSync->pullUpdates($request->user());
         $combinedGrowth = $combinedGrowthScore->forBranch($branch, $request->user());
         $score = $combinedGrowth['action_progress'];
         $recommendations = $combinedGrowth['recommendations'];
         $profileCompletionScore = $profileCompletion->scoreForLibrary($request->user());
-        $ticketSync->pullUpdates($request->user());
+        $paymentsAvailable = $hubPayments->available();
         $orders = GrowthOrder::query()
             ->with('requester:id,name')
             ->when($branch->id, fn ($q) => $q->where('branch_id', $branch->id))
@@ -57,10 +66,14 @@ class GrowthController extends Controller
                 'id' => $order->id,
                 'item_name' => $order->item_name,
                 'type_label' => $order->order_type === 'package' ? 'Package' : 'Service',
-                'price_label' => config(($order->order_type === 'package' ? 'growth.packages.' : 'growth.services.').$order->item_key.'.price_label') ?? '—',
+                'price_label' => ($order->order_type === 'service' && $order->amount_paise)
+                    ? '₹'.number_format($order->amount_paise / 100)
+                    : (config(($order->order_type === 'package' ? 'growth.packages.' : 'growth.services.').$order->item_key.'.price_label') ?? '—'),
                 'status' => $order->status,
                 'status_label' => $order->statusLabel(),
                 'payment_status' => $order->payment_status,
+                'pay_label' => $this->payableAmountPaise($order) ? 'Pay ₹'.number_format($this->payableAmountPaise($order) / 100) : null,
+                'pay_url' => $paymentsAvailable && $this->payableAmountPaise($order) ? route('growth.orders.pay', $order) : null,
                 'requested_by' => $order->requester?->name ?? $order->contact_name,
                 'created_at' => $order->created_at?->format('d M Y, h:i A'),
                 'monthly_report_url' => $order->monthly_report_url,
@@ -85,7 +98,8 @@ class GrowthController extends Controller
             'orders' => $orders,
             'gstDisclaimer' => config('growth.gst_disclaimer'),
             'adSpendDisclaimer' => config('growth.ad_spend_disclaimer'),
-            'razorpayEnabled' => $billing->enabled(),
+            'paymentsAvailable' => $paymentsAvailable,
+            'returnedPayment' => $returnedPayment,
             'whatsappBaseUrl' => $orderService->whatsappUrl('LibControl Growth'),
             'whatsappPhone' => $waPhone,
             'reviewTarget' => (int) config('growth.review_target', 50),
@@ -165,15 +179,38 @@ class GrowthController extends Controller
     public function requestPackage(
         Request $request,
         GrowthOrderService $orderService,
-        RazorpayGrowthBillingService $billing,
+        HubPaymentClient $hubPayments,
     ): JsonResponse {
-        return $this->requestItem($request, $orderService, $billing, 'package');
+        return $this->requestItem($request, $orderService, $hubPayments, 'package');
+    }
+
+    public function payOrder(Request $request, GrowthOrder $growthOrder, HubPaymentClient $hubPayments): JsonResponse
+    {
+        if ($growthOrder->branch_id) {
+            $this->assertCanAccessBranch($request, $growthOrder->branch_id);
+        } else {
+            abort_unless($request->user()?->isAnyAdmin(), 403);
+        }
+
+        if (! $this->payableAmountPaise($growthOrder)) {
+            return response()->json(['message' => $growthOrder->payment_status === 'paid'
+                ? 'This request is already paid.'
+                : 'This request is not ready for payment yet. Katsindia will share a quote first.'], 422);
+        }
+
+        $checkout = $this->startGrowthCheckout($request, $hubPayments, $growthOrder);
+
+        if (! $checkout['ok']) {
+            return response()->json(['message' => $checkout['message']], 422);
+        }
+
+        return response()->json(['checkout_url' => $checkout['redirect_url']]);
     }
 
     public function requestService(
         Request $request,
         GrowthOrderService $orderService,
-        RazorpayGrowthBillingService $billing,
+        HubPaymentClient $hubPayments,
         LibraryGrowthScoreService $scoreService,
         LibraryGrowthRecommendationService $recommendations,
     ): JsonResponse {
@@ -187,7 +224,7 @@ class GrowthController extends Controller
             }
         }
 
-        return $this->requestItem($request, $orderService, $billing, 'service');
+        return $this->requestItem($request, $orderService, $hubPayments, 'service');
     }
 
     public function startReferralCampaign(Request $request, LibraryGrowthScoreService $scoreService): RedirectResponse
@@ -246,10 +283,47 @@ class GrowthController extends Controller
         return redirect()->to(strtok(url()->previous(), '#').'#'.$anchor);
     }
 
+    private function payableAmountPaise(GrowthOrder $order): ?int
+    {
+        if ($order->payment_status === 'paid' || in_array($order->status, [GrowthOrder::STATUS_CANCELLED, GrowthOrder::STATUS_COMPLETED], true)) {
+            return null;
+        }
+
+        if ($order->order_type === 'package') {
+            $price = (int) config("growth.packages.{$order->item_key}.price", 0);
+
+            return $price > 0 ? $price * 100 : null;
+        }
+
+        return ($order->status !== GrowthOrder::STATUS_NEW && (int) $order->amount_paise >= 100) ? (int) $order->amount_paise : null;
+    }
+
+    /**
+     * @return array{ok: bool, redirect_url: ?string, message: ?string}
+     */
+    private function startGrowthCheckout(Request $request, HubPaymentClient $hubPayments, GrowthOrder $order): array
+    {
+        $user = $request->user();
+        $result = $hubPayments->checkout([
+            'purpose' => $order->order_type === 'package' ? 'growth_package' : 'growth_service',
+            'growth_order_uuid' => $order->uuid,
+            'payer_name' => $order->contact_name ?: $user?->name,
+            'payer_email' => $order->contact_email ?: $user?->email,
+            'payer_phone' => $order->contact_phone,
+            'return_url' => route('growth.index').'#growth-requests',
+        ]);
+
+        if ($result['ok']) {
+            $this->logActivity($request, 'growth.checkout_started', "Started PhonePe payment for {$order->item_name}.", $order, $order->branch_id);
+        }
+
+        return $result;
+    }
+
     private function requestItem(
         Request $request,
         GrowthOrderService $orderService,
-        RazorpayGrowthBillingService $billing,
+        HubPaymentClient $hubPayments,
         string $type,
     ): JsonResponse {
         $validated = $request->validate([
@@ -272,8 +346,10 @@ class GrowthController extends Controller
         ]);
 
         $checkout = null;
-        if ($request->boolean('with_checkout') && $billing->enabled()) {
-            $checkout = $billing->checkoutUrlForOrder($result['order']);
+        if ($type === 'package' && $request->boolean('with_checkout') && $hubPayments->available()) {
+            $checkout = $result['ticket_synced']
+                ? $this->startGrowthCheckout($request, $hubPayments, $result['order'])
+                : ['ok' => false, 'redirect_url' => null, 'message' => 'Request saved, but online payment needs a connection to Katsindia. Try "Pay" from Your growth requests shortly.'];
         }
 
         return response()->json([
@@ -286,8 +362,8 @@ class GrowthController extends Controller
                 'status' => $result['order']->status,
             ],
             'whatsapp_url' => $result['whatsapp_url'],
-            'checkout_url' => $checkout['url'] ?? null,
-            'checkout_error' => $checkout['error'] ?? null,
+            'checkout_url' => $checkout['redirect_url'] ?? null,
+            'checkout_error' => ($checkout && ! $checkout['ok']) ? $checkout['message'] : null,
         ], 201);
     }
 

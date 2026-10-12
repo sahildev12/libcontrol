@@ -263,6 +263,10 @@ class SupportTicketSyncService
             'monthly_report_url' => filled($remote['monthly_report_url'] ?? null) ? (string) $remote['monthly_report_url'] : null,
         ]);
 
+        if (is_numeric($remote['amount_paise'] ?? null) && (int) $remote['amount_paise'] > 0) {
+            $order->amount_paise = (int) $remote['amount_paise'];
+        }
+
         foreach (['quoted_at', 'activated_at', 'completed_at'] as $column) {
             if (! $order->{$column} && filled($remote[$column] ?? null)) {
                 $order->{$column} = Carbon::parse((string) $remote[$column]);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnquiryController;
@@ -162,7 +163,13 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/promotion', [StudentOfferController::class, 'index'])->name('promotion.index');
     Route::post('/promotion/send', [StudentOfferController::class, 'send'])->name('promotion.send');
 
+    Route::middleware('platform_admin')->group(function (): void {
+        Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        Route::post('/billing/pay', [BillingController::class, 'pay'])->middleware('throttle:10,1')->name('billing.pay');
+    });
+
     Route::get('/growth', [GrowthController::class, 'index'])->name('growth.index');
+    Route::post('/growth/orders/{growthOrder}/pay', [GrowthController::class, 'payOrder'])->middleware('throttle:10,1')->name('growth.orders.pay');
     Route::post('/growth/profile', [GrowthController::class, 'updateProfile'])->name('growth.profile.update');
     Route::post('/growth/packages/request', [GrowthController::class, 'requestPackage'])->name('growth.packages.request');
     Route::post('/growth/services/request', [GrowthController::class, 'requestService'])->name('growth.services.request');

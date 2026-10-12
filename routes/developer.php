@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Developer\DeploymentController;
 use App\Http\Controllers\Developer\GrowthOrderController;
+use App\Http\Controllers\Developer\PaymentController;
 use App\Http\Controllers\Developer\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,14 @@ Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host']
         Route::get('/', [GrowthOrderController::class, 'index'])->name('index');
         Route::get('/{growthOrder}', [GrowthOrderController::class, 'show'])->name('show');
         Route::patch('/{growthOrder}', [GrowthOrderController::class, 'update'])->name('update');
+    });
+
+Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host'])
+    ->prefix('developer/payments')
+    ->name('developer.payments.')
+    ->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->name('index');
+        Route::post('/{payment}/refresh', [PaymentController::class, 'refresh'])->name('refresh');
     });
 
 Route::middleware(['auth', 'developer_admin', 'license_server', 'landlord_host'])

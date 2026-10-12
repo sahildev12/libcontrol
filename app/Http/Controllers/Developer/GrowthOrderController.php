@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
 use App\Models\GrowthOrder;
+use App\Models\Payment;
 use App\Services\Growth\GrowthOrderService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -63,6 +65,9 @@ class GrowthOrderController extends Controller
         return view('developer.growth-orders.show', [
             'order' => $growthOrder,
             'statuses' => GrowthOrder::statuses(),
+            'payments' => Schema::hasTable('payments')
+                ? Payment::query()->where('growth_order_uuid', $growthOrder->uuid)->orderByDesc('id')->get()
+                : collect(),
         ]);
     }
 
@@ -73,6 +78,7 @@ class GrowthOrderController extends Controller
             'admin_notes' => ['nullable', 'string', 'max:5000'],
             'monthly_report_url' => ['nullable', 'url', 'max:500'],
             'payment_status' => ['nullable', 'in:pending,paid,failed'],
+            'quote_amount' => ['nullable', 'numeric', 'min:1', 'max:1000000'],
         ]);
 
         $growthOrder->fill([
@@ -81,6 +87,12 @@ class GrowthOrderController extends Controller
             'monthly_report_url' => $validated['monthly_report_url'] ?? null,
             'payment_status' => $validated['payment_status'] ?? null,
         ]);
+
+        if ($growthOrder->order_type === 'service' && $growthOrder->payment_status !== 'paid') {
+            $growthOrder->amount_paise = filled($validated['quote_amount'] ?? null)
+                ? (int) round(((float) $validated['quote_amount']) * 100)
+                : null;
+        }
 
         if ($validated['status'] === GrowthOrder::STATUS_QUOTED && ! $growthOrder->quoted_at) {
             $growthOrder->quoted_at = now();

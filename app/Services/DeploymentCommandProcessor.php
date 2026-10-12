@@ -69,12 +69,18 @@ class DeploymentCommandProcessor
     private function setPlan(array $payload): array
     {
         $settings = PlatformSetting::current();
-        $settings->update([
+        $attributes = [
             'plan_tier' => $payload['plan_tier'] ?? $settings->plan_tier,
             'max_seats_override' => $payload['max_seats_override'] ?? null,
             'max_halls_override' => $payload['max_halls_override'] ?? null,
             'max_branches_override' => $payload['max_branches_override'] ?? null,
-        ]);
+        ];
+
+        if (array_key_exists('plan_paid_until', $payload) && \Illuminate\Support\Facades\Schema::hasColumn('platform_settings', 'plan_paid_until')) {
+            $attributes['plan_paid_until'] = filled($payload['plan_paid_until']) ? \Illuminate\Support\Carbon::parse((string) $payload['plan_paid_until']) : null;
+        }
+
+        $settings->update($attributes);
 
         return ['status' => 'completed', 'result' => 'Plan settings updated.'];
     }

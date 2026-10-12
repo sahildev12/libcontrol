@@ -31,6 +31,8 @@ class EnsureLibraryOperationsAccess
             'profile/*',
             'notifications',
             'notifications/*',
+            'payments/*',
+            'api/*',
         )) {
             return $next($request);
         }
