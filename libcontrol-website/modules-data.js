@@ -23,8 +23,8 @@
           { icon: 'fa-user-shield', title: 'Staff & Access Control', text: 'Assign staff and manage their permissions.' },
           { icon: 'fa-chart-line', title: 'Branch Performance Overview', text: 'Track occupancy, revenue, and student activity.' }
         ],
-        highlightTitle: 'One view. Complete control.',
-        highlightText: 'Manage your entire library network without switching between registers, spreadsheets, or separate systems.'
+        highlightTitle: 'Grow with clarity.',
+        highlightText: 'See every branch and hall in one place — spot weak occupancy before it hits revenue.'
       },
       seats: {
         id: 'seats',
