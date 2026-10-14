@@ -3033,9 +3033,9 @@ body {
   z-index: 92;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  width: min(300px, calc(100vw - 24px));
+  align-items: flex-start;
+  gap: 8px;
+  max-width: min(280px, calc(100vw - 24px));
   pointer-events: none;
   isolation: isolate;
 }
@@ -3049,38 +3049,56 @@ body {
 }
 .lc-contact-dock__avatar {
   flex-shrink: 0;
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
   border-radius: 50%;
   mix-blend-mode: screen;
   filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.15));
 }
 .lc-contact-dock__bubble {
-  margin: 0 0 6px;
-  padding: 12px 14px;
+  margin: 0 0 4px;
+  padding: 10px 12px;
   background: #fff;
   color: #0f172a;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  line-height: 1.4;
-  border-radius: 16px 16px 16px 6px;
+  line-height: 1.35;
+  border-radius: 14px 14px 14px 6px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
   border: 1px solid #e2e8f0;
+  min-width: 10.5rem;
+  min-height: 2.65rem;
+}
+.lc-contact-dock__bubble-text {
+  display: inline;
+}
+.lc-contact-dock__bubble-text::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin-left: 1px;
+  vertical-align: -0.1em;
+  background: #2563eb;
+  animation: lcEdwikCaret 0.85s step-end infinite;
+}
+@keyframes lcEdwikCaret {
+  50% { opacity: 0; }
 }
 .lc-edwik-trigger,
 .lc-wa-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 48px;
-  padding: 12px 18px;
+  gap: 7px;
+  width: auto;
+  min-height: 0;
+  padding: 8px 14px;
   border: none;
   border-radius: 999px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12.5px;
   text-decoration: none;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
@@ -3107,7 +3125,7 @@ body {
   box-shadow: 0 12px 28px rgba(37, 211, 102, 0.42);
 }
 .lc-wa-trigger i {
-  font-size: 22px;
+  font-size: 17px;
   line-height: 1;
 }
 .lc-edwik-panel {
@@ -3701,18 +3719,18 @@ body {
   .lc-contact-dock {
     left: 12px;
     bottom: 14px;
-    width: min(280px, calc(100vw - 20px));
+    max-width: min(260px, calc(100vw - 20px));
   }
   .lc-contact-dock__avatar {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
   }
   .lc-edwik-trigger,
   .lc-wa-trigger {
-    min-height: 44px;
-    font-size: 13px;
+    padding: 7px 12px;
+    font-size: 12px;
   }
-  .lc-wa-trigger i { font-size: 20px; }
+  .lc-wa-trigger i { font-size: 16px; }
 }
 
 @media (max-width: 575.98px) {
