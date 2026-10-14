@@ -74,6 +74,7 @@ return [
     ],
 
     'support' => [
+        'address' => env('LIBCONTROL_COMPANY_ADDRESS', 'Hisar, Haryana'),
         'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@katsindia.com'),
         'public_email' => env('LIBCONTROL_PUBLIC_EMAIL', 'info@katsindia.com'),
         'phone' => env('LIBCONTROL_SUPPORT_PHONE', '8076105181'),

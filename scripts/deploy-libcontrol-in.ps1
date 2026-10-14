@@ -12,6 +12,17 @@ if (-not (Test-Path (Join-Path $localBuild "manifest.json"))) {
     throw "Run npm run build first (missing public/build/manifest.json)."
 }
 
+$repoRoot = Join-Path $PSScriptRoot ".." | Resolve-Path
+$mailEnv = Join-Path $repoRoot "deploy\mail.env"
+$mailSettingsLocal = Join-Path $env:TEMP "libcontrol-mail-settings.php"
+
+if (Test-Path $mailEnv) {
+    Write-Host "Building mail-settings.php from deploy/mail.env..."
+    php (Join-Path $repoRoot "scripts\build-mail-settings-php.php") $mailEnv | Set-Content -Path $mailSettingsLocal -Encoding utf8
+} else {
+    Write-Warning "deploy/mail.env not found — SMTP on demo/hub will stay as-is until you copy deploy/mail.env.example to deploy/mail.env and re-run deploy."
+}
+
 $remoteDeploy = @"
 set -e
 for APP in '$hub' '$demo'; do
@@ -30,5 +41,13 @@ ssh -p $sshPort $sshHost $remoteDeploy
 Write-Host "Uploading Vite build to hub and demo..."
 scp -P $sshPort -r "$localBuild\*" "${sshHost}:${hub}/public/build/"
 scp -P $sshPort -r "$localBuild\*" "${sshHost}:${demo}/public/build/"
+
+if (Test-Path $mailSettingsLocal) {
+    Write-Host "Uploading mail-settings.php to hub and demo..."
+    foreach ($app in @($hub, $demo)) {
+        ssh -p $sshPort $sshHost "mkdir -p ${app}/storage/app/private"
+        scp -P $sshPort $mailSettingsLocal "${sshHost}:${app}/storage/app/private/mail-settings.php"
+    }
+}
 
 Write-Host "Done. Hub: https://libcontrol.in/  Demo: https://demo.libcontrol.in/"

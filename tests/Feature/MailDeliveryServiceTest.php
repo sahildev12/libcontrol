@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Services\MailDeliveryService;
+use App\Support\MailConfigOverride;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class MailDeliveryServiceTest extends TestCase
@@ -45,5 +47,36 @@ class MailDeliveryServiceTest extends TestCase
 
         $this->assertTrue($service->isConfigured());
         $this->assertNull($service->issue());
+    }
+
+    public function test_private_mail_settings_file_overrides_log_mailer(): void
+    {
+        $path = storage_path('app/private/mail-settings.php');
+        $backup = is_readable($path) ? file_get_contents($path) : null;
+
+        File::put($path, <<<'PHP'
+<?php
+
+return [
+    'mail.default' => 'smtp',
+    'mail.mailers.smtp.username' => 'library@example.com',
+    'mail.mailers.smtp.password' => 'secret',
+    'mail.from.address' => 'library@example.com',
+];
+PHP);
+
+        try {
+            config(['mail.default' => 'log']);
+            MailConfigOverride::apply();
+
+            $service = app(MailDeliveryService::class);
+            $this->assertTrue($service->isConfigured());
+        } finally {
+            if ($backup !== null) {
+                File::put($path, $backup);
+            } else {
+                File::delete($path);
+            }
+        }
     }
 }

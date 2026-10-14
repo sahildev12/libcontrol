@@ -147,7 +147,7 @@
     setActive(activeId);
   }
 
-  document.querySelectorAll('.feat-card, .panel-intro, .story-card, .section-head, .table-wrap, .support-card, .plan-card, .pain-card, .pain-intro, .module-tabs-wrap, .callout').forEach(function (el, i) {
+  document.querySelectorAll('.feat-card, .benefit-card, .challenge-card, .module-simple-card, .workspace-card, .support-card, .plan-card, .section-head, .growth-pack-card, .final-cta-copy').forEach(function (el, i) {
     el.classList.add('reveal');
     el.style.setProperty('--reveal-delay', ((i % 6) * 0.07) + 's');
   });
@@ -196,7 +196,7 @@
     document.body.style.overflow = '';
   }
 
-  document.querySelectorAll('.feat-shot, .section-shot').forEach(function (btn) {
+  document.querySelectorAll('.feat-shot, .section-shot, .workspace-shot').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var img = btn.querySelector('img');
       var src = btn.getAttribute('data-full') || (img && img.src);

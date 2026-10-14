@@ -23,7 +23,7 @@ Notes for libcontrol.in:
 - Root `.htaccess` (tracked) rewrites everything into `public/`.
 - Demo is licensed on the libcontrol.in hub (Dev & Domains → "LibControl Demo") and syncs to `https://libcontrol.in/api/runtime/sync`.
 - Demo data: `php artisan db:seed --class=DemoSiteSeeder --force` (no developer account on the demo).
-- Both sites use `MAIL_MAILER=log` until a libcontrol.in mailbox is configured.
+- SMTP: copy `deploy/mail.env.example` to `deploy/mail.env` (gitignored) with the Hostinger mailbox password, then run `scripts/deploy-libcontrol-in.ps1` — it uploads `storage/app/private/mail-settings.php` to hub and demo. Or create that file manually on the server from `storage/app/private/mail-settings.example.php`.
 
 ## Typical update (after `git push` to `main`)
 

@@ -5,6 +5,7 @@
 .env.*
 !.env.example
 auth.json
+/deploy/mail.env
 
 # Local SMTP config for the marketing site (use mail-config.example.php as a template)
 /libcontrol-website/mail-config.php

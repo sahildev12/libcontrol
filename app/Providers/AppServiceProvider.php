@@ -16,6 +16,7 @@ use App\Services\NotificationService;
 use App\Services\PlanLimitService;
 use App\Support\PlanLimitPresentation;
 use App\Support\InstallState;
+use App\Support\MailConfigOverride;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
@@ -35,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        MailConfigOverride::apply();
+
         $auditor = new RecordsModelChanges;
         Branch::observe($auditor);
         Hall::observe($auditor);

@@ -143,7 +143,7 @@ Mon–Sat, 9:00–18:00 IST
 
 ### Legal footer
 © katsindia.com · LibControl is a product by katsindia.com  
-Katsindia, Rishi Nagar, Hisar 125001 (Haryana)
+Katsindia, Hisar, Haryana
 
 ---
 
