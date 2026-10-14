@@ -44,6 +44,7 @@ Route::get('/terms-and-conditions.html', [LibcontrolMarketingSiteController::cla
 Route::get('/refund-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'refund-policy.html');
 Route::get('/disclaimer.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'disclaimer.html');
 Route::get('/whatsapp.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'whatsapp.js');
+Route::get('/contact-widget.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'contact-widget.js');
 Route::get('/cookie-consent.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'cookie-consent.js');
 Route::get('/styles.css', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'styles.css');
 Route::get('/script.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'script.js');
