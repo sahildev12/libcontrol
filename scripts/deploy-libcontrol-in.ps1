@@ -18,9 +18,10 @@ $mailSettingsLocal = Join-Path $env:TEMP "libcontrol-mail-settings.php"
 
 if (Test-Path $mailEnv) {
     Write-Host "Building mail-settings.php from deploy/mail.env..."
-    php (Join-Path $repoRoot "scripts\build-mail-settings-php.php") $mailEnv | Set-Content -Path $mailSettingsLocal -Encoding utf8
+    $mailPhp = php (Join-Path $repoRoot "scripts\build-mail-settings-php.php") $mailEnv
+    [System.IO.File]::WriteAllText($mailSettingsLocal, $mailPhp)
 } else {
-    Write-Warning "deploy/mail.env not found — SMTP on demo/hub will stay as-is until you copy deploy/mail.env.example to deploy/mail.env and re-run deploy."
+    Write-Warning 'deploy/mail.env not found. Copy deploy/mail.env.example to deploy/mail.env and re-run deploy to enable SMTP.'
 }
 
 $remoteDeploy = @"
