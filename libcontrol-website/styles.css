@@ -3052,7 +3052,9 @@ body {
   width: 76px;
   height: 76px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.2));
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.15));
 }
 .lc-contact-dock__bubble {
   margin: 0 0 6px;
