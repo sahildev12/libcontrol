@@ -49,7 +49,8 @@ Upload `public/build/` from local (`npm run build`) — npm is not available on 
   2. Set `PHONEPE_ENV=production`, `PHONEPE_CLIENT_ID=…`, `PHONEPE_CLIENT_SECRET=…`, `PHONEPE_CLIENT_VERSION=1`.
   3. Create a **production** webhook → `https://libcontrol.in/api/webhooks/phonepe` (SHA auth; events `checkout.order.completed`, `checkout.order.failed`) → set `PHONEPE_WEBHOOK_USERNAME` / `PHONEPE_WEBHOOK_PASSWORD` (password ≤20 chars, letters+digits).
   4. `php artisan config:clear && php artisan config:cache`
-  5. `php scripts/phonepe-connectivity-test.php` — expect redirect host **without** `uat` (e.g. `mercury.phonepe.com`).
+  5. `php scripts/phonepe-connectivity-test.php` — expect redirect host **without** `uat` (e.g. `mercury-t2.phonepe.com` or `mercury.phonepe.com`). That is **live** checkout, not sandbox (`mercury-uat`).
+- **QR missing on PhonePe pay page:** In [business.phonepe.com](https://business.phonepe.com) turn **Test Mode OFF**, and ask PhonePe support to whitelist **`demo.libcontrol.in`** and **`libcontrol.in`** for PG Standard Checkout (payments start from the demo site but use live keys). The app sends `Referrer-Policy: strict-origin-when-cross-origin` as PhonePe requires.
 - If auth returns `CLIENT_NOT_FOUND`, the hub still has **UAT** keys while `PHONEPE_ENV=production`.
 - `payments:reconcile` runs every 10 minutes via the Laravel scheduler, which needs an hPanel cron: `* * * * * cd /home/u843330709/domains/libcontrol.in/public_html && php artisan schedule:run >> /dev/null 2>&1`.
 - Payments list: `https://libcontrol.in/developer/payments`. Clients pay from `/billing` (plans) and `/growth` (packages, quoted services).
