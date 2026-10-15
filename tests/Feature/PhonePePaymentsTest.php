@@ -110,9 +110,14 @@ class PhonePePaymentsTest extends TestCase
             'return_url' => 'https://evil.test/steal',
         ])->assertCreated();
 
-        $this->assertStringStartsWith('https://mercury-uat.phonepe.com/', $response->json('redirect_url'));
+        $launchUrl = (string) $response->json('redirect_url');
+        $this->assertStringContainsString('/payments/', $launchUrl);
+        $this->assertStringContainsString('/launch', $launchUrl);
 
         $payment = Payment::query()->sole();
+        $this->assertStringStartsWith('https://mercury-uat.phonepe.com/', $payment->meta['phonepe_redirect_url'] ?? '');
+        $this->get($launchUrl)->assertRedirect('https://mercury-uat.phonepe.com/transact/uat_v2?token=abc');
+
         $this->assertSame(99900, $payment->amount_paise);
         $this->assertSame(Payment::STATUS_PENDING, $payment->status);
         $this->assertNull($payment->return_url, 'Return URL outside the deployment domains must be dropped.');

@@ -67,7 +67,7 @@ class HubPaymentClient
         $json = $response->json();
         $redirect = is_array($json) ? (string) ($json['redirect_url'] ?? '') : '';
 
-        if (! $response->successful() || ! $this->isPhonePeUrl($redirect)) {
+        if (! $response->successful() || ! $this->isAllowedCheckoutRedirect($redirect)) {
             return [
                 'ok' => false,
                 'redirect_url' => null,
@@ -177,6 +177,11 @@ class HubPaymentClient
         return LicensedDeployment::normalizeDomain($host !== '' ? $host : (string) config('app.url'));
     }
 
+    private function isAllowedCheckoutRedirect(string $url): bool
+    {
+        return $this->isPhonePeUrl($url) || $this->isHubLaunchUrl($url);
+    }
+
     private function isPhonePeUrl(string $url): bool
     {
         if (! filter_var($url, FILTER_VALIDATE_URL) || strtolower((string) parse_url($url, PHP_URL_SCHEME)) !== 'https') {
@@ -186,5 +191,24 @@ class HubPaymentClient
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));
 
         return $host === 'phonepe.com' || str_ends_with($host, '.phonepe.com');
+    }
+
+    private function isHubLaunchUrl(string $url): bool
+    {
+        if (! filter_var($url, FILTER_VALIDATE_URL) || strtolower((string) parse_url($url, PHP_URL_SCHEME)) !== 'https') {
+            return false;
+        }
+
+        $hubHost = strtolower((string) parse_url($this->hubBaseUrl(), PHP_URL_HOST));
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        if ($hubHost === '' || $host !== $hubHost) {
+            return false;
+        }
+
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return (bool) preg_match('#^/payments/[0-9a-f-]{36}/launch$#i', $path)
+            && str_contains((string) parse_url($url, PHP_URL_QUERY), 'signature=');
     }
 }

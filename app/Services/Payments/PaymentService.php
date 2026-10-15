@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -87,12 +88,32 @@ class PaymentService
             throw ValidationException::withMessages(['payment' => $e->getMessage()]);
         }
 
+        $phonePeRedirect = (string) $order['redirect_url'];
+
         $payment->update([
             'status' => Payment::STATUS_PENDING,
             'gateway_order_id' => $order['order_id'] ?: null,
+            'meta' => array_merge($payment->meta ?? [], [
+                'phonepe_redirect_url' => $phonePeRedirect,
+            ]),
         ]);
 
-        return ['payment' => $payment->fresh(), 'redirect_url' => $order['redirect_url']];
+        return [
+            'payment' => $payment->fresh(),
+            'redirect_url' => $this->signedLaunchUrl($payment->fresh()),
+        ];
+    }
+
+    public function signedLaunchUrl(Payment $payment): string
+    {
+        $minutes = max(5, (int) config('payments.phonepe.launch_url_ttl_minutes', 30));
+
+        return URL::temporarySignedRoute(
+            'payments.launch',
+            now()->addMinutes($minutes),
+            ['uuid' => $payment->uuid],
+            absolute: true,
+        );
     }
 
     /**

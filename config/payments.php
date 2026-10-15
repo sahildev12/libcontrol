@@ -13,6 +13,7 @@ return [
         'webhook_username' => env('PHONEPE_WEBHOOK_USERNAME'),
         'webhook_password' => env('PHONEPE_WEBHOOK_PASSWORD'),
         'order_expire_seconds' => (int) env('PHONEPE_ORDER_EXPIRE_SECONDS', 900),
+        'launch_url_ttl_minutes' => (int) env('PHONEPE_LAUNCH_URL_TTL_MINUTES', 30),
         'timeout' => 20,
         'endpoints' => [
             'sandbox' => [

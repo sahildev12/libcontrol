@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\PhonePeWebhookController;
 use App\Http\Controllers\Api\RuntimeSyncController;
 use App\Http\Controllers\Api\SupportTicketController;
+use App\Http\Controllers\PaymentLaunchController;
 use App\Http\Controllers\PaymentReturnController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,10 @@ Route::middleware(['license_server', 'throttle:60,1'])
         Route::get('/payments/{uuid}/return', PaymentReturnController::class)
             ->whereUuid('uuid')
             ->name('payments.return');
+        Route::get('/payments/{uuid}/launch', PaymentLaunchController::class)
+            ->middleware('signed')
+            ->whereUuid('uuid')
+            ->name('payments.launch');
     });
 
 Route::post('/api/webhooks/phonepe', PhonePeWebhookController::class)
