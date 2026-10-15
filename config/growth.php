@@ -206,6 +206,21 @@ return [
             ],
             'notes' => ['Ad budget billed separately.'],
         ],
+        'payment_test' => [
+            'name' => 'Payment test',
+            'price' => 1,
+            'price_label' => '₹1 (one-time test)',
+            'billing' => 'one_time',
+            'demo_only' => true,
+            'skip_profile_activation' => true,
+            'tagline' => 'Tiny charge to verify PhonePe checkout on demo.libcontrol.in only.',
+            'includes' => [
+                'One-time ₹1 payment test',
+                'No marketing deliverables',
+                'Use before switching PhonePe to live mode',
+            ],
+            'notes' => ['Demo site only. Not a real growth package.'],
+        ],
     ],
 
     'services' => [

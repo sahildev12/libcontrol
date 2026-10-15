@@ -10,6 +10,7 @@ use App\Models\PlatformSetting;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Services\SupportTicketSyncService;
+use App\Support\GrowthCatalog;
 use App\Support\WhatsAppLink;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -149,8 +150,9 @@ class GrowthOrderService
     public function resolveCatalogItem(string $type, string $key): array
     {
         if ($type === 'package') {
-            $package = config("growth.packages.{$key}");
-            abort_unless(is_array($package), 422, 'Unknown growth package.');
+            GrowthCatalog::assertPackageAllowedOnInstall($key);
+            $package = GrowthCatalog::package($key);
+            abort_unless($package, 422, 'Unknown growth package.');
 
             return $package + ['key' => $key];
         }
@@ -171,6 +173,11 @@ class GrowthOrderService
             ['branch_id' => $order->branch_id],
             ['score_cached' => 0]
         );
+
+        $package = GrowthCatalog::package($order->item_key);
+        if (is_array($package) && ! empty($package['skip_profile_activation'])) {
+            return;
+        }
 
         if ($order->status === GrowthOrder::STATUS_ACTIVE) {
             $profile->forceFill([

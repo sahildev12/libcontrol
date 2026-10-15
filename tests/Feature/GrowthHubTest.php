@@ -79,6 +79,34 @@ class GrowthHubTest extends TestCase
             ->assertSee('Dominate', false);
     }
 
+    public function test_payment_test_package_only_on_demo_install(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+
+        $this->actingAs($user)
+            ->get(route('growth.index'))
+            ->assertOk()
+            ->assertDontSee('Payment test', false);
+
+        $this->actingAs($user)
+            ->postJson(route('growth.packages.request'), ['item_key' => 'payment_test'])
+            ->assertStatus(422);
+
+        config(['libcontrol.demo.enabled' => true]);
+
+        $this->actingAs($user)
+            ->get(route('growth.index'))
+            ->assertOk()
+            ->assertSee('Payment test', false)
+            ->assertSee('₹1 (one-time test)', false);
+
+        $this->actingAs($user)
+            ->postJson(route('growth.packages.request'), ['item_key' => 'payment_test'])
+            ->assertCreated()
+            ->assertJsonPath('order.item_name', 'Payment test');
+    }
+
     public function test_package_request_creates_growth_order_and_local_ticket(): void
     {
         Http::fake([

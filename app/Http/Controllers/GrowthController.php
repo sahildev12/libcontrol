@@ -15,6 +15,7 @@ use App\Services\LibraryWebsiteService;
 use App\Services\Payments\HubPaymentClient;
 use App\Services\Profile\LibraryProfileCompletionService;
 use App\Services\SupportTicketSyncService;
+use App\Support\GrowthCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -92,7 +93,7 @@ class GrowthController extends Controller
             'combinedGrowth' => $combinedGrowth,
             'profileCompletionScore' => $profileCompletionScore,
             'recommendations' => $recommendations,
-            'packages' => config('growth.packages', []),
+            'packages' => GrowthCatalog::packagesForUi(),
             'services' => config('growth.services', []),
             'actions' => config('growth.actions', []),
             'orders' => $orders,

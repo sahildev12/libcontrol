@@ -145,6 +145,8 @@
         .lc-growth-wa-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #15803d; text-decoration: none; }
         .lc-growth-wa-link:hover { text-decoration: underline; }
         .lc-growth-pack-badge { display: inline-block; margin-bottom: 8px; padding: 3px 8px; border-radius: 999px; background: var(--lc-yellow); color: var(--lc-navy); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .lc-growth-pack-badge--demo { background: #e0f2fe; color: #0369a1; }
+        .lc-growth-pack--demo { border-color: #7dd3fc; }
         .lc-growth-service { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
         .lc-growth-service:hover { border-color: #BFDBFE; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08); }
         .lc-growth-service__name { margin: 0; font-size: 14px; font-weight: 700; color: var(--lc-navy); line-height: 1.3; }
@@ -337,11 +339,13 @@
         <section id="packages">
             <h2 class="lc-growth-section-title">Library Growth Marketing Packages</h2>
             <p class="lc-growth-section-sub">{{ $gstDisclaimer }} {{ $adSpendDisclaimer }}</p>
-            <div class="mt-4 grid gap-4 lg:grid-cols-3">
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 {{ count($packages) >= 4 ? 'xl:grid-cols-4' : 'lg:grid-cols-3' }}">
                 @foreach ($packages as $key => $package)
-                    <article class="lc-growth-panel lc-growth-pack {{ $key === 'grow' ? 'lc-growth-pack--popular' : '' }}">
+                    <article class="lc-growth-panel lc-growth-pack {{ $key === 'grow' ? 'lc-growth-pack--popular' : '' }} {{ ! empty($package['demo_only']) ? 'lc-growth-pack--demo' : '' }}">
                         @if ($key === 'grow')
                             <span class="lc-growth-pack-badge">Most popular</span>
+                        @elseif (! empty($package['demo_only']))
+                            <span class="lc-growth-pack-badge lc-growth-pack-badge--demo">Demo test only</span>
                         @endif
                         <h3 class="text-lg font-bold text-[#082D70]">{{ $package['name'] }}</h3>
                         <p class="mt-1 text-2xl font-bold text-[#082D70]">{{ $package['price_label'] }}</p>

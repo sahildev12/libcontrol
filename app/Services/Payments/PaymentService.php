@@ -7,6 +7,7 @@ use App\Models\LicensedDeployment;
 use App\Models\Payment;
 use App\Services\Developer\DeploymentCommandService;
 use App\Services\Growth\GrowthOrderService;
+use App\Support\GrowthCatalog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -304,7 +305,23 @@ class PaymentService
             }
 
             if ($expectedType === 'package') {
-                $price = (int) config("growth.packages.{$order->item_key}.price", 0);
+                $package = GrowthCatalog::package($order->item_key);
+                if (! is_array($package)) {
+                    throw ValidationException::withMessages(['payment' => 'Unknown growth package.']);
+                }
+
+                if (! empty($package['demo_only'])) {
+                    $checkoutDomain = LicensedDeployment::normalizeDomain(
+                        (string) ($input['domain'] ?? $order->deployment_domain ?? '')
+                    );
+                    if (! GrowthCatalog::isDemoDeploymentDomain($checkoutDomain)) {
+                        throw ValidationException::withMessages([
+                            'payment' => 'The payment test package is only available on demo.libcontrol.in.',
+                        ]);
+                    }
+                }
+
+                $price = (int) ($package['price'] ?? 0);
                 if ($price <= 0) {
                     throw ValidationException::withMessages(['payment' => 'Unknown growth package.']);
                 }
