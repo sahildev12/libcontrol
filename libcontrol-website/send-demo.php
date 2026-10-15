@@ -65,19 +65,7 @@ if (mb_strlen($message) > 1000) {
     $demoError('Message must be 1000 characters or fewer.');
 }
 
-$phpmailerBase = __DIR__ . '/../kims_pro/lib/PHPMailer';
-if (!is_file($phpmailerBase . '/PHPMailer.php')) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'message' => 'Mail library is not available.']);
-    exit;
-}
-
-require_once $phpmailerBase . '/Exception.php';
-require_once $phpmailerBase . '/PHPMailer.php';
-require_once $phpmailerBase . '/SMTP.php';
-
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\PHPMailer;
+use Illuminate\Support\Facades\Mail;
 
 function h(string $value): string
 {
@@ -191,32 +179,26 @@ $plainBody = "New LibControl Demo Request\n"
     . "City: " . ($city !== '' ? $city : '—') . "\n"
     . "Message: " . ($message !== '' ? $message : '—') . "\n";
 
+if (! function_exists('app') || ! app()->bound('mail.manager')) {
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'message' => 'Mail is not available.']);
+    exit;
+}
+
 try {
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host       = (string) $config['host'];
-    $mail->SMTPAuth   = true;
-    $mail->Username   = (string) $config['username'];
-    $mail->Password   = (string) $config['password'];
-    $mail->SMTPSecure = ((string) ($config['encryption'] ?? 'ssl')) === 'tls'
-        ? PHPMailer::ENCRYPTION_STARTTLS
-        : PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = (int) $config['port'];
-    $mail->CharSet    = 'UTF-8';
+    Mail::html($htmlBody, function ($message) use ($config, $name, $institute, $plainBody) {
+        $message
+            ->to((string) $config['to_email'], (string) ($config['to_name'] ?? ''))
+            ->subject('LibControl Demo Request — '.$institute)
+            ->replyTo((string) $config['from_email'], $name);
 
-    $mail->setFrom((string) $config['from_email'], (string) $config['from_name']);
-    $mail->addAddress((string) $config['to_email'], (string) ($config['to_name'] ?? ''));
-    $mail->addReplyTo((string) $config['from_email'], $name);
-
-    $mail->isHTML(true);
-    $mail->Subject = 'LibControl Demo Request — ' . $institute;
-    $mail->Body    = $htmlBody;
-    $mail->AltBody = $plainBody;
-
-    $mail->send();
+        if (method_exists($message, 'text')) {
+            $message->text($plainBody);
+        }
+    });
 
     echo json_encode(['ok' => true, 'message' => 'Demo request sent successfully.']);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
