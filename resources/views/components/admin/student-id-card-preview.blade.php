@@ -1,6 +1,7 @@
 @props([
     'template' => 'classic',
     'logoUrl' => null,
+    'bindLogoFromAlpine' => false,
     'sample' => null,
 ])
 
@@ -21,5 +22,6 @@
     @include($previewView, [
         'sample' => $sample,
         'logoUrl' => $logoUrl,
+        'bindLogoFromAlpine' => $bindLogoFromAlpine,
     ])
 </div>

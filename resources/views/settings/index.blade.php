@@ -24,6 +24,7 @@
                 'id_card_logo_url' => $platformSettings->idCardLogoUrl(),
             ]),
             idCardTemplates: @js(config('libcontrol.id_card_templates', [])),
+            idCardLogoLimits: @js(config('libcontrol.id_card_logo_upload', [])),
             planSnapshot: @js($planSnapshot),
             planForm: @js([
                 'plan_tier' => $platformSettings->planTier(),
@@ -290,9 +291,9 @@
                 <div class="space-y-5 p-5">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Library logo for ID cards</label>
-                        <p class="mt-0.5 text-xs text-gray-500">Shown on the selected template when printing student ID cards.</p>
-                        <input type="file" @change="platformForm.id_card_logo = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg,.webp" class="mt-2 block w-full max-w-md text-sm text-gray-600">
-                        <img x-show="platformSettings.id_card_logo_url" :src="platformSettings.id_card_logo_url" alt="" class="mt-3 h-12 max-w-[12rem] object-contain rounded border border-gray-200 bg-gray-50 p-2">
+                        <p class="mt-0.5 text-xs text-gray-500">Shown on the selected template when printing student ID cards. PNG or JPG, max 2&nbsp;MB, between 80×32 and 1200×600 pixels.</p>
+                        <input type="file" @change="onIdCardLogoSelected($event)" accept=".jpg,.jpeg,.png,.webp" class="mt-2 block w-full max-w-md text-sm text-gray-600">
+                        <img x-show="idCardLogoPreviewUrl || platformSettings.id_card_logo_url" :src="idCardLogoPreviewUrl || platformSettings.id_card_logo_url" alt="" class="mt-3 h-12 max-w-[12rem] object-contain rounded border border-gray-200 bg-gray-50 p-2">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-gray-700">ID card template</p>
@@ -314,7 +315,7 @@
                                     <p class="mt-1 text-xs text-gray-500">{{ $templateMeta['description'] }}</p>
                                     <x-admin.student-id-card-preview
                                         :template="$templateKey"
-                                        :logo-url="$platformSettings->idCardLogoUrl()"
+                                        :bind-logo-from-alpine="true"
                                     />
                                 </button>
                             @endforeach

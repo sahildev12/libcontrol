@@ -7,4 +7,5 @@
     'studentId' => $student->student_code,
     'photoUrl' => $student->photoUrl(),
     'photoInitials' => $student->initials(),
+    'logoUrl' => $logoUrl ?? null,
 ])

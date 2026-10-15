@@ -2,6 +2,9 @@
 @php
     $layout = config('libcontrol.id_card_layouts.'.$layoutKey, config('libcontrol.id_card_layouts.classic'));
     $photo = $layout['photo'];
+    $logoBox = $layout['logo'] ?? null;
+    $logoAlign = is_array($logoBox) ? ($logoBox['align'] ?? 'left') : 'left';
+    $logoPadding = is_array($logoBox) ? (float) ($logoBox['padding'] ?? 0) : 0;
     $text = config('libcontrol.id_card_text');
     $fontSize = $text['font_size'];
     $values = [
@@ -11,15 +14,41 @@
         'student_id' => $studentId ?? '—',
     ];
     $px = fn (float $percent): string => round($percent * 3.25, 2).'px';
+    $fitPreview = ! empty($fitPreview);
+    $cardWidth = empty($fluid) ? '325px' : '100%';
+    $cardHeight = empty($fluid) ? '204px' : '100%';
 @endphp
 <div
-    style="position: relative; container-type: inline-size; width: {{ empty($fluid) ? '325px' : '100%' }}; height: {{ empty($fluid) ? '204px' : '100%' }}; overflow: hidden; background: #fff;{{ empty($fluid) ? ' box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);' : '' }}"
+    @class(['id-card-preview__card' => $fitPreview])
+    style="position: relative; container-type: inline-size; width: {{ $cardWidth }}; height: {{ $cardHeight }}; overflow: hidden; background: #fff;{{ empty($fluid) && ! $fitPreview ? ' box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);' : '' }}"
 >
     <img
         src="{{ $backgroundUrl }}"
         alt=""
         style="position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: fill; print-color-adjust: exact; -webkit-print-color-adjust: exact;"
     >
+
+    @if (is_array($logoBox) && (! empty($bindLogoFromAlpine) || ! empty($logoUrl)))
+        <div
+            style="position: absolute; z-index: 2; left: {{ $logoBox['left'] }}%; top: {{ $logoBox['top'] }}%; width: {{ $logoBox['width'] }}%; height: {{ $logoBox['height'] }}%; box-sizing: border-box; padding: {{ $logoPadding }}%; overflow: hidden; display: flex; align-items: center; justify-content: {{ $logoAlign === 'right' ? 'flex-end' : 'flex-start' }}; pointer-events: none; line-height: 0;"
+        >
+            @if (! empty($bindLogoFromAlpine))
+                <img
+                    x-show="idCardLogoPreviewUrl || platformSettings.id_card_logo_url"
+                    x-cloak
+                    :src="idCardLogoPreviewUrl || platformSettings.id_card_logo_url"
+                    alt=""
+                    style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: {{ $logoAlign === 'right' ? 'right center' : 'left center' }}; print-color-adjust: exact; -webkit-print-color-adjust: exact;"
+                >
+            @elseif (! empty($logoUrl))
+                <img
+                    src="{{ $logoUrl }}"
+                    alt=""
+                    style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: {{ $logoAlign === 'right' ? 'right center' : 'left center' }}; print-color-adjust: exact; -webkit-print-color-adjust: exact;"
+                >
+            @endif
+        </div>
+    @endif
 
     <div
         style="position: absolute; z-index: 2; left: {{ $photo['left'] }}%; top: {{ $photo['top'] }}%; width: {{ $photo['width'] }}%; height: {{ $photo['height'] }}%; overflow: hidden; border-radius: {{ $px($photo['radius']) }}; border-radius: {{ $photo['radius'] }}cqw; background: #fff; line-height: 0;"

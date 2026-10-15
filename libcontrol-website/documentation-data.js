@@ -517,7 +517,7 @@
             title: 'Contact Katsindia support',
             keywords: ['contact', 'whatsapp', 'phone number', 'email support', 'support hours', 'call'],
             steps: [
-              'Email info@katsindia.com or WhatsApp / call +91 8076 105 181.',
+              'Email support@libcontrol.in or WhatsApp / call +91 8076 105 181.',
               'Support hours: Monday to Saturday, 9 AM – 6 PM IST.',
               'Include your library name and a screenshot so we can help faster.',
             ],

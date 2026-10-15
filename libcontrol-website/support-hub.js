@@ -321,7 +321,7 @@
           '<p>Try fewer or simpler words (for example “add student”, “renew fee”, “transfer seat”), browse the ' +
           '<a href="support-articles.html">Support Articles</a>, or ask us on ' +
           '<a href="https://wa.me/918076105181" target="_blank" rel="noopener">WhatsApp</a> / ' +
-          '<a href="mailto:info@katsindia.com">info@katsindia.com</a>.</p>' +
+          '<a href="mailto:support@libcontrol.in">support@libcontrol.in</a>.</p>' +
         '</div>'
       );
     }

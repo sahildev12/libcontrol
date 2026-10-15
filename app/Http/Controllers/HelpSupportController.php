@@ -90,7 +90,7 @@ class HelpSupportController extends Controller
             $reporterEmail = trim((string) ($user?->email ?: $request->string('reporter_email')->toString()));
 
             if ($reporterEmail === '') {
-                $reporterEmail = (string) config('libcontrol.support.email', 'support@katsindia.com');
+                $reporterEmail = (string) config('libcontrol.support.email', 'support@libcontrol.in');
             }
 
             $uuid = (string) Str::uuid();

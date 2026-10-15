@@ -75,8 +75,8 @@ return [
 
     'support' => [
         'address' => env('LIBCONTROL_COMPANY_ADDRESS', 'Hisar, Haryana'),
-        'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@katsindia.com'),
-        'public_email' => env('LIBCONTROL_PUBLIC_EMAIL', 'info@katsindia.com'),
+        'email' => env('LIBCONTROL_SUPPORT_EMAIL', 'support@libcontrol.in'),
+        'public_email' => env('LIBCONTROL_PUBLIC_EMAIL', env('LIBCONTROL_SUPPORT_EMAIL', 'support@libcontrol.in')),
         'phone' => env('LIBCONTROL_SUPPORT_PHONE', '8076105181'),
         'whatsapp' => env('LIBCONTROL_SUPPORT_WHATSAPP', '8076105181'),
         'faq_url' => env('LIBCONTROL_SUPPORT_FAQ_URL', 'https://libcontrol.in/support-articles.html'),
@@ -147,7 +147,7 @@ return [
         ],
         'modern' => [
             'label' => 'LibControl Card 2',
-            'description' => 'Wave header and footer with LibControl branding.',
+            'description' => 'Wave header and footer with your library logo on top.',
         ],
         'professional' => [
             'label' => 'LibControl Card 3',
@@ -161,17 +161,28 @@ return [
      */
     'id_card_layouts' => [
         'classic' => [
-            'background' => 'logo/id-cards/card-classic.jpeg',
+            'background' => 'logo/id-cards/no-logo-id-cards/card-classic.jpeg',
+            'logo' => ['left' => 0, 'top' => 0, 'width' => 22.5, 'height' => 27.5, 'padding' => 1.2, 'align' => 'left'],
             'photo' => ['left' => 4.923, 'top' => 30.882, 'width' => 27.692, 'height' => 50.98, 'radius' => 2.46],
         ],
         'modern' => [
-            'background' => 'logo/id-cards/card-modern.jpeg',
+            'background' => 'logo/id-cards/no-logo-id-cards/card-modern.jpeg',
+            'logo' => ['left' => 2.2, 'top' => 0, 'width' => 22.5, 'height' => 24.5, 'padding' => 1, 'align' => 'left'],
             'photo' => ['left' => 4.84, 'top' => 34.33, 'width' => 21.15, 'height' => 40.28, 'radius' => 1.7],
         ],
         'professional' => [
-            'background' => 'logo/id-cards/card-professional.jpeg',
+            'background' => 'logo/id-cards/no-logo-id-cards/card-professional.jpeg',
+            'logo' => ['left' => 73.5, 'top' => 0, 'width' => 26, 'height' => 25.2, 'padding' => 1, 'align' => 'right'],
             'photo' => ['left' => 7.71, 'top' => 31.35, 'width' => 26.28, 'height' => 49.84, 'radius' => 0],
         ],
+    ],
+
+    'id_card_logo_upload' => [
+        'max_kb' => 2048,
+        'max_width' => 1200,
+        'max_height' => 600,
+        'min_width' => 80,
+        'min_height' => 32,
     ],
 
     /*

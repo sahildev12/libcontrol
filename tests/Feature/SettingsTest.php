@@ -61,6 +61,35 @@ class SettingsTest extends TestCase
         ]);
     }
 
+    public function test_id_card_logo_rejects_oversized_dimensions(): void
+    {
+        PlatformSetting::query()->create([
+            'student_code_prefix' => 'LIB',
+            'student_code_padding' => 3,
+        ]);
+
+        $user = $this->clientAdmin();
+        $path = storage_path('framework/testing/id-card-logo-oversize.png');
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+
+        $image = imagecreatetruecolor(1400, 100);
+        imagepng($image, $path);
+        imagedestroy($image);
+
+        $file = new \Illuminate\Http\UploadedFile($path, 'logo.png', 'image/png', null, true);
+
+        $this->actingAs($user)
+            ->patchJson(route('settings.platform.update'), [
+                'student_code_prefix' => 'LIB',
+                'student_code_padding' => 3,
+                'id_card_logo' => $file,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['id_card_logo']);
+    }
+
     public function test_client_admin_can_update_id_card_template_settings(): void
     {
         PlatformSetting::query()->create([

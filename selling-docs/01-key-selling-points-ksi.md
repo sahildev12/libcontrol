@@ -106,7 +106,7 @@ See `07-ideal-customer-profile.md` for full ICP.
 
 1. **Pre-Register** — live walkthrough of seat map + fees  
 2. **WhatsApp** — +91 8076 105 181  
-3. **Email** — info@katsindia.com  
+3. **Email** — support@libcontrol.in  
 4. **Custom quote** — networks with 3+ branches or special workflows
 
 ---

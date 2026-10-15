@@ -135,7 +135,7 @@ Built for how Indian libraries actually work
 Ready to run your library without the paperwork?
 
 ### CTA buttons
-**Pre-Register** · **WhatsApp: +91 8076 105 181** · **info@katsindia.com**
+**Pre-Register** · **WhatsApp: +91 8076 105 181** · **support@libcontrol.in**
 
 ### Support line
 We help you launch — real setup support so your staff use LibControl from day one.  

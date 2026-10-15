@@ -56,7 +56,7 @@ Reading libraries still run on **registers, Excel, and WhatsApp**. Seat disputes
 ## Contact
 
 📞 **+91 8076 105 181** (Call / WhatsApp)  
-✉️ **info@katsindia.com**  
+✉️ **support@libcontrol.in**  
 🌐 **katsindia.com**
 
 **Pre-Register** — see your hall on the seat map in 30 minutes.

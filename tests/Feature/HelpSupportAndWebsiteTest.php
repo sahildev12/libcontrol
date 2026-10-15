@@ -267,7 +267,7 @@ class HelpSupportAndWebsiteTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('info@katsindia.com', false)
+            ->assertSee('support@libcontrol.in', false)
             ->assertSee('+91 8076 105 181', false)
             ->assertSee('wa.me/918076105181', false)
             ->assertDontSee('House rules', false);

@@ -10,4 +10,7 @@
     'studentId' => $studentId ?? '—',
     'photoUrl' => $photoUrl ?? null,
     'photoInitials' => $photoInitials ?? '—',
+    'logoUrl' => $logoUrl ?? null,
+    'bindLogoFromAlpine' => $bindLogoFromAlpine ?? false,
+    'fitPreview' => $fitPreview ?? false,
 ])

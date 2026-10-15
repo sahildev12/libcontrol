@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PlatformSetting;
 use App\Models\Student;
 use GdImage;
 use Illuminate\Support\Facades\Storage;
@@ -72,6 +73,9 @@ class StudentIdCardImageService
         imagesavealpha($canvas, false);
 
         $this->fillBackground($canvas, public_path($layout['background']), $width, $height);
+        if (isset($layout['logo']) && is_array($layout['logo'])) {
+            $this->drawLibraryLogo($canvas, $layout['logo'], $width, $height);
+        }
         $this->drawPhoto($canvas, $student, $layout['photo'], $width, $height);
         $this->drawValues($canvas, $student, config('libcontrol.id_card_text'), $width, $height);
 
@@ -91,6 +95,54 @@ class StudentIdCardImageService
 
         imagecopyresampled($canvas, $background, 0, 0, 0, 0, $width, $height, imagesx($background), imagesy($background));
         imagedestroy($background);
+    }
+
+    /**
+     * @param  array<string, float|string>  $box
+     */
+    private function drawLibraryLogo(GdImage $canvas, array $box, int $cardWidth, int $cardHeight): void
+    {
+        $path = PlatformSetting::current()->id_card_logo_path;
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            return;
+        }
+
+        $logo = $this->loadImageFromPath(Storage::disk('public')->path($path));
+        if ($logo === null) {
+            return;
+        }
+
+        $left = (int) round($box['left'] / 100 * $cardWidth);
+        $top = (int) round($box['top'] / 100 * $cardHeight);
+        $slotWidth = (int) round($box['width'] / 100 * $cardWidth);
+        $slotHeight = (int) round($box['height'] / 100 * $cardHeight);
+        $align = (string) ($box['align'] ?? 'left');
+        $padding = (float) ($box['padding'] ?? 0);
+        $padX = (int) round($slotWidth * $padding / 100);
+        $padY = (int) round($slotHeight * $padding / 100);
+        $innerW = max(1, $slotWidth - ($padX * 2));
+        $innerH = max(1, $slotHeight - ($padY * 2));
+
+        $slot = imagecreatetruecolor($slotWidth, $slotHeight);
+        if ($slot === false) {
+            imagedestroy($logo);
+
+            return;
+        }
+
+        imagealphablending($slot, false);
+        imagesavealpha($slot, true);
+        $transparent = imagecolorallocatealpha($slot, 0, 0, 0, 127);
+        imagefill($slot, 0, 0, $transparent);
+        imagealphablending($slot, true);
+
+        $destX = $padX + ($align === 'right' ? max(0, $slotWidth - $padX - $innerW) : $padX);
+        $destY = $padY + (int) max(0, ($slotHeight - ($padY * 2) - $innerH) / 2);
+        $this->copyContain($slot, $logo, $destX, $destY, $innerW, $innerH, $align);
+        imagedestroy($logo);
+
+        imagecopy($canvas, $slot, $left, $top, 0, 0, $slotWidth, $slotHeight);
+        imagedestroy($slot);
     }
 
     /**
@@ -289,6 +341,23 @@ class StudentIdCardImageService
         }
 
         imagecopyresampled($canvas, $source, $destX, $destY, $cropX, $cropY, $destW, $destH, $cropW, $cropH);
+    }
+
+    private function copyContain(GdImage $canvas, GdImage $source, int $destX, int $destY, int $destW, int $destH, string $align = 'left'): void
+    {
+        $srcW = imagesx($source);
+        $srcH = imagesy($source);
+        if ($srcW <= 0 || $srcH <= 0 || $destW <= 0 || $destH <= 0) {
+            return;
+        }
+
+        $scale = min($destW / $srcW, $destH / $srcH);
+        $drawW = max(1, (int) round($srcW * $scale));
+        $drawH = max(1, (int) round($srcH * $scale));
+        $offsetX = $align === 'right' ? $destW - $drawW : 0;
+        $offsetY = (int) round(($destH - $drawH) / 2);
+
+        imagecopyresampled($canvas, $source, $destX + $offsetX, $destY + $offsetY, 0, 0, $drawW, $drawH, $srcW, $srcH);
     }
 
     private function boldFontPath(): string

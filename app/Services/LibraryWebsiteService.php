@@ -503,7 +503,7 @@ class LibraryWebsiteService
         return [
             'phone' => $display,
             'phone_href' => $e164 !== '' ? 'tel:+'.$e164 : '',
-            'email' => (string) config('libcontrol.support.public_email', 'info@katsindia.com'),
+            'email' => (string) config('libcontrol.support.public_email', 'support@libcontrol.in'),
             'whatsapp' => $digits,
             'whatsapp_url' => $this->whatsappUrl($digits),
         ];

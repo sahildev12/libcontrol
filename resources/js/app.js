@@ -6314,6 +6314,8 @@ Alpine.data('settingsPage', (config) => ({
         require_student_contact: config.settings?.require_student_contact || false,
     },
     idCardTemplates: config.idCardTemplates || {},
+    idCardLogoLimits: config.idCardLogoLimits || {},
+    idCardLogoPreviewUrl: null,
     platformForm: {
         student_code_prefix: config.platformSettings?.student_code_prefix || '',
         student_code_padding: config.platformSettings?.student_code_padding || 3,
@@ -6942,6 +6944,55 @@ Alpine.data('settingsPage', (config) => ({
         }
     },
 
+    async onIdCardLogoSelected(event) {
+        const file = event?.target?.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        const limits = this.idCardLogoLimits || {};
+        const maxKb = Number(limits.max_kb || 2048);
+        const maxWidth = Number(limits.max_width || 1200);
+        const maxHeight = Number(limits.max_height || 600);
+        const minWidth = Number(limits.min_width || 80);
+        const minHeight = Number(limits.min_height || 32);
+
+        if (file.size > maxKb * 1024) {
+            showToast(`Logo must be ${maxKb} KB or smaller.`, 'error');
+            event.target.value = '';
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        try {
+            const { width, height } = await new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+                image.onerror = () => reject(new Error('invalid'));
+                image.src = objectUrl;
+            });
+
+            if (width < minWidth || height < minHeight || width > maxWidth || height > maxHeight) {
+                URL.revokeObjectURL(objectUrl);
+                showToast(`Use a logo between ${minWidth}×${minHeight} and ${maxWidth}×${maxHeight} pixels.`, 'error');
+                event.target.value = '';
+                return;
+            }
+        } catch {
+            URL.revokeObjectURL(objectUrl);
+            showToast('Could not read the logo image. Use PNG or JPG.', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        if (this.idCardLogoPreviewUrl) {
+            URL.revokeObjectURL(this.idCardLogoPreviewUrl);
+        }
+
+        this.platformForm.id_card_logo = file;
+        this.idCardLogoPreviewUrl = objectUrl;
+    },
+
     async saveIdCardSettings() {
         this.savingIdCards = true;
         try {
@@ -6959,6 +7010,10 @@ Alpine.data('settingsPage', (config) => ({
             this.platformSettings = platformResponse.data.platform_settings;
             this.platformForm.id_card_template = this.platformSettings.id_card_template || 'classic';
             this.platformForm.id_card_logo = null;
+            if (this.idCardLogoPreviewUrl) {
+                URL.revokeObjectURL(this.idCardLogoPreviewUrl);
+                this.idCardLogoPreviewUrl = null;
+            }
             showToast('ID card settings saved.');
         } catch (e) {
             showToast(extractAxiosError(e), 'error');

@@ -1,7 +1,32 @@
 /* Student ID card image overlays — edit positioning here (classic / modern / professional) */
 
+/* Settings template picker — match artwork (1012×638) and keep the full card inside the box */
+.id-card-preview {
+    min-width: 0;
+}
+
 .id-card-preview__frame {
-    aspect-ratio: 86 / 54;
+    position: relative;
+    aspect-ratio: 1012 / 638;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 5px;
+}
+
+.id-card-preview__fit {
+    position: absolute;
+    inset: 5px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.id-card-preview__fit > .id-card-preview__card {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .id-card-template__bg,

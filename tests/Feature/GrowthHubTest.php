@@ -111,7 +111,7 @@ class GrowthHubTest extends TestCase
     {
         Http::fake(['*' => Http::response(['id' => 99], 201)]);
         \Illuminate\Support\Facades\Mail::fake();
-        config(['growth.notify_email' => 'contact@katsindia.com, sales@katsindia.com']);
+        config(['growth.notify_email' => 'support@libcontrol.in']);
 
         $branch = Branch::factory()->create(['name' => 'Sunrise Study Hall', 'phone' => '9876500000']);
         $user = User::factory()->create(['branch_id' => $branch->id, 'name' => 'Ravi Owner', 'email' => 'ravi@example.com']);
@@ -124,8 +124,7 @@ class GrowthHubTest extends TestCase
         \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\GrowthOrderRequestedMail::class, function ($mail) {
             $html = $mail->render();
 
-            return $mail->hasTo('contact@katsindia.com')
-                && $mail->hasTo('sales@katsindia.com')
+            return $mail->hasTo('support@libcontrol.in')
                 && $mail->hasReplyTo('ravi@example.com')
                 && str_contains($html, 'Google Business Profile Boost')
                 && str_contains($html, 'Ravi Owner')

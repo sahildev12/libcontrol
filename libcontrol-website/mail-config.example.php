@@ -7,10 +7,10 @@ return [
     'host' => 'smtp.example.com',
     'port' => 465,
     'encryption' => 'ssl',
-    'username' => 'contact@example.com',
+    'username' => 'support@libcontrol.in',
     'password' => 'your-smtp-password',
-    'from_email' => 'contact@example.com',
+    'from_email' => 'support@libcontrol.in',
     'from_name' => 'LibControl Demo Requests',
-    'to_email' => 'you@example.com',
+    'to_email' => 'support@libcontrol.in',
     'to_name' => 'LibControl',
 ];

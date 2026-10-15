@@ -46,6 +46,7 @@
             'studentId' => $studentId,
             'photoUrl' => $photoUrl,
             'photoInitials' => $photoInitials,
+            'logoUrl' => $logoUrl ?? null,
         ])
     </div>
 </body>
