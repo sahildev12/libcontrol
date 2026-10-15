@@ -48,12 +48,26 @@ class GrowthCatalog
             return true;
         }
 
-        $host = LicensedDeployment::normalizeDomain((string) request()->getHost());
-        if ($host !== '' && self::isDemoDeploymentDomain($host)) {
-            return true;
+        foreach (self::runtimeHosts() as $host) {
+            if (self::isDemoDeploymentDomain($host)) {
+                return true;
+            }
         }
 
         return (bool) config('growth.payment_test_visible', false);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function runtimeHosts(): array
+    {
+        $hosts = [
+            LicensedDeployment::normalizeDomain((string) request()->getHost()),
+            LicensedDeployment::normalizeDomain((string) parse_url((string) config('app.url'), PHP_URL_HOST)),
+        ];
+
+        return array_values(array_unique(array_filter($hosts)));
     }
 
     public static function paymentTestCheckoutAllowed(?string $domain): bool

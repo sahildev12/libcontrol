@@ -114,6 +114,13 @@ class GrowthHubTest extends TestCase
             ->assertOk()
             ->assertSee('₹1 test pack', false);
 
+        config(['app.url' => 'https://demo.libcontrol.in']);
+
+        $this->actingAs($user)
+            ->get(route('growth.index'))
+            ->assertOk()
+            ->assertSee('₹1 test pack', false);
+
         config(['libcontrol.demo.enabled' => true]);
 
         $this->actingAs($user)
