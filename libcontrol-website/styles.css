@@ -3152,6 +3152,27 @@ body {
   display: flex;
   align-items: flex-end;
   gap: 10px;
+  transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+}
+/* Home hero: keep Chat Now bottom-left; float Edwik + bubble on the right */
+.lc-contact-dock--hero-inview .lc-contact-dock__promo {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right, 0px));
+  left: auto;
+  bottom: calc(var(--lc-dock-bottom) + 3.25rem);
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  max-width: min(280px, calc(100vw - 24px));
+  z-index: 93;
+}
+.lc-contact-dock--hero-inview .lc-contact-dock__bubble {
+  border-radius: 14px 14px 6px 14px;
+}
+/* Below hero: promo sits above Chat Now on the left (default dock layout) */
+.lc-contact-dock:not(.lc-contact-dock--hero-inview) .lc-contact-dock__promo {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
 }
 .lc-contact-dock__avatar {
   flex-shrink: 0;
@@ -3833,6 +3854,11 @@ body {
     left: max(12px, env(safe-area-inset-left, 0px));
     bottom: var(--lc-dock-bottom);
     max-width: min(260px, calc(100vw - 20px));
+  }
+  .lc-contact-dock--hero-inview .lc-contact-dock__promo {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(var(--lc-dock-bottom) + 3rem);
+    max-width: min(240px, calc(100vw - 88px));
   }
   .lc-contact-dock__avatar {
     width: 56px;

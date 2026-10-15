@@ -152,13 +152,39 @@
         window.addEventListener('orientationchange', syncBrowserBottomInset);
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () {
-            mount();
-            bindViewportInsets();
-        });
-    } else {
+    function bindHeroPromoLayout() {
+        var hero = document.querySelector('header.hero-growth, header.hero');
+        var dock = document.getElementById('lcContactDock');
+
+        if (!hero || !dock) {
+            return;
+        }
+
+        if (!('IntersectionObserver' in window)) {
+            return;
+        }
+
+        var observer = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    dock.classList.toggle('lc-contact-dock--hero-inview', entry.isIntersecting);
+                });
+            },
+            { threshold: 0.12, rootMargin: '-8% 0px 0px 0px' }
+        );
+
+        observer.observe(hero);
+    }
+
+    function init() {
         mount();
         bindViewportInsets();
+        bindHeroPromoLayout();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
 })();
