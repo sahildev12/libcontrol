@@ -18,6 +18,9 @@
   --display: "Saira", sans-serif;
   --section-pad: clamp(56px, 8vw, 88px);
   --nav-height: 72px;
+  --nav-safe-top: env(safe-area-inset-top, 0px);
+  --browser-bottom-inset: 0px; /* raised on mobile + visualViewport (contact-widget.js) */
+  --lc-dock-bottom: max(22px, calc(var(--browser-bottom-inset) + env(safe-area-inset-bottom, 0px) + 12px));
 }
 
 * { box-sizing: border-box; }
@@ -41,15 +44,18 @@
   0% { transform: translateX(-120%) skewX(-18deg); }
   100% { transform: translateX(220%) skewX(-18deg); }
 }
-html { scroll-behavior: smooth; }
-[id] { scroll-margin-top: calc(var(--nav-height) + 20px); }
+html {
+  scroll-behavior: smooth;
+  background: #002364;
+}
+[id] { scroll-margin-top: calc(var(--nav-height) + var(--nav-safe-top) + 20px); }
 body {
   margin: 0;
   font-family: var(--font);
   color: var(--ink);
   background: var(--paper);
   line-height: 1.55;
-  padding-top: var(--nav-height);
+  padding-top: calc(var(--nav-height) + var(--nav-safe-top));
 }
 
 .container-xl {
@@ -71,9 +77,21 @@ body {
   background: #002364;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px 0;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  padding-bottom: 12px;
   transition: box-shadow 0.25s ease;
+}
+.guide-nav::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  height: env(safe-area-inset-top, 0px);
+  background: #002364;
+  pointer-events: none;
 }
 .guide-nav.is-scrolled {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
@@ -105,6 +123,24 @@ body {
   width: auto;
   max-width: min(240px, 58vw);
   object-fit: contain;
+}
+.brand-mark-nav {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+.brand-mark-nav img {
+  height: clamp(38px, 11vw, 48px);
+  max-width: min(240px, 68vw);
+}
+.brand-mark-footer img {
+  height: clamp(42px, 12vw, 52px);
+  max-width: min(260px, 72vw);
+}
+.brand-nav-logo {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .brand-mark-hero {
   padding: 8px 14px;
@@ -3098,8 +3134,8 @@ body {
 
 .lc-contact-dock {
   position: fixed;
-  left: 18px;
-  bottom: 22px;
+  left: max(18px, env(safe-area-inset-left, 0px));
+  bottom: var(--lc-dock-bottom);
   z-index: 92;
   display: flex;
   flex-direction: column;
@@ -3325,8 +3361,8 @@ body {
 }
 .back-to-top {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
+  right: max(22px, env(safe-area-inset-right, 0px));
+  bottom: var(--lc-dock-bottom);
   z-index: 90;
   width: 48px;
   height: 48px;
@@ -3788,14 +3824,14 @@ body {
     right: 10px;
   }
   .back-to-top {
-    right: 14px;
-    bottom: 14px;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: var(--lc-dock-bottom);
     width: 44px;
     height: 44px;
   }
   .lc-contact-dock {
-    left: 12px;
-    bottom: 14px;
+    left: max(12px, env(safe-area-inset-left, 0px));
+    bottom: var(--lc-dock-bottom);
     max-width: min(260px, calc(100vw - 20px));
   }
   .lc-contact-dock__avatar {
@@ -4441,8 +4477,11 @@ body {
 .cookie-banner__btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
 @media (max-width: 768px) {
+  :root {
+    --browser-bottom-inset: 56px;
+  }
   .cookie-banner {
-    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + var(--browser-bottom-inset)));
     flex-direction: column;
     align-items: stretch;
     gap: 0.85rem;

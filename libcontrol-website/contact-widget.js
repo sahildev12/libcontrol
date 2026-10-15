@@ -130,9 +130,35 @@
         }
     }
 
+    function syncBrowserBottomInset() {
+        var inset = 0;
+        if (window.visualViewport && window.matchMedia('(max-width: 768px)').matches) {
+            var gap = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+            if (gap > 0 && gap < 200) {
+                inset = Math.round(gap);
+            }
+        }
+        var minInset = window.matchMedia('(max-width: 768px)').matches ? 48 : 0;
+        document.documentElement.style.setProperty('--browser-bottom-inset', Math.max(inset, minInset) + 'px');
+    }
+
+    function bindViewportInsets() {
+        syncBrowserBottomInset();
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', syncBrowserBottomInset);
+            window.visualViewport.addEventListener('scroll', syncBrowserBottomInset);
+        }
+        window.addEventListener('resize', syncBrowserBottomInset);
+        window.addEventListener('orientationchange', syncBrowserBottomInset);
+    }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', mount);
+        document.addEventListener('DOMContentLoaded', function () {
+            mount();
+            bindViewportInsets();
+        });
     } else {
         mount();
+        bindViewportInsets();
     }
 })();
