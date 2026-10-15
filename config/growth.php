@@ -3,6 +3,15 @@
 return [
     'enabled' => filter_var(env('LIBCONTROL_GROWTH_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    /*
+    | Show the ₹1 payment_test growth package (hub only; demo.libcontrol.in is detected by host).
+    */
+    'payment_test_visible' => filter_var(env('LIBCONTROL_GROWTH_PAYMENT_TEST', false), FILTER_VALIDATE_BOOLEAN),
+    'payment_test_hosts' => array_values(array_filter(array_map(
+        static fn (string $host) => strtolower(trim($host)),
+        explode(',', (string) env('LIBCONTROL_GROWTH_PAYMENT_TEST_HOSTS', 'libcontrol.in,www.libcontrol.in'))
+    ))),
+
     'review_target' => (int) env('LIBCONTROL_GROWTH_REVIEW_TARGET', 50),
 
     /*
@@ -207,7 +216,7 @@ return [
             'notes' => ['Ad budget billed separately.'],
         ],
         'payment_test' => [
-            'name' => 'Payment test',
+            'name' => '₹1 test pack',
             'price' => 1,
             'price_label' => '₹1 (one-time test)',
             'billing' => 'one_time',

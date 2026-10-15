@@ -11,7 +11,16 @@ class GrowthCatalog
      */
     public static function packagesForUi(): array
     {
-        return self::filterPackages(config('growth.packages', []));
+        $packages = self::filterPackages(config('growth.packages', []));
+
+        if (isset($packages['payment_test'])) {
+            $test = $packages['payment_test'];
+            unset($packages['payment_test']);
+
+            return ['payment_test' => $test] + $packages;
+        }
+
+        return $packages;
     }
 
     /**
@@ -20,7 +29,7 @@ class GrowthCatalog
      */
     public static function filterPackages(array $packages): array
     {
-        if (self::isDemoInstall()) {
+        if (self::includesDemoOnlyPackages()) {
             return $packages;
         }
 
@@ -28,6 +37,39 @@ class GrowthCatalog
             $packages,
             static fn (array $package): bool => empty($package['demo_only'])
         );
+    }
+
+    /**
+     * ₹1 PhonePe test pack — demo install, demo host, or explicit env on hub.
+     */
+    public static function includesDemoOnlyPackages(): bool
+    {
+        if (self::isDemoInstall()) {
+            return true;
+        }
+
+        $host = LicensedDeployment::normalizeDomain((string) request()->getHost());
+        if ($host !== '' && self::isDemoDeploymentDomain($host)) {
+            return true;
+        }
+
+        return (bool) config('growth.payment_test_visible', false);
+    }
+
+    public static function paymentTestCheckoutAllowed(?string $domain): bool
+    {
+        $domain = LicensedDeployment::normalizeDomain((string) $domain);
+        if ($domain !== '' && self::isDemoDeploymentDomain($domain)) {
+            return true;
+        }
+
+        if (! config('growth.payment_test_visible', false)) {
+            return false;
+        }
+
+        $hosts = config('growth.payment_test_hosts', []);
+
+        return $domain !== '' && in_array($domain, $hosts, true);
     }
 
     public static function isDemoInstall(): bool
@@ -60,7 +102,7 @@ class GrowthCatalog
         $package = self::package($key);
         abort_unless($package, 422, 'Unknown growth package.');
 
-        if (! empty($package['demo_only']) && ! self::isDemoInstall()) {
+        if (! empty($package['demo_only']) && ! self::includesDemoOnlyPackages()) {
             abort(422, 'This package is only available on the public demo site.');
         }
     }

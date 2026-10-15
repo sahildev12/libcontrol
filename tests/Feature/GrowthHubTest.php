@@ -87,7 +87,7 @@ class GrowthHubTest extends TestCase
         $this->actingAs($user)
             ->get(route('growth.index'))
             ->assertOk()
-            ->assertDontSee('Payment test', false);
+            ->assertDontSee('₹1 test pack', false);
 
         $this->actingAs($user)
             ->postJson(route('growth.packages.request'), ['item_key' => 'payment_test'])
@@ -98,13 +98,28 @@ class GrowthHubTest extends TestCase
         $this->actingAs($user)
             ->get(route('growth.index'))
             ->assertOk()
-            ->assertSee('Payment test', false)
+            ->assertSee('₹1 test pack', false)
             ->assertSee('₹1 (one-time test)', false);
+
+        config(['libcontrol.demo.enabled' => false]);
+
+        $this->actingAs($user)
+            ->get(route('growth.index', [], false))
+            ->assertOk()
+            ->assertDontSee('₹1 test pack', false);
+
+        $this->withServerVariables(['HTTP_HOST' => 'demo.libcontrol.in'])
+            ->actingAs($user)
+            ->get('http://demo.libcontrol.in/growth')
+            ->assertOk()
+            ->assertSee('₹1 test pack', false);
+
+        config(['libcontrol.demo.enabled' => true]);
 
         $this->actingAs($user)
             ->postJson(route('growth.packages.request'), ['item_key' => 'payment_test'])
             ->assertCreated()
-            ->assertJsonPath('order.item_name', 'Payment test');
+            ->assertJsonPath('order.item_name', '₹1 test pack');
     }
 
     public function test_package_request_creates_growth_order_and_local_ticket(): void

@@ -314,7 +314,7 @@ class PaymentService
                     $checkoutDomain = LicensedDeployment::normalizeDomain(
                         (string) ($input['domain'] ?? $order->deployment_domain ?? '')
                     );
-                    if (! GrowthCatalog::isDemoDeploymentDomain($checkoutDomain)) {
+                    if (! GrowthCatalog::paymentTestCheckoutAllowed($checkoutDomain)) {
                         throw ValidationException::withMessages([
                             'payment' => 'The payment test package is only available on demo.libcontrol.in.',
                         ]);

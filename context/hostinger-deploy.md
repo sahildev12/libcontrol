@@ -13,7 +13,7 @@
 | Site | Role | Path on server | Database |
 |------|------|----------------|----------|
 | libcontrol.in (+ www) | Main: marketing site + license hub (`LIBCONTROL_LICENSE_SERVER=true`) | `/home/u843330709/domains/libcontrol.in/public_html` | `u843330709_libcontrol_in` |
-| demo.libcontrol.in | Public demo client (`LIBCONTROL_DEMO_MODE=true`, logins shown on sign-in) | `/home/u843330709/domains/libcontrol.in/public_html/demo` | `u843330709_lib_demo` |
+| demo.libcontrol.in | Public demo client (`LIBCONTROL_DEMO_MODE=true`, `LIBCONTROL_DEMO_PAYMENTS=true` for ₹1 PhonePe test pack) | `/home/u843330709/domains/libcontrol.in/public_html/demo` | `u843330709_lib_demo` |
 | libcontrol.katsindia.com | Old hub (still used by existing clients' sync + mobile resolver) | `/home/u843330709/domains/katsindia.com/public_html/libcontrol` | — |
 | aims.katsindia.com | Client | `/home/u843330709/domains/katsindia.com/public_html/aims` | — |
 
