@@ -32,6 +32,7 @@ for APP in '$hub' '$demo'; do
   git fetch origin && git reset --hard origin/main
   composer install --no-dev --optimize-autoloader --no-interaction
   php artisan migrate --force
+  bash scripts/ensure-marketing-public-assets-link.sh
   php artisan optimize
 done
 "@

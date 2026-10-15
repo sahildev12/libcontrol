@@ -21,6 +21,7 @@ Notes for libcontrol.in:
 
 - `public_html` is a git checkout; `/demo/` is listed in `public_html/.git/info/exclude` so the demo app is never touched by the main repo.
 - Root `.htaccess` (tracked) rewrites everything into `public/`.
+- After deploy, run `bash scripts/ensure-marketing-public-assets-link.sh` on the hub so `public/assets` → `libcontrol-website/assets`. Marketing images must be served as static files; serving them through Laravel/PHP triggers Hostinger CDN `422 Invalid source image` for larger PNGs/JPEGs.
 - Demo is licensed on the libcontrol.in hub (Dev & Domains → "LibControl Demo") and syncs to `https://libcontrol.in/api/runtime/sync`.
 - Demo data: `php artisan db:seed --class=DemoSiteSeeder --force` (no developer account on the demo).
 - SMTP: copy `deploy/mail.env.example` to `deploy/mail.env` (gitignored) with the Hostinger mailbox password, then run `scripts/deploy-libcontrol-in.ps1` — it uploads `storage/app/private/mail-settings.php` to hub and demo. Or create that file manually on the server from `storage/app/private/mail-settings.example.php`.
