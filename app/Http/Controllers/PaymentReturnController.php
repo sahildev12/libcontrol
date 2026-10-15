@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Services\Payments\PaymentService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class PaymentReturnController extends Controller
 {
-    public function __invoke(Request $request, string $uuid, PaymentService $payments): View
+    public function __invoke(Request $request, string $uuid, PaymentService $payments): RedirectResponse
     {
         abort_unless((bool) config('libcontrol.license_server.enabled'), 404);
 
@@ -21,15 +21,19 @@ class PaymentReturnController extends Controller
             $payment->refresh();
         }
 
-        $backUrl = null;
-        if ($payment->return_url) {
-            [$base, $fragment] = array_pad(explode('#', $payment->return_url, 2), 2, null);
-            $backUrl = $base.(str_contains($base, '?') ? '&' : '?').'payment='.$payment->uuid.($fragment ? '#'.$fragment : '');
+        $target = $this->clientReturnUrl($payment) ?? (string) config('app.url');
+
+        return redirect()->away($target);
+    }
+
+    private function clientReturnUrl(Payment $payment): ?string
+    {
+        if (! $payment->return_url) {
+            return null;
         }
 
-        return view('payments.return', [
-            'payment' => $payment,
-            'backUrl' => $backUrl,
-        ]);
+        [$base, $fragment] = array_pad(explode('#', $payment->return_url, 2), 2, null);
+
+        return $base.(str_contains($base, '?') ? '&' : '?').'payment='.$payment->uuid.($fragment ? '#'.$fragment : '');
     }
 }

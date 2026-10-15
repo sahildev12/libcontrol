@@ -17,19 +17,6 @@
         <p class="text-sm text-gray-500">Your LibControl plan, limits and payments. Payments are processed securely by PhonePe for Katsindia.</p>
     </header>
 
-    @if ($returnedPayment)
-        @php $rs = $returnedPayment['status']; @endphp
-        <div class="mt-5 rounded-xl border px-4 py-3 text-sm {{ $rs === 'completed' ? 'border-green-200 bg-green-50 text-green-800' : ($rs === 'failed' ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-800') }}" role="status">
-            @if ($rs === 'completed')
-                <strong>Payment successful.</strong> {{ $returnedPayment['item_name'] }} — {{ $returnedPayment['amount_label'] }} received. Your plan is now active.
-            @elseif ($rs === 'failed')
-                <strong>Payment failed.</strong> {{ $returnedPayment['item_name'] }} was not charged. You can try again below.
-            @else
-                <strong>Payment not confirmed yet.</strong> If you paid, it will be applied automatically within a few minutes — please don't pay twice. If you left PhonePe without paying, nothing was charged.
-            @endif
-        </div>
-    @endif
-
     @error('payment')
         <div class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{{ $message }}</div>
     @enderror

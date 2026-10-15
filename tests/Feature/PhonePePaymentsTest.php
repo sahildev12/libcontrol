@@ -176,7 +176,7 @@ class PhonePePaymentsTest extends TestCase
         ])->assertCreated();
 
         $this->remoteState = 'COMPLETED';
-        $this->get(route('payments.return', Payment::query()->sole()->uuid))->assertOk()->assertSee('Payment successful');
+        $this->get(route('payments.return', Payment::query()->sole()->uuid))->assertRedirect(config('app.url'));
 
         $this->assertTrue($deployment->fresh()->plan_paid_until->greaterThan(now()->addYear()->addDays(9)));
     }
@@ -191,7 +191,7 @@ class PhonePePaymentsTest extends TestCase
         $this->remoteState = 'COMPLETED';
         $this->remoteAmount = 100;
 
-        $this->get(route('payments.return', Payment::query()->sole()->uuid))->assertOk()->assertSee('Payment failed');
+        $this->get(route('payments.return', Payment::query()->sole()->uuid))->assertRedirect(config('app.url'));
 
         $this->assertSame('AMOUNT_MISMATCH', Payment::query()->sole()->error_code);
         $this->assertNotSame('pro', $deployment->fresh()->plan_tier);
@@ -231,7 +231,7 @@ class PhonePePaymentsTest extends TestCase
         $this->assertSame(650000, Payment::query()->sole()->amount_paise);
 
         $this->remoteState = 'COMPLETED';
-        $this->get(route('payments.return', Payment::query()->sole()->uuid))->assertOk();
+        $this->get(route('payments.return', Payment::query()->sole()->uuid))->assertRedirect(config('app.url'));
 
         $order->refresh();
         $this->assertSame('paid', $order->payment_status);
@@ -337,7 +337,7 @@ class PhonePePaymentsTest extends TestCase
             ->assertOk()
             ->assertViewHas('orders', fn ($orders) => $orders->first()['pay_label'] === 'Pay ₹6,500'
                 && $orders->first()['pay_url'] === route('growth.orders.pay', $order))
-            ->assertSee('Payment successful.', false);
+            ->assertOk();
 
         $this->actingAs($admin)->postJson(route('growth.orders.pay', $order))
             ->assertOk()
@@ -452,23 +452,20 @@ class PhonePePaymentsTest extends TestCase
         $this->assertNotNull($payment->webhookReceivedAt());
     }
 
-    public function test_return_page_stops_waiting_for_long_abandoned_payments(): void
+    public function test_return_redirects_to_client_url_when_configured(): void
     {
         $this->deployment();
         $this->signedPost('/api/payments/checkout', [
-            'purpose' => 'software_plan', 'item_key' => 'pro', 'billing_cycle' => 'monthly', 'domain' => 'client.test',
+            'purpose' => 'software_plan',
+            'item_key' => 'pro',
+            'billing_cycle' => 'monthly',
+            'domain' => 'client.test',
+            'return_url' => 'https://client.test/billing',
         ])->assertCreated();
         $uuid = Payment::query()->sole()->uuid;
 
-        $this->get(route('payments.return', $uuid))->assertOk()->assertSee('http-equiv="refresh"', false);
-
-        $this->travel(11)->minutes();
-
         $this->get(route('payments.return', $uuid))
-            ->assertOk()
-            ->assertSee('Payment not completed yet')
-            ->assertSee('Check again')
-            ->assertDontSee('http-equiv="refresh"', false);
+            ->assertRedirect('https://client.test/billing?payment='.$uuid);
     }
 
     public function test_developer_can_record_an_offline_paid_until_date(): void

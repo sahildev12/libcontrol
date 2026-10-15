@@ -194,19 +194,6 @@
             </div>
         </header>
 
-        @if ($returnedPayment)
-            @php $rs = $returnedPayment['status']; @endphp
-            <div class="rounded-xl border px-4 py-3 text-sm {{ $rs === 'completed' ? 'border-green-200 bg-green-50 text-green-800' : ($rs === 'failed' ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-800') }}" role="status">
-                @if ($rs === 'completed')
-                    <strong>Payment successful.</strong> {{ $returnedPayment['item_name'] }} — {{ $returnedPayment['amount_label'] }} received. Katsindia's team will start shortly.
-                @elseif ($rs === 'failed')
-                    <strong>Payment failed.</strong> {{ $returnedPayment['item_name'] }} was not charged. You can try again from Your growth requests.
-                @else
-                    <strong>Payment is being confirmed.</strong> Refresh in a minute — please don't pay twice.
-                @endif
-            </div>
-        @endif
-
         @if (session('status'))
             <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" x-transition class="fixed bottom-6 right-6 z-50 flex max-w-sm items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 shadow-lg" role="status">
                 <span class="flex-1">{{ session('status') }}</span>
