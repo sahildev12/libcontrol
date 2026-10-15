@@ -1,7 +1,7 @@
 (function () {
     var WA_PHONE = '918076105181';
     var WA_TEXT = 'Hi, I want to know about LibControl.';
-    var BOT_SRC = '/assets/edwik-bot.png';
+    var BOT_SRC = '/assets/edwik-bot.png?v=6';
     var BUBBLE_LINES = [
         'I can help you grow your library ✨',
         'Get more students for your library',
