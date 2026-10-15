@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use App\Services\Payments\PhonePeClient;
+use Illuminate\View\View;
 
 /**
- * Browser step on the approved merchant host (libcontrol.in) before redirecting to PhonePe.
+ * Checkout runs on the approved merchant host (libcontrol.in) before / inside PhonePe UI.
  */
 class PaymentLaunchController extends Controller
 {
-    public function __invoke(Request $request, string $uuid): RedirectResponse
+    public function __invoke(string $uuid, PhonePeClient $phonePe): View
     {
         $payment = Payment::query()->where('uuid', $uuid)->firstOrFail();
 
@@ -27,7 +27,13 @@ class PaymentLaunchController extends Controller
             abort(404, 'Payment session not found.');
         }
 
-        return redirect()->away($redirect);
+        $env = $phonePe->environment();
+
+        return view('payments.launch', [
+            'payment' => $payment,
+            'phonePeUrl' => $redirect,
+            'checkoutScript' => (string) config("payments.phonepe.checkout_js.{$env}"),
+        ]);
     }
 
     private function isPhonePeUrl(string $url): bool

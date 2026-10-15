@@ -107,6 +107,9 @@ class PaymentService
     public function signedLaunchUrl(Payment $payment): string
     {
         $minutes = max(5, (int) config('payments.phonepe.launch_url_ttl_minutes', 30));
+        $origin = (string) config('payments.phonepe.checkout_origin', config('app.url'));
+
+        URL::forceRootUrl(rtrim($origin, '/'));
 
         return URL::temporarySignedRoute(
             'payments.launch',

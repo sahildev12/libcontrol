@@ -14,6 +14,11 @@ return [
         'webhook_password' => env('PHONEPE_WEBHOOK_PASSWORD'),
         'order_expire_seconds' => (int) env('PHONEPE_ORDER_EXPIRE_SECONDS', 900),
         'launch_url_ttl_minutes' => (int) env('PHONEPE_LAUNCH_URL_TTL_MINUTES', 30),
+        'checkout_origin' => rtrim((string) env('PHONEPE_CHECKOUT_ORIGIN', 'https://libcontrol.in'), '/'),
+        'checkout_js' => [
+            'sandbox' => 'https://mercury-stg.phonepe.com/web/bundle/checkout.js',
+            'production' => 'https://mercury.phonepe.com/web/bundle/checkout.js',
+        ],
         'timeout' => 20,
         'endpoints' => [
             'sandbox' => [
