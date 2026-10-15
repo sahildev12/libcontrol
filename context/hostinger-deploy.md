@@ -43,7 +43,14 @@ Upload `public/build/` from local (`npm run build`) — npm is not available on 
 
 - Keys live only in the hub `.env` (`PHONEPE_ENV`, `PHONEPE_CLIENT_ID`, `PHONEPE_CLIENT_VERSION`, `PHONEPE_CLIENT_SECRET`, `PHONEPE_WEBHOOK_USERNAME`, `PHONEPE_WEBHOOK_PASSWORD`). Run `php artisan config:cache` after editing.
 - Webhook (PhonePe dashboard → Developer Settings → Webhooks): `https://libcontrol.in/api/webhooks/phonepe`, SHA auth, events `checkout.order.completed` + `checkout.order.failed`. PhonePe limits the password to 20 chars with letters and digits.
-- Test mode and live mode have separate keys and webhooks. Going live: switch the dashboard out of Test Mode, copy the live keys, set `PHONEPE_ENV=production`, and recreate the webhook there.
+- Test mode and live mode have **separate** Client ID / Client Secret. Turning off Test Mode in [business.phonepe.com](https://business.phonepe.com/dashboard) does **not** auto-update the server.
+- **Go live on libcontrol.in hub** (`public_html/.env`):
+  1. [developer.phonepe.com](https://developer.phonepe.com) → **Developer Settings** (production / live, not UAT) → copy **Production** `Client ID` and `Client Secret`.
+  2. Set `PHONEPE_ENV=production`, `PHONEPE_CLIENT_ID=…`, `PHONEPE_CLIENT_SECRET=…`, `PHONEPE_CLIENT_VERSION=1`.
+  3. Create a **production** webhook → `https://libcontrol.in/api/webhooks/phonepe` (SHA auth; events `checkout.order.completed`, `checkout.order.failed`) → set `PHONEPE_WEBHOOK_USERNAME` / `PHONEPE_WEBHOOK_PASSWORD` (password ≤20 chars, letters+digits).
+  4. `php artisan config:clear && php artisan config:cache`
+  5. `php scripts/phonepe-connectivity-test.php` — expect redirect host **without** `uat` (e.g. `mercury.phonepe.com`).
+- If auth returns `CLIENT_NOT_FOUND`, the hub still has **UAT** keys while `PHONEPE_ENV=production`.
 - `payments:reconcile` runs every 10 minutes via the Laravel scheduler, which needs an hPanel cron: `* * * * * cd /home/u843330709/domains/libcontrol.in/public_html && php artisan schedule:run >> /dev/null 2>&1`.
 - Payments list: `https://libcontrol.in/developer/payments`. Clients pay from `/billing` (plans) and `/growth` (packages, quoted services).
 

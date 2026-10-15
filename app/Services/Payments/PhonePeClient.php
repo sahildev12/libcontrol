@@ -166,7 +166,23 @@ class PhonePeClient
         $token = (string) ($response->json('access_token') ?? '');
 
         if (! $response->successful() || $token === '') {
-            Log::error('PhonePe auth token request failed.', ['status' => $response->status()]);
+            $body = $response->json();
+            $code = is_array($body) ? (string) ($body['code'] ?? $body['errorCode'] ?? '') : '';
+            $message = is_array($body) ? (string) ($body['message'] ?? '') : '';
+
+            Log::error('PhonePe auth token request failed.', [
+                'status' => $response->status(),
+                'environment' => $this->environment(),
+                'code' => $code !== '' ? $code : null,
+                'message' => $message !== '' ? $message : null,
+            ]);
+
+            if ($code === 'CLIENT_NOT_FOUND' || str_contains($message, 'Client Not Found')) {
+                throw new RuntimeException(
+                    'PhonePe production credentials are missing or still set to UAT/test keys. '
+                    .'In developer.phonepe.com (live mode), copy the production Client ID and Client Secret into the hub .env, then run php artisan config:cache.'
+                );
+            }
 
             throw new RuntimeException('Could not authenticate with PhonePe.');
         }
