@@ -14,12 +14,13 @@
 |------|------|----------------|----------|
 | libcontrol.in (+ www) | Main: marketing site + license hub (`LIBCONTROL_LICENSE_SERVER=true`) | `/home/u843330709/domains/libcontrol.in/public_html` | `u843330709_libcontrol_in` |
 | demo.libcontrol.in | Public demo client (`LIBCONTROL_DEMO_MODE=true`, `LIBCONTROL_DEMO_PAYMENTS=true` for ₹1 PhonePe test pack) | `/home/u843330709/domains/libcontrol.in/public_html/demo` | `u843330709_lib_demo` |
+| rpj.libcontrol.in | Client: RPJ Library | `/home/u843330709/domains/libcontrol.in/public_html/rpj` | `u843330709_rjp` |
 | libcontrol.katsindia.com | Old hub (still used by existing clients' sync + mobile resolver) | `/home/u843330709/domains/katsindia.com/public_html/libcontrol` | — |
 | aims.katsindia.com | Client | `/home/u843330709/domains/katsindia.com/public_html/aims` | — |
 
 Notes for libcontrol.in:
 
-- `public_html` is a git checkout; `/demo/` is listed in `public_html/.git/info/exclude` so the demo app is never touched by the main repo.
+- `public_html` is a git checkout; `/demo/` and `/rpj/` are listed in `public_html/.git/info/exclude` so nested client apps are never touched by the main hub repo.
 - Root `.htaccess` (tracked) rewrites everything into `public/`.
 - After deploy, run `bash scripts/ensure-marketing-public-assets-link.sh` on the hub so `public/assets` → `libcontrol-website/assets`. Marketing images must be served as static files; serving them through Laravel/PHP triggers Hostinger CDN `422 Invalid source image` for larger PNGs/JPEGs.
 - Demo is licensed on the libcontrol.in hub (Dev & Domains → "LibControl Demo") and syncs to `https://libcontrol.in/api/runtime/sync`.

@@ -176,10 +176,44 @@
         observer.observe(hero);
     }
 
+    /** Tablet only: hide Chat Now + bot until the user reaches the page bottom. */
+    function bindTabletBottomOnlyDock() {
+        var dock = document.getElementById('lcContactDock');
+        if (!dock || !window.matchMedia) {
+            return;
+        }
+
+        var mq = window.matchMedia('(min-width: 768px) and (max-width: 1199.98px)');
+        var BOTTOM_PX = 64;
+
+        function update() {
+            if (!mq.matches) {
+                dock.classList.remove('lc-contact-dock--await-bottom');
+                dock.classList.remove('lc-contact-dock--at-bottom');
+                return;
+            }
+
+            dock.classList.add('lc-contact-dock--await-bottom');
+            var doc = document.documentElement;
+            var remaining = doc.scrollHeight - (window.scrollY + window.innerHeight);
+            dock.classList.toggle('lc-contact-dock--at-bottom', remaining <= BOTTOM_PX);
+        }
+
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        if (mq.addEventListener) {
+            mq.addEventListener('change', update);
+        } else if (mq.addListener) {
+            mq.addListener(update);
+        }
+        update();
+    }
+
     function init() {
         mount();
         bindViewportInsets();
         bindHeroPromoLayout();
+        bindTabletBottomOnlyDock();
     }
 
     if (document.readyState === 'loading') {

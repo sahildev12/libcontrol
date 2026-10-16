@@ -5868,7 +5868,8 @@ body {
  }
 }
 
-@media (max-width: 768px) {
+/* Phone only — keep tablet (768px+) on 2-column grids + side-by-side hero CTAs */
+@media (max-width: 767.98px) {
  .benefits-grid,
  .challenges-grid,
  .showcase-grid-cards,
@@ -5886,6 +5887,56 @@ body {
  .benefit-card,
  .challenge-card {
    align-items: flex-start;
+ }
+}
+
+/* Tablet — hero CTAs side by side; showcase / modules / contact stay 2-up */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+ .hero-growth .hero-actions {
+   display: flex;
+   flex-direction: row;
+   flex-wrap: nowrap;
+   align-items: stretch;
+   gap: 10px;
+ }
+ .hero-growth .hero-actions .btn-main,
+ .hero-growth .hero-actions .btn-ghost {
+   width: auto;
+   flex: 1 1 0;
+   min-width: 0;
+   justify-content: center;
+   text-align: center;
+ }
+ .showcase-grid-cards,
+ .modules-simple-grid,
+ .resources-grid,
+ .contact-grid,
+ .resources-support .support-cards-row,
+ .contact-support .support-cards-row {
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+ }
+ .support-cards-row > .support-card-stack:last-child:nth-child(3) {
+   grid-column: 1 / -1;
+   max-width: min(100%, 520px);
+   margin-inline: auto;
+   width: 100%;
+ }
+ /* Chat / WhatsApp dock: hidden until page bottom on tablet */
+ .lc-contact-dock.lc-contact-dock--await-bottom:not(.lc-contact-dock--at-bottom) {
+   opacity: 0;
+   visibility: hidden;
+   pointer-events: none;
+   transform: translateY(12px);
+ }
+ .lc-contact-dock.lc-contact-dock--await-bottom.lc-contact-dock--at-bottom {
+   opacity: 1;
+   visibility: visible;
+   pointer-events: none;
+   transform: none;
+   transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+ }
+ .lc-contact-dock.lc-contact-dock--await-bottom.lc-contact-dock--at-bottom > * {
+   pointer-events: auto;
  }
 }
 
