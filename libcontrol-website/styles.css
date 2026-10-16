@@ -3264,6 +3264,53 @@ body {
 }
 .footer-copy p { margin: 0; }
 
+.footer-cache-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 16px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+}
+.footer-cache-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1.5px solid rgba(255, 217, 77, 0.85);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffd94d;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.footer-cache-btn:hover {
+  background: #ffd94d;
+  color: #082d70;
+  border-color: #ffd94d;
+}
+.footer-cache-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+.footer-cache-btn i {
+  font-size: 13px;
+}
+.footer-cache-hint {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
 /* Legacy — removed from markup; contact-widget.js upgrades old pages */
 .wa-float { display: none !important; }
 

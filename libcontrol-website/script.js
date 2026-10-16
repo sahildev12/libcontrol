@@ -519,4 +519,31 @@
   }
 
   initPricingToggle();
+
+  var clearCacheBtn = document.getElementById('clearCacheBtn');
+  if (clearCacheBtn) {
+    clearCacheBtn.addEventListener('click', function () {
+      clearCacheBtn.disabled = true;
+      clearCacheBtn.querySelector('span').textContent = 'Clearing…';
+
+      var bust = String(Date.now());
+      var reloadFresh = function () {
+        var url = new URL(window.location.href);
+        url.searchParams.set('_cb', bust);
+        window.location.replace(url.toString());
+      };
+
+      if ('caches' in window) {
+        caches.keys()
+          .then(function (keys) {
+            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          })
+          .catch(function () { /* ignore */ })
+          .then(reloadFresh);
+        return;
+      }
+
+      reloadFresh();
+    });
+  }
 })();
