@@ -5915,8 +5915,12 @@ body {
  }
 }
 
-/* Phone only — keep tablet (768px+) on 2-column grids + side-by-side hero CTAs */
-@media (max-width: 767.98px) {
+/*
+ * Phone only (<640): stacked CTAs + 1-col grids.
+ * Tablet band (640–1366) covers Xiaomi Pad 6 (~834 CSS px portrait / ~1194 landscape)
+ * and display-size / zoom modes that report narrower than 768.
+ */
+@media (max-width: 639.98px) {
  .benefits-grid,
  .challenges-grid,
  .showcase-grid-cards,
@@ -5926,33 +5930,50 @@ body {
  .contact-grid,
  .onboarding-track { grid-template-columns: 1fr; }
  .onboarding-track::before { display: none; }
+ .hero-growth .hero-actions {
+   flex-direction: column;
+   flex-wrap: nowrap;
+ }
  .hero-growth .hero-actions .btn-main,
  .hero-growth .hero-actions .btn-ghost {
  width: 100%;
+ flex: 0 0 auto;
  justify-content: center;
  }
  .benefit-card,
  .challenge-card {
    align-items: flex-start;
  }
+ .resources-support .support-cards-row,
+ .contact-support .support-cards-row {
+   grid-template-columns: 1fr;
+   max-width: 440px;
+   margin-inline: auto;
+ }
+ .support-cards-row > .support-card-stack:last-child:nth-child(3) {
+   grid-column: auto;
+   max-width: none;
+ }
 }
 
-/* Tablet — hero CTAs side by side; showcase / modules / contact stay 2-up */
-@media (min-width: 768px) and (max-width: 1199.98px) {
+/* Tablet / large phone landscape — Xiaomi Pad 6 friendly */
+@media (min-width: 640px) and (max-width: 1366px) {
  .hero-growth .hero-actions {
-   display: flex;
-   flex-direction: row;
-   flex-wrap: nowrap;
+   display: flex !important;
+   flex-direction: row !important;
+   flex-wrap: nowrap !important;
    align-items: stretch;
    gap: 10px;
  }
  .hero-growth .hero-actions .btn-main,
  .hero-growth .hero-actions .btn-ghost {
-   width: auto;
-   flex: 1 1 0;
-   min-width: 0;
+   width: auto !important;
+   flex: 1 1 0 !important;
+   min-width: 0 !important;
+   max-width: none !important;
    justify-content: center;
    text-align: center;
+   white-space: nowrap;
  }
  .showcase-grid-cards,
  .modules-simple-grid,
@@ -5960,7 +5981,7 @@ body {
  .contact-grid,
  .resources-support .support-cards-row,
  .contact-support .support-cards-row {
-   grid-template-columns: repeat(2, minmax(0, 1fr));
+   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
  }
  .support-cards-row > .support-card-stack:last-child:nth-child(3) {
    grid-column: 1 / -1;
@@ -6197,17 +6218,7 @@ body {
   width: 100%;
  }
 }
-@media (max-width: 767.98px) {
- .resources-support .support-cards-row,
- .contact-support .support-cards-row {
-  grid-template-columns: 1fr;
-  max-width: 440px;
-  margin-inline: auto;
- }
- .support-cards-row > .support-card-stack:last-child:nth-child(3) {
-  grid-column: auto;
-  max-width: none;
- }
+@media (max-width: 639.98px) {
  .resources-support .support-card-stack,
  .contact-support .support-card-stack {
   padding: 18px 20px;

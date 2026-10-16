@@ -524,26 +524,57 @@
   if (clearCacheBtn) {
     clearCacheBtn.addEventListener('click', function () {
       clearCacheBtn.disabled = true;
-      clearCacheBtn.querySelector('span').textContent = 'Clearing…';
+      var label = clearCacheBtn.querySelector('span');
+      if (label) label.textContent = 'Clearing…';
 
       var bust = String(Date.now());
-      var reloadFresh = function () {
-        var url = new URL(window.location.href);
-        url.searchParams.set('_cb', bust);
-        window.location.replace(url.toString());
-      };
 
-      if ('caches' in window) {
-        caches.keys()
-          .then(function (keys) {
-            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
-          })
-          .catch(function () { /* ignore */ })
-          .then(reloadFresh);
-        return;
+      function bustAssetUrls() {
+        document.querySelectorAll('link[rel="stylesheet"]').forEach(function (link) {
+          try {
+            var href = new URL(link.href, window.location.href);
+            href.searchParams.set('v', bust);
+            link.href = href.toString();
+          } catch (e) { /* ignore */ }
+        });
+        document.querySelectorAll('script[src]').forEach(function (script) {
+          try {
+            var src = new URL(script.src, window.location.href);
+            src.searchParams.set('v', bust);
+            script.setAttribute('data-cache-busted', src.toString());
+          } catch (e) { /* ignore */ }
+        });
       }
 
-      reloadFresh();
+      function reloadFresh() {
+        bustAssetUrls();
+        var url = new URL(window.location.href);
+        url.searchParams.set('_cb', bust);
+        /* Avoid bfcache restoring a stale document on tablets */
+        window.location.replace(url.toString());
+      }
+
+      var jobs = [];
+
+      if ('caches' in window) {
+        jobs.push(
+          caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          })
+        );
+      }
+
+      if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+        jobs.push(
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+          })
+        );
+      }
+
+      Promise.all(jobs)
+        .catch(function () { /* ignore */ })
+        .then(reloadFresh);
     });
   }
 })();

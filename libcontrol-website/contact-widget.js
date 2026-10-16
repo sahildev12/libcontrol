@@ -183,7 +183,8 @@
             return;
         }
 
-        var mq = window.matchMedia('(min-width: 768px) and (max-width: 1199.98px)');
+        /* Xiaomi Pad 6 ~834 CSS px; include zoomed/narrow tablet widths from 640 */
+        var mq = window.matchMedia('(min-width: 640px) and (max-width: 1366px)');
         var BOTTOM_PX = 64;
 
         function update() {
