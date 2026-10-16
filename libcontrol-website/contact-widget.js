@@ -14,14 +14,8 @@
     var DELETE_MS = 28;
 
     function buildWhatsAppHref() {
-        var mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        var text = encodeURIComponent(WA_TEXT);
-
-        if (mobile) {
-            return 'https://wa.me/' + WA_PHONE + '?text=' + text;
-        }
-
-        return 'https://web.whatsapp.com/send?phone=' + WA_PHONE + '&text=' + text;
+        /* Universal link: app on phone/tablet, desktop app when installed, else WhatsApp Web */
+        return 'https://wa.me/' + WA_PHONE + '?text=' + encodeURIComponent(WA_TEXT);
     }
 
     function removeLegacyFloat() {
@@ -118,7 +112,7 @@
             '    <span class="lc-contact-dock__bubble-text" id="lcEdwikBubbleText"></span>' +
             '  </p>' +
             '</div>' +
-            '<a class="lc-wa-trigger" href="' + buildWhatsAppHref() + '" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">' +
+            '<a class="lc-wa-trigger" href="' + buildWhatsAppHref() + '" data-wa-phone="' + WA_PHONE + '" data-wa-text="' + WA_TEXT.replace(/"/g, '&quot;') + '" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">' +
             '  <i class="fa-brands fa-whatsapp" aria-hidden="true"></i><span>Chat Now</span>' +
             '</a>';
 
@@ -176,15 +170,14 @@
         observer.observe(hero);
     }
 
-    /** Tablet only: hide Chat Now + Edwik when the user reaches the page bottom. */
-    function bindTabletHideDockAtBottom() {
+    /** Phone + tablet: hide Chat Now + Edwik when the user reaches the page bottom. */
+    function bindHideDockAtBottom() {
         var dock = document.getElementById('lcContactDock');
         if (!dock || !window.matchMedia) {
             return;
         }
 
-        /* Xiaomi Pad 6 ~834 CSS px; include zoomed/narrow tablet widths from 640 */
-        var mq = window.matchMedia('(min-width: 640px) and (max-width: 1366px)');
+        var mq = window.matchMedia('(max-width: 1366px)');
         var BOTTOM_PX = 96;
 
         function update() {
@@ -214,7 +207,10 @@
         mount();
         bindViewportInsets();
         bindHeroPromoLayout();
-        bindTabletHideDockAtBottom();
+        bindHideDockAtBottom();
+        if (typeof window.LibControlApplyWhatsAppLinks === 'function') {
+            window.LibControlApplyWhatsAppLinks();
+        }
     }
 
     if (document.readyState === 'loading') {

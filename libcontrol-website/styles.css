@@ -5989,7 +5989,10 @@ body {
    margin-inline: auto;
    width: 100%;
  }
- /* Tablet: hide Edwik + Chat Now when scrolled to the page bottom (keep footer clear) */
+}
+
+/* Phone + tablet: hide Edwik + Chat Now at page bottom (keep footer clear) */
+@media (max-width: 1366px) {
  .lc-contact-dock.lc-contact-dock--hide-at-bottom {
    transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
  }
