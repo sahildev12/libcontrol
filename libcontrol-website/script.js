@@ -480,6 +480,8 @@
     var amounts = document.querySelectorAll('.plan-amount[data-monthly]');
     var wasPrices = document.querySelectorAll('.plan-price-was[data-monthly]');
     var billingLabels = document.querySelectorAll('.plan-billing[data-monthly-label]');
+    var priceCaptions = document.querySelectorAll('.plan-price-caption[data-monthly-caption]');
+    var diwaliBadges = document.querySelectorAll('.plan-discount-badge-monthly');
     var equivLines = document.querySelectorAll('.plan-equiv-yearly');
     var isYearly = false;
 
@@ -496,6 +498,12 @@
       });
       billingLabels.forEach(function (el) {
         el.textContent = isYearly ? el.getAttribute('data-yearly-label') : el.getAttribute('data-monthly-label');
+      });
+      priceCaptions.forEach(function (el) {
+        el.textContent = isYearly ? el.getAttribute('data-yearly-caption') : el.getAttribute('data-monthly-caption');
+      });
+      diwaliBadges.forEach(function (el) {
+        el.hidden = isYearly;
       });
       equivLines.forEach(function (el) {
         el.hidden = !isYearly;
