@@ -5989,22 +5989,15 @@ body {
    margin-inline: auto;
    width: 100%;
  }
- /* Chat / WhatsApp dock: hidden until page bottom on tablet */
- .lc-contact-dock.lc-contact-dock--await-bottom:not(.lc-contact-dock--at-bottom) {
+ /* Tablet: hide Edwik + Chat Now when scrolled to the page bottom (keep footer clear) */
+ .lc-contact-dock.lc-contact-dock--hide-at-bottom {
+   transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+ }
+ .lc-contact-dock.lc-contact-dock--hide-at-bottom.lc-contact-dock--at-bottom {
    opacity: 0;
    visibility: hidden;
    pointer-events: none;
    transform: translateY(12px);
- }
- .lc-contact-dock.lc-contact-dock--await-bottom.lc-contact-dock--at-bottom {
-   opacity: 1;
-   visibility: visible;
-   pointer-events: none;
-   transform: none;
-   transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
- }
- .lc-contact-dock.lc-contact-dock--await-bottom.lc-contact-dock--at-bottom > * {
-   pointer-events: auto;
  }
 }
 

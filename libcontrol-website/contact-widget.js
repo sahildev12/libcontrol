@@ -176,8 +176,8 @@
         observer.observe(hero);
     }
 
-    /** Tablet only: hide Chat Now + bot until the user reaches the page bottom. */
-    function bindTabletBottomOnlyDock() {
+    /** Tablet only: hide Chat Now + Edwik when the user reaches the page bottom. */
+    function bindTabletHideDockAtBottom() {
         var dock = document.getElementById('lcContactDock');
         if (!dock || !window.matchMedia) {
             return;
@@ -185,16 +185,16 @@
 
         /* Xiaomi Pad 6 ~834 CSS px; include zoomed/narrow tablet widths from 640 */
         var mq = window.matchMedia('(min-width: 640px) and (max-width: 1366px)');
-        var BOTTOM_PX = 64;
+        var BOTTOM_PX = 96;
 
         function update() {
             if (!mq.matches) {
-                dock.classList.remove('lc-contact-dock--await-bottom');
+                dock.classList.remove('lc-contact-dock--hide-at-bottom');
                 dock.classList.remove('lc-contact-dock--at-bottom');
                 return;
             }
 
-            dock.classList.add('lc-contact-dock--await-bottom');
+            dock.classList.add('lc-contact-dock--hide-at-bottom');
             var doc = document.documentElement;
             var remaining = doc.scrollHeight - (window.scrollY + window.innerHeight);
             dock.classList.toggle('lc-contact-dock--at-bottom', remaining <= BOTTOM_PX);
@@ -214,7 +214,7 @@
         mount();
         bindViewportInsets();
         bindHeroPromoLayout();
-        bindTabletBottomOnlyDock();
+        bindTabletHideDockAtBottom();
     }
 
     if (document.readyState === 'loading') {
