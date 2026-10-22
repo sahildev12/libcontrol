@@ -3,6 +3,7 @@
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailUnsubscribeController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\ProfitLossController;
@@ -31,6 +32,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', PublicHomeController::class)->name('home');
 Route::redirect('/library', '/');
+Route::get('/email/unsubscribe/{token}', EmailUnsubscribeController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->name('email.unsubscribe');
 
 Route::get('/index.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'index.html');
 Route::get('/favicon.ico', [LibcontrolMarketingSiteController::class, 'favicon']);

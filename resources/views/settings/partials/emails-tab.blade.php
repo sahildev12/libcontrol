@@ -41,6 +41,54 @@
                     <span class="mt-0.5 block text-xs text-gray-500">Sent to inactive students to encourage them to return.</span>
                 </span>
             </label>
+            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+                <input type="checkbox" x-model="emailForm.email_fee_alerts_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">Fee alert emails</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Automatic due, overdue, and payment-received emails for students.</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+                <input type="checkbox" x-model="emailForm.email_seat_alerts_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">Seat alert emails</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Seat expiry reminders for students and vacant / high-occupancy digests for owners.</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+                <input type="checkbox" x-model="emailForm.email_subscription_alerts_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">Subscription / trial emails</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">LibControl plan trial reminders for library owners.</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+                <input type="checkbox" x-model="emailForm.email_growth_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">Growth tip emails</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Periodic “Grow Your Library” tips for owners (opt-in).</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+                <input type="checkbox" x-model="emailForm.email_marketing_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">Marketing emails</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Product updates and seasonal campaigns (opt-in only).</span>
+                </span>
+            </label>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block rounded-lg border border-gray-200 p-4">
+                    <span class="block text-sm font-semibold text-gray-900">Vacant seat alert threshold</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Email owners when vacant seats reach this count.</span>
+                    <input type="number" min="1" max="10000" x-model.number="emailForm.seat_vacant_alert_threshold" class="mt-2 w-full rounded-lg border-gray-300 text-sm">
+                </label>
+                <label class="block rounded-lg border border-gray-200 p-4">
+                    <span class="block text-sm font-semibold text-gray-900">High occupancy %</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Email owners when occupancy reaches this percent.</span>
+                    <input type="number" min="50" max="100" x-model.number="emailForm.seat_high_occupancy_pct" class="mt-2 w-full rounded-lg border-gray-300 text-sm">
+                </label>
+            </div>
 
             <div class="flex justify-end">
                 <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" :disabled="emailSaving">

@@ -43,7 +43,14 @@ class SettingsPayloadService
             'email_welcome_enabled' => (bool) $settings->email_welcome_enabled,
             'email_birthday_enabled' => (bool) $settings->email_birthday_enabled,
             'email_offers_enabled' => (bool) $settings->email_offers_enabled,
+            'email_marketing_enabled' => (bool) $settings->email_marketing_enabled,
             'email_recovery_enabled' => (bool) $settings->email_recovery_enabled,
+            'email_fee_alerts_enabled' => (bool) ($settings->email_fee_alerts_enabled ?? true),
+            'email_seat_alerts_enabled' => (bool) ($settings->email_seat_alerts_enabled ?? true),
+            'email_subscription_alerts_enabled' => (bool) ($settings->email_subscription_alerts_enabled ?? true),
+            'email_growth_enabled' => (bool) ($settings->email_growth_enabled ?? false),
+            'seat_vacant_alert_threshold' => (int) ($settings->seat_vacant_alert_threshold ?? 5),
+            'seat_high_occupancy_pct' => (int) ($settings->seat_high_occupancy_pct ?? 90),
         ];
     }
 

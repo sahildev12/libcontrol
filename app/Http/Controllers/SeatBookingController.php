@@ -387,6 +387,13 @@ class SeatBookingController extends Controller
             $seat->hall->branch_id,
         );
 
+        try {
+            app(\App\Services\EmailAutomation\SeatAlertService::class)
+                ->sendBookingConfirmed($booking->fresh(['student', 'seat.hall.branch']));
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
         return response()->json([
             'message' => 'Seat assigned successfully.',
             'booking' => $this->serializeBooking($booking->fresh(['student', 'seat.hall', 'payments'])),

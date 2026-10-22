@@ -37,7 +37,18 @@ class PlatformSetting extends Model
         'email_welcome_enabled',
         'email_birthday_enabled',
         'email_offers_enabled',
+        'email_marketing_enabled',
         'email_recovery_enabled',
+        'email_fee_alerts_enabled',
+        'email_seat_alerts_enabled',
+        'email_subscription_alerts_enabled',
+        'email_growth_enabled',
+        'seat_vacant_alert_threshold',
+        'seat_high_occupancy_pct',
+        'growth_campaign_step',
+        'subscription_trial_started_at',
+        'growth_last_sent_at',
+        'marketing_unsubscribe_token',
     ];
 
     /**
@@ -58,7 +69,17 @@ class PlatformSetting extends Model
             'email_welcome_enabled' => 'boolean',
             'email_birthday_enabled' => 'boolean',
             'email_offers_enabled' => 'boolean',
+            'email_marketing_enabled' => 'boolean',
             'email_recovery_enabled' => 'boolean',
+            'email_fee_alerts_enabled' => 'boolean',
+            'email_seat_alerts_enabled' => 'boolean',
+            'email_subscription_alerts_enabled' => 'boolean',
+            'email_growth_enabled' => 'boolean',
+            'seat_vacant_alert_threshold' => 'integer',
+            'seat_high_occupancy_pct' => 'integer',
+            'growth_campaign_step' => 'integer',
+            'subscription_trial_started_at' => 'datetime',
+            'growth_last_sent_at' => 'datetime',
         ];
     }
 

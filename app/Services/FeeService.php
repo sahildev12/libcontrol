@@ -406,8 +406,9 @@ class FeeService
         $due = $this->amountDue($booking);
         $amount = min($amount, $due);
 
+        $payment = null;
         if ($amount > 0) {
-            FeePayment::query()->create([
+            $payment = FeePayment::query()->create([
                 'seat_booking_id' => $booking->id,
                 'amount' => $amount,
                 'payment_method' => $meta['payment_method'] ?? 'cash',
@@ -433,7 +434,18 @@ class FeeService
         $booking = $booking->fresh('installments');
         $this->applyInstallmentCoverage($booking);
 
-        return $booking->fresh(['installments', 'payments']);
+        $booking = $booking->fresh(['installments', 'payments', 'student', 'seat.hall.branch']);
+
+        if ($payment) {
+            try {
+                app(\App\Services\EmailAutomation\FeeAlertService::class)
+                    ->sendPaymentReceived($booking, $payment);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        return $booking;
     }
 
     public function markInstallmentPaid(FeeInstallment $installment): FeeInstallment
