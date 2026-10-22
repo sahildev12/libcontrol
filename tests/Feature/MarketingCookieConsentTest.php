@@ -56,7 +56,7 @@ class MarketingCookieConsentTest extends TestCase
 
             $this->assertStringContainsString('<h3>Guide</h3>', $html, $page);
             $this->assertStringContainsString('href="disclaimer.html', $html, $page);
-            $this->assertStringContainsString('Mon – Sat 9.00 – 18.00', $html, $page);
+            $this->assertStringContainsString('Mon – Sat 9am to 6 PM', $html, $page);
             $this->assertStringContainsString('lc-trust-bar', $html, $page);
         }
     }
