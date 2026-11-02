@@ -18,11 +18,24 @@ class TenantProvisioner
 
     public function provision(Tenant $tenant, string $adminEmail, string $adminPassword, string $adminName = 'Library Admin'): void
     {
-        if (! $tenant->provisioned_at) {
-            $this->migrateDatabase($tenant->database_name);
+        $this->provisionWithPasswordHash($tenant, $adminEmail, Hash::make($adminPassword), $adminName);
+    }
+
+    public function provisionWithPasswordHash(
+        Tenant $tenant,
+        string $adminEmail,
+        string $passwordHash,
+        string $adminName = 'Library Admin',
+        bool $emailVerified = true,
+        bool $migrate = true,
+    ): void {
+        if ($migrate && ! $tenant->provisioned_at) {
+            filled($tenant->db_username)
+                ? $this->migrateTenant($tenant)
+                : $this->migrateDatabase($tenant->database_name);
         }
 
-        $this->connections->runOnTenant($tenant, function () use ($tenant, $adminEmail, $adminPassword, $adminName) {
+        $this->connections->runOnTenant($tenant, function () use ($tenant, $adminEmail, $passwordHash, $adminName, $emailVerified) {
             $settings = PlatformSetting::query()->firstOrCreate([], [
                 'student_code_prefix' => 'LIB',
                 'student_code_padding' => config('libcontrol.defaults.student_code_padding', 3),
@@ -33,21 +46,27 @@ class TenantProvisioner
                 'display_name' => $tenant->client_name,
             ]);
 
-            $settings->update([
+            $updates = [
                 'plan_tier' => $tenant->planTier(),
                 'max_seats_override' => $tenant->max_seats_override,
                 'max_halls_override' => $tenant->max_halls_override,
                 'max_branches_override' => $tenant->max_branches_override,
                 'display_name' => $tenant->client_name,
-            ]);
+            ];
+
+            if ($tenant->is_trial && ! $settings->subscription_trial_started_at) {
+                $updates['subscription_trial_started_at'] = now();
+            }
+
+            $settings->update($updates);
 
             $user = User::query()->firstOrCreate(
                 ['email' => $adminEmail],
                 [
                     'branch_id' => null,
                     'name' => $adminName,
-                    'email_verified_at' => now(),
-                    'password' => Hash::make($adminPassword),
+                    'email_verified_at' => $emailVerified ? now() : null,
+                    'password' => $passwordHash,
                 ],
             );
 
@@ -99,6 +118,30 @@ class TenantProvisioner
         $this->connections->runOnTenant($tenant, function () {
             Artisan::call('migrate', ['--force' => true]);
         });
+    }
+
+    /**
+     * Migrates a tenant that connects with its own database user, which the landlord user cannot inspect.
+     */
+    public function migrateTenant(Tenant $tenant): void
+    {
+        $this->connections->runOnTenant($tenant, function () {
+            DB::connection()->getPdo();
+            Artisan::call('migrate', ['--force' => true]);
+        });
+    }
+
+    public function canConnect(Tenant $tenant): bool
+    {
+        try {
+            return $this->connections->runOnTenant($tenant, function () {
+                DB::connection()->getPdo();
+
+                return true;
+            });
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function isDatabaseMigrated(string $databaseName): bool

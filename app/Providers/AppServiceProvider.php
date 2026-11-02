@@ -29,6 +29,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Support\Runtime\DeploymentState::class);
         $this->app->singleton(\App\Support\Runtime\SyncCoordinator::class);
 
+        $this->app->bind(\App\Services\Hosting\HostingProvider::class, function () {
+            if (config('libcontrol.trials.hosting_driver') !== 'hostinger') {
+                return new \App\Services\Hosting\LocalHostingProvider;
+            }
+
+            return new \App\Services\Hosting\HostingerProvider(
+                (string) config('services.hostinger.token'),
+                (string) config('services.hostinger.account'),
+                (string) config('services.hostinger.website'),
+                (string) config('services.hostinger.base_url'),
+            );
+        });
+
         if (! $this->app->runningInConsole()) {
             InstallState::configureRuntimeForInstallation();
         }

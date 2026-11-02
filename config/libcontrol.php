@@ -115,6 +115,27 @@ return [
     ],
 
     /*
+    | Self-service free trials: each trial gets its own subdomain and database.
+    | hosting_driver "hostinger" calls the Hostinger API; "local" is for development.
+    */
+    'trials' => [
+        'enabled' => filter_var(env('LIBCONTROL_TRIALS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'days' => (int) env('LIBCONTROL_TRIAL_DAYS', 14),
+        'plan_tier' => env('LIBCONTROL_TRIAL_PLAN_TIER', 'pro'),
+        'hosting_driver' => env('LIBCONTROL_TRIAL_HOSTING_DRIVER', 'local'),
+        // Hostinger account limit is 300 databases; keep headroom for non-trial sites.
+        'max_databases' => (int) env('LIBCONTROL_TRIAL_MAX_DATABASES', 280),
+        'ssl_wait_seconds' => (int) env('LIBCONTROL_TRIAL_SSL_WAIT_SECONDS', 180),
+        'database_wait_seconds' => (int) env('LIBCONTROL_TRIAL_DATABASE_WAIT_SECONDS', 60),
+        'reserved_subdomains' => [
+            'www', 'mail', 'email', 'smtp', 'imap', 'pop', 'ftp', 'cpanel', 'webmail', 'autodiscover', 'autoconfig',
+            'admin', 'api', 'app', 'apps', 'dashboard', 'developer', 'dev', 'staging', 'test', 'trialtest',
+            'demo', 'rpj', 'support', 'help', 'docs', 'status', 'blog', 'billing', 'pay', 'payments', 'login',
+            'signup', 'register', 'try', 'trial', 'libcontrol', 'static', 'cdn', 'assets', 'ns1', 'ns2',
+        ],
+    ],
+
+    /*
     | LibControl product marketing site (libcontrol-website/) on landlord hosts only.
     | Client libraries (e.g. aims.katsindia.com) keep the per-library public website.
     */

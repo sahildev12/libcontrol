@@ -31,9 +31,14 @@ class TenantConnectionManager
             throw new \RuntimeException('Landlord database connection is not configured.');
         }
 
-        Config::set('database.connections.tenant', array_merge($base, [
-            'database' => $tenant->database_name,
-        ]));
+        $overrides = ['database' => $tenant->database_name];
+
+        if (filled($tenant->db_username)) {
+            $overrides['username'] = $tenant->db_username;
+            $overrides['password'] = (string) $tenant->db_password;
+        }
+
+        Config::set('database.connections.tenant', array_merge($base, $overrides));
 
         Config::set('database.default', 'tenant');
         DB::purge('tenant');

@@ -39,4 +39,11 @@ return [
         'webhook_token' => env('LIBCONTROL_WEBHOOK_TOKEN', 'libcontrol-dev-webhook-token'),
     ],
 
+    'hostinger' => [
+        'token' => env('HOSTINGER_API_TOKEN'),
+        'account' => env('HOSTINGER_ACCOUNT_USERNAME', 'u843330709'),
+        'website' => env('HOSTINGER_WEBSITE_DOMAIN', 'libcontrol.in'),
+        'base_url' => env('HOSTINGER_API_BASE_URL', 'https://developers.hostinger.com'),
+    ],
+
 ];
