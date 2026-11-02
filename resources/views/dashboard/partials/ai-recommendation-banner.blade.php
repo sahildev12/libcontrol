@@ -66,7 +66,7 @@
 
     $unlocked = $unlocked->all();
     $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=2';
-    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=9';
+    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=10';
 @endphp
 
 @if (count($unlocked) > 0 || $pendingTotal === 0)
@@ -101,7 +101,8 @@
         padding: 12px 8px 12px 14px;
         z-index: 2;
         overflow: hidden;
-        background: transparent;
+        /* Match WhatsApp export matte so the MP4 edge does not read as a box on #0b3680 */
+        background: #10427a;
     }
     .lc-ai-banner__bot-frame {
         position: relative;
@@ -112,7 +113,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 0;
-        background: transparent;
+        background: #10427a;
     }
     .lc-ai-banner__bot {
         display: block;
@@ -127,7 +128,6 @@
         object-position: center center;
         pointer-events: none;
         user-select: none;
-        mix-blend-mode: screen;
         filter: drop-shadow(0 6px 12px rgba(8, 45, 112, 0.2));
     }
     .lc-ai-banner__bot-fallback {
@@ -598,6 +598,7 @@
                 class="lc-ai-banner__bot lc-ai-banner__bot-video"
                 src="{{ $botVideoMp4Url }}"
                 muted
+                loop
                 playsinline
                 webkit-playsinline
                 preload="auto"
