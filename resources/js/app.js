@@ -8317,8 +8317,10 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
     busy: null,
     dismissedLocal: 0,
     botVideoFailed: false,
-    botSpinActive: false,
     botVideoTimer: null,
+    botIntroPlayed: false,
+    botFreezeListener: null,
+    botRenderRaf: null,
     onVisibility: null,
 
     get caughtUp() {
@@ -8359,6 +8361,7 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
                 this.pause();
             } else {
                 this.resume();
+                this.playBotIntro();
             }
         };
         document.addEventListener('visibilitychange', this.onVisibility);
@@ -8368,30 +8371,91 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
         }
 
         this.$nextTick(() => {
-            if (this.queue.length && ! document.hidden) {
-                this.showBotIdle();
-            }
+            this.bindBotCanvas();
+            this.playBotIntro();
         });
     },
 
-    showBotIdle() {
-        this.botSpinActive = false;
+    bindBotCanvas() {
         const video = this.$refs.botVideo;
-        if (! video || this.botVideoFailed) {
+        const canvas = this.$refs.botCanvas;
+        const ctx = canvas?.getContext?.('2d');
+        if (! video || ! ctx) {
+            if (video) {
+                video.style.opacity = '1';
+            }
+
             return;
         }
 
-        try {
-            video.pause();
-            video.playbackRate = 1;
-        } catch (e) {
-            // ignore
+        const draw = () => {
+            if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            }
+        };
+
+        const loop = () => {
+            draw();
+            this.botRenderRaf = ! video.paused && ! video.ended
+                ? window.requestAnimationFrame(loop)
+                : null;
+        };
+
+        video.addEventListener('playing', () => {
+            window.cancelAnimationFrame(this.botRenderRaf);
+            loop();
+        });
+        ['loadeddata', 'seeked', 'pause', 'ended'].forEach((name) => video.addEventListener(name, draw));
+    },
+
+    playBotIntro() {
+        if (this.botIntroPlayed || ! this.queue.length || document.hidden) {
+            return;
         }
+
+        this.botIntroPlayed = true;
+        this.playBotVideo();
+    },
+
+    attachBotFreezeListener(video) {
+        if (! video || this.botFreezeListener) {
+            return;
+        }
+
+        this.botFreezeListener = () => {
+            const dur = Number(video.duration);
+            if (! Number.isFinite(dur) || dur <= 0) {
+                return;
+            }
+
+            if (video.currentTime >= dur - 0.1) {
+                video.removeEventListener('timeupdate', this.botFreezeListener);
+                this.botFreezeListener = null;
+
+                try {
+                    video.pause();
+                    video.playbackRate = 1;
+                } catch (e) {
+                    // ignore
+                }
+            }
+        };
+
+        video.addEventListener('timeupdate', this.botFreezeListener);
+    },
+
+    detachBotFreezeListener() {
+        const video = this.$refs.botVideo;
+        if (video && this.botFreezeListener) {
+            video.removeEventListener('timeupdate', this.botFreezeListener);
+        }
+        this.botFreezeListener = null;
     },
 
     destroy() {
         this.stopRotate();
         this.clearBotVideoTimer();
+        window.cancelAnimationFrame(this.botRenderRaf);
         if (this.onVisibility) {
             document.removeEventListener('visibilitychange', this.onVisibility);
         }
@@ -8613,7 +8677,16 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
     },
 
     onBotVideoEnded() {
-        this.showBotIdle();
+        const video = this.$refs.botVideo;
+        if (video) {
+            try {
+                video.pause();
+                video.playbackRate = 1;
+            } catch (e) {
+                // ignore
+            }
+        }
+        this.detachBotFreezeListener();
     },
 
     clearBotVideoTimer() {
@@ -8644,12 +8717,11 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
         }
 
         this.clearBotVideoTimer();
-        this.botSpinActive = true;
+        this.detachBotFreezeListener();
 
         const failToFallback = () => {
             if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
                 this.botVideoFailed = true;
-                this.showBotIdle();
                 this.playBotVideo();
             }
         };
@@ -8659,6 +8731,7 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
                 video.pause();
                 video.currentTime = 0;
                 video.playbackRate = 1;
+                this.attachBotFreezeListener(video);
                 const playPromise = video.play();
                 if (playPromise && typeof playPromise.catch === 'function') {
                     playPromise.catch(() => {
@@ -8668,23 +8741,19 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
 
                             return;
                         }
-                        this.showBotIdle();
                         failToFallback();
                     });
                 }
             } catch (e) {
-                this.showBotIdle();
                 failToFallback();
             }
         };
 
-        this.$nextTick(() => {
-            if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
-                attemptPlay();
-            } else {
-                video.addEventListener('loadedmetadata', attemptPlay, { once: true });
-            }
-        });
+        if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+            attemptPlay();
+        } else {
+            video.addEventListener('loadedmetadata', attemptPlay, { once: true });
+        }
     },
 
     async botAnimationMs() {

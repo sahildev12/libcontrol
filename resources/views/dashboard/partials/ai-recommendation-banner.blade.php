@@ -66,7 +66,7 @@
 
     $unlocked = $unlocked->all();
     $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=3';
-    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=18';
+    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=21';
 @endphp
 
 @if (count($unlocked) > 0 || $pendingTotal === 0)
@@ -81,67 +81,63 @@
         --lc-ai-ease: cubic-bezier(0.4, 0.05, 0.2, 1);
         --lc-ai-dur: 750ms;
         --lc-ai-bot-spin-dur: 4.2s;
+        /* Video is 1:1; at rest the bot spans ~23–83% x and ~18–82% y of the frame. */
+        --lc-ai-bot-slot: 312px;
+        --lc-ai-bot-size: 430px;
+        --lc-ai-bot-x: -58px;
+        --lc-ai-bot-cy: 210px;
         position: relative;
         display: flex;
-        align-items: stretch;
-        gap: 8px;
+        align-items: center;
+        gap: 6px;
         overflow: hidden;
         border-radius: 18px;
         background: var(--lc-ai-bg);
         border: 1px solid var(--lc-ai-bg);
-        min-height: 288px;
+        min-height: 300px;
     }
     .lc-ai-banner__bot-wrap {
         position: relative;
-        flex: 0 0 300px;
-        width: 300px;
+        flex: 0 0 var(--lc-ai-bot-slot);
+        width: var(--lc-ai-bot-slot);
         align-self: stretch;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 6px 10px 14px;
+        margin: 0;
+        padding: 0;
         z-index: 2;
-        overflow: visible;
+        overflow: hidden;
         background: transparent;
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent);
+        mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent);
     }
     .lc-ai-banner__bot-frame {
-        position: relative;
-        width: 100%;
-        max-width: 280px;
-        aspect-ratio: 1;
-        max-height: 100%;
-        overflow: visible;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0;
-        background: transparent;
-    }
-    .lc-ai-banner__bot {
-        display: block;
-        backface-visibility: hidden;
-    }
-    .lc-ai-banner__bot-idle,
-    .lc-ai-banner__bot-video {
         position: absolute;
         inset: 0;
-        width: 100%;
-        height: 100%;
+        overflow: hidden;
+    }
+    .lc-ai-banner__bot-canvas,
+    .lc-ai-banner__bot-video {
+        position: absolute;
+        left: var(--lc-ai-bot-x);
+        top: calc(50% - var(--lc-ai-bot-cy));
+        display: block;
+        width: var(--lc-ai-bot-size);
+        height: var(--lc-ai-bot-size);
+        max-width: none;
         margin: 0;
         object-fit: contain;
-        object-position: center center;
         pointer-events: none;
         user-select: none;
-        background-color: var(--lc-ai-bg);
     }
+    /* Drawn through the canvas: the native video layer renders the matte a few shades off the banner. */
+    .lc-ai-banner__bot-video { opacity: 0; }
     .lc-ai-banner__bot-fallback {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        max-height: 280px;
+        position: absolute;
+        inset: 14px 14px 14px 20px;
+        display: block;
+        width: calc(100% - 34px);
+        height: calc(100% - 28px);
         object-fit: contain;
-        object-position: center center;
-        background-color: var(--lc-ai-bg);
+        object-position: center;
     }
     .lc-ai-banner__bot-fallback.is-spinning {
         animation: lc-ai-bot-spin var(--lc-ai-bot-spin-dur) var(--lc-ai-ease);
@@ -156,7 +152,7 @@
         position: relative;
         flex: 1 1 auto;
         min-width: 0;
-        padding: 18px 48px 18px 6px;
+        padding: 16px 48px 16px 4px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -547,17 +543,21 @@
         }
     }
     @media (max-width: 900px) {
-        .lc-ai-banner { flex-direction: column; min-height: 0; }
+        .lc-ai-banner { flex-direction: column; min-height: 0; align-items: stretch; }
+        .lc-ai-banner {
+            --lc-ai-bot-size: 340px;
+            --lc-ai-bot-cy: 166px;
+        }
         .lc-ai-banner__bot-wrap {
             width: 100%;
-            max-width: none;
             flex-basis: auto;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 16px 0;
+            align-self: auto;
+            height: 240px;
+            -webkit-mask-image: none;
+            mask-image: none;
         }
-        .lc-ai-banner__bot-frame { max-width: 260px; margin: 0 auto; }
-        .lc-ai-banner__bot-fallback { width: 140px; max-height: 160px; }
+        .lc-ai-banner__bot-canvas,
+        .lc-ai-banner__bot-video { left: calc(50% - 176px); }
         .lc-ai-banner__body { padding: 8px 16px 16px; }
         .lc-ai-banner__stack-wrap,
         .lc-ai-banner__stack { min-height: 210px; }
@@ -595,18 +595,16 @@
 
     <div class="lc-ai-banner__bot-wrap" aria-hidden="true">
         <div class="lc-ai-banner__bot-frame">
-            <img
-                x-show="!botVideoFailed && !botSpinActive"
-                x-cloak
-                src="{{ $botUrl }}"
-                alt=""
-                class="lc-ai-banner__bot lc-ai-banner__bot-idle"
-                decoding="async"
-            >
+            <canvas
+                x-ref="botCanvas"
+                x-show="!botVideoFailed"
+                class="lc-ai-banner__bot lc-ai-banner__bot-canvas"
+                width="420"
+                height="420"
+            ></canvas>
             <video
                 x-ref="botVideo"
-                x-show="!botVideoFailed && botSpinActive"
-                x-cloak
+                x-show="!botVideoFailed"
                 class="lc-ai-banner__bot lc-ai-banner__bot-video"
                 src="{{ $botVideoMp4Url }}"
                 muted
@@ -614,7 +612,7 @@
                 webkit-playsinline
                 preload="auto"
                 tabindex="-1"
-                x-on:error="botVideoFailed = true; showBotIdle()"
+                x-on:error="botVideoFailed = true"
                 x-on:ended="onBotVideoEnded()"
             ></video>
             <img
