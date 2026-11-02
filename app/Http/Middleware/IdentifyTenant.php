@@ -7,8 +7,11 @@ use App\Services\Tenancy\TenantConnectionManager;
 use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class IdentifyTenant
 {
@@ -66,6 +69,7 @@ class IdentifyTenant
 
                 TenantContext::activate($tenant);
                 $this->connections->useTenant($tenant);
+                $this->isolateCache($tenant);
 
                 return $next($request);
             }
@@ -73,7 +77,7 @@ class IdentifyTenant
             TenantContext::setLandlordMode();
             $this->connections->useLandlord();
         } catch (\Throwable $e) {
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof HttpExceptionInterface) {
                 throw $e;
             }
 
@@ -82,5 +86,19 @@ class IdentifyTenant
         }
 
         return $next($request);
+    }
+
+    /**
+     * All tenants share one codebase and storage folder, so cached values must not leak between libraries.
+     */
+    private function isolateCache(Tenant $tenant): void
+    {
+        $key = 'tenant_'.$tenant->id;
+
+        Config::set('cache.prefix', $key.'_'.config('cache.prefix'));
+        Config::set('cache.stores.file.path', storage_path('framework/cache/data/'.$key));
+
+        Cache::forgetDriver();
+        Cache::forgetDriver('file');
     }
 }
