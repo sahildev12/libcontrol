@@ -14,6 +14,8 @@ class TrialProvisioner
 {
     public const STEPS = ['subdomain', 'database', 'migrate', 'admin', 'ssl', 'done'];
 
+    public const STALE_MINUTES = 10;
+
     private Closure $sleeper;
 
     public function __construct(
@@ -67,12 +69,25 @@ class TrialProvisioner
         }
 
         $source = $data['source'] ?? 'email';
+        $email = Str::lower(trim($data['owner_email']));
+
+        $existing = Tenant::query()
+            ->where('owner_email', $email)
+            ->where('is_trial', true)
+            ->where('status', '!=', Tenant::STATUS_FAILED)
+            ->first();
+
+        if ($existing) {
+            throw ValidationException::withMessages([
+                'email' => "You already have a trial library at {$existing->host()}. Please log in there.",
+            ]);
+        }
 
         return Tenant::query()->create([
             'subdomain' => $subdomain,
             'client_name' => trim($data['library_name']),
             'owner_name' => trim($data['owner_name']),
-            'owner_email' => Str::lower(trim($data['owner_email'])),
+            'owner_email' => $email,
             'owner_password_hash' => Hash::make(filled($data['password'] ?? null) ? $data['password'] : Str::random(40)),
             'owner_email_verified_at' => $source === 'email' ? null : now(),
             'signup_source' => $source,
@@ -83,16 +98,37 @@ class TrialProvisioner
             'active' => false,
             'status' => Tenant::STATUS_PENDING,
             'signup_ip' => $data['ip'] ?? null,
+            'signup_token' => Str::random(48),
         ]);
+    }
+
+    /**
+     * Atomically marks the trial as provisioning so concurrent callers cannot build it twice.
+     */
+    public function claim(Tenant $tenant): bool
+    {
+        $claimed = Tenant::query()
+            ->whereKey($tenant->id)
+            ->where(fn ($query) => $query
+                ->whereIn('status', [Tenant::STATUS_PENDING, Tenant::STATUS_FAILED])
+                ->orWhere(fn ($stale) => $stale
+                    ->where('status', Tenant::STATUS_PROVISIONING)
+                    ->where('updated_at', '<', now()->subMinutes(self::STALE_MINUTES))))
+            ->update(['status' => Tenant::STATUS_PROVISIONING, 'provision_error' => null, 'updated_at' => now()]);
+
+        $tenant->refresh();
+
+        return $claimed === 1;
     }
 
     public function provision(Tenant $tenant): Tenant
     {
-        if ($tenant->isReady()) {
+        if (! $this->claim($tenant)) {
             return $tenant;
         }
 
-        $tenant->update(['status' => Tenant::STATUS_PROVISIONING, 'provision_error' => null]);
+        @set_time_limit(600);
+        ignore_user_abort(true);
 
         try {
             $this->step($tenant, 'subdomain');
@@ -125,7 +161,7 @@ class TrialProvisioner
             $this->provisioner->provisionWithPasswordHash(
                 $tenant,
                 (string) $tenant->owner_email,
-                (string) $tenant->owner_password_hash,
+                (string) ($tenant->owner_password_hash ?: Hash::make(Str::random(40))),
                 (string) ($tenant->owner_name ?: 'Library Admin'),
                 emailVerified: $tenant->owner_email_verified_at !== null,
                 migrate: false,

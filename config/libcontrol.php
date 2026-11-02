@@ -127,6 +127,7 @@ return [
         'max_databases' => (int) env('LIBCONTROL_TRIAL_MAX_DATABASES', 280),
         'ssl_wait_seconds' => (int) env('LIBCONTROL_TRIAL_SSL_WAIT_SECONDS', 180),
         'database_wait_seconds' => (int) env('LIBCONTROL_TRIAL_DATABASE_WAIT_SECONDS', 60),
+        'signups_per_ip_per_day' => (int) env('LIBCONTROL_TRIAL_SIGNUPS_PER_IP_PER_DAY', 3),
         'reserved_subdomains' => [
             'www', 'mail', 'email', 'smtp', 'imap', 'pop', 'ftp', 'cpanel', 'webmail', 'autodiscover', 'autoconfig',
             'admin', 'api', 'app', 'apps', 'dashboard', 'developer', 'dev', 'staging', 'test', 'trialtest',

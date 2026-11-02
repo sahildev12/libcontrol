@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\ReconcilePayments;
+use App\Console\Commands\ResumePendingTrials;
 use App\Console\Commands\SendFeeAlerts;
 use App\Console\Commands\SendGrowthCampaignEmails;
 use App\Console\Commands\SendMarketingCampaignEmails;
@@ -67,3 +68,9 @@ Schedule::command(SendStudentRecoveryEmails::class)
     ->weeklyOn(1, '10:00')
     ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
     ->description('Send recovery emails to inactive students');
+
+Schedule::command(ResumePendingTrials::class)
+    ->everyMinute()
+    ->withoutOverlapping(15)
+    ->when(fn () => (bool) config('libcontrol.trials.enabled'))
+    ->description('Build trial libraries that did not start from the sign-up page');

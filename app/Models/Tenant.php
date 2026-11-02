@@ -43,6 +43,9 @@ class Tenant extends Model
         'hosting_subdomain_created',
         'hosting_database_created',
         'signup_ip',
+        'signup_token',
+        'login_token_hash',
+        'login_token_expires_at',
         'notes',
         'provisioned_at',
     ];
@@ -53,6 +56,7 @@ class Tenant extends Model
     protected $hidden = [
         'db_password',
         'owner_password_hash',
+        'login_token_hash',
     ];
 
     /**
@@ -72,6 +76,7 @@ class Tenant extends Model
             'owner_email_verified_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'locked_at' => 'datetime',
+            'login_token_expires_at' => 'datetime',
             'provisioned_at' => 'datetime',
         ];
     }
@@ -113,6 +118,34 @@ class Tenant extends Model
     public function isReady(): bool
     {
         return $this->status === self::STATUS_READY;
+    }
+
+    /**
+     * Issues a short-lived single-use link that signs the owner into their library.
+     */
+    public function issueLoginToken(int $minutes = 2): string
+    {
+        $token = Str::random(64);
+
+        $this->forceFill([
+            'login_token_hash' => hash('sha256', $token),
+            'login_token_expires_at' => now()->addMinutes($minutes),
+        ])->save();
+
+        return $token;
+    }
+
+    public function consumeLoginToken(string $token): bool
+    {
+        $valid = $this->login_token_hash !== null
+            && $this->login_token_expires_at?->isFuture()
+            && hash_equals($this->login_token_hash, hash('sha256', $token));
+
+        if ($valid) {
+            $this->forceFill(['login_token_hash' => null, 'login_token_expires_at' => null])->save();
+        }
+
+        return (bool) $valid;
     }
 
     public function trialExpired(): bool
