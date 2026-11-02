@@ -86,7 +86,7 @@
         gap: 8px;
         overflow: hidden;
         border-radius: 18px;
-        background: #0b3680;
+        background: linear-gradient(90deg, #10427a 0%, #10427a 210px, #0b3680 210px, #0b3680 100%);
         border: 1px solid #0b3680;
         min-height: 260px;
     }
@@ -101,8 +101,8 @@
         padding: 12px 8px 12px 14px;
         z-index: 2;
         overflow: hidden;
-        /* Match WhatsApp export matte so the MP4 edge does not read as a box on #0b3680 */
-        background: #10427a;
+        /* Matte matches WhatsApp export inside the spin MP4 */
+        background: transparent;
     }
     .lc-ai-banner__bot-frame {
         position: relative;
@@ -113,7 +113,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 0;
-        background: #10427a;
+        background: transparent;
     }
     .lc-ai-banner__bot {
         display: block;
