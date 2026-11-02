@@ -5,6 +5,7 @@ namespace App\Services\Tenancy;
 use App\Models\Tenant;
 use App\Services\Hosting\HostingProvider;
 use Closure;
+use Illuminate\Auth\RequestGuard;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -130,6 +131,11 @@ class TrialProvisioner
         @set_time_limit(600);
         ignore_user_abort(true);
 
+        return $this->withoutSignedInUser(fn () => $this->build($tenant));
+    }
+
+    private function build(Tenant $tenant): Tenant
+    {
         try {
             $this->step($tenant, 'subdomain');
             if (! $tenant->hosting_subdomain_created) {
@@ -218,6 +224,26 @@ class TrialProvisioner
             'active' => false,
             'provision_error' => trim(($reason?->getMessage() ?? 'Rolled back').' '.implode('; ', $errors)),
         ]);
+    }
+
+    /**
+     * Whoever's browser triggers the build may be signed in on the main site; that user
+     * does not exist in the new library, so nothing may be recorded against them.
+     */
+    private function withoutSignedInUser(Closure $callback): Tenant
+    {
+        $auth = app('auth');
+        $previous = $auth->getDefaultDriver();
+
+        $auth->extend('trial-provisioning', fn () => new RequestGuard(fn () => null, request()));
+        config(['auth.guards.trial-provisioning' => ['driver' => 'trial-provisioning']]);
+        $auth->shouldUse('trial-provisioning');
+
+        try {
+            return $callback();
+        } finally {
+            $auth->shouldUse($previous);
+        }
     }
 
     private function step(Tenant $tenant, string $step): void

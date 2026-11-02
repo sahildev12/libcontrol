@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Tenant;
+use App\Models\User;
 use App\Services\Hosting\HostingProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -104,6 +105,18 @@ class TrialSignupTest extends TestCase
         Auth::logout();
         $this->get($status['redirect'])->assertRedirect(route('admin.login'));
         $this->assertGuest();
+    }
+
+    public function test_build_does_not_attribute_changes_to_a_user_signed_in_on_the_main_site(): void
+    {
+        User::factory()->count(3)->create();
+        $this->actingAs(User::factory()->create());
+
+        $this->signUp();
+        $tenant = Tenant::query()->where('subdomain', 'sunrise')->firstOrFail();
+        $this->postJson(self::HUB.'/try/'.$tenant->signup_token.'/start')->assertOk();
+
+        $this->assertSame(Tenant::STATUS_READY, $tenant->refresh()->status, (string) $tenant->provision_error);
     }
 
     public function test_status_without_the_signup_session_points_to_the_login_page(): void
