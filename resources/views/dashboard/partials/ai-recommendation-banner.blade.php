@@ -66,7 +66,7 @@
 
     $unlocked = $unlocked->all();
     $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=2';
-    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=8';
+    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=9';
 @endphp
 
 @if (count($unlocked) > 0 || $pendingTotal === 0)
@@ -101,7 +101,7 @@
         padding: 12px 8px 12px 14px;
         z-index: 2;
         overflow: hidden;
-        background: var(--lc-ai-bg);
+        background: transparent;
     }
     .lc-ai-banner__bot-frame {
         position: relative;
@@ -112,7 +112,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 0;
-        background: var(--lc-ai-bg);
+        background: transparent;
     }
     .lc-ai-banner__bot {
         display: block;
@@ -606,6 +606,7 @@
             ></video>
             <img
                 x-show="botVideoFailed"
+                x-cloak
                 src="{{ $botUrl }}"
                 alt=""
                 width="210"

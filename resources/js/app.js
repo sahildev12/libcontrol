@@ -8625,19 +8625,38 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
 
         this.clearBotVideoTimer();
 
-        try {
-            video.pause();
-            video.currentTime = 0;
-            const playPromise = video.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(() => {
-                    this.botVideoFailed = true;
-                    this.playBotVideo();
-                });
+        const failToFallback = () => {
+            if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+                this.botVideoFailed = true;
+                this.playBotVideo();
             }
-        } catch (e) {
-            this.botVideoFailed = true;
-            this.playBotVideo();
+        };
+
+        const attemptPlay = () => {
+            try {
+                video.pause();
+                video.currentTime = 0;
+                const playPromise = video.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => {
+                        if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+                            video.addEventListener('loadeddata', attemptPlay, { once: true });
+                            video.load();
+
+                            return;
+                        }
+                        failToFallback();
+                    });
+                }
+            } catch (e) {
+                failToFallback();
+            }
+        };
+
+        if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+            attemptPlay();
+        } else {
+            video.addEventListener('loadeddata', attemptPlay, { once: true });
         }
     },
 
