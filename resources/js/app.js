@@ -8317,6 +8317,7 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
     busy: null,
     dismissedLocal: 0,
     botVideoFailed: false,
+    botSpinActive: false,
     botVideoTimer: null,
     onVisibility: null,
 
@@ -8368,35 +8369,23 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
 
         this.$nextTick(() => {
             if (this.queue.length && ! document.hidden) {
-                this.holdBotIdleFrame();
+                this.showBotIdle();
             }
         });
     },
 
-    holdBotIdleFrame() {
-        if (this.botVideoFailed) {
-            return;
-        }
-
+    showBotIdle() {
+        this.botSpinActive = false;
         const video = this.$refs.botVideo;
-        if (! video) {
+        if (! video || this.botVideoFailed) {
             return;
         }
 
-        const seekIdle = () => {
-            try {
-                video.pause();
-                video.playbackRate = 1;
-                video.currentTime = this.botIdleTime(video);
-            } catch (e) {
-                // ignore seek errors while metadata loads
-            }
-        };
-
-        if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
-            seekIdle();
-        } else {
-            video.addEventListener('loadedmetadata', seekIdle, { once: true });
+        try {
+            video.pause();
+            video.playbackRate = 1;
+        } catch (e) {
+            // ignore
         }
     },
 
@@ -8623,18 +8612,8 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
         return 4200;
     },
 
-    botIdleTime(video) {
-        const dur = Number(video?.duration);
-        if (! Number.isFinite(dur) || dur <= 0) {
-            return 0.001;
-        }
-
-        // Hold the last frame so the bot stays visible between card changes.
-        return Math.max(0.001, dur - 0.06);
-    },
-
     onBotVideoEnded() {
-        this.holdBotIdleFrame();
+        this.showBotIdle();
     },
 
     clearBotVideoTimer() {
@@ -8665,10 +8644,12 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
         }
 
         this.clearBotVideoTimer();
+        this.botSpinActive = true;
 
         const failToFallback = () => {
             if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
                 this.botVideoFailed = true;
+                this.showBotIdle();
                 this.playBotVideo();
             }
         };
@@ -8687,19 +8668,23 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
 
                             return;
                         }
+                        this.showBotIdle();
                         failToFallback();
                     });
                 }
             } catch (e) {
+                this.showBotIdle();
                 failToFallback();
             }
         };
 
-        if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
-            attemptPlay();
-        } else {
-            video.addEventListener('loadedmetadata', attemptPlay, { once: true });
-        }
+        this.$nextTick(() => {
+            if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                attemptPlay();
+            } else {
+                video.addEventListener('loadedmetadata', attemptPlay, { once: true });
+            }
+        });
     },
 
     async botAnimationMs() {

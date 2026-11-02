@@ -65,7 +65,7 @@
     }
 
     $unlocked = $unlocked->all();
-    $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=2';
+    $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=3';
     $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=18';
 @endphp
 
@@ -89,25 +89,27 @@
         border-radius: 18px;
         background: var(--lc-ai-bg);
         border: 1px solid var(--lc-ai-bg);
-        min-height: 276px;
+        min-height: 288px;
     }
     .lc-ai-banner__bot-wrap {
         position: relative;
-        flex: 0 0 auto;
-        width: 272px;
+        flex: 0 0 300px;
+        width: 300px;
         align-self: stretch;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 6px 0 6px 10px;
+        padding: 10px 6px 10px 14px;
         z-index: 2;
         overflow: visible;
         background: transparent;
     }
     .lc-ai-banner__bot-frame {
         position: relative;
-        width: 268px;
-        height: 268px;
+        width: 100%;
+        max-width: 280px;
+        aspect-ratio: 1;
+        max-height: 100%;
         overflow: visible;
         display: flex;
         align-items: center;
@@ -119,9 +121,12 @@
         display: block;
         backface-visibility: hidden;
     }
+    .lc-ai-banner__bot-idle,
     .lc-ai-banner__bot-video {
-        width: 268px;
-        height: 268px;
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         margin: 0;
         object-fit: contain;
         object-position: center center;
@@ -130,14 +135,13 @@
         background-color: var(--lc-ai-bg);
     }
     .lc-ai-banner__bot-fallback {
-        display: none;
-        width: 220px;
-        height: auto;
-        max-height: 240px;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        max-height: 280px;
         object-fit: contain;
-        object-position: center bottom;
-        mix-blend-mode: screen;
-        filter: drop-shadow(0 6px 12px rgba(8, 45, 112, 0.2));
+        object-position: center center;
+        background-color: var(--lc-ai-bg);
     }
     .lc-ai-banner__bot-fallback.is-spinning {
         animation: lc-ai-bot-spin var(--lc-ai-bot-spin-dur) var(--lc-ai-ease);
@@ -547,12 +551,12 @@
         .lc-ai-banner__bot-wrap {
             width: 100%;
             max-width: none;
+            flex-basis: auto;
             justify-content: center;
             align-items: center;
             padding: 10px 16px 0;
         }
-        .lc-ai-banner__bot-frame { width: 240px; height: 240px; }
-        .lc-ai-banner__bot-video { width: 240px; height: 240px; }
+        .lc-ai-banner__bot-frame { max-width: 260px; margin: 0 auto; }
         .lc-ai-banner__bot-fallback { width: 140px; max-height: 160px; }
         .lc-ai-banner__body { padding: 8px 16px 16px; }
         .lc-ai-banner__stack-wrap,
@@ -591,9 +595,18 @@
 
     <div class="lc-ai-banner__bot-wrap" aria-hidden="true">
         <div class="lc-ai-banner__bot-frame">
+            <img
+                x-show="!botVideoFailed && !botSpinActive"
+                x-cloak
+                src="{{ $botUrl }}"
+                alt=""
+                class="lc-ai-banner__bot lc-ai-banner__bot-idle"
+                decoding="async"
+            >
             <video
                 x-ref="botVideo"
-                x-show="!botVideoFailed"
+                x-show="!botVideoFailed && botSpinActive"
+                x-cloak
                 class="lc-ai-banner__bot lc-ai-banner__bot-video"
                 src="{{ $botVideoMp4Url }}"
                 muted
@@ -601,7 +614,7 @@
                 webkit-playsinline
                 preload="auto"
                 tabindex="-1"
-                x-on:error="botVideoFailed = true"
+                x-on:error="botVideoFailed = true; showBotIdle()"
                 x-on:ended="onBotVideoEnded()"
             ></video>
             <img
@@ -609,8 +622,6 @@
                 x-cloak
                 src="{{ $botUrl }}"
                 alt=""
-                width="210"
-                height="220"
                 class="lc-ai-banner__bot lc-ai-banner__bot-fallback"
                 :class="{ 'is-spinning': spinning }"
                 decoding="async"
