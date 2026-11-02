@@ -88,25 +88,25 @@
         border-radius: 18px;
         background: var(--lc-ai-bg);
         border: 1px solid var(--lc-ai-bg);
-        min-height: 260px;
+        min-height: 276px;
     }
     .lc-ai-banner__bot-wrap {
         position: relative;
         flex: 0 0 auto;
-        width: 228px;
+        width: 272px;
         align-self: stretch;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 8px 4px 8px 12px;
+        padding: 6px 0 6px 10px;
         z-index: 2;
         overflow: visible;
         background: transparent;
     }
     .lc-ai-banner__bot-frame {
         position: relative;
-        width: 228px;
-        height: 228px;
+        width: 268px;
+        height: 268px;
         overflow: visible;
         display: flex;
         align-items: center;
@@ -119,8 +119,8 @@
         backface-visibility: hidden;
     }
     .lc-ai-banner__bot-video {
-        width: 228px;
-        height: 228px;
+        width: 268px;
+        height: 268px;
         margin: 0;
         object-fit: contain;
         object-position: center center;
@@ -550,8 +550,8 @@
             align-items: center;
             padding: 10px 16px 0;
         }
-        .lc-ai-banner__bot-frame { width: 200px; height: 200px; }
-        .lc-ai-banner__bot-video { width: 200px; height: 200px; }
+        .lc-ai-banner__bot-frame { width: 240px; height: 240px; }
+        .lc-ai-banner__bot-video { width: 240px; height: 240px; }
         .lc-ai-banner__bot-fallback { width: 140px; max-height: 160px; }
         .lc-ai-banner__body { padding: 8px 16px 16px; }
         .lc-ai-banner__stack-wrap,
@@ -596,12 +596,12 @@
                 class="lc-ai-banner__bot lc-ai-banner__bot-video"
                 src="{{ $botVideoMp4Url }}"
                 muted
-                loop
                 playsinline
                 webkit-playsinline
                 preload="auto"
                 tabindex="-1"
                 x-on:error="botVideoFailed = true"
+                x-on:ended="onBotVideoEnded()"
             ></video>
             <img
                 x-show="botVideoFailed"

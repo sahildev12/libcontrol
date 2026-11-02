@@ -8588,12 +8588,34 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
     },
 
     readBotSpinMs() {
+        return this.readCarouselMotionMs();
+    },
+
+    onBotVideoEnded() {
         const video = this.$refs.botVideo;
-        if (video && Number.isFinite(video.duration) && video.duration > 0) {
-            return Math.round(video.duration * 1000);
+        if (! video || this.botVideoFailed) {
+            return;
         }
 
-        return 4200;
+        video.pause();
+        video.playbackRate = 1;
+        try {
+            video.currentTime = 0;
+        } catch (e) {
+            // ignore seek errors while metadata loads
+        }
+    },
+
+    syncBotPlaybackRate(video) {
+        const motionMs = this.readCarouselMotionMs();
+        const durationMs = video.duration * 1000;
+        if (! motionMs || ! Number.isFinite(durationMs) || durationMs <= 0) {
+            video.playbackRate = 1;
+
+            return;
+        }
+
+        video.playbackRate = Math.min(8, Math.max(1, durationMs / motionMs));
     },
 
     clearBotVideoTimer() {
@@ -8636,6 +8658,7 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
             try {
                 video.pause();
                 video.currentTime = 0;
+                this.syncBotPlaybackRate(video);
                 const playPromise = video.play();
                 if (playPromise && typeof playPromise.catch === 'function') {
                     playPromise.catch(() => {
@@ -8656,7 +8679,10 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
         if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
             attemptPlay();
         } else {
-            video.addEventListener('loadeddata', attemptPlay, { once: true });
+            video.addEventListener('loadedmetadata', () => {
+                this.syncBotPlaybackRate(video);
+                attemptPlay();
+            }, { once: true });
         }
     },
 
@@ -8728,7 +8754,6 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
         await this.waitFrames(2);
 
         this.snapping = false;
-        this.spinning = false;
         this.animating = false;
     },
 }));
