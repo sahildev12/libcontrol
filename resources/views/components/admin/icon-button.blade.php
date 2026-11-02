@@ -12,6 +12,6 @@
     $classes = $tones[$tone] ?? $tones['gray'];
 @endphp
 
-<button {{ $attributes->merge(['type' => 'button', 'class' => "inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors {$classes}"]) }}>
+<button {{ $attributes->merge(['type' => 'button', 'class' => "lc-icon-btn inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors {$classes}"]) }}>
     {{ $slot }}
 </button>

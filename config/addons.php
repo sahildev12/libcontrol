@@ -9,4 +9,10 @@ return [
         'migrations_path' => 'database/migrations/addons/attendance',
         'settings_route' => 'attendance.settings',
     ],
+    'activity-log' => [
+        'name' => 'Activity Log',
+        'description' => 'Browse and review staff and admin activity across your library branches.',
+        'version' => '1.0.0',
+        'provider' => \App\Addons\ActivityLog\ActivityLogAddonServiceProvider::class,
+    ],
 ];

@@ -16,7 +16,7 @@
         type="button"
         x-ref="studentPickerTrigger"
         @click="openStudentPicker()"
-        class="mt-1 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+        class="lc-field-trigger mt-1 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
         :class="getStudentSelectId() ? 'text-gray-900' : 'text-gray-500'"
     >
         <span class="truncate" x-text="selectedStudentLabel() || 'Choose a student'"></span>

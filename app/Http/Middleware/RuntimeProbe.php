@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\InstallState;
+use App\Support\DeploymentPublicUrl;
 use App\Support\Runtime\SyncCoordinator;
 use App\Support\Tenancy\TenantContext;
 use Closure;
@@ -44,6 +45,10 @@ class RuntimeProbe
         }
 
         if (app()->environment('local')) {
+            return true;
+        }
+
+        if (DeploymentPublicUrl::isLocalhost('http://'.$request->getHost())) {
             return true;
         }
 

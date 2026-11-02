@@ -342,7 +342,6 @@
                 </div>
 
                 <div class="flex justify-end gap-2 border-t border-gray-200 px-5 py-3">
-                    <button type="button" @click="closeView()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
                     <button type="button" @click="openReceivePayment(viewRow); closeView()" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Add fee</button>
                 </div>
             </div>

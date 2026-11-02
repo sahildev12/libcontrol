@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\InstallState;
+use App\Support\DeploymentPublicUrl;
 use App\Support\Runtime\DeploymentState;
 use App\Support\Tenancy\TenantContext;
 use Closure;
@@ -29,6 +30,10 @@ class EnsureDeploymentLicensed
         }
 
         if (app()->environment('local')) {
+            return $next($request);
+        }
+
+        if (DeploymentPublicUrl::isLocalhost('http://'.$request->getHost())) {
             return $next($request);
         }
 

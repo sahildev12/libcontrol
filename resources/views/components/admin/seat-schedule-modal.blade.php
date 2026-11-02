@@ -90,9 +90,5 @@
                 </template>
             </div>
         </div>
-
-        <div class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-5 py-4">
-            <button type="button" @click="closeFullSchedule()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
-        </div>
     </div>
 </div>

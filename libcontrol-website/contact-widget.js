@@ -1,7 +1,8 @@
 (function () {
     var WA_PHONE = '918076105181';
     var WA_TEXT = 'Hi, I want to know about LibControl.';
-    var BOT_SRC = '/assets/edwik-bot.png?v=6';
+    var BOT_SRC = '/assets/edwik-bot.webp?v=7';
+    var BOT_SRC_FALLBACK = '/assets/edwik-bot.png?v=7';
     var BUBBLE_LINES = [
         'I can help you grow your library ✨',
         'Get more students for your library',
@@ -107,7 +108,10 @@
         dock.setAttribute('aria-label', 'Contact LibControl');
         dock.innerHTML =
             '<div class="lc-contact-dock__promo">' +
-            '  <img src="' + BOT_SRC + '" width="64" height="64" alt="Edwik assistant" class="lc-contact-dock__avatar" decoding="async">' +
+            '  <picture>' +
+            '    <source srcset="' + BOT_SRC + '" type="image/webp">' +
+            '    <img src="' + BOT_SRC_FALLBACK + '" width="64" height="64" alt="Edwik, LibControl AI assistant" class="lc-contact-dock__avatar" decoding="async">' +
+            '  </picture>' +
             '  <p class="lc-contact-dock__bubble" aria-live="polite">' +
             '    <span class="lc-contact-dock__bubble-text" id="lcEdwikBubbleText"></span>' +
             '  </p>' +

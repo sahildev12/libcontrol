@@ -83,6 +83,8 @@ class LibcontrolMarketingSite
             'webp' => 'image/webp',
             'ico' => 'image/x-icon',
             'svg' => 'image/svg+xml',
+            'txt' => 'text/plain; charset=UTF-8',
+            'xml' => 'application/xml; charset=UTF-8',
             default => 'application/octet-stream',
         };
     }

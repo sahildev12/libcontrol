@@ -47,6 +47,8 @@ Route::get('/privacy-policy.html', [LibcontrolMarketingSiteController::class, 'f
 Route::get('/terms-and-conditions.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'terms-and-conditions.html');
 Route::get('/refund-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'refund-policy.html');
 Route::get('/disclaimer.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'disclaimer.html');
+Route::get('/backlink', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'backlink.html');
+Route::redirect('/backlink.html', '/backlink', 301);
 Route::get('/whatsapp.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'whatsapp.js');
 Route::get('/contact-widget.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'contact-widget.js');
 Route::get('/cookie-consent.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'cookie-consent.js');
@@ -57,6 +59,7 @@ Route::get('/modules-data.js', [LibcontrolMarketingSiteController::class, 'file'
 Route::get('/documentation-data.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'documentation-data.js');
 Route::get('/support-articles-data.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'support-articles-data.js');
 Route::get('/support-hub.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'support-hub.js');
+Route::get('/llms.txt', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'llms.txt');
 
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
@@ -194,9 +197,6 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/bulk-delete', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk-destroy');
-    Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
-    Route::post('/activity-logs/bulk-delete', [\App\Http\Controllers\ActivityLogController::class, 'bulkDestroy'])->name('activity-logs.bulk-destroy');
-    Route::get('/activity-logs/{activityLog}', [\App\Http\Controllers\ActivityLogController::class, 'show'])->name('activity-logs.show');
 
     Route::get('/help-support', [HelpSupportController::class, 'index'])->name('help-support.index');
     Route::get('/help-support/sync', [HelpSupportController::class, 'sync'])->name('help-support.sync');

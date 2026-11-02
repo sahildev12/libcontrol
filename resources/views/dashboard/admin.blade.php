@@ -38,6 +38,10 @@
     }"
     class="space-y-6"
 >
+    @if (config('growth.enabled', true) && ! empty($combinedGrowth))
+        @include('dashboard.partials.ai-recommendation-banner')
+    @endif
+
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="lc-page-title">Dashboard</h1>
@@ -55,14 +59,6 @@
             >
                 <input type="hidden" name="revenue_months" value="{{ $revenueMonthsCount }}">
             </x-admin.date-range-picker>
-
-            <a
-                href="{{ route('dashboard', array_merge(request()->only(['from', 'to', 'revenue_months']))) }}"
-                class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014-7M19 5a9 9 0 00-14 7"/></svg>
-                Refresh
-            </a>
         </div>
     </header>
 
@@ -123,19 +119,19 @@
                 </div>
                 <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-3 text-sm text-gray-600">
                     <p>Total <span class="font-semibold text-gray-900" x-text="rows.length"></span> branches</p>
-                    <div class="flex items-center gap-1.5">
+                    <div class="lc-pagination flex items-center gap-1.5">
                         <template x-for="p in pages()" :key="p">
                             <button
                                 type="button"
                                 @click="page = p"
-                                class="inline-flex size-8 items-center justify-center rounded-lg text-xs font-semibold"
-                                :class="page === p ? 'bg-indigo-600 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'"
+                                class="lc-page-btn inline-flex size-8 items-center justify-center rounded-lg text-xs font-semibold"
+                                :class="page === p ? 'bg-brand-blue text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'"
                                 x-text="p"
                             ></button>
                         </template>
                         <button
                             type="button"
-                            class="inline-flex h-8 items-center rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                            class="lc-page-btn inline-flex h-8 items-center rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
                             :disabled="page >= totalPages()"
                             @click="page = Math.min(totalPages(), page + 1)"
                         >Next</button>
@@ -153,7 +149,7 @@
                         <button
                             type="button"
                             @click="revenueOpen = !revenueOpen"
-                            class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                            class="lc-field-trigger inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                         >
                             {{ $admin['revenue_months_label'] }}
                             <svg class="size-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>

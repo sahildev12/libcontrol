@@ -172,11 +172,11 @@ return [
             'billing' => 'monthly',
             'tagline' => 'Essential local visibility for one reading centre.',
             'includes' => [
-                'WhatsApp promotional campaign',
-                '4 social media creatives',
+                'WhatsApp promotional campaign (managed outreach)',
+                '4 social media creatives per month',
                 'Google Business Profile posts',
-                'Review-generation campaign',
-                'Monthly marketing report',
+                'Review-generation campaign support',
+                'Monthly marketing performance report',
             ],
         ],
         'grow' => [
@@ -188,12 +188,11 @@ return [
             'includes_package' => 'starter',
             'includes' => [
                 'Everything in Starter',
-                '8–10 social media creatives',
-                '2 reels',
-                'Local SEO',
-                'Google Business optimization',
-                'WhatsApp campaigns',
-                'Lead / enquiry tracking',
+                '8–10 social media creatives per month',
+                '2 short reels',
+                'Local SEO (keywords, on-page and directories)',
+                'Google Business optimisation',
+                'WhatsApp campaigns and lead / enquiry tracking',
             ],
         ],
         'dominate' => [
@@ -232,82 +231,7 @@ return [
         ],
     ],
 
-    'services' => [
-        'whatsapp_marketing' => [
-            'name' => 'WhatsApp Marketing',
-            'description' => 'Promotional creatives + WhatsApp campaigns to local students/contacts',
-            'price_label' => '₹2,500–₹5,000/month',
-            'billing' => 'monthly',
-        ],
-        'gbp_boost' => [
-            'name' => 'Google Business Profile Boost',
-            'description' => 'Optimize Google Maps profile, photos, posts, reviews & local visibility',
-            'price_label' => '₹2,500/month',
-            'billing' => 'monthly',
-        ],
-        'google_ads' => [
-            'name' => 'Google Ads – Local Leads',
-            'description' => 'Search ads targeting students searching for libraries nearby',
-            'price_label' => '₹5,000–₹10,000/month + ad spend',
-            'billing' => 'monthly',
-            'ad_spend' => true,
-        ],
-        'social_marketing' => [
-            'name' => 'Facebook & Instagram Marketing',
-            'description' => '8–12 creatives/reels + posting + local targeting',
-            'price_label' => '₹5,000–₹10,000/month',
-            'billing' => 'monthly',
-        ],
-        'local_seo' => [
-            'name' => 'Local SEO',
-            'description' => '“Library near me”, “Study library in Hisar” and similar keywords',
-            'price_label' => '₹5,000–₹8,000/month',
-            'billing' => 'monthly',
-        ],
-        'website_landing' => [
-            'name' => 'Website / Landing Page',
-            'description' => 'Professional library website with enquiry / WhatsApp button',
-            'price_label' => '₹10,000–₹25,000 one-time',
-            'billing' => 'one_time',
-        ],
-        'lead_generation' => [
-            'name' => 'Student Lead Generation',
-            'description' => 'Facebook/Instagram lead campaigns for new memberships',
-            'price_label' => '₹5,000–₹10,000 + ad spend',
-            'billing' => 'monthly',
-            'ad_spend' => true,
-        ],
-        'reputation' => [
-            'name' => 'Review & Reputation Marketing',
-            'description' => 'Assisted review requests + testimonial creatives',
-            'price_label' => '₹1,500–₹3,000/month',
-            'billing' => 'monthly',
-        ],
-        'festival_campaign' => [
-            'name' => 'Festival & Admission Campaigns',
-            'description' => 'Special campaigns for exams, admissions, new batches',
-            'price_label' => '₹2,500–₹5,000/campaign',
-            'billing' => 'campaign',
-        ],
-        'referral_campaign' => [
-            'name' => 'Referral Campaign',
-            'description' => '“Refer a friend & get ₹X off” campaign + tracking',
-            'price_label' => '₹2,500 setup',
-            'billing' => 'setup',
-        ],
-        'branding_kit' => [
-            'name' => 'Library Branding Kit',
-            'description' => 'Logo, posters, membership cards, social templates, banners',
-            'price_label' => '₹5,000–₹15,000',
-            'billing' => 'one_time',
-        ],
-        'video_reels' => [
-            'name' => 'Video / Reels Marketing',
-            'description' => 'Short promotional videos showing facilities and ambience',
-            'price_label' => '₹2,000–₹5,000/video',
-            'billing' => 'campaign',
-        ],
-    ],
+    'services' => require __DIR__.'/growth-services.php',
 
     'actions' => [
         'whatsapp' => [

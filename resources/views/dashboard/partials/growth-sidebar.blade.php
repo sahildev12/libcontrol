@@ -43,8 +43,8 @@
             </p>
             <a
                 href="{{ $growthHubUrl }}#packages"
-                class="lc-shine-btn relative z-20 inline-flex items-center font-bold shadow-sm transition hover:brightness-95 active:scale-[0.98]"
-                style="margin-top:14px;height:38px;border-radius:10px;padding:0 14px;background-color:#FFCC00;color:#082a67;font-size:12px;width:fit-content;overflow:hidden;isolation:isolate;"
+                class="lc-web-btn lc-web-btn--yellow lc-shine-btn relative z-20"
+                style="margin-top:14px;height:38px;padding:0 14px;font-size:12px;width:fit-content;"
             >
                 <span class="lc-shine-btn__glint" aria-hidden="true"></span>
                 <span class="relative z-[1] inline-flex items-center" style="gap:8px;">

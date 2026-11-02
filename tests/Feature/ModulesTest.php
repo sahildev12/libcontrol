@@ -11,10 +11,12 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\InstallsActivityLogAddon;
 use Tests\TestCase;
 
 class ModulesTest extends TestCase
 {
+    use InstallsActivityLogAddon;
     use RefreshDatabase;
 
     public function test_branch_user_can_update_branch_details(): void
@@ -702,6 +704,8 @@ class ModulesTest extends TestCase
 
     public function test_module_pages_load_for_branch_user(): void
     {
+        $this->installActivityLogAddon();
+
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
 

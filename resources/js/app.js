@@ -8291,6 +8291,429 @@ Alpine.data('helpSupportPage', (config) => ({
     },
 }));
 
+Alpine.data('aiRecommendationBanner', (config = {}) => ({
+    storageKey: config.storageKey || 'lc_ai_rec_dismissed',
+    rotateMs: config.rotateMs || 10000,
+    motionMs: Number(config.motionMs || 750),
+    servicesRequestUrl: config.servicesRequestUrl || '',
+    csrfToken: config.csrfToken || '',
+    packagesUrl: config.packagesUrl || '#packages',
+    recsUrl: config.recsUrl || '#recommendations',
+    allItems: Array.isArray(config.items) ? config.items : [],
+    backendPendingTotal: Number(config.pendingTotal || 0),
+    queue: [],
+    slots: [],
+    incomingItem: null,
+    bannerVisible: true,
+    spinning: false,
+    spinKey: 0,
+    timer: null,
+    rotateToken: 0,
+    animating: false,
+    advancing: false,
+    reversing: false,
+    snapping: false,
+    paused: false,
+    busy: null,
+    dismissedLocal: 0,
+    botVideoFailed: false,
+    botVideoTimer: null,
+    onVisibility: null,
+
+    get caughtUp() {
+        return this.queue.length === 0;
+    },
+
+    get pendingCount() {
+        return Math.max(0, this.backendPendingTotal - this.dismissedLocal);
+    },
+
+    syncSlots() {
+        if (! this.queue.length) {
+            this.slots = [];
+            this.incomingItem = null;
+
+            return;
+        }
+
+        // Queue is always ordered with the active card at [0], so wrapping
+        // the array itself keeps the loop infinite without an index cursor.
+        const count = Math.min(5, this.queue.length);
+        this.slots = Array.from({ length: count }, (_, depth) => ({
+            depth,
+            item: this.queue[depth],
+        }));
+        this.incomingItem = this.queue[this.queue.length - 1];
+    },
+
+    init() {
+        const dismissed = this.readDismissed();
+        this.queue = this.allItems.filter((item) => ! dismissed.includes(item.key));
+        this.dismissedLocal = Math.max(0, this.allItems.filter((item) => ! item.is_premium && dismissed.includes(item.key)).length);
+        this.bannerVisible = true;
+        this.syncSlots();
+
+        this.onVisibility = () => {
+            if (document.hidden) {
+                this.pause();
+            } else {
+                this.resume();
+            }
+        };
+        document.addEventListener('visibilitychange', this.onVisibility);
+
+        if (this.queue.length > 1) {
+            this.startRotate();
+        }
+
+        this.$nextTick(() => {
+            if (this.queue.length && ! document.hidden) {
+                this.playBotVideo();
+            }
+        });
+    },
+
+    destroy() {
+        this.stopRotate();
+        this.clearBotVideoTimer();
+        if (this.onVisibility) {
+            document.removeEventListener('visibilitychange', this.onVisibility);
+        }
+    },
+
+    readDismissed() {
+        try {
+            const raw = localStorage.getItem(this.storageKey);
+            const parsed = raw ? JSON.parse(raw) : [];
+
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    writeDismissed(keys) {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(keys.slice(-40)));
+        } catch (e) {
+            // ignore quota / private mode
+        }
+    },
+
+    clearTimer() {
+        if (this.timer) {
+            window.clearTimeout(this.timer);
+            this.timer = null;
+        }
+    },
+
+    pause() {
+        this.paused = true;
+        this.clearTimer();
+    },
+
+    resume() {
+        if (document.hidden) {
+            return;
+        }
+        this.paused = false;
+        if (this.queue.length > 1 && ! this.animating) {
+            this.startRotate();
+        }
+    },
+
+    startRotate() {
+        this.clearTimer();
+        if (this.paused || this.queue.length < 2 || document.hidden || this.animating) {
+            return;
+        }
+
+        const token = this.rotateToken;
+        this.timer = window.setTimeout(async () => {
+            this.timer = null;
+            if (token !== this.rotateToken || this.paused || this.busy || this.animating || document.hidden || this.queue.length < 2) {
+                if (token === this.rotateToken && ! this.paused && ! document.hidden && this.queue.length > 1 && ! this.animating) {
+                    this.startRotate();
+                }
+
+                return;
+            }
+
+            await this.animateStep(1, token);
+            if (token === this.rotateToken && ! this.paused && ! document.hidden) {
+                this.startRotate();
+            }
+        }, this.rotateMs);
+    },
+
+    stopRotate() {
+        this.clearTimer();
+        this.rotateToken += 1;
+    },
+
+    async next() {
+        if (this.animating || this.queue.length < 2) {
+            return;
+        }
+        this.clearTimer();
+        const token = this.rotateToken;
+        await this.animateStep(1, token);
+        if (token === this.rotateToken && ! this.paused && ! document.hidden) {
+            this.startRotate();
+        }
+    },
+
+    async prev() {
+        if (this.animating || this.queue.length < 2) {
+            return;
+        }
+        this.clearTimer();
+        const token = this.rotateToken;
+        await this.animateStep(-1, token);
+        if (token === this.rotateToken && ! this.paused && ! document.hidden) {
+            this.startRotate();
+        }
+    },
+
+    dismissBanner() {
+        this.stopRotate();
+        this.bannerVisible = false;
+    },
+
+    async dismissCurrent() {
+        if (! this.queue[0] || this.animating) {
+            return;
+        }
+
+        this.stopRotate();
+        const key = this.queue[0].key;
+        const wasPremium = !! this.queue[0].is_premium;
+        const dismissed = this.readDismissed();
+        if (! dismissed.includes(key)) {
+            dismissed.push(key);
+            this.writeDismissed(dismissed);
+            if (! wasPremium) {
+                this.dismissedLocal += 1;
+            }
+        }
+
+        const nextQueue = this.queue.filter((item) => item.key !== key);
+        this.queue = nextQueue;
+        this.syncSlots();
+        if (nextQueue.length === 0) {
+            return;
+        }
+        this.resume();
+    },
+
+    async hireExpert(item) {
+        if (! item || this.busy) {
+            return;
+        }
+
+        this.pause();
+
+        if (item.hire_mode !== 'request' || ! item.expert_service) {
+            window.location.href = item.hire_url || this.packagesUrl;
+
+            return;
+        }
+
+        if (! this.servicesRequestUrl) {
+            window.location.href = this.packagesUrl;
+
+            return;
+        }
+
+        this.busy = item.key;
+        try {
+            const res = await fetch(this.servicesRequestUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                body: JSON.stringify({ item_key: item.expert_service, source: 'recommendation' }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (! res.ok) {
+                if (data.packages_url) {
+                    window.location.href = data.packages_url;
+
+                    return;
+                }
+                throw new Error(data.message || 'Could not send request');
+            }
+            window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { message: data.message || 'Request sent to Katsindia.', type: 'success' },
+            }));
+        } catch (e) {
+            window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { message: e.message || 'Could not send request', type: 'error' },
+            }));
+        } finally {
+            this.busy = null;
+            this.resume();
+        }
+    },
+
+    prefersReducedMotion() {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    },
+
+    readCarouselMotionMs() {
+        const root = this.$root;
+        if (root) {
+            const raw = getComputedStyle(root).getPropertyValue('--lc-ai-dur').trim();
+            if (raw.endsWith('ms')) {
+                const parsed = parseInt(raw, 10);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                    return parsed;
+                }
+            }
+            if (raw.endsWith('s')) {
+                const parsed = parseFloat(raw);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                    return Math.round(parsed * 1000);
+                }
+            }
+        }
+
+        if (this.prefersReducedMotion()) {
+            return 320;
+        }
+
+        return this.motionMs || 750;
+    },
+
+    readBotSpinMs() {
+        const video = this.$refs.botVideo;
+        if (video && Number.isFinite(video.duration) && video.duration > 0) {
+            return Math.round(video.duration * 1000);
+        }
+
+        return 4200;
+    },
+
+    clearBotVideoTimer() {
+        if (this.botVideoTimer) {
+            window.clearTimeout(this.botVideoTimer);
+            this.botVideoTimer = null;
+        }
+    },
+
+    playBotVideo() {
+        if (this.botVideoFailed) {
+            const spinMs = this.readBotSpinMs();
+            this.spinning = false;
+            this.spinKey += 1;
+            this.$nextTick(() => {
+                this.spinning = true;
+                window.setTimeout(() => {
+                    this.spinning = false;
+                }, spinMs);
+            });
+
+            return;
+        }
+
+        const video = this.$refs.botVideo;
+        if (! video) {
+            return;
+        }
+
+        this.clearBotVideoTimer();
+
+        try {
+            video.pause();
+            video.currentTime = 0;
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {
+                    this.botVideoFailed = true;
+                    this.playBotVideo();
+                });
+            }
+        } catch (e) {
+            this.botVideoFailed = true;
+            this.playBotVideo();
+        }
+    },
+
+    async botAnimationMs() {
+        return this.readCarouselMotionMs();
+    },
+
+    bumpBot() {
+        this.playBotVideo();
+    },
+
+    waitFrames(count = 2) {
+        return new Promise((resolve) => {
+            const step = () => {
+                if (count <= 0) {
+                    resolve();
+
+                    return;
+                }
+                count -= 1;
+                window.requestAnimationFrame(step);
+            };
+            step();
+        });
+    },
+
+    async animateStep(direction, token = this.rotateToken) {
+        if (this.animating || this.queue.length < 2) {
+            return;
+        }
+
+        this.animating = true;
+        this.bumpBot();
+
+        this.advancing = direction === 1;
+        this.reversing = direction === -1;
+        await this.$nextTick();
+        const motionMs = this.readCarouselMotionMs();
+        await new Promise((resolve) => window.setTimeout(resolve, motionMs));
+
+        if (token !== this.rotateToken) {
+            this.advancing = false;
+            this.reversing = false;
+            this.spinning = false;
+            this.animating = false;
+
+            return;
+        }
+
+        // Suppress transitions, rotate the deck, then drop motion classes so
+        // the new front card does not tween back from the exit pose.
+        this.snapping = true;
+        await this.$nextTick();
+
+        if (direction === 1) {
+            this.queue = [...this.queue.slice(1), this.queue[0]];
+        } else {
+            this.queue = [this.queue[this.queue.length - 1], ...this.queue.slice(0, -1)];
+        }
+        this.syncSlots();
+        this.advancing = false;
+        this.reversing = false;
+        await this.$nextTick();
+
+        const stack = this.$root?.querySelector?.('.lc-ai-banner__stack');
+        if (stack) {
+            void stack.offsetWidth;
+        }
+        await this.waitFrames(2);
+
+        this.snapping = false;
+        this.spinning = false;
+        this.animating = false;
+    },
+}));
+
 Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {

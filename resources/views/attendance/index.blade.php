@@ -202,9 +202,9 @@
                                 <option value="50">50</option>
                             </select>
                         </label>
-                        <button type="button" @click="prevPage()" :disabled="page <= 1" class="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">Previous</button>
+                        <button type="button" @click="prevPage()" :disabled="page <= 1" class="lc-page-btn rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">Previous</button>
                         <span class="text-gray-500">Page <span x-text="page"></span> of <span x-text="totalPages"></span></span>
-                        <button type="button" @click="nextPage()" :disabled="page >= totalPages" class="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">Next</button>
+                        <button type="button" @click="nextPage()" :disabled="page >= totalPages" class="lc-page-btn rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">Next</button>
                     </div>
                 </div>
             </section>

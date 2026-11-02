@@ -59,6 +59,7 @@ Upload `public/build/` from local (`npm run build`) — npm is not available on 
 
 ## Last deploy
 
+- **2026-10-22:** `78bed41` email automation (fee/seat/trial/growth/marketing) on hub + demo; migration `email_automation_logs`; Vite build + `noreply@libcontrol.in` mail-settings uploaded.
 - **2026-10-12:** `e1a553d` PhonePe payments (plans, growth packages, quoted services) on hub + demo; payments migration run; hub `.env` has sandbox keys; sandbox webhook created and validated.
 - **2026-10-12:** `e465014` pushed to `origin/main` (Katsindia rebrand, plan-limit UX, terms notice). Run `scripts/deploy-libcontrol-in.ps1` on a machine with Hostinger SSH (syncs git + `public/build` to hub and demo).
 - **2026-10-09:** `d14811e` first deploy of libcontrol.in (main hub + marketing) and demo.libcontrol.in (demo data); Vite `public/build` synced via SCP.

@@ -120,9 +120,6 @@
                         </div>
                     </template>
                 </div>
-                <div class="border-t border-gray-200 px-5 py-3 text-right">
-                    <button type="button" @click="closeView()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
-                </div>
             </div>
         </div>
     </div>

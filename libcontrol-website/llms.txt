@@ -1,0 +1,56 @@
+# LibControl
+
+> Smart Library Growth System — library management and growth software for reading halls and study centres in India.
+
+LibControl helps library owners fill seats, improve renewals, manage students and fees, run multi-branch operations, and grow with AI insights and marketing services. Operated and marketed by Katsindia.
+
+## Product
+
+- [Home](https://libcontrol.in/): Main product site with features, modules, pricing, and growth services
+- [Live demo](https://demo.libcontrol.in/admin/login): Explore the LibControl admin demo
+- [Documentation](https://libcontrol.in/documentation.html): Product guides and how-to documentation
+- [Support articles](https://libcontrol.in/support-articles.html): Help centre articles for library owners
+
+## What LibControl does
+
+- Multi-branch library management from one platform
+- Live seat maps, trial seats, and occupancy tracking
+- Student registry, fees, renewals, and expiry reminders
+- Enquiries, WhatsApp-friendly contact flows, and growth tooling
+- AI insights and business reports for smarter decisions
+- Optional Grow My Library marketing packages (WhatsApp, Google Business, SEO, ads, reviews)
+
+## Plans
+
+- Starter: up to 35 seats, 1 hall, 1 branch
+- Pro: up to 100 seats, 3 halls, 2 branches
+- Custom: larger libraries, custom features, and workflows
+- Prices are shown on the website and exclude GST
+
+## Contact
+
+- Email: support@libcontrol.in
+- Phone / WhatsApp: +91 8076 105 181
+- Location: Hisar, Haryana, India
+- Hours: Mon – Sat, 9am to 6 PM
+- Pre-register: https://libcontrol.in/#contact
+
+## Social
+
+- [Instagram](https://www.instagram.com/libcontrol/): Product updates and library growth tips
+- [Facebook](https://www.facebook.com/profile.php?id=61594471471491): LibControl page
+- [YouTube](https://www.youtube.com/@LibControl): Product videos and walkthroughs
+- [X](https://x.com/Libcontrol_): LibControl on X
+
+## Legal
+
+- [Privacy Policy](https://libcontrol.in/privacy-policy.html)
+- [Terms & Conditions](https://libcontrol.in/terms-and-conditions.html)
+- [Refund Policy](https://libcontrol.in/refund-policy.html)
+- [Disclaimer](https://libcontrol.in/disclaimer.html)
+
+## Optional
+
+- [Sitemap](https://libcontrol.in/sitemap.xml): All public pages
+- [Robots](https://libcontrol.in/robots.txt): Crawler rules
+- [Katsindia](https://katsindia.com/): Parent company / operator

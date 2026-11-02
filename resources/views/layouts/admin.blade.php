@@ -36,7 +36,8 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased overflow-hidden lc-theme">
+    {{-- lc-btn-website-test: temporary website-style buttons (exclude datatables). Remove class to revert. --}}
+    <body class="font-sans antialiased overflow-hidden lc-theme lc-btn-website-test">
         <div
             x-data="adminShell({ supportTicketUnread: @js($supportTicketUnreadCount ?? 0) })"
             x-init="init()"

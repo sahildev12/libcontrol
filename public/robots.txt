@@ -3,3 +3,5 @@ Allow: /
 Disallow: /send-demo.php
 
 Sitemap: https://libcontrol.in/sitemap.xml
+# LLM-friendly site summary: https://libcontrol.in/llms.txt
+

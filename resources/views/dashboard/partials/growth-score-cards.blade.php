@@ -116,21 +116,11 @@
         color: #718096;
     }
     .lc-score-cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
         margin-top: 10px;
         min-height: 32px;
         padding: 0 12px;
-        border-radius: 8px;
-        background: #FFCC00;
-        color: #082a67;
         font-size: 12px;
-        font-weight: 700;
-        text-decoration: none;
-        white-space: nowrap;
     }
-    .lc-score-cta:hover { filter: brightness(0.97); }
 </style>
 
 <div id="lc-score-cards-root" class="grid gap-4 md:grid-cols-2 {{ $showProfileCompletionCard ? 'xl:grid-cols-3' : '' }}">
@@ -185,7 +175,7 @@
                     <p class="font-bold" style="margin:0;font-size:15px;color:{{ $growthLabelColor }};">{{ $growthLabel }}</p>
                     <p style="margin:4px 0 0;font-size:12px;line-height:1.45;color:#718096;">Your library's overall growth. Complete recommendations to raise it.</p>
                     @if ($improveScoreUrl)
-                        <a href="{{ $improveScoreUrl }}" class="lc-score-cta">
+                        <a href="{{ $improveScoreUrl }}" class="lc-web-btn lc-web-btn--yellow lc-score-cta">
                             Improve score
                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                         </a>
@@ -308,7 +298,7 @@
                             @endif
                         </p>
                         @if ($profileCompleteUrl && ! ($profileCompletionScore['complete'] ?? false))
-                            <a href="{{ $profileCompleteUrl }}" class="lc-score-cta">
+                            <a href="{{ $profileCompleteUrl }}" class="lc-web-btn lc-web-btn--yellow lc-score-cta">
                                 Complete profile
                                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                             </a>

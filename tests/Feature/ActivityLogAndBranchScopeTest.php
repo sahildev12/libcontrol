@@ -9,10 +9,12 @@ use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Tests\InstallsActivityLogAddon;
 use Tests\TestCase;
 
 class ActivityLogAndBranchScopeTest extends TestCase
 {
+    use InstallsActivityLogAddon;
     use RefreshDatabase;
 
     public function test_trial_seats_page_only_lists_unassigned_trial_students(): void
@@ -97,6 +99,8 @@ class ActivityLogAndBranchScopeTest extends TestCase
 
     public function test_activity_log_show_returns_details(): void
     {
+        $this->installActivityLogAddon();
+
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
 
@@ -113,6 +117,8 @@ class ActivityLogAndBranchScopeTest extends TestCase
 
     public function test_updating_a_student_records_old_and_new_values(): void
     {
+        $this->installActivityLogAddon();
+
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
         $student = Student::factory()->create([

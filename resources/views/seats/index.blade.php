@@ -34,9 +34,13 @@
                 </button>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" @click="zoomOut()" class="inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-white">−</button>
-                <span class="min-w-12 text-center text-sm font-medium text-gray-700" x-text="`${zoom}%`"></span>
-                <button type="button" @click="zoomIn()" class="inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-white">+</button>
+                <button type="button" @click="zoomOut()" class="lc-zoom-btn inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-white" aria-label="Zoom out">
+                    <svg class="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 8h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <span class="min-w-12 text-center text-sm font-medium leading-none text-gray-700" x-text="`${zoom}%`"></span>
+                <button type="button" @click="zoomIn()" class="lc-zoom-btn inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-white" aria-label="Zoom in">
+                    <svg class="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
             </div>
         </header>
 

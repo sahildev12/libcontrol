@@ -174,7 +174,7 @@
   function openLightbox(src, alt) {
     if (!lightbox || !lightboxImg) return;
     lightboxImg.removeAttribute('src');
-    lightboxImg.alt = alt || '';
+    lightboxImg.alt = alt || 'Enlarged LibControl product screenshot';
     lightbox.hidden = false;
     lightbox.classList.add('is-loading');
     document.body.style.overflow = 'hidden';

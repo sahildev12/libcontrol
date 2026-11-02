@@ -36,10 +36,29 @@
 }
 
 .lc-theme aside nav a.lc-sidebar-nav--active {
-    background-color: var(--lc-sidebar-active) !important;
+    background: linear-gradient(#ffd84d, #f0b800) !important;
     color: var(--lc-sidebar-active-text) !important;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.22);
+    font-weight: 700;
+    border: 0;
+    box-shadow:
+        inset 0 1px 0 #ffffff59,
+        inset 0 -2px 0 #0003,
+        0 2px 8px rgb(0 0 0 / 0.28);
+}
+.lc-theme aside nav a.lc-sidebar-nav--active:hover {
+    background: linear-gradient(#ffe066, #f5c000) !important;
+    color: var(--lc-sidebar-active-text) !important;
+}
+.lc-theme aside nav a:not(.lc-sidebar-nav--active):hover {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.08)) !important;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.22),
+        inset 0 -1px 0 rgb(0 0 0 / 0.18);
+}
+.lc-theme aside nav a:not(.lc-sidebar-nav--active):active,
+.lc-theme aside nav a.lc-sidebar-nav--active:active {
+    translate: 0 1px;
+    box-shadow: inset 0 2px 4px #0004;
 }
 
 .lc-theme .bg-indigo-600 {
@@ -480,7 +499,7 @@
 }
 
 .lc-theme .lc-main .lc-panel-header .text-indigo-600,
-.lc-theme .lc-main .lc-panel-header button {
+.lc-theme .lc-main .lc-panel-header button:not(.lc-web-btn):not(.lc-field-trigger) {
     color: var(--lc-yellow) !important;
 }
 
@@ -506,6 +525,518 @@
 
 .lc-theme .lc-btn-secondary {
     @apply inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-brand-blue/30 hover:text-brand-blue;
+}
+
+/* Website pricing CTA look (yellow / blue) — use on explicit marketing-style buttons */
+.lc-web-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.25rem;
+    border: 0;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 #ffffff59,
+        inset 0 -2px 0 #0003,
+        0 1px 2px #0006;
+    transition: background 0.2s ease, box-shadow 0.15s ease, translate 0.08s ease, color 0.2s ease;
+}
+.lc-web-btn:active {
+    translate: 0 1px;
+    box-shadow: inset 0 2px 4px #0004;
+}
+.lc-web-btn--yellow {
+    background: linear-gradient(#ffd84d, #f0b800);
+    color: #082D70;
+}
+.lc-web-btn--yellow:hover {
+    background: linear-gradient(#ffe066, #f5c000);
+    color: #082D70;
+}
+.lc-web-btn--blue {
+    background: linear-gradient(#4f9cf9, #2563eb);
+    color: #fff;
+}
+.lc-web-btn--blue:hover {
+    background: linear-gradient(#6aafff, #3b82f6);
+    color: #fff;
+}
+.lc-web-btn--emerald {
+    background: linear-gradient(#34d399, #059669);
+    color: #fff;
+}
+.lc-web-btn--emerald:hover {
+    background: linear-gradient(#6ee7b7, #10b981);
+    color: #fff;
+}
+/* Keep explicit website CTA classes intact under the button-test theme */
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn:hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn:active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn.lc-web-btn,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn.lc-web-btn:hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn.lc-web-btn:active {
+    border: 0 !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    box-shadow:
+        inset 0 1px 0 #ffffff59,
+        inset 0 -2px 0 #0003,
+        0 1px 2px #0006 !important;
+    translate: none;
+    scale: none;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn:active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn.lc-web-btn:active {
+    translate: 0 1px !important;
+    box-shadow: inset 0 2px 4px #0004 !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--blue,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--blue:hover {
+    background: linear-gradient(#4f9cf9, #2563eb) !important;
+    color: #fff !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--blue:hover {
+    background: linear-gradient(#6aafff, #3b82f6) !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--emerald,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--emerald:hover {
+    background: linear-gradient(#34d399, #059669) !important;
+    color: #fff !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--emerald:hover {
+    background: linear-gradient(#6ee7b7, #10b981) !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--yellow,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--yellow:hover {
+    background: linear-gradient(#ffd84d, #f0b800) !important;
+    color: #082D70 !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn--yellow:hover {
+    background: linear-gradient(#ffe066, #f5c000) !important;
+}
+
+/*
+ * TEST: website pricing CTA look on admin buttons.
+ * Toggle via body.lc-btn-website-test on layouts/admin.blade.php.
+ * Datatable toolbar / emerald-red bulk actions / tiny icon buttons are excluded.
+ */
+.lc-theme.lc-btn-website-test {
+    --lc-web-btn-blue: linear-gradient(#4f9cf9, #2563eb);
+    --lc-web-btn-blue-hover: linear-gradient(#6aafff, #3b82f6);
+    --lc-web-btn-yellow: linear-gradient(#ffd84d, #f0b800);
+    --lc-web-btn-yellow-hover: linear-gradient(#ffe066, #f5c000);
+    --lc-web-btn-outline: linear-gradient(#ffffff, #eef1f6);
+    --lc-web-btn-outline-hover: linear-gradient(#f8fafc, #e2e8f0);
+    --lc-web-btn-shadow:
+        inset 0 1px 0 #ffffff59,
+        inset 0 -2px 0 #0003,
+        0 1px 2px #0006;
+    --lc-web-btn-shadow-outline:
+        inset 0 1px 0 #ffffffcc,
+        inset 0 -2px 0 #00000014,
+        0 1px 2px #0000001f;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-600']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-500']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-brand-blue']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-violet-600']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-purple-600']:not(.lc-page-btn) {
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: var(--lc-web-btn-blue) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+    box-shadow: var(--lc-web-btn-shadow) !important;
+    transition: background 0.2s ease, box-shadow 0.15s ease, translate 0.08s ease, color 0.2s ease !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-600']:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-500']:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-brand-blue']:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='hover:bg-indigo-700']:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='hover:bg-brand-navy']:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-violet-600']:not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-purple-600']:not(.lc-page-btn):hover {
+    background: var(--lc-web-btn-blue-hover) !important;
+    color: #fff !important;
+    box-shadow: var(--lc-web-btn-shadow) !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-brand-yellow']:not(.lc-web-btn):not(.lc-shine-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-amber-400']:not(.lc-web-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-amber-300']:not(.lc-web-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-score-cta:not(.lc-web-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn:not(.lc-web-btn) {
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: var(--lc-web-btn-yellow) !important;
+    color: #082D70 !important;
+    font-weight: 700 !important;
+    box-shadow: var(--lc-web-btn-shadow) !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-brand-yellow']:not(.lc-web-btn):not(.lc-shine-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-amber-400']:not(.lc-web-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-amber-300']:not(.lc-web-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-score-cta:not(.lc-web-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn:not(.lc-web-btn):hover {
+    background: var(--lc-web-btn-yellow-hover) !important;
+    color: #082D70 !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-score-cta:not(.lc-web-btn):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn:not(.lc-web-btn):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-brand-yellow']:not(.lc-web-btn):active {
+    translate: 0 1px !important;
+    box-shadow: inset 0 2px 4px #0004 !important;
+    border: 0 !important;
+    scale: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn:focus-visible,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-shine-btn.lc-web-btn:focus-visible,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-score-cta:focus-visible,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__cta:focus-visible,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__hire:focus-visible {
+    outline: 2px solid #082d70 !important;
+    outline-offset: 2px;
+    border: 0 !important;
+}
+
+/* Banner CTAs keep their scoped styles — block generic admin button overrides */
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__cta,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__cta:hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__cta:active,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__hire,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__hire:hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-ai-banner__hire:active {
+    border: 0 !important;
+    scale: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-200']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-300']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn) {
+    border: 1.5px solid #062b70 !important;
+    border-radius: 12px !important;
+    background: var(--lc-web-btn-outline) !important;
+    color: #062b70 !important;
+    font-weight: 700 !important;
+    box-shadow: var(--lc-web-btn-shadow-outline) !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-200']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-300']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):hover {
+    background: var(--lc-web-btn-outline-hover) !important;
+    border-color: #062b70 !important;
+    color: #062b70 !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):active {
+    translate: 0 1px !important;
+    box-shadow: inset 0 2px 4px #0004 !important;
+    border: 1.5px solid #062b70 !important;
+    background: var(--lc-web-btn-outline-hover) !important;
+    color: #062b70 !important;
+}
+
+/* Form field triggers (e.g. student picker) — keep flat input look */
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-field-trigger,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-field-trigger:hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-field-trigger:active {
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    background: #fff !important;
+    background-image: none !important;
+    color: inherit !important;
+    font-weight: 400 !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    translate: none !important;
+    min-height: 0 !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-field-trigger:hover {
+    border-color: #9ca3af !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-field-trigger:focus,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-field-trigger:focus-visible {
+    border-color: #6366f1 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgb(99 102 241 / 0.3) !important;
+}
+
+/* Native form controls — flat fields, not marketing CTAs */
+.lc-theme.lc-btn-website-test .lc-main select,
+.lc-theme.lc-btn-website-test .lc-main select:hover,
+.lc-theme.lc-btn-website-test .lc-main select:active {
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    background-color: #fff !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    font-weight: 400 !important;
+    translate: none !important;
+    letter-spacing: normal !important;
+    color: #374151 !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main select:focus,
+.lc-theme.lc-btn-website-test .lc-main select:focus-visible {
+    border-color: #243a8b !important;
+    outline: 2px solid transparent !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgb(36 58 139 / 0.3) !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='password'],
+    input[type='number'],
+    input[type='date'],
+    input[type='datetime-local'],
+    input[type='tel'],
+    input[type='url'],
+    textarea
+) {
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    background: #fff !important;
+    background-image: none !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    font-weight: 400 !important;
+    translate: none !important;
+    letter-spacing: normal !important;
+    color: inherit !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='password'],
+    input[type='number'],
+    input[type='date'],
+    input[type='datetime-local'],
+    input[type='tel'],
+    input[type='url'],
+    textarea
+):focus,
+.lc-theme.lc-btn-website-test .lc-main :is(
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='password'],
+    input[type='number'],
+    input[type='date'],
+    input[type='datetime-local'],
+    input[type='tel'],
+    input[type='url'],
+    textarea
+):focus-visible {
+    border-color: #6366f1 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgb(99 102 241 / 0.3) !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']):active:is(
+    .lc-btn-primary,
+    [class*='bg-indigo-600'],
+    [class*='bg-brand-blue'],
+    [class*='bg-brand-yellow'],
+    .lc-btn-secondary,
+    [class*='bg-white']
+):not(.lc-web-btn):not(.lc-shine-btn):not(.lc-score-cta):not(.lc-ai-banner__cta):not(.lc-ai-banner__hire):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-field-trigger) {
+    translate: 0 1px;
+    box-shadow: inset 0 2px 4px #0004 !important;
+}
+
+/* Keep datatable toolbar / bulk / export / filter chrome unchanged */
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button),
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button):hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button):active {
+    translate: none !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar button:not(.lc-toolbar-filter):not([class*='bg-emerald']):not([class*='bg-red']),
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar a:not(.lc-toolbar-filter):not([class*='bg-emerald']):not([class*='bg-red']) {
+    border: 1px solid rgb(255 255 255 / 0.4) !important;
+    border-radius: 0.5rem !important;
+    background: rgb(255 255 255 / 0.1) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar button:not(.lc-toolbar-filter):not([class*='bg-emerald']):not([class*='bg-red']):hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar a:not(.lc-toolbar-filter):not([class*='bg-emerald']):not([class*='bg-red']):hover {
+    background: rgb(255 255 255 / 0.22) !important;
+    border-color: rgb(255 255 255 / 0.55) !important;
+    color: #fff !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button)[class*='bg-emerald'],
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button)[class*='bg-emerald']:hover {
+    border-color: rgb(167 243 208) !important;
+    background: rgb(236 253 245) !important;
+    color: rgb(4 120 87) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button)[class*='bg-red'],
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar :is(a, button)[class*='bg-red']:hover {
+    border-color: rgb(254 202 202) !important;
+    background: rgb(254 242 242) !important;
+    color: rgb(185 28 28) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar .lc-toolbar-filter {
+    border: 1px solid rgb(255 255 255 / 0.35) !important;
+    border-radius: 9999px !important;
+    background: transparent !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main .lc-table-toolbar .lc-toolbar-filter.is-active {
+    border-color: var(--lc-yellow) !important;
+    background: var(--lc-yellow) !important;
+    color: var(--lc-navy) !important;
+}
+
+/* Pagination — flat controls, no website CTA chrome */
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button),
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:active {
+    border-radius: 0.5rem !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    translate: none !important;
+    letter-spacing: normal !important;
+    font-weight: 600 !important;
+    min-height: 0 !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:is([class*='bg-indigo'], [class*='bg-brand-blue']),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:is([class*='bg-indigo'], [class*='bg-brand-blue']):hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):is([class*='bg-indigo'], [class*='bg-brand-blue']),
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):is([class*='bg-indigo'], [class*='bg-brand-blue']):hover {
+    border: 0 !important;
+    background: var(--lc-blue) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:not([class*='bg-indigo']):not([class*='bg-brand-blue']),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:not([class*='bg-indigo']):not([class*='bg-brand-blue']):hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):not([class*='bg-indigo']):not([class*='bg-brand-blue']),
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):not([class*='bg-indigo']):not([class*='bg-brand-blue']):hover {
+    border: 1px solid #e5e7eb !important;
+    background: #fff !important;
+    color: #4b5563 !important;
+    box-shadow: none !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-page-btn:not([class*='bg-indigo']):not([class*='bg-brand-blue']):hover,
+.lc-theme.lc-btn-website-test .lc-main .lc-pagination :is(a, button):not([class*='bg-indigo']):not([class*='bg-brand-blue']):hover {
+    background: #f9fafb !important;
+}
+
+/* Datatable row actions — never apply website CTA chrome */
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn:hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn:active,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button),
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button):hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button):active {
+    border-radius: 0.5rem !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    translate: none !important;
+    letter-spacing: normal !important;
+    font-weight: 600 !important;
+    min-height: 0 !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class~='bg-white'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class~='bg-white']:hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class~='bg-white'],
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class~='bg-white']:hover {
+    border: 1px solid #e5e7eb !important;
+    background: #fff !important;
+    color: #374151 !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class~='bg-white']:hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class~='bg-white']:hover {
+    background: #f9fafb !important;
+}
+
+/* Don't restyle tiny icon / zoom controls (exclude pagination page numbers) */
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='size-8']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='h-8'][class*='w-8']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='size-7']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='size-9']:not(.lc-page-btn),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-zoom-btn {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    background: #f9fafb !important;
+    background-image: none !important;
+    color: #374151 !important;
+    box-shadow: none !important;
+    translate: none !important;
+    font-weight: 500 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-zoom-btn:hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='size-9']:hover {
+    background: #fff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+    box-shadow: none !important;
+}
+.lc-zoom-btn {
+    line-height: 0;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+}
+
+/* Leave semantic danger / success CTAs outside toolbar alone (keep status color) */
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-red-600'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-red-500'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-emerald-600'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='bg-emerald-500'] {
+    background-image: none !important;
+    box-shadow: var(--lc-web-btn-shadow) !important;
+    border-radius: 12px !important;
+    border: 0 !important;
+    font-weight: 700 !important;
 }
 
 select.admin-select {

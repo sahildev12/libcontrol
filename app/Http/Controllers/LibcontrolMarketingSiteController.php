@@ -13,7 +13,7 @@ class LibcontrolMarketingSiteController extends Controller
     public function favicon(Request $request): Response|BinaryFileResponse
     {
         if (LibcontrolMarketingSite::shouldServe($request)) {
-            return $this->file($request, 'assets/favicon.ico');
+            return $this->file($request, 'assets/favicon-dark-32x32.png');
         }
 
         $path = public_path('logo/png-background/light-favicon/favicon.ico');

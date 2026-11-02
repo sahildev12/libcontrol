@@ -100,12 +100,16 @@ class SyncCoordinator
                 ->post($endpoint);
 
             if (! $response->successful()) {
+                $this->rememberSyncAttempt();
+
                 return;
             }
 
             $data = $response->json();
 
             if (! is_array($data)) {
+                $this->rememberSyncAttempt();
+
                 return;
             }
 
@@ -121,8 +125,19 @@ class SyncCoordinator
                 Cache::put(self::COMMAND_RESULTS_CACHE_KEY, $results, now()->addDay());
             }
         } catch (\Throwable) {
-            // Fail open on network errors.
+            $this->rememberSyncAttempt();
         }
+    }
+
+    private function rememberSyncAttempt(): void
+    {
+        $current = $this->state->current();
+
+        $this->state->store([
+            'status' => (string) ($current['status'] ?? 'pending'),
+            'authorized' => (bool) ($current['authorized'] ?? false),
+            'grace_until' => $current['grace_until'] ?? null,
+        ]);
     }
 
     private function resolvedLicenseKey(): ?string

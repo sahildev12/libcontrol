@@ -117,7 +117,6 @@
         </div>
 
         <div class="flex shrink-0 justify-end gap-2 border-t border-gray-200 px-6 py-4">
-            <button type="button" @click="closeView()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
             <a
                 x-show="viewStudent?.id"
                 :href="`/students/${viewStudent?.id}/id-card`"

@@ -90,7 +90,6 @@
                     </template>
                 </div>
                 <div class="flex justify-end gap-2 border-t border-gray-200 px-5 py-3">
-                    <button type="button" @click="closeView()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
                     <a :href="viewRow?.url" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" x-text="viewRow?.action_label || 'Open'"></a>
                 </div>
             </div>

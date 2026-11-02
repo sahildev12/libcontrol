@@ -54,10 +54,14 @@ class MarketingCookieConsentTest extends TestCase
         foreach ($pages as $page) {
             $html = $this->servedHtml($page);
 
-            $this->assertStringContainsString('<h3>Guide</h3>', $html, $page);
+            $this->assertTrue(
+                str_contains($html, '<h3>Guide</h3>') || str_contains($html, '<h3>Product</h3>'),
+                $page.' footer should include Guide or Product links'
+            );
             $this->assertStringContainsString('href="disclaimer.html', $html, $page);
             $this->assertStringContainsString('Mon – Sat 9am to 6 PM', $html, $page);
             $this->assertStringContainsString('lc-trust-bar', $html, $page);
+            $this->assertStringContainsString('footer-social', $html, $page);
         }
     }
 
@@ -67,6 +71,23 @@ class MarketingCookieConsentTest extends TestCase
 
         $this->assertStringContainsString('Sitemap: https://libcontrol.in/sitemap.xml', $robots);
         $this->assertStringContainsString('Allow: /', $robots);
+        $this->assertStringContainsString('llms.txt', $robots);
+    }
+
+    public function test_llms_txt_summarizes_the_product(): void
+    {
+        $llms = file_get_contents(public_path('llms.txt'));
+
+        $this->assertStringContainsString('# LibControl', $llms);
+        $this->assertStringContainsString('https://libcontrol.in/', $llms);
+        $this->assertStringContainsString('support@libcontrol.in', $llms);
+
+        $response = $this->get('http://libcontrol.in/llms.txt')->assertOk();
+        $this->assertStringContainsString('text/plain', (string) $response->headers->get('Content-Type'));
+
+        $served = file_get_contents($response->baseResponse->getFile()->getPathname());
+        $this->assertStringContainsString('# LibControl', $served);
+        $this->assertStringContainsString('Smart Library Growth System', $served);
     }
 
     public function test_sitemap_lists_every_public_page(): void
