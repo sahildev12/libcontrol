@@ -80,6 +80,7 @@
         --lc-ai-muted: #5b6f8f;
         --lc-ai-ease: cubic-bezier(0.4, 0.05, 0.2, 1);
         --lc-ai-dur: 750ms;
+        --lc-ai-bot-spin-dur: 4.2s;
         position: relative;
         display: flex;
         align-items: stretch;
@@ -130,16 +131,16 @@
     }
     .lc-ai-banner__bot-fallback {
         display: none;
-        width: 156px;
+        width: 220px;
         height: auto;
-        max-height: 176px;
+        max-height: 240px;
         object-fit: contain;
         object-position: center bottom;
         mix-blend-mode: screen;
         filter: drop-shadow(0 6px 12px rgba(8, 45, 112, 0.2));
     }
     .lc-ai-banner__bot-fallback.is-spinning {
-        animation: lc-ai-bot-spin 0.85s var(--lc-ai-ease);
+        animation: lc-ai-bot-spin var(--lc-ai-bot-spin-dur) var(--lc-ai-ease);
     }
     @keyframes lc-ai-bot-spin {
         0% { transform: rotateY(0deg) translateY(0) scale(1); }
@@ -569,7 +570,7 @@
         'items' => $unlocked,
         'pendingTotal' => $pendingTotal,
         'storageKey' => 'lc_ai_rec_dismissed_'.(auth()->id() ?? 'guest'),
-        'rotateMs' => 10000,
+        'rotateMs' => 20000,
         'motionMs' => 750,
         'servicesRequestUrl' => $servicesRequestUrl,
         'csrfToken' => csrf_token(),
