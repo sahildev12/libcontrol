@@ -66,7 +66,7 @@
 
     $unlocked = $unlocked->all();
     $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=2';
-    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=10';
+    $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=18';
 @endphp
 
 @if (count($unlocked) > 0 || $pendingTotal === 0)
@@ -86,29 +86,28 @@
         gap: 8px;
         overflow: hidden;
         border-radius: 18px;
-        background: linear-gradient(90deg, #10427a 0%, #10427a 210px, #0b3680 210px, #0b3680 100%);
-        border: 1px solid #0b3680;
+        background: var(--lc-ai-bg);
+        border: 1px solid var(--lc-ai-bg);
         min-height: 260px;
     }
     .lc-ai-banner__bot-wrap {
         position: relative;
         flex: 0 0 auto;
-        width: 204px;
+        width: 228px;
         align-self: stretch;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 12px 8px 12px 14px;
+        padding: 8px 4px 8px 12px;
         z-index: 2;
-        overflow: hidden;
-        /* Matte matches WhatsApp export inside the spin MP4 */
+        overflow: visible;
         background: transparent;
     }
     .lc-ai-banner__bot-frame {
         position: relative;
-        width: 184px;
-        height: 196px;
-        overflow: hidden;
+        width: 228px;
+        height: 228px;
+        overflow: visible;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -120,15 +119,14 @@
         backface-visibility: hidden;
     }
     .lc-ai-banner__bot-video {
-        width: 184px;
-        height: auto;
-        max-height: 196px;
+        width: 228px;
+        height: 228px;
         margin: 0;
         object-fit: contain;
         object-position: center center;
         pointer-events: none;
         user-select: none;
-        filter: drop-shadow(0 6px 12px rgba(8, 45, 112, 0.2));
+        background-color: var(--lc-ai-bg);
     }
     .lc-ai-banner__bot-fallback {
         display: none;
@@ -552,8 +550,8 @@
             align-items: center;
             padding: 10px 16px 0;
         }
-        .lc-ai-banner__bot-frame { width: 168px; height: 178px; }
-        .lc-ai-banner__bot-video { width: 168px; max-height: 178px; }
+        .lc-ai-banner__bot-frame { width: 200px; height: 200px; }
+        .lc-ai-banner__bot-video { width: 200px; height: 200px; }
         .lc-ai-banner__bot-fallback { width: 140px; max-height: 160px; }
         .lc-ai-banner__body { padding: 8px 16px 16px; }
         .lc-ai-banner__stack-wrap,
