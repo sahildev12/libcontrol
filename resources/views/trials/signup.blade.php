@@ -16,6 +16,34 @@
     >
         @csrf
 
+        @if (session('trial_social_error'))
+            <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{{ session('trial_social_error') }}</div>
+        @endif
+
+        @if ($social)
+            <div class="mb-5 flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm" data-social-account>
+                <div class="min-w-0">
+                    <p class="font-semibold text-emerald-800">Signed in with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}</p>
+                    <p class="truncate text-emerald-700">{{ $social['email'] }}</p>
+                </div>
+                <button type="submit" form="trial-social-forget" class="shrink-0 text-xs font-semibold text-emerald-800 underline hover:text-emerald-950">Use another account</button>
+            </div>
+        @elseif ($socialProviders)
+            <div class="space-y-2">
+                @foreach ($socialProviders as $provider => $label)
+                    <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50" data-social-provider="{{ $provider }}">
+                        @include('trials.partials.social-icon', ['provider' => $provider])
+                        Continue with {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+            <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+                <span class="h-px flex-1 bg-gray-200"></span>
+                or sign up with email
+                <span class="h-px flex-1 bg-gray-200"></span>
+            </div>
+        @endif
+
         <div style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;" aria-hidden="true">
             <label for="website">Website</label>
             <input id="website" type="text" name="website" tabindex="-1" autocomplete="off">
@@ -51,22 +79,27 @@
 
         <div class="mt-4">
             <x-input-label for="owner_name" value="Your name" />
-            <x-text-input id="owner_name" class="mt-1 block w-full" type="text" name="owner_name" :value="old('owner_name')" required maxlength="120" autocomplete="name" />
+            <x-text-input id="owner_name" class="mt-1 block w-full" type="text" name="owner_name" :value="old('owner_name', $social['name'] ?? '')" required maxlength="120" autocomplete="name" />
             <x-input-error :messages="$errors->get('owner_name')" class="mt-2" />
         </div>
 
-        <div class="mt-4">
-            <x-input-label for="email" value="Email" />
-            <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required maxlength="190" autocomplete="email" />
+        @if ($social)
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+            <p class="mt-4 text-xs text-gray-500">You'll sign in to your library with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}. You can also set a password later using "Forgot password" on your library's login page.</p>
+        @else
+            <div class="mt-4">
+                <x-input-label for="email" value="Email" />
+                <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required maxlength="190" autocomplete="email" />
+                <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            </div>
 
-        <div class="mt-4">
-            <x-input-label for="password" value="Choose a password" />
-            <x-password-input id="password" name="password" autocomplete="new-password" minlength="8" />
-            <p class="mt-1 text-xs text-gray-500">At least 8 characters. You will use this to log in as the library admin.</p>
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+            <div class="mt-4">
+                <x-input-label for="password" value="Choose a password" />
+                <x-password-input id="password" name="password" autocomplete="new-password" minlength="8" />
+                <p class="mt-1 text-xs text-gray-500">At least 8 characters. You will use this to log in as the library admin.</p>
+                <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            </div>
+        @endif
 
         <div class="mt-6">
             <x-primary-button class="w-full justify-center" x-bind:disabled="submitting" x-bind:class="submitting && 'opacity-70'">
@@ -82,6 +115,10 @@
             <a href="/privacy-policy.html" target="_blank" class="font-semibold text-indigo-600 hover:text-indigo-800">privacy policy</a>.
         </p>
     </form>
+
+    @if ($social)
+        <form id="trial-social-forget" method="POST" action="{{ route('trials.social.forget') }}" class="hidden">@csrf</form>
+    @endif
 
     <script>
         function trialSignup(config) {

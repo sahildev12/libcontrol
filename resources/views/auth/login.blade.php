@@ -98,4 +98,43 @@
             @endif
         </p>
     </form>
+
+    @php
+        $libraryTenant = $portal === 'admin' ? \App\Support\Tenancy\TenantContext::current() : null;
+        $librarySocial = $libraryTenant
+            ? array_filter(
+                \App\Support\Tenancy\SocialLogin::providers(),
+                fn ($label, $provider) => $provider === 'google' || $provider === $libraryTenant->signup_source,
+                ARRAY_FILTER_USE_BOTH,
+            )
+            : [];
+        $signinError = match (request()->query('signin')) {
+            'cancelled' => 'Sign-in was cancelled.',
+            'failed' => "We couldn't sign you in. Please try again.",
+            'no-email' => "That account didn't share an email address. Please log in with your email and password.",
+            'not-owner' => "That account isn't the owner of this library. Please log in with your email and password.",
+            default => null,
+        };
+    @endphp
+
+    @if ($librarySocial)
+        <div class="mt-6" data-library-social-login>
+            @if ($signinError)
+                <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{{ $signinError }}</div>
+            @endif
+            <div class="mb-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+                <span class="h-px flex-1 bg-gray-200"></span>
+                or
+                <span class="h-px flex-1 bg-gray-200"></span>
+            </div>
+            <div class="space-y-2">
+                @foreach ($librarySocial as $provider => $label)
+                    <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider, $libraryTenant->subdomain) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        @include('trials.partials.social-icon', ['provider' => $provider])
+                        Continue with {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </x-guest-layout>

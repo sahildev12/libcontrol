@@ -27,6 +27,7 @@ class Tenant extends Model
         'owner_password_hash',
         'owner_email_verified_at',
         'signup_source',
+        'owner_social_id',
         'database_name',
         'db_username',
         'db_password',

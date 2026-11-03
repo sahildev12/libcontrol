@@ -21,6 +21,7 @@ use App\Http\Controllers\StudentRegistrationInviteController;
 use App\Http\Controllers\TrialEnterController;
 use App\Http\Controllers\TrialSeatController;
 use App\Http\Controllers\TrialSignupController;
+use App\Http\Controllers\TrialSocialAuthController;
 use App\Http\Controllers\TrialVerificationController;
 use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\HelpSupportController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\PublicHomeController;
 use App\Http\Controllers\PublicWebsiteEnquiryController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\WebhookController;
+use App\Support\Tenancy\SocialLogin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', PublicHomeController::class)->name('home');
@@ -80,6 +82,12 @@ Route::middleware('landlord_host')->prefix('try')->name('trials.')->group(functi
         ->where('hash', '[a-f0-9]{40}')
         ->middleware('throttle:20,1')
         ->name('verify');
+    Route::post('/social/forget', [TrialSocialAuthController::class, 'forget'])->name('social.forget');
+});
+
+Route::middleware(['landlord_host', 'throttle:20,1'])->prefix('auth/{provider}')->whereIn('provider', array_keys(SocialLogin::PROVIDERS))->name('trials.social.')->group(function () {
+    Route::get('/redirect', [TrialSocialAuthController::class, 'redirect'])->name('redirect');
+    Route::get('/callback', [TrialSocialAuthController::class, 'callback'])->name('callback');
 });
 
 Route::get('/trial/enter/{token}', TrialEnterController::class)

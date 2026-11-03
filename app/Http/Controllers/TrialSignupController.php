@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Tenant;
 use App\Services\Tenancy\TrialLifecycle;
 use App\Services\Tenancy\TrialProvisioner;
+use App\Support\Tenancy\SocialLogin;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,11 +41,13 @@ class TrialSignupController extends Controller implements HasMiddleware
         ];
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('trials.signup', [
             'baseDomain' => (string) config('libcontrol.tenancy.base_domain'),
             'trialDays' => (int) config('libcontrol.trials.days', 14),
+            'socialProviders' => SocialLogin::providers(),
+            'social' => TrialSocialAuthController::pending($request),
         ]);
     }
 
@@ -65,12 +68,14 @@ class TrialSignupController extends Controller implements HasMiddleware
 
     public function store(Request $request): RedirectResponse
     {
+        $social = TrialSocialAuthController::pending($request);
+
         $validated = $request->validate([
             'library_name' => ['required', 'string', 'max:120'],
             'subdomain' => ['required', 'string', 'max:40'],
             'owner_name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'string', 'email:rfc', 'max:190'],
-            'password' => ['required', 'string', 'min:8', 'max:100'],
+            'email' => [$social ? 'nullable' : 'required', 'string', 'email:rfc', 'max:190'],
+            'password' => [$social ? 'nullable' : 'required', 'string', 'min:8', 'max:100'],
         ]);
 
         if (filled($request->input('website'))) {
@@ -88,14 +93,19 @@ class TrialSignupController extends Controller implements HasMiddleware
             'library_name' => $validated['library_name'],
             'subdomain' => $validated['subdomain'],
             'owner_name' => $validated['owner_name'],
-            'owner_email' => $validated['email'],
-            'password' => $validated['password'],
-            'source' => 'email',
+            'owner_email' => $social['email'] ?? $validated['email'],
+            'password' => $social ? null : $validated['password'],
+            'source' => $social['provider'] ?? 'email',
+            'social_id' => $social['id'] ?? null,
+            'email_verified' => $social['email_verified'] ?? false,
             'ip' => $request->ip(),
         ]);
 
         RateLimiter::hit($limiterKey, 86400);
-        $this->lifecycle->sendVerification($tenant);
+        $request->session()->forget(TrialSocialAuthController::SESSION_KEY);
+        if (! $tenant->owner_email_verified_at) {
+            $this->lifecycle->sendVerification($tenant);
+        }
         $request->session()->push('trial_signups', $tenant->signup_token);
 
         return redirect()->route('trials.building', $tenant->signup_token);

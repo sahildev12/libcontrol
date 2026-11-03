@@ -55,7 +55,7 @@ class TrialProvisioner
     }
 
     /**
-     * @param  array{library_name: string, subdomain: string, owner_name: string, owner_email: string, password?: ?string, source?: string, ip?: ?string}  $data
+     * @param  array{library_name: string, subdomain: string, owner_name: string, owner_email: string, password?: ?string, source?: string, social_id?: ?string, email_verified?: bool, ip?: ?string}  $data
      *
      * @throws ValidationException
      */
@@ -90,8 +90,9 @@ class TrialProvisioner
             'owner_name' => trim($data['owner_name']),
             'owner_email' => $email,
             'owner_password_hash' => Hash::make(filled($data['password'] ?? null) ? $data['password'] : Str::random(40)),
-            'owner_email_verified_at' => $source === 'email' ? null : now(),
+            'owner_email_verified_at' => ($data['email_verified'] ?? false) ? now() : null,
             'signup_source' => $source,
+            'owner_social_id' => $source === 'email' ? null : ($data['social_id'] ?? null),
             'database_name' => '',
             'plan_tier' => (string) config('libcontrol.trials.plan_tier', 'pro'),
             'is_trial' => true,
