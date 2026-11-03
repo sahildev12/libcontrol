@@ -1890,6 +1890,20 @@ body {
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+@media (max-width: 419.98px) {
+  .pricing-billing-toggle {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .billing-save-badge {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+  }
 }
 .pricing-onetime-banner {
   display: flex;
@@ -4100,18 +4114,6 @@ body {
   }
   .plan-limits { padding: 12px 8px; margin-bottom: 10px; }
   .plan-limit strong { font-size: 1.15rem; }
-  .pricing-billing-toggle {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    padding: 10px 14px;
-  }
-  .billing-save-badge {
-    width: 100%;
-    text-align: center;
-    margin-left: 0;
-  }
-
   .callout-cta { padding: 36px 40px; }
   .callout { padding: 32px 36px; }
   .doc-guide { padding: 18px; gap: 20px 28px; }
