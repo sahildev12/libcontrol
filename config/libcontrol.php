@@ -138,6 +138,25 @@ return [
             'demo', 'rpj', 'support', 'help', 'docs', 'status', 'blog', 'billing', 'pay', 'payments', 'login',
             'signup', 'register', 'try', 'trial', 'libcontrol', 'static', 'cdn', 'assets', 'ns1', 'ns2',
         ],
+        // Rejected in trial library names and addresses (abuse and look-alikes of banks/brands used for phishing).
+        // "anywhere" matches inside other words; "whole" only as a separate word, to avoid blocking
+        // innocent names such as peacock, chutney, gandhi, laudable or therapist.
+        'blocked_words' => [
+            'anywhere' => [
+                'fuck', 'bitch', 'cunt', 'whore', 'slut', 'porn', 'pussy', 'asshole', 'bastard', 'bullshit',
+                'shithead', 'nigger', 'nigga', 'faggot', 'dildo', 'hentai', 'milf', 'wanker', 'twat', 'penis',
+                'vagina', 'xxx', 'chutiya', 'chutia', 'chootiya', 'madarchod', 'maderchod', 'behenchod',
+                'bhenchod', 'benchod', 'bhosd', 'gandu', 'gaandu', 'lavda', 'harami', 'bsdk',
+                'libcontrol', 'katsindia', 'paypal', 'paytm', 'phonepe', 'gpay', 'googlepay', 'google',
+                'facebook', 'instagram', 'whatsapp', 'amazon', 'flipkart', 'microsoft', 'hdfc', 'icici',
+                'axisbank', 'netbanking', 'verification',
+            ],
+            'whole' => [
+                'shit', 'ass', 'dick', 'cock', 'cum', 'sex', 'sexy', 'nude', 'tits', 'fag', 'rape', 'rapist',
+                'chut', 'chod', 'lund', 'loda', 'lauda', 'randi',
+                'wank', 'sbi', 'kotak', 'kyc', 'upi', 'otp', 'wallet', 'secure', 'verify', 'signin', 'login',
+            ],
+        ],
     ],
 
     /*

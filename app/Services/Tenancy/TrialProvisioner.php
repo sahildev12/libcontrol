@@ -4,6 +4,7 @@ namespace App\Services\Tenancy;
 
 use App\Models\Tenant;
 use App\Services\Hosting\HostingProvider;
+use App\Support\Tenancy\BlockedWords;
 use Closure;
 use Illuminate\Auth\RequestGuard;
 use Illuminate\Support\Facades\Hash;
@@ -42,6 +43,7 @@ class TrialProvisioner
             strlen($subdomain) < 3 || strlen($subdomain) > 30 => 'Use 3 to 30 letters, numbers or hyphens.',
             ! preg_match('/^[a-z][a-z0-9-]*[a-z0-9]$/', $subdomain) => 'Start with a letter and use only letters, numbers or hyphens.',
             in_array($subdomain, config('libcontrol.trials.reserved_subdomains', []), true) => 'This name is reserved. Please choose another.',
+            BlockedWords::found($subdomain) => "This name isn't allowed. Please choose another.",
             Tenant::query()->where('subdomain', $subdomain)->exists() => 'This name is already taken. Please choose another.',
             $this->hosting->subdomainExists($subdomain) => 'This name is already taken. Please choose another.',
             default => null,
@@ -91,6 +93,12 @@ class TrialProvisioner
         if ($this->hosting->databaseCount() >= (int) config('libcontrol.trials.max_databases', 280)) {
             throw ValidationException::withMessages([
                 'subdomain' => 'New trials are paused right now. Please contact support and we will set you up.',
+            ]);
+        }
+
+        if (BlockedWords::found($data['library_name'])) {
+            throw ValidationException::withMessages([
+                'library_name' => 'Please choose a different library name.',
             ]);
         }
 

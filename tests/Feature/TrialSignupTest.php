@@ -84,6 +84,16 @@ class TrialSignupTest extends TestCase
             ->assertJson(['available' => false, 'suggestion' => null]);
     }
 
+    public function test_offensive_or_phishing_names_are_rejected(): void
+    {
+        $this->getJson(self::HUB.'/try/check?subdomain=fuck')
+            ->assertJson(['available' => false, 'message' => "This name isn't allowed. Please choose another.", 'suggestion' => null]);
+
+        $this->signUp(['subdomain' => 'sbi-kyc'])->assertSessionHasErrors('subdomain');
+        $this->signUp(['library_name' => 'Chutiya Library', 'subdomain' => 'reading-hub'])->assertSessionHasErrors('library_name');
+        $this->assertSame(0, Tenant::query()->count());
+    }
+
     public function test_signup_builds_the_library_and_hands_the_owner_a_one_time_login(): void
     {
         $response = $this->signUp();
