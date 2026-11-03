@@ -6849,13 +6849,16 @@ body {
 }
 
 .nav-links a.nav-demo-btn {
- padding: 8px 16px;
+ padding: 9px 16px;
  font-size: 14px;
- font-weight: 600;
+ font-weight: 700;
+ border-radius: 8px;
+ line-height: normal;
 }
+.nav-links a.nav-demo-btn:focus { transform: none; }
 @media (max-width: 1440px) and (min-width: 992px) {
- .nav-links a.nav-demo-btn { padding: 7px 14px; font-size: 13px; }
+ .nav-links a.nav-demo-btn { font-size: 13px; }
 }
 @media (max-width: 1199.98px) {
- .nav-links a.nav-demo-btn { justify-content: center; padding: 12px 16px; }
+ .nav-links a.nav-demo-btn { justify-content: center; }
 }
