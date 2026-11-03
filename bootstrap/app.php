@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'landlord_host' => \App\Http\Middleware\EnsureLandlordHost::class,
             'addon' => \App\Http\Middleware\EnsureAddonEnabled::class,
             'student.api' => \App\Http\Middleware\EnsureStudentApiUser::class,
+            'redirect_signed_in_library' => \App\Http\Middleware\RedirectToActiveLibrary::class,
         ]);
 
         $middleware->web(prepend: [
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureSubscriptionActive::class,
             \App\Http\Middleware\EnforceTrialAccess::class,
             \App\Http\Middleware\RuntimeProbe::class,
+            \App\Http\Middleware\ShareLibrarySession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

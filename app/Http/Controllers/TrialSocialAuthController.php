@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tenant;
+use App\Support\Tenancy\LibrarySession;
 use App\Support\Tenancy\SocialLogin;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,11 @@ class TrialSocialAuthController extends Controller
         }
 
         $library = $request->filled('library') ? Tenant::normalizeSubdomain((string) $request->query('library')) : null;
+
+        if ($library === null && $signedIn = LibrarySession::activeTenant($request)) {
+            return redirect()->away(LibrarySession::dashboardUrl($request, $signedIn));
+        }
+
         $request->session()->put(self::INTENT_KEY, $library);
 
         $driver = $this->driver($provider);

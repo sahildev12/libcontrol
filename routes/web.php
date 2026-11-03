@@ -71,8 +71,8 @@ Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'sh
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
 
 Route::middleware('landlord_host')->prefix('try')->name('trials.')->group(function () {
-    Route::get('/', [TrialSignupController::class, 'create'])->name('create');
-    Route::post('/', [TrialSignupController::class, 'store'])->middleware('throttle:10,1')->name('store');
+    Route::get('/', [TrialSignupController::class, 'create'])->middleware('redirect_signed_in_library')->name('create');
+    Route::post('/', [TrialSignupController::class, 'store'])->middleware(['throttle:10,1', 'redirect_signed_in_library'])->name('store');
     Route::get('/check', [TrialSignupController::class, 'check'])->middleware('throttle:40,1')->name('check');
     Route::get('/{token}', [TrialSignupController::class, 'building'])->where('token', '[A-Za-z0-9]{48}')->name('building');
     Route::get('/{token}/status', [TrialSignupController::class, 'status'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:120,1')->name('status');

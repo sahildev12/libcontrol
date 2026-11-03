@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Tenant;
 use App\Services\Hosting\HostingProvider;
+use App\Support\Tenancy\LibrarySession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -187,6 +188,35 @@ class TrialSocialAuthTest extends TestCase
         $this->get(self::HUB.'/auth/google/redirect?library=sunrise');
         $this->fakeAccount('google', 'g-9', 'asha@example.com', verified: false);
         $this->oauthCallback('google')->assertRedirect('http://sunrise.libcontrol.in/admin/login?signin=not-owner');
+    }
+
+    public function test_signed_in_owner_is_sent_from_signup_pages_to_their_dashboard(): void
+    {
+        $tenant = $this->build($this->signUpWith('google', 'g-1', 'asha@example.com'));
+        $redirect = $this->getJson(self::HUB.'/try/'.$tenant->signup_token.'/status')->json('redirect');
+
+        $entered = $this->get($redirect);
+        $entered->assertCookie(LibrarySession::COOKIE, 'sunrise');
+        $this->assertSame('.libcontrol.in', $entered->getCookie(LibrarySession::COOKIE, false)->getDomain());
+
+        $this->withCookie(LibrarySession::COOKIE, 'sunrise');
+        $this->get(self::HUB.'/try')->assertRedirect('http://sunrise.libcontrol.in/dashboard');
+        $this->post(self::HUB.'/try', ['library_name' => 'Second Library', 'subdomain' => 'second'])
+            ->assertRedirect('http://sunrise.libcontrol.in/dashboard');
+        $this->get(self::HUB.'/auth/google/redirect')->assertRedirect('http://sunrise.libcontrol.in/dashboard');
+        $this->assertSame(1, Tenant::query()->count());
+
+        Auth::logout();
+        $loggedOut = $this->get('http://sunrise.libcontrol.in/admin/login')->assertOk();
+        $this->assertTrue($loggedOut->getCookie(LibrarySession::COOKIE, false)->isCleared());
+    }
+
+    public function test_unknown_library_cookie_does_not_block_signup(): void
+    {
+        $this->withCookie(LibrarySession::COOKIE, 'ghost')
+            ->get(self::HUB.'/try')
+            ->assertOk()
+            ->assertSee('Create my library');
     }
 
     public function test_cancelled_or_emailless_sign_in_returns_to_the_form(): void
