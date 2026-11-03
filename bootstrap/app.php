@@ -47,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetReferrerPolicyForPayments::class,
             \App\Http\Middleware\EnsureLibraryOperationsAccess::class,
             \App\Http\Middleware\EnsureSubscriptionActive::class,
+            \App\Http\Middleware\EnforceTrialAccess::class,
             \App\Http\Middleware\RuntimeProbe::class,
         ]);
     })

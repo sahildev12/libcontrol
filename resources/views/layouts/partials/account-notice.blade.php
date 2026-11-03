@@ -1,12 +1,49 @@
 @php
+    use App\Services\Tenancy\TrialLifecycle;
     use App\Support\Subscription;
+    use App\Support\Tenancy\TenantContext;
 
     $notice = null;
     $ownerView = ($isClientAdmin ?? false);
+    $trialTenant = TenantContext::current();
 
-    if (! ($isDeveloperAdmin ?? false) && ! ($licenseServerEnabled ?? false)) {
+    if ($trialTenant?->is_trial && ! ($isDeveloperAdmin ?? false)) {
+        $upgrade = $ownerView ? ['label' => 'Upgrade now', 'url' => app(TrialLifecycle::class)->upgradeUrl($trialTenant), 'external' => true] : null;
+
+        if ($trialTenant->isReadOnly()) {
+            $deletesAt = $trialTenant->deletesAt();
+            $notice = [
+                'urgent' => true,
+                'dismissible' => false,
+                'title' => 'Your free trial has ended',
+                'text' => $ownerView
+                    ? 'This library is read-only. Upgrade to keep adding and changing records'.($deletesAt ? '; unpaid trials are deleted on '.$deletesAt->format('d M Y').'.' : '.')
+                    : 'This library is read-only. Ask the library owner to upgrade.',
+                'action' => $upgrade,
+            ];
+        } elseif ($deadline = $trialTenant->verificationDeadline()) {
+            $hoursLeft = max(1, (int) ceil(now()->diffInMinutes($deadline) / 60));
+            $notice = [
+                'urgent' => false,
+                'dismissible' => false,
+                'title' => 'Please verify your email',
+                'text' => 'We sent a link to '.$trialTenant->owner_email.'. Verify within '.$hoursLeft.' '.($hoursLeft === 1 ? 'hour' : 'hours').' to keep using this library.',
+                'action' => $ownerView ? ['label' => 'Resend link', 'form' => route('trials.resend-verification')] : null,
+            ];
+        } elseif ($trialTenant->trial_ends_at) {
+            $daysLeft = max(1, (int) ceil(now()->diffInHours($trialTenant->trial_ends_at) / 24));
+            $notice = [
+                'urgent' => false,
+                'dismissible' => false,
+                'title' => 'Free trial: '.$daysLeft.' '.($daysLeft === 1 ? 'day' : 'days').' left',
+                'text' => $ownerView ? 'Upgrade any time to keep your library after the trial.' : null,
+                'action' => $upgrade,
+            ];
+        }
+    } elseif (! ($isDeveloperAdmin ?? false) && ! ($licenseServerEnabled ?? false)) {
         $subscription = Subscription::status();
         $state = $subscription['state'];
+        $renew = $ownerView && ! request()->routeIs('billing.*');
 
         if ($state !== Subscription::ACTIVE) {
             $daysLeft = (int) $subscription['days_left'];
@@ -24,7 +61,7 @@
                         : 'Renew today to keep using LibControl.',
                     default => null,
                 },
-                'button' => $ownerView && ! request()->routeIs('billing.*') ? 'Renew now' : null,
+                'action' => $renew ? ['label' => 'Renew now', 'url' => route('billing.index')] : null,
             ];
         } elseif (($planLimitCapped ?? []) !== [] && ($planSnapshot ?? null) && ! request()->routeIs('billing.*')) {
             $dismissedAt = (int) session('plan_limit_dismissed_at', 0);
@@ -35,12 +72,20 @@
                     'dismissible' => true,
                     'title' => 'Plan limit reached',
                     'text' => $ownerView ? 'Upgrade to add more branches, halls or seats.' : 'Ask the library owner to upgrade.',
-                    'button' => $ownerView ? 'Upgrade plan' : null,
+                    'action' => $ownerView ? ['label' => 'Upgrade plan', 'url' => route('billing.index')] : null,
                 ];
             }
         }
     }
+
+    $toast = session('trial_read_only')
+        ? ['message' => session('trial_read_only'), 'type' => 'error']
+        : (session('trial_notice') ? ['message' => session('trial_notice'), 'type' => 'success'] : null);
 @endphp
+
+@if ($toast)
+    <div x-data x-init="$nextTick(() => $dispatch('show-toast', @js($toast)))" hidden></div>
+@endif
 
 @if ($notice)
     <div
@@ -62,12 +107,24 @@
                 {{ $notice['text'] }}
             @endif
         </p>
-        @if ($notice['button'])
-            <a
-                href="{{ route('billing.index') }}"
-                class="inline-flex shrink-0 items-center font-bold transition hover:brightness-95"
-                style="height:34px;border-radius:9px;padding:0 12px;background-color:#FFCC00;color:#082a67;font-size:12.5px;"
-            >{{ $notice['button'] }}</a>
+        @if ($action = $notice['action'] ?? null)
+            @if (isset($action['form']))
+                <form method="POST" action="{{ $action['form'] }}" class="shrink-0">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="inline-flex items-center font-bold transition hover:brightness-95"
+                        style="height:34px;border-radius:9px;padding:0 12px;background-color:#FFCC00;color:#082a67;font-size:12.5px;"
+                    >{{ $action['label'] }}</button>
+                </form>
+            @else
+                <a
+                    href="{{ $action['url'] }}"
+                    @if ($action['external'] ?? false) target="_blank" rel="noopener" @endif
+                    class="inline-flex shrink-0 items-center font-bold transition hover:brightness-95"
+                    style="height:34px;border-radius:9px;padding:0 12px;background-color:#FFCC00;color:#082a67;font-size:12.5px;"
+                >{{ $action['label'] }}</a>
+            @endif
         @endif
         @if ($notice['dismissible'])
             <button

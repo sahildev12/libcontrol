@@ -67,6 +67,42 @@
                 </div>
             </section>
 
+            @if ($tenant->is_trial)
+                <section class="overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-sm" data-trial-controls>
+                    <div class="border-b border-indigo-100 bg-indigo-50 px-5 py-4">
+                        <h2 class="text-sm font-semibold text-gray-900">Free trial</h2>
+                        <p class="mt-1 text-xs text-indigo-800">
+                            Owner {{ $tenant->owner_email }} ·
+                            {{ $tenant->owner_email_verified_at ? 'email verified' : 'email not verified' }} ·
+                            @if ($tenant->locked_at)
+                                read-only since {{ $tenant->locked_at->format('d M Y') }}, deleted on {{ $tenant->deletesAt()?->format('d M Y') }} unless upgraded
+                            @else
+                                ends {{ $tenant->trial_ends_at?->format('d M Y') ?? 'not set' }}
+                            @endif
+                        </p>
+                    </div>
+                    <div class="grid gap-4 p-5 md:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Trial ends on</label>
+                            <input type="date" name="trial_ends_at" value="{{ old('trial_ends_at', $tenant->trial_ends_at?->toDateString()) }}" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                            <p class="mt-1 text-xs text-gray-500">A future date unlocks a read-only trial.</p>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <input type="checkbox" name="end_trial" value="1" class="rounded border-gray-300 text-indigo-600">
+                                Paid: end the trial and unlock for good
+                            </label>
+                            @unless ($tenant->owner_email_verified_at)
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                    <input type="checkbox" name="owner_email_verified" value="1" class="rounded border-gray-300 text-indigo-600">
+                                    Mark the owner's email as verified
+                                </label>
+                            @endunless
+                        </div>
+                    </div>
+                </section>
+            @endif
+
             <div>
                 <label class="block text-sm font-medium text-gray-700">Notes</label>
                 <textarea name="notes" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">{{ old('notes', $tenant->notes) }}</textarea>

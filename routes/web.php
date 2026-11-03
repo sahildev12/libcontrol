@@ -21,6 +21,7 @@ use App\Http\Controllers\StudentRegistrationInviteController;
 use App\Http\Controllers\TrialEnterController;
 use App\Http\Controllers\TrialSeatController;
 use App\Http\Controllers\TrialSignupController;
+use App\Http\Controllers\TrialVerificationController;
 use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\HelpSupportController;
 use App\Http\Controllers\LibcontrolMarketingSiteController;
@@ -73,12 +74,20 @@ Route::middleware('landlord_host')->prefix('try')->name('trials.')->group(functi
     Route::get('/{token}', [TrialSignupController::class, 'building'])->where('token', '[A-Za-z0-9]{48}')->name('building');
     Route::get('/{token}/status', [TrialSignupController::class, 'status'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:120,1')->name('status');
     Route::post('/{token}/start', [TrialSignupController::class, 'start'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:10,1')->name('start');
+    Route::get('/verify/{tenant}/{hash}', [TrialVerificationController::class, 'verify'])
+        ->whereNumber('tenant')
+        ->where('hash', '[a-f0-9]{40}')
+        ->middleware('throttle:20,1')
+        ->name('verify');
 });
 
 Route::get('/trial/enter/{token}', TrialEnterController::class)
     ->where('token', '[A-Za-z0-9]{64}')
     ->middleware('throttle:10,1')
     ->name('trials.enter');
+Route::post('/trial/verify/resend', [TrialVerificationController::class, 'resend'])
+    ->middleware(['auth', 'throttle:3,10'])
+    ->name('trials.resend-verification');
 
 Route::post('/website/enquiries', [PublicWebsiteEnquiryController::class, 'store'])
     ->middleware('throttle:12,1')

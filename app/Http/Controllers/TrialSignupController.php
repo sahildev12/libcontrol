@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TrialLifecycle;
 use App\Services\Tenancy\TrialProvisioner;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,10 @@ class TrialSignupController extends Controller implements HasMiddleware
         'ssl' => 'Securing your site with SSL',
     ];
 
-    public function __construct(private TrialProvisioner $trials) {}
+    public function __construct(
+        private TrialProvisioner $trials,
+        private TrialLifecycle $lifecycle,
+    ) {}
 
     public static function middleware(): array
     {
@@ -91,6 +95,7 @@ class TrialSignupController extends Controller implements HasMiddleware
         ]);
 
         RateLimiter::hit($limiterKey, 86400);
+        $this->lifecycle->sendVerification($tenant);
         $request->session()->push('trial_signups', $tenant->signup_token);
 
         return redirect()->route('trials.building', $tenant->signup_token);

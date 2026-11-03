@@ -9,9 +9,11 @@ use App\Http\Requests\UpdateTenantRequest;
 use App\Models\Tenant;
 use App\Services\Developer\TenantRemoteManageService;
 use App\Services\Tenancy\TenantProvisioner;
+use App\Services\Tenancy\TrialLifecycle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -20,6 +22,7 @@ class TenantController extends Controller
     public function __construct(
         private TenantProvisioner $provisioner,
         private TenantRemoteManageService $remoteManage,
+        private TrialLifecycle $trialLifecycle,
     ) {}
 
     public function index(): View
@@ -208,10 +211,39 @@ class TenantController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
+        if ($tenant->is_trial) {
+            $this->updateTrial($request, $tenant);
+        }
+
         $this->provisioner->syncPlan($tenant);
 
         return redirect()
             ->route('developer.tenants.edit', $tenant)
             ->with('status', 'Client library updated.');
+    }
+
+    /**
+     * A new end date in the future (or marking it paid) unlocks a read-only trial.
+     */
+    private function updateTrial(UpdateTenantRequest $request, Tenant $tenant): void
+    {
+        if ($request->boolean('owner_email_verified')) {
+            $this->trialLifecycle->markVerified($tenant);
+        }
+
+        if ($request->boolean('end_trial')) {
+            $tenant->update(['is_trial' => false, 'trial_ends_at' => null, 'locked_at' => null]);
+
+            return;
+        }
+
+        if ($request->filled('trial_ends_at')) {
+            $endsAt = Carbon::parse($request->string('trial_ends_at')->toString())->endOfDay();
+
+            $tenant->update([
+                'trial_ends_at' => $endsAt,
+                'locked_at' => $endsAt->isFuture() ? null : $tenant->locked_at,
+            ]);
+        }
     }
 }

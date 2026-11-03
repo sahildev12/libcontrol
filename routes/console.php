@@ -2,6 +2,7 @@
 
 use App\Console\Commands\ReconcilePayments;
 use App\Console\Commands\ResumePendingTrials;
+use App\Console\Commands\RunTrialLifecycle;
 use App\Console\Commands\SendFeeAlerts;
 use App\Console\Commands\SendGrowthCampaignEmails;
 use App\Console\Commands\SendMarketingCampaignEmails;
@@ -74,3 +75,9 @@ Schedule::command(ResumePendingTrials::class)
     ->withoutOverlapping(15)
     ->when(fn () => (bool) config('libcontrol.trials.enabled'))
     ->description('Build trial libraries that did not start from the sign-up page');
+
+Schedule::command(RunTrialLifecycle::class)
+    ->hourly()
+    ->withoutOverlapping(30)
+    ->when(fn () => (bool) config('libcontrol.trials.enabled'))
+    ->description('Trial owner reminders, read-only lock and deletion of unpaid trials');

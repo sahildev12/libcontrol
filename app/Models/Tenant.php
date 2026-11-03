@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class Tenant extends Model
@@ -151,5 +152,33 @@ class Tenant extends Model
     public function trialExpired(): bool
     {
         return $this->is_trial && $this->trial_ends_at !== null && $this->trial_ends_at->isPast();
+    }
+
+    public function isReadOnly(): bool
+    {
+        return $this->is_trial && ($this->locked_at !== null || $this->trialExpired());
+    }
+
+    public function verificationDeadline(): ?Carbon
+    {
+        if (! $this->is_trial || $this->owner_email_verified_at !== null || $this->created_at === null) {
+            return null;
+        }
+
+        return $this->created_at->copy()->addHours((int) config('libcontrol.trials.verify_hours', 24));
+    }
+
+    public function needsEmailVerification(): bool
+    {
+        return (bool) $this->verificationDeadline()?->isPast();
+    }
+
+    public function deletesAt(): ?Carbon
+    {
+        if (! $this->is_trial || $this->locked_at === null) {
+            return null;
+        }
+
+        return $this->locked_at->copy()->addDays((int) config('libcontrol.trials.delete_after_lock_days', 30));
     }
 }

@@ -27,6 +27,9 @@ class UpdateTenantRequest extends FormRequest
             'max_branches_override' => ['nullable', 'integer', 'min:1'],
             'active' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'trial_ends_at' => ['nullable', 'date'],
+            'end_trial' => ['sometimes', 'boolean'],
+            'owner_email_verified' => ['sometimes', 'boolean'],
         ];
     }
 }

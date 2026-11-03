@@ -128,6 +128,10 @@ return [
         'ssl_wait_seconds' => (int) env('LIBCONTROL_TRIAL_SSL_WAIT_SECONDS', 180),
         'database_wait_seconds' => (int) env('LIBCONTROL_TRIAL_DATABASE_WAIT_SECONDS', 60),
         'signups_per_ip_per_day' => (int) env('LIBCONTROL_TRIAL_SIGNUPS_PER_IP_PER_DAY', 3),
+        // Email sign-ups are paused after this many hours until the owner verifies.
+        'verify_hours' => (int) env('LIBCONTROL_TRIAL_VERIFY_HOURS', 24),
+        // Locked (unpaid) trials are deleted this many days after locking, with warnings 14 and 3 days before.
+        'delete_after_lock_days' => (int) env('LIBCONTROL_TRIAL_DELETE_AFTER_LOCK_DAYS', 30),
         'reserved_subdomains' => [
             'www', 'mail', 'email', 'smtp', 'imap', 'pop', 'ftp', 'cpanel', 'webmail', 'autodiscover', 'autoconfig',
             'admin', 'api', 'app', 'apps', 'dashboard', 'developer', 'dev', 'staging', 'test', 'trialtest',
