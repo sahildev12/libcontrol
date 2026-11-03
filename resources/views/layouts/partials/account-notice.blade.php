@@ -121,6 +121,7 @@
                 <a
                     href="{{ $action['url'] }}"
                     @if ($action['external'] ?? false) target="_blank" rel="noopener" @endif
+                    @if (str_starts_with($action['url'], 'https://wa.me/')) data-whatsapp @endif
                     class="lc-web-btn lc-web-btn--yellow shrink-0"
                     style="min-height:34px;padding:0 16px;border-radius:8px !important;font-size:12.5px;text-transform:uppercase;letter-spacing:0.04em;"
                 >{{ $action['label'] }}</a>

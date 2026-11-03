@@ -1,6 +1,7 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 import { initRealtime } from './realtime';
+import './whatsapp-link';
 import {
     destroyFinanceCharts,
     formatInr,
