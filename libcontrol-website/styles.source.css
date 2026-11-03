@@ -1892,7 +1892,7 @@ body {
   text-transform: uppercase;
   white-space: nowrap;
 }
-@media (max-width: 419.98px) {
+@media (max-width: 369.98px) {
   .pricing-billing-toggle {
     flex-wrap: wrap;
     justify-content: center;
