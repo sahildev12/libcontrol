@@ -19,7 +19,7 @@
 
     @if ($demoLogin)
         <div
-            class="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm"
+            class="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm sm:mb-4 sm:p-3"
             x-data="{ fill() { document.getElementById('email').value = @js($demoLogin['email']); document.getElementById('password').value = @js($demoLogin['password']); } }"
             data-demo-login
         >
@@ -58,13 +58,13 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="mt-4">
+        <div class="mt-4 sm:mt-3">
             <x-input-label for="password" :value="__('Password')" />
             <x-password-input id="password" name="password" autocomplete="current-password" />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <div class="mt-4 flex items-center justify-between">
+        <div class="mt-4 flex items-center justify-between sm:mt-3">
             <label for="remember_me" class="inline-flex items-center">
                 <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
                 <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
@@ -75,7 +75,7 @@
             </a>
         </div>
 
-        <div class="mt-6">
+        <div class="mt-6 sm:mt-4">
             <x-primary-button class="w-full justify-center">
                 {{ match($portal) {
                     'developer' => 'Developer log in',
@@ -85,7 +85,7 @@
             </x-primary-button>
         </div>
 
-        <p class="mt-4 text-center text-xs text-gray-500">
+        <p class="mt-4 text-center text-xs text-gray-500 sm:mt-3">
             @if ($portal === 'developer')
                 Library admin?
                 <a href="{{ route('admin.login') }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Use admin login</a>
@@ -118,11 +118,11 @@
     @endphp
 
     @if ($librarySocial)
-        <div class="mt-6" data-library-social-login>
+        <div class="mt-6 sm:mt-4" data-library-social-login>
             @if ($signinError)
-                <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{{ $signinError }}</div>
+                <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 sm:mb-3" role="alert">{{ $signinError }}</div>
             @endif
-            <div class="mb-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+            <div class="mb-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400 sm:mb-3">
                 <span class="h-px flex-1 bg-gray-200"></span>
                 or
                 <span class="h-px flex-1 bg-gray-200"></span>

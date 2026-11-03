@@ -20,36 +20,34 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy px-4 py-10 sm:flex sm:items-center sm:justify-center {{ $compact ? 'sm:py-4' : 'sm:py-16' }}">
+        <div class="min-h-screen bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy px-4 py-10 sm:flex sm:items-center sm:justify-center sm:py-3">
             <div class="mx-auto w-full {{ $compact ? 'max-w-md sm:max-w-lg' : 'max-w-md' }}">
-                <div class="{{ $compact ? 'mb-4' : ($usesDarkLoginLogo ? 'mb-10' : 'mb-8') }} text-center">
-                    @if ($compact)
-                        <img src="{{ LibControlBrand::darkWideLogoWithTextUrl() }}" alt="LibControl" class="mx-auto mb-2 h-12 w-full max-w-[220px] object-contain">
-                    @elseif ($usesDarkLoginLogo)
+                <div class="{{ $usesDarkLoginLogo ? 'mb-8' : 'mb-6' }} text-center sm:mb-4">
+                    @if ($usesDarkLoginLogo)
                         <x-auth.login-logo-on-dark />
                     @elseif ($logoUrl)
-                        <div class="mx-auto flex size-20 items-center justify-center rounded-2xl bg-white p-3 shadow-lg shadow-brand-navy/20">
-                            <img src="{{ $logoUrl }}" alt="{{ $name }}" class="max-h-14 max-w-full object-contain">
+                        <div class="mx-auto flex size-20 items-center justify-center rounded-2xl bg-white p-3 shadow-lg shadow-brand-navy/20 sm:size-16 sm:p-2.5">
+                            <img src="{{ $logoUrl }}" alt="{{ $name }}" class="max-h-14 max-w-full object-contain sm:max-h-11">
                         </div>
                     @else
-                        <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="mx-auto h-16 max-w-[240px] object-contain">
+                        <img src="{{ LibControlBrand::darkWideUrl() }}" alt="LibControl" class="mx-auto h-16 max-w-[240px] object-contain sm:h-12">
                     @endif
                     @if (! $usesDarkLoginLogo)
-                        <h1 class="mt-5 text-xl font-bold text-white">{{ $name }}</h1>
+                        <h1 class="mt-5 text-xl font-bold text-white sm:mt-3">{{ $name }}</h1>
                     @endif
                     @if ($title)
                         <p class="{{ $usesDarkLoginLogo ? 'mt-0' : 'mt-1' }} text-sm font-semibold text-brand-yellow">{{ $title }}</p>
                     @endif
                     @if ($subtitle)
-                        <p class="{{ $usesDarkLoginLogo ? 'mt-2' : 'mt-0.5' }} text-xs text-white/70">{{ $subtitle }}</p>
+                        <p class="{{ $usesDarkLoginLogo ? 'mt-2 sm:mt-1' : 'mt-0.5' }} text-xs text-white/70">{{ $subtitle }}</p>
                     @endif
                 </div>
 
-                <div class="rounded-2xl border border-white/10 bg-white {{ $compact ? 'px-6 py-5 sm:px-7' : 'px-6 py-6' }} shadow-2xl shadow-brand-navy/30">
+                <div class="rounded-2xl border border-white/10 bg-white px-6 py-6 shadow-2xl shadow-brand-navy/30 sm:px-7 sm:py-5">
                     {{ $slot }}
                 </div>
 
-                <p class="{{ $compact ? 'mt-3' : 'mt-6' }} text-center text-xs text-white/60">
+                <p class="mt-6 text-center text-xs text-white/60 sm:mt-3">
                     {{ config('libcontrol.product.byline') }}
                 </p>
             </div>
