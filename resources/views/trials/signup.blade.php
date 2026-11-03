@@ -1,5 +1,6 @@
 <x-guest-layout
     portal="auth"
+    compact
     title="Start your free {{ $trialDays }}-day trial"
     subtitle="Full Pro plan · No card needed · Ready in about a minute"
 >
@@ -30,7 +31,7 @@
                 <button type="submit" form="trial-social-forget" class="shrink-0 text-xs font-semibold text-emerald-800 underline hover:text-emerald-950">Use another account</button>
             </div>
         @elseif ($socialProviders)
-            <div class="space-y-2">
+            <div class="grid gap-2 {{ count($socialProviders) > 1 ? 'sm:grid-cols-2' : '' }}">
                 @foreach ($socialProviders as $provider => $label)
                     <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50" data-social-provider="{{ $provider }}">
                         @include('trials.partials.social-icon', ['provider' => $provider])
@@ -38,7 +39,7 @@
                     </a>
                 @endforeach
             </div>
-            <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+            <div class="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
                 <span class="h-px flex-1 bg-gray-200"></span>
                 or sign up with email
                 <span class="h-px flex-1 bg-gray-200"></span>
@@ -56,7 +57,7 @@
             <x-input-error :messages="$errors->get('library_name')" class="mt-2" />
         </div>
 
-        <div class="mt-4">
+        <div class="mt-3">
             <x-input-label for="subdomain" value="Your library address" />
             <div class="mt-1 flex rounded-md shadow-sm">
                 <div class="relative min-w-0 flex-1">
@@ -82,7 +83,6 @@
                 </div>
                 <span class="inline-flex shrink-0 items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-2 text-xs text-gray-500 sm:px-3 sm:text-sm">.{{ $baseDomain }}</span>
             </div>
-            <p class="mt-1.5 text-xs text-gray-500" x-show="state === 'idle'">Filled in from your library name. You can change it.</p>
             <p class="mt-1.5 text-xs text-gray-500" x-cloak x-show="state === 'checking'">Checking availability…</p>
             <p class="mt-1.5 text-xs" x-cloak x-show="state === 'available' || state === 'taken'" :class="state === 'available' ? 'text-emerald-600' : 'text-rose-600'" data-subdomain-message>
                 <span x-text="message"></span>
@@ -95,30 +95,32 @@
 
         @if ($social)
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            <p class="mt-4 text-xs text-gray-500">You'll sign in to your library with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}. You can also set a password later using "Forgot password" on your library's login page.</p>
+            <p class="mt-3 text-xs text-gray-500">You'll sign in to your library with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}. You can also set a password later using "Forgot password" on your library's login page.</p>
         @else
-            <div class="mt-4">
-                <x-input-label for="email" value="Email" />
-                <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required maxlength="190" autocomplete="email" />
-                <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            </div>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <x-input-label for="email" value="Email" />
+                    <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required maxlength="190" autocomplete="email" />
+                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                </div>
 
-            <div class="mt-4">
-                <x-input-label for="password" value="Choose a password" />
-                <x-password-input id="password" name="password" autocomplete="new-password" minlength="8" />
-                <p class="mt-1 text-xs text-gray-500">At least 8 characters. You will use this to log in as the library admin.</p>
-                <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                <div>
+                    <x-input-label for="password" value="Choose a password" />
+                    <x-password-input id="password" name="password" autocomplete="new-password" minlength="8" />
+                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                </div>
             </div>
+            <p class="mt-1.5 text-xs text-gray-500">Password needs at least 8 characters. You'll use your email and password to log in as the library admin.</p>
         @endif
 
-        <div class="mt-6">
+        <div class="mt-5">
             <x-primary-button class="w-full justify-center" x-bind:disabled="submitting" x-bind:class="submitting && 'opacity-70'">
                 <span x-show="! submitting">Create my library</span>
                 <span x-show="submitting" x-cloak>Starting…</span>
             </x-primary-button>
         </div>
 
-        <p class="mt-4 text-center text-xs text-gray-500">
+        <p class="mt-3 text-center text-xs text-gray-500">
             By continuing you agree to our
             <a href="/terms-and-conditions.html" target="_blank" class="font-semibold text-indigo-600 hover:text-indigo-800">terms</a>
             and
