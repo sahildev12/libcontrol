@@ -43,7 +43,7 @@
                     @endif
                 </div>
 
-                <div class="rounded-2xl border border-white/10 bg-white px-6 py-6 shadow-2xl shadow-brand-navy/30 sm:px-7 sm:py-5">
+                <div class="rounded-2xl border border-white/10 bg-white px-6 py-6 shadow-2xl shadow-brand-navy/30 sm:px-7 {{ $compact ? 'sm:py-4' : 'sm:py-5' }}">
                     {{ $slot }}
                 </div>
 

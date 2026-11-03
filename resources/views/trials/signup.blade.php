@@ -33,13 +33,13 @@
         @elseif ($socialProviders)
             <div class="grid gap-2 {{ count($socialProviders) > 1 ? 'sm:grid-cols-2' : '' }}">
                 @foreach ($socialProviders as $provider => $label)
-                    <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50" data-social-provider="{{ $provider }}">
+                    <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:py-2" data-social-provider="{{ $provider }}">
                         @include('trials.partials.social-icon', ['provider' => $provider])
                         <span>@if (count($socialProviders) > 1)<span class="sm:hidden">Continue with </span>@else Continue with @endif{{ $label }}</span>
                     </a>
                 @endforeach
             </div>
-            <div class="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+            <div class="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400 sm:my-3">
                 <span class="h-px flex-1 bg-gray-200"></span>
                 or sign up with email
                 <span class="h-px flex-1 bg-gray-200"></span>
@@ -113,7 +113,7 @@
             <p class="mt-1.5 text-xs text-gray-500">Password: at least 8 characters. You'll use these to log in as admin.</p>
         @endif
 
-        <div class="mt-5">
+        <div class="mt-5 sm:mt-4">
             <x-primary-button class="w-full justify-center" x-bind:disabled="submitting" x-bind:class="submitting && 'opacity-70'">
                 <span x-show="! submitting">Create my library</span>
                 <span x-show="submitting" x-cloak>Starting…</span>
