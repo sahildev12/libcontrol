@@ -28,22 +28,22 @@ class StudentEmailNotificationService
         return $this->deliver($student, $subject, $body, 'offers');
     }
 
-    public function sendRecovery(Student $student): void
+    public function sendRecovery(Student $student): bool
     {
-        $this->sendIfEnabled($student, 'recovery', 'We miss you at {library}');
+        return $this->sendIfEnabled($student, 'recovery', 'We miss you at {library}');
     }
 
-    private function sendIfEnabled(Student $student, string $type, string $subjectTemplate): void
+    private function sendIfEnabled(Student $student, string $type, string $subjectTemplate): bool
     {
         if (! $this->canSend($student, $type)) {
-            return;
+            return false;
         }
 
         $library = PlatformSetting::current()->displayName();
         $subject = str_replace('{library}', $library, $subjectTemplate);
         $body = $this->defaultBody($type, $student, $library);
 
-        $this->deliver($student, $subject, $body, $type);
+        return $this->deliver($student, $subject, $body, $type);
     }
 
     private function canSend(Student $student, string $type): bool
