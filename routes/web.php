@@ -50,6 +50,7 @@ Route::get('/privacy-policy.html', [LibcontrolMarketingSiteController::class, 'f
 Route::get('/terms-and-conditions.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'terms-and-conditions.html');
 Route::get('/refund-policy.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'refund-policy.html');
 Route::get('/disclaimer.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'disclaimer.html');
+Route::get('/data-deletion.html', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'data-deletion.html');
 Route::get('/backlink', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'backlink.html');
 Route::redirect('/backlink.html', '/backlink', 301);
 Route::get('/whatsapp.js', [LibcontrolMarketingSiteController::class, 'file'])->defaults('path', 'whatsapp.js');
