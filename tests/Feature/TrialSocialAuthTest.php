@@ -86,7 +86,6 @@ class TrialSocialAuthTest extends TestCase
         $this->post(self::HUB.'/try', [
             'library_name' => 'Sunrise Library',
             'subdomain' => 'sunrise',
-            'owner_name' => 'Asha Rao',
         ])->assertSessionDoesntHaveErrors();
 
         return Tenant::query()->where('subdomain', 'sunrise')->firstOrFail();
@@ -128,11 +127,11 @@ class TrialSocialAuthTest extends TestCase
         $this->post(self::HUB.'/try', [
             'library_name' => 'Sunrise Library',
             'subdomain' => 'sunrise',
-            'owner_name' => 'Asha Rao',
         ])->assertSessionDoesntHaveErrors();
 
         $tenant = Tenant::query()->where('subdomain', 'sunrise')->firstOrFail();
         $this->assertSame('asha@example.com', $tenant->owner_email);
+        $this->assertSame('Asha Rao', $tenant->owner_name);
         $this->assertSame('google', $tenant->signup_source);
         $this->assertSame('g-1', $tenant->owner_social_id);
         $this->assertNotNull($tenant->owner_email_verified_at);

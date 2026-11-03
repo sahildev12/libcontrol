@@ -53,7 +53,6 @@ class TrialSignupTest extends TestCase
         return $this->post(self::HUB.'/try', array_merge([
             'library_name' => 'Sunrise Library',
             'subdomain' => 'sunrise',
-            'owner_name' => 'Asha',
             'email' => 'asha@example.com',
             'password' => 'secret-pass-1',
         ], $overrides));
@@ -76,7 +75,13 @@ class TrialSignupTest extends TestCase
 
         $this->getJson(self::HUB.'/try/check?subdomain=demo')
             ->assertOk()
-            ->assertJson(['available' => false]);
+            ->assertJson(['available' => false, 'suggestion' => 'demo-2']);
+
+        $this->signUp();
+        $this->getJson(self::HUB.'/try/check?subdomain=sunrise')
+            ->assertJson(['available' => false, 'suggestion' => 'sunrise-2']);
+        $this->getJson(self::HUB.'/try/check?subdomain=ab')
+            ->assertJson(['available' => false, 'suggestion' => null]);
     }
 
     public function test_signup_builds_the_library_and_hands_the_owner_a_one_time_login(): void

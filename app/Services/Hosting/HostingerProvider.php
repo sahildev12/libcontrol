@@ -4,6 +4,7 @@ namespace App\Services\Hosting;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class HostingerProvider implements HostingProvider
@@ -21,17 +22,26 @@ class HostingerProvider implements HostingProvider
 
     public function subdomainExists(string $subdomain): bool
     {
-        $rows = $this->request()
-            ->get($this->accountPath("websites/{$this->website}/subdomains"))
-            ->throw()
-            ->json();
+        $existing = Cache::remember($this->subdomainsCacheKey(), 60, function () {
+            $rows = $this->request()
+                ->get($this->accountPath("websites/{$this->website}/subdomains"))
+                ->throw()
+                ->json();
 
-        return collect(is_array($rows) ? $rows : [])
-            ->contains(fn ($row) => strtolower((string) ($row['subdomain'] ?? '')) === strtolower($subdomain));
+            return collect(is_array($rows) ? $rows : [])
+                ->map(fn ($row) => strtolower((string) ($row['subdomain'] ?? '')))
+                ->filter()
+                ->values()
+                ->all();
+        });
+
+        return in_array(strtolower($subdomain), $existing, true);
     }
 
     public function createSubdomain(string $subdomain): void
     {
+        Cache::forget($this->subdomainsCacheKey());
+
         $this->request()
             ->post($this->accountPath("websites/{$this->website}/subdomains"), [
                 'subdomain' => $subdomain,
@@ -42,6 +52,8 @@ class HostingerProvider implements HostingProvider
 
     public function deleteSubdomain(string $subdomain): void
     {
+        Cache::forget($this->subdomainsCacheKey());
+
         $response = $this->request()
             ->delete($this->accountPath("websites/{$this->website}/subdomains/{$subdomain}"));
 
@@ -100,6 +112,11 @@ class HostingerProvider implements HostingProvider
             ->asJson()
             ->timeout(30)
             ->retry(2, 1000, throw: false);
+    }
+
+    private function subdomainsCacheKey(): string
+    {
+        return "hostinger:subdomains:{$this->account}:{$this->website}";
     }
 
     private function accountPath(string $path): string

@@ -10,6 +10,7 @@
             'libraryName' => old('library_name', ''),
             'subdomain' => old('subdomain', ''),
             'checkUrl' => route('trials.check'),
+            'baseDomain' => $baseDomain,
         ]))"
         x-on:submit="submitting = true"
         data-trial-signup
@@ -58,29 +59,38 @@
         <div class="mt-4">
             <x-input-label for="subdomain" value="Your library address" />
             <div class="mt-1 flex rounded-md shadow-sm">
-                <input
-                    id="subdomain"
-                    name="subdomain"
-                    type="text"
-                    x-model="subdomain"
-                    x-on:input="edited = true; queueCheck()"
-                    required
-                    maxlength="30"
-                    autocomplete="off"
-                    spellcheck="false"
-                    class="block w-full min-w-0 rounded-l-md border-gray-300 lowercase focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="sunrise"
-                >
+                <div class="relative min-w-0 flex-1">
+                    <input
+                        id="subdomain"
+                        name="subdomain"
+                        type="text"
+                        x-model="subdomain"
+                        x-on:input="edited = subdomain !== ''; queueCheck()"
+                        required
+                        maxlength="30"
+                        autocomplete="off"
+                        spellcheck="false"
+                        class="block w-full rounded-l-md border-gray-300 pr-9 lowercase focus:border-indigo-500 focus:ring-indigo-500"
+                        x-bind:class="state === 'available' ? 'border-emerald-400' : (state === 'taken' ? 'border-rose-400' : '')"
+                        placeholder="sunrise"
+                    >
+                    <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3" aria-hidden="true">
+                        <svg x-cloak x-show="state === 'checking'" class="h-4 w-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" class="opacity-25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                        <svg x-cloak x-show="state === 'available'" class="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0z" clip-rule="evenodd"/></svg>
+                        <svg x-cloak x-show="state === 'taken'" class="h-4 w-4 text-rose-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.3 4.3a1 1 0 0 1 1.4 0L10 8.6l4.3-4.3a1 1 0 1 1 1.4 1.4L11.4 10l4.3 4.3a1 1 0 0 1-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 0 1-1.4-1.4L8.6 10 4.3 5.7a1 1 0 0 1 0-1.4z" clip-rule="evenodd"/></svg>
+                    </span>
+                </div>
                 <span class="inline-flex shrink-0 items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-2 text-xs text-gray-500 sm:px-3 sm:text-sm">.{{ $baseDomain }}</span>
             </div>
-            <p class="mt-1.5 text-xs" x-cloak x-show="message" :class="available ? 'text-emerald-600' : 'text-rose-600'" x-text="message" data-subdomain-message></p>
+            <p class="mt-1.5 text-xs text-gray-500" x-show="state === 'idle'">Filled in from your library name. You can change it.</p>
+            <p class="mt-1.5 text-xs text-gray-500" x-cloak x-show="state === 'checking'">Checking availability…</p>
+            <p class="mt-1.5 text-xs" x-cloak x-show="state === 'available' || state === 'taken'" :class="state === 'available' ? 'text-emerald-600' : 'text-rose-600'" data-subdomain-message>
+                <span x-text="message"></span>
+                <template x-if="state === 'taken' && suggestion">
+                    <button type="button" class="ml-1 font-semibold text-indigo-600 underline hover:text-indigo-800" x-on:click="useSuggestion()">Use <span x-text="suggestion"></span></button>
+                </template>
+            </p>
             <x-input-error :messages="$errors->get('subdomain')" class="mt-2" />
-        </div>
-
-        <div class="mt-4">
-            <x-input-label for="owner_name" value="Your name" />
-            <x-text-input id="owner_name" class="mt-1 block w-full" type="text" name="owner_name" :value="old('owner_name', $social['name'] ?? '')" required maxlength="120" autocomplete="name" />
-            <x-input-error :messages="$errors->get('owner_name')" class="mt-2" />
         </div>
 
         @if ($social)
@@ -126,40 +136,62 @@
                 libraryName: config.libraryName,
                 subdomain: config.subdomain,
                 edited: config.subdomain !== '',
-                available: false,
+                state: 'idle',
                 message: '',
+                suggestion: null,
                 submitting: false,
                 timer: null,
                 init() {
                     if (this.subdomain) this.queueCheck();
                 },
-                suggest() {
-                    if (this.edited) return;
-                    this.subdomain = this.libraryName.toLowerCase()
-                        .replace(/\b(library|study|centre|center|reading|room|the)\b/g, ' ')
+                slug(value) {
+                    return value.toLowerCase()
                         .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-+|-+$/g, '')
                         .replace(/^[^a-z]+/, '')
                         .slice(0, 30)
                         .replace(/-+$/, '');
+                },
+                suggest() {
+                    if (this.edited) return;
+                    const short = this.slug(this.libraryName.toLowerCase().replace(/\b(library|study|centre|center|reading|room|the)\b/g, ' '));
+                    this.subdomain = short.length >= 3 ? short : this.slug(this.libraryName);
+                    this.queueCheck();
+                },
+                useSuggestion() {
+                    this.subdomain = this.suggestion;
                     this.queueCheck();
                 },
                 queueCheck() {
                     clearTimeout(this.timer);
-                    this.message = '';
-                    if (this.subdomain.length < 3) return;
-                    this.timer = setTimeout(() => this.check(), 450);
+                    this.suggestion = null;
+                    if (this.subdomain.length < 3) {
+                        this.state = 'idle';
+                        return;
+                    }
+                    this.state = 'checking';
+                    this.timer = setTimeout(() => this.check(), 400);
                 },
                 async check() {
                     const value = this.subdomain;
                     try {
                         const response = await fetch(config.checkUrl + '?subdomain=' + encodeURIComponent(value), { headers: { Accept: 'application/json' } });
-                        if (! response.ok) return;
+                        if (! response.ok) throw new Error();
                         const data = await response.json();
                         if (value !== this.subdomain) return;
-                        this.available = data.available;
+
+                        if (! data.available && data.suggestion && ! this.edited) {
+                            this.subdomain = data.suggestion;
+                            this.state = 'available';
+                            this.message = value + ' is taken, so we picked ' + data.suggestion + '.' + config.baseDomain + ' for you.';
+                            return;
+                        }
+
+                        this.state = data.available ? 'available' : 'taken';
                         this.message = data.message;
-                    } catch (e) {}
+                        this.suggestion = data.available ? null : data.suggestion;
+                    } catch (e) {
+                        if (value === this.subdomain) this.state = 'idle';
+                    }
                 },
             };
         }

@@ -53,10 +53,16 @@ class TrialSignupController extends Controller implements HasMiddleware
 
     public function check(Request $request): JsonResponse
     {
+        $raw = (string) $request->query('subdomain', '');
+
         try {
-            $subdomain = $this->trials->normalizeAndValidateSubdomain((string) $request->query('subdomain', ''));
+            $subdomain = $this->trials->normalizeAndValidateSubdomain($raw);
         } catch (ValidationException $e) {
-            return response()->json(['available' => false, 'message' => $e->errors()['subdomain'][0] ?? 'Not available.']);
+            return response()->json([
+                'available' => false,
+                'message' => $e->errors()['subdomain'][0] ?? 'Not available.',
+                'suggestion' => $this->trials->suggestSubdomain($raw),
+            ]);
         }
 
         return response()->json([
@@ -73,7 +79,6 @@ class TrialSignupController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'library_name' => ['required', 'string', 'max:120'],
             'subdomain' => ['required', 'string', 'max:40'],
-            'owner_name' => ['required', 'string', 'max:120'],
             'email' => [$social ? 'nullable' : 'required', 'string', 'email:rfc', 'max:190'],
             'password' => [$social ? 'nullable' : 'required', 'string', 'min:8', 'max:100'],
         ]);
@@ -92,7 +97,7 @@ class TrialSignupController extends Controller implements HasMiddleware
         $tenant = $this->trials->register([
             'library_name' => $validated['library_name'],
             'subdomain' => $validated['subdomain'],
-            'owner_name' => $validated['owner_name'],
+            'owner_name' => $social['name'] ?? null,
             'owner_email' => $social['email'] ?? $validated['email'],
             'password' => $social ? null : $validated['password'],
             'source' => $social['provider'] ?? 'email',

@@ -55,7 +55,32 @@ class TrialProvisioner
     }
 
     /**
-     * @param  array{library_name: string, subdomain: string, owner_name: string, owner_email: string, password?: ?string, source?: string, social_id?: ?string, email_verified?: bool, ip?: ?string}  $data
+     * First free address built from the given name: the name itself, then name-2 … name-9.
+     */
+    public function suggestSubdomain(string $raw): ?string
+    {
+        $base = Str::of(Tenant::normalizeSubdomain($raw))
+            ->replaceMatches('/^[^a-z]+/', '')
+            ->substr(0, 27)
+            ->trim('-')
+            ->toString();
+
+        if (strlen($base) < 3) {
+            return null;
+        }
+
+        foreach ([$base, ...array_map(fn (int $n) => "{$base}-{$n}", range(2, 9))] as $candidate) {
+            try {
+                return $this->normalizeAndValidateSubdomain($candidate);
+            } catch (ValidationException) {
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array{library_name: string, subdomain: string, owner_name?: ?string, owner_email: string, password?: ?string, source?: string, social_id?: ?string, email_verified?: bool, ip?: ?string}  $data
      *
      * @throws ValidationException
      */
@@ -87,7 +112,7 @@ class TrialProvisioner
         return Tenant::query()->create([
             'subdomain' => $subdomain,
             'client_name' => trim($data['library_name']),
-            'owner_name' => trim($data['owner_name']),
+            'owner_name' => trim((string) ($data['owner_name'] ?? '')) ?: null,
             'owner_email' => $email,
             'owner_password_hash' => Hash::make(filled($data['password'] ?? null) ? $data['password'] : Str::random(40)),
             'owner_email_verified_at' => ($data['email_verified'] ?? false) ? now() : null,
