@@ -35,7 +35,7 @@
                 @foreach ($socialProviders as $provider => $label)
                     <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50" data-social-provider="{{ $provider }}">
                         @include('trials.partials.social-icon', ['provider' => $provider])
-                        Continue with {{ $label }}
+                        <span>@if (count($socialProviders) > 1)<span class="sm:hidden">Continue with </span>@else Continue with @endif{{ $label }}</span>
                     </a>
                 @endforeach
             </div>
@@ -110,7 +110,7 @@
                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                 </div>
             </div>
-            <p class="mt-1.5 text-xs text-gray-500">Password needs at least 8 characters. You'll use your email and password to log in as the library admin.</p>
+            <p class="mt-1.5 text-xs text-gray-500">Password: at least 8 characters. You'll use these to log in as admin.</p>
         @endif
 
         <div class="mt-5">

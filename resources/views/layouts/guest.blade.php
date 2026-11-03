@@ -20,11 +20,11 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy px-4 py-10 sm:flex sm:items-center sm:justify-center {{ $compact ? 'sm:py-6' : 'sm:py-16' }}">
+        <div class="min-h-screen bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy px-4 py-10 sm:flex sm:items-center sm:justify-center {{ $compact ? 'sm:py-4' : 'sm:py-16' }}">
             <div class="mx-auto w-full {{ $compact ? 'max-w-md sm:max-w-lg' : 'max-w-md' }}">
-                <div class="{{ $compact ? 'mb-5' : ($usesDarkLoginLogo ? 'mb-10' : 'mb-8') }} text-center">
+                <div class="{{ $compact ? 'mb-4' : ($usesDarkLoginLogo ? 'mb-10' : 'mb-8') }} text-center">
                     @if ($compact)
-                        <img src="{{ LibControlBrand::darkWideLogoWithTextUrl() }}" alt="LibControl" class="mx-auto mb-3 h-14 w-full max-w-[240px] object-contain">
+                        <img src="{{ LibControlBrand::darkWideLogoWithTextUrl() }}" alt="LibControl" class="mx-auto mb-2 h-12 w-full max-w-[220px] object-contain">
                     @elseif ($usesDarkLoginLogo)
                         <x-auth.login-logo-on-dark />
                     @elseif ($logoUrl)
@@ -49,7 +49,7 @@
                     {{ $slot }}
                 </div>
 
-                <p class="{{ $compact ? 'mt-4' : 'mt-6' }} text-center text-xs text-white/60">
+                <p class="{{ $compact ? 'mt-3' : 'mt-6' }} text-center text-xs text-white/60">
                     {{ config('libcontrol.product.byline') }}
                 </p>
             </div>

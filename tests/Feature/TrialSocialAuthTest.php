@@ -103,14 +103,14 @@ class TrialSocialAuthTest extends TestCase
     {
         $this->get(self::HUB.'/try')
             ->assertOk()
-            ->assertSee('Continue with Google')
-            ->assertSee('Continue with Facebook');
+            ->assertSee('data-social-provider="google"', false)
+            ->assertSee('data-social-provider="facebook"', false);
 
         Config::set('services.facebook.client_secret', null);
 
         $this->get(self::HUB.'/try')
-            ->assertSee('Continue with Google')
-            ->assertDontSee('Continue with Facebook');
+            ->assertSee('data-social-provider="google"', false)
+            ->assertDontSee('data-social-provider="facebook"', false);
         $this->get(self::HUB.'/auth/facebook/redirect')->assertNotFound();
     }
 
