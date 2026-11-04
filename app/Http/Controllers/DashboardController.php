@@ -65,13 +65,14 @@ class DashboardController extends Controller
                 $growthBranch = $this->resolveGrowthBranchForDashboard($request);
                 if ($growthBranch) {
                     $combinedGrowth = $combinedGrowthScore->forBranch($growthBranch, $request->user());
-                    $growthScore = $combinedGrowth['action_progress'];
-                    $businessPerformance = $combinedGrowth['business_performance'];
                     $growthActions = config('growth.actions', []);
                 } else {
-                    // Still show Edwik with a simple "create a branch" tip.
+                    // Same admin chrome as a normal library; Edwik asks them to create a branch.
                     $combinedGrowth = $combinedGrowthScore->forEmptyLibrary();
                 }
+
+                $growthScore = $combinedGrowth['action_progress'] ?? null;
+                $businessPerformance = $combinedGrowth['business_performance'] ?? null;
             }
 
             $profileCompletionScore = $profileCompletion->scoreForLibrary($request->user());

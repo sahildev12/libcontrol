@@ -88,12 +88,33 @@ class LibraryCombinedGrowthScoreService
             ];
         }
 
+        $actionWeight = (float) config('growth.growth_score.action_weight', 0.40);
+        $businessWeight = (float) config('growth.growth_score.business_weight', 0.60);
+
         return [
             'growth_score' => 0,
-            'action_progress' => null,
-            'business_performance' => null,
+            // Keep the same dashboard chrome as a normal admin library (score cards + sidebar).
+            'action_progress' => [
+                'score' => 0,
+                'max' => 100,
+                'pct' => 0,
+                'items' => [[
+                    'key' => 'create_branch',
+                    'label' => 'Create your first branch',
+                    'status' => 'missing',
+                    'detail' => 'Add a branch to unlock halls, seats, students, and growth tips.',
+                    'href' => $createBranchUrl,
+                ]],
+            ],
+            'business_performance' => [
+                'score' => 0,
+                'score_rounded' => 0,
+                'max' => 100,
+                'label' => 'Needs attention',
+                'metrics' => [],
+            ],
             'recommendations' => [
-                'has_package' => true,
+                'has_package' => false,
                 'free_limit' => 3,
                 'unlocked' => [[
                     'key' => 'create_branch',
@@ -117,8 +138,8 @@ class LibraryCombinedGrowthScoreService
             'action_pct' => 0,
             'business_pct' => 0,
             'formula' => [
-                'action_weight' => (float) config('growth.growth_score.action_weight', 0.40),
-                'business_weight' => (float) config('growth.growth_score.business_weight', 0.60),
+                'action_weight' => $actionWeight,
+                'business_weight' => $businessWeight,
             ],
             'bootstrap' => true,
         ];
