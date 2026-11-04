@@ -1,6 +1,6 @@
 # LibControl
 
-> Best AI library management software for reading halls and study centres in India — free trial and online demo available.
+> Best AI library growth software for reading halls and study centres in India — free trial available.
 
 LibControl is an affordable, professional library management system with AI tools for seat tracking, fee management, student register, digital attendance, scheduling, multi-branch operations, mobile access, and business growth. Operated and marketed by Katsindia.
 
