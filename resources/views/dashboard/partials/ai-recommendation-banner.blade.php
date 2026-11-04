@@ -456,7 +456,11 @@
         cursor: default;
         pointer-events: none;
     }
-    .lc-ai-banner__card.is-locked { opacity: 0.92; }
+    .lc-ai-banner__layer.is-active .lc-ai-banner__card,
+    .lc-ai-banner__layer[data-depth="0"] .lc-ai-banner__card {
+        opacity: 1;
+        background: #fff;
+    }
     .lc-ai-banner__why {
         margin: 4px 0 0;
         font-size: 0.8125rem;
