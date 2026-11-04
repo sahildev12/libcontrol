@@ -29,6 +29,17 @@ class LibraryWebsiteController extends Controller
         return redirect()->route('home');
     }
 
+    public function preview(Request $request, LibraryWebsiteService $websiteService): View
+    {
+        abort_unless($request->user()?->isClientAdmin(), 403);
+
+        return view('website.show', [
+            'site' => $websiteService->homePayload(),
+            'isPreview' => true,
+            'websiteEnabled' => (bool) \App\Models\PlatformSetting::current()->website_enabled,
+        ]);
+    }
+
     public function update(Request $request, LibraryWebsiteService $websiteService): \Illuminate\Http\JsonResponse
     {
         abort_unless($request->user()?->isPlatformAdmin(), 403);
@@ -97,9 +108,16 @@ class LibraryWebsiteController extends Controller
             LibraryWebsiteService::syncSocialsToGrowthProfiles($settings);
         }
 
+        $completion = app(\App\Services\Profile\LibraryProfileCompletionService::class)
+            ->scoreForLibrary($request->user());
+
         return response()->json([
             'message' => 'Website settings saved.',
             'website' => $websiteService->settingsPayload($settings),
+            'profile_completion' => [
+                'pct' => (int) ($completion['pct'] ?? 0),
+                'complete' => (bool) ($completion['complete'] ?? false),
+            ],
         ]);
     }
 }

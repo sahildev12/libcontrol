@@ -12,6 +12,16 @@
     @vite(['resources/css/library-website.css', 'resources/js/library-website.js'])
 </head>
 <body class="library-website">
+    @if (! empty($isPreview))
+        <div class="sticky top-0 z-[60] border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
+            <strong>Preview mode</strong>
+            — only you can see this while logged in.
+            @if (empty($websiteEnabled))
+                Your public website is still off. Enable it in Settings → Website when you are ready.
+            @endif
+            <a href="{{ route('settings.index', ['tab' => 'website']) }}" class="ml-2 font-semibold underline hover:no-underline">Back to settings</a>
+        </div>
+    @endif
     @yield('content')
 
     <div data-lw-lightbox class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/90 p-4">

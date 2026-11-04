@@ -226,6 +226,9 @@ class LibraryWebsiteService
             'website_logo_url' => $this->websiteLogoUrl($settings),
             'website_gallery' => $this->galleryItemsForSettings($settings),
             'public_url' => route('home'),
+            'preview_url' => \Illuminate\Support\Facades\Route::has('website.preview')
+                ? route('website.preview')
+                : route('home'),
         ];
     }
 

@@ -108,7 +108,16 @@ class LibraryProfileCompletionService
      */
     private function amenities(PlatformSetting $settings): array
     {
-        $amenities = collect($settings->website_amenities ?? [])->filter()->values();
+        $amenities = collect($settings->website_amenities ?? [])
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    return trim((string) ($item['label'] ?? $item['name'] ?? $item['value'] ?? reset($item) ?: ''));
+                }
+
+                return trim((string) $item);
+            })
+            ->filter()
+            ->values();
         $ok = $amenities->isNotEmpty();
 
         return $this->item(

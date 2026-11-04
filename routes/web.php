@@ -241,6 +241,7 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::patch('/settings/global', [SettingsController::class, 'updateGlobal'])->name('settings.global.update')->middleware('platform_admin');
     Route::patch('/settings/platform', [SettingsController::class, 'updatePlatform'])->name('settings.platform.update')->middleware('platform_admin');
+    Route::get('/website/preview', [LibraryWebsiteController::class, 'preview'])->name('website.preview')->middleware('platform_admin');
     Route::post('/settings/website', [LibraryWebsiteController::class, 'update'])->name('settings.website.update')->middleware('platform_admin');
     Route::patch('/settings/email-notifications', [SettingsController::class, 'updateEmailNotifications'])->name('settings.email-notifications.update')->middleware('platform_admin');
     Route::patch('/settings/platform/plan', [SettingsController::class, 'updatePlatformPlan'])->name('settings.platform.plan.update')->middleware('developer_admin');

@@ -126,14 +126,15 @@
                                     <p class="truncate" style="margin:2px 0 0;font-size:11px;line-height:1.25;color:#7B8BA5;">Complete your profile to unlock all features</p>
                                 </div>
 
-                                <span class="relative mx-1 h-2.5 min-w-0 flex-1 overflow-hidden rounded-full" style="background-color:#FFCC00;" aria-hidden="true">
+                                <span class="relative mx-1 h-2.5 min-w-0 flex-1 overflow-hidden rounded-full" style="background-color:#E2E8F0;" aria-hidden="true" data-profile-completion-track>
                                     <span
                                         class="absolute inset-y-0 left-0 rounded-full"
-                                        style="width:{{ $navyFill }}%;background-color:#082a67;"
+                                        style="width:{{ $navyFill }}%;background-color:#FFCC00;"
+                                        data-profile-completion-fill
                                     ></span>
                                 </span>
 
-                                <span class="shrink-0 font-bold tabular-nums" style="font-size:15px;color:#082a67;">{{ $profilePct }}%</span>
+                                <span class="shrink-0 font-bold tabular-nums" style="font-size:15px;color:#082a67;" data-profile-completion-pct>{{ $profilePct }}%</span>
 
                                 <a
                                     @if ($profileHref) href="{{ $profileHref }}" @endif

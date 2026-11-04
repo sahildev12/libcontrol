@@ -45,16 +45,18 @@
                 <div class="flex items-center gap-3">
                     <span
                         class="relative h-3 min-w-0 flex-1 overflow-hidden rounded-full"
-                        style="background-color:#FFCC00;"
+                        style="background-color:#E2E8F0;"
                         role="progressbar"
                         aria-valuenow="{{ $pct }}"
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-label="Profile completion {{ $pct }} percent"
+                        data-profile-completion-track
                     >
                         <span
                             class="absolute inset-y-0 left-0 rounded-full"
-                            style="width:{{ $pct }}%;background-color:#082a67;"
+                            style="width:{{ $pct }}%;background-color:#FFCC00;"
+                            data-profile-completion-fill
                         ></span>
                     </span>
                     <span class="shrink-0 text-lg font-bold tabular-nums" style="color:#082a67;">{{ $pct }}%</span>

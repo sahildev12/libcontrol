@@ -6372,6 +6372,8 @@ Alpine.data('settingsPage', (config) => ({
             website: config.websiteSettings?.website_social_links?.website || '',
         },
         website_whatsapp: config.websiteSettings?.website_whatsapp || '',
+        public_url: config.websiteSettings?.public_url || '',
+        preview_url: config.websiteSettings?.preview_url || '',
         website_logo_url: config.websiteSettings?.website_logo_url || '',
         website_gallery: Array.isArray(config.websiteSettings?.website_gallery) ? [...config.websiteSettings.website_gallery] : [],
         public_url: config.websiteSettings?.public_url || '',
@@ -6535,6 +6537,46 @@ Alpine.data('settingsPage', (config) => ({
 
     selectedCountInCategory(category) {
         return (category.items || []).filter((item) => this.isAmenitySelected(item)).length;
+    },
+
+    allAmenitiesSelectedInCategory(category) {
+        const items = category.items || [];
+        return items.length > 0 && items.every((item) => this.isAmenitySelected(item));
+    },
+
+    toggleAllAmenitiesInCategory(category) {
+        const items = category.items || [];
+        if (items.length === 0) {
+            return;
+        }
+
+        const selectAll = ! this.allAmenitiesSelectedInCategory(category);
+        const current = [...(this.websiteForm.website_amenities || [])];
+        const keys = new Set(current.map((item) => this.amenityKey(item)));
+
+        items.forEach((item) => {
+            const normalized = this.normalizeAmenityLabel(item);
+            if (! normalized) {
+                return;
+            }
+
+            const key = this.amenityKey(normalized);
+            if (selectAll) {
+                if (! keys.has(key)) {
+                    current.push(normalized);
+                    keys.add(key);
+                }
+            } else {
+                const index = current.findIndex((existing) => this.amenityKey(existing) === key);
+                if (index >= 0) {
+                    current.splice(index, 1);
+                    keys.delete(key);
+                }
+            }
+        });
+
+        this.websiteForm.website_amenities = current;
+        this.customAmenityError = '';
     },
 
     filteredAmenityCategories() {
@@ -7275,6 +7317,20 @@ Alpine.data('settingsPage', (config) => ({
         });
     },
 
+    applyProfileCompletion(completion) {
+        const pct = Math.max(0, Math.min(100, Number(completion?.pct ?? 0)));
+        document.querySelectorAll('[data-profile-completion-pct]').forEach((el) => {
+            el.textContent = `${pct}%`;
+        });
+        document.querySelectorAll('[data-profile-completion-fill]').forEach((el) => {
+            el.style.width = `${pct}%`;
+        });
+        document.querySelectorAll('[data-profile-completion-track]').forEach((el) => {
+            el.setAttribute('aria-valuenow', String(pct));
+            el.setAttribute('aria-label', `Profile completion ${pct} percent`);
+        });
+    },
+
     async saveWebsiteSettings() {
         if (! this.websiteUpdateUrl || this.websiteSaving) {
             return;
@@ -7328,6 +7384,10 @@ Alpine.data('settingsPage', (config) => ({
                 }
                 this.normalizeWebsiteAmenities();
                 this.normalizeWebsiteGallery();
+            }
+
+            if (response.data.profile_completion) {
+                this.applyProfileCompletion(response.data.profile_completion);
             }
 
             this.websiteLogoFile = null;
