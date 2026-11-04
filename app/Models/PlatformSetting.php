@@ -32,6 +32,7 @@ class PlatformSetting extends Model
         'website_amenities',
         'website_social_links',
         'website_whatsapp',
+        'website_address',
         'website_logo_path',
         'website_gallery',
         'email_welcome_enabled',

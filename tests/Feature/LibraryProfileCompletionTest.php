@@ -33,10 +33,12 @@ class LibraryProfileCompletionTest extends TestCase
         $this->actingAs($admin)
             ->postJson(route('settings.website.update'), [
                 'website_amenities' => ['Wi-Fi', 'Reading Room'],
+                'website_address' => '12 MG Road, Hisar, Haryana 125001',
             ])
             ->assertOk()
             ->assertJsonPath('profile_completion.pct', 25)
-            ->assertJsonPath('profile_completion.complete', false);
+            ->assertJsonPath('profile_completion.complete', false)
+            ->assertJsonPath('website.website_address', '12 MG Road, Hisar, Haryana 125001');
     }
 
     public function test_platform_admin_can_preview_website_while_logged_in(): void

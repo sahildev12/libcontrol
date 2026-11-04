@@ -6363,6 +6363,7 @@ Alpine.data('settingsPage', (config) => ({
         website_tagline: config.websiteSettings?.website_tagline || '',
         website_hero_title: config.websiteSettings?.website_hero_title || '',
         website_about: config.websiteSettings?.website_about || '',
+        website_address: config.websiteSettings?.website_address || '',
         website_amenities: Array.isArray(config.websiteSettings?.website_amenities) ? [...config.websiteSettings.website_amenities] : [],
         website_social_links: {
             facebook: config.websiteSettings?.website_social_links?.facebook || '',
@@ -7350,6 +7351,7 @@ Alpine.data('settingsPage', (config) => ({
             data.append('website_tagline', this.websiteForm.website_tagline || '');
             data.append('website_hero_title', this.websiteForm.website_hero_title || '');
             data.append('website_about', this.websiteForm.website_about || '');
+            data.append('website_address', this.websiteForm.website_address || '');
             data.append('website_whatsapp', this.websiteForm.website_whatsapp || '');
             (this.websiteForm.website_amenities || [])
                 .map((amenity) => String(amenity || '').trim())

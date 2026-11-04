@@ -53,6 +53,19 @@
             </div>
 
             <div>
+                <label for="website-address" class="block text-sm font-medium text-gray-700">Library address</label>
+                <textarea
+                    id="website-address"
+                    x-model="websiteForm.website_address"
+                    rows="3"
+                    maxlength="1000"
+                    placeholder="Street, area, city, PIN"
+                    class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                ></textarea>
+                <p class="mt-1 text-xs text-gray-500">Shown on your public website contact section and used for profile completion.</p>
+            </div>
+
+            <div>
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Amenities</label>
@@ -123,29 +136,17 @@
                                         x-text="allAmenitiesSelectedInCategory(category) ? 'Clear section' : 'Select all'"
                                     ></button>
                                 </div>
-                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <div class="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
                                     <template x-for="item in category.items" :key="category.key + '-' + item">
-                                        <button
-                                            type="button"
-                                            role="checkbox"
-                                            :aria-checked="isAmenitySelected(item)"
-                                            @click="toggleAmenity(item)"
-                                            @keydown.enter.prevent="toggleAmenity(item)"
-                                            @keydown.space.prevent="toggleAmenity(item)"
-                                            class="flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            :class="isAmenitySelected(item)
-                                                ? 'border-indigo-600 bg-indigo-50 text-indigo-950'
-                                                : 'border-gray-200 bg-white text-gray-800 hover:border-gray-300'"
-                                        >
-                                            <span
-                                                class="inline-flex size-4 shrink-0 items-center justify-center rounded border"
-                                                :class="isAmenitySelected(item) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white'"
-                                                aria-hidden="true"
+                                        <label class="flex cursor-pointer items-start gap-2.5 py-1.5 text-sm text-gray-800">
+                                            <input
+                                                type="checkbox"
+                                                class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                :checked="isAmenitySelected(item)"
+                                                @change="toggleAmenity(item)"
                                             >
-                                                <svg x-show="isAmenitySelected(item)" class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                            </span>
                                             <span class="leading-snug" x-text="item"></span>
-                                        </button>
+                                        </label>
                                     </template>
                                 </div>
                             </div>

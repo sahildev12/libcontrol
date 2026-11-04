@@ -52,6 +52,7 @@ class LibraryWebsiteController extends Controller
             'website_tagline' => ['nullable', 'string', 'max:255'],
             'website_hero_title' => ['nullable', 'string', 'max:255'],
             'website_about' => ['nullable', 'string', 'max:5000'],
+            'website_address' => ['nullable', 'string', 'max:1000'],
             'website_amenities' => ['nullable', 'array'],
             'website_amenities.*' => ['nullable', 'string', 'max:120'],
             ...LibraryWebsiteService::contactRules(),
@@ -69,6 +70,11 @@ class LibraryWebsiteController extends Controller
         if (array_key_exists('display_name', $data)) {
             $name = trim((string) ($data['display_name'] ?? ''));
             $data['display_name'] = $name !== '' ? $name : null;
+        }
+
+        if (array_key_exists('website_address', $data)) {
+            $address = trim((string) ($data['website_address'] ?? ''));
+            $data['website_address'] = $address !== '' ? $address : null;
         }
 
         if (array_key_exists('website_amenities', $data)) {

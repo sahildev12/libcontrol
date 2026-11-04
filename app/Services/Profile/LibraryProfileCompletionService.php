@@ -66,21 +66,28 @@ class LibraryProfileCompletionService
         $hasLogo = filled($settings->logo_path)
             || filled($settings->simple_logo_path)
             || filled($settings->website_logo_path);
+        $hasAddress = filled($settings->website_address);
 
-        $branchOk = false;
+        $hasContact = filled($settings->website_whatsapp);
         if ($branchIds !== [] && Schema::hasTable('branches')) {
-            $branchOk = Branch::query()
-                ->whereIn('id', $branchIds)
-                ->where(function ($q) {
-                    $q->whereNotNull('phone')->where('phone', '!=', '')
-                        ->orWhere(function ($q2) {
-                            $q2->whereNotNull('address')->where('address', '!=', '');
-                        });
-                })
-                ->exists();
+            if (! $hasAddress) {
+                $hasAddress = Branch::query()
+                    ->whereIn('id', $branchIds)
+                    ->whereNotNull('address')
+                    ->where('address', '!=', '')
+                    ->exists();
+            }
+
+            if (! $hasContact) {
+                $hasContact = Branch::query()
+                    ->whereIn('id', $branchIds)
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+                    ->exists();
+            }
         }
 
-        $ok = $hasName && $hasLogo && $branchOk;
+        $ok = $hasName && $hasLogo && $hasAddress && $hasContact;
         $missing = [];
         if (! $hasName) {
             $missing[] = 'library name';
@@ -88,8 +95,11 @@ class LibraryProfileCompletionService
         if (! $hasLogo) {
             $missing[] = 'logo';
         }
-        if (! $branchOk) {
-            $missing[] = 'address or contact';
+        if (! $hasAddress) {
+            $missing[] = 'address';
+        }
+        if (! $hasContact) {
+            $missing[] = 'contact';
         }
 
         return $this->item(

@@ -169,7 +169,7 @@ class LibraryWebsiteService
             'email' => $config['email'] ?? '',
             'whatsapp' => $whatsapp,
             'whatsapp_url' => $this->whatsappUrl($whatsapp),
-            'address' => $config['address'] ?? [],
+            'address' => $this->addressLines($settings, $this->isDemoLibraryWebsite() ? ($config['address'] ?? []) : []),
             'opening_hours' => $config['opening_hours'] ?? '',
             'map_embed_url' => $config['map_embed_url'] ?? '',
             'map_directions_url' => $config['map_directions_url'] ?? '',
@@ -220,6 +220,7 @@ class LibraryWebsiteService
             'website_tagline' => $settings->website_tagline,
             'website_hero_title' => $settings->website_hero_title,
             'website_about' => $settings->website_about,
+            'website_address' => $settings->website_address,
             'website_amenities' => $this->normalizeAmenities($settings->website_amenities),
             'website_social_links' => $this->normalizeSocialLinks($settings->website_social_links),
             'website_whatsapp' => $settings->website_whatsapp,
@@ -229,6 +230,56 @@ class LibraryWebsiteService
             'preview_url' => \Illuminate\Support\Facades\Route::has('website.preview')
                 ? route('website.preview')
                 : route('home'),
+        ];
+    }
+
+    /**
+     * @param  array{line1?: string, line2?: string, line3?: string}  $fallback
+     * @return array{line1: string, line2: string, line3: string}
+     */
+    public function addressLines(PlatformSetting $settings, array $fallback = []): array
+    {
+        $raw = trim((string) ($settings->website_address ?? ''));
+
+        if ($raw === '') {
+            $branchAddress = \App\Models\Branch::query()
+                ->whereNotNull('address')
+                ->where('address', '!=', '')
+                ->orderBy('id')
+                ->value('address');
+            $raw = trim((string) ($branchAddress ?? ''));
+        }
+
+        if ($raw === '') {
+            return [
+                'line1' => (string) ($fallback['line1'] ?? ''),
+                'line2' => (string) ($fallback['line2'] ?? ''),
+                'line3' => (string) ($fallback['line3'] ?? ''),
+            ];
+        }
+
+        $parts = preg_split('/\r\n|\r|\n|,/', $raw) ?: [];
+        $parts = array_values(array_filter(array_map(
+            static fn ($part) => trim((string) $part),
+            $parts,
+        ), static fn ($part) => $part !== ''));
+
+        if ($parts === []) {
+            return ['line1' => $raw, 'line2' => '', 'line3' => ''];
+        }
+
+        if (count($parts) === 1) {
+            return ['line1' => $parts[0], 'line2' => '', 'line3' => ''];
+        }
+
+        if (count($parts) === 2) {
+            return ['line1' => $parts[0], 'line2' => $parts[1], 'line3' => ''];
+        }
+
+        return [
+            'line1' => $parts[0],
+            'line2' => $parts[1],
+            'line3' => implode(', ', array_slice($parts, 2)),
         ];
     }
 
