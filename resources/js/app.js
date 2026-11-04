@@ -1563,18 +1563,18 @@ function visibleOnTrialMap(seat) {
 }
 
 function seatTileClasses(seat) {
-    const base = 'relative flex h-[64px] w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1 text-center shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400';
+    const base = 'lc-seat-tile relative flex h-[64px] w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1 text-center focus:outline-none focus:ring-2 focus:ring-indigo-400';
     const status = displaySeatStatus(seat);
 
     return {
-        available: `${base} bg-[#E5E7EB] text-gray-700 hover:bg-gray-300`,
-        occupied: `${base} bg-[#3a995d] text-white hover:brightness-95`,
-        occupied_custom: `${base} bg-[#6366F1] text-white hover:bg-indigo-600`,
-        expiring_soon: `${base} bg-[#ebb862] text-amber-950 hover:brightness-95`,
-        expired: `${base} bg-[#c15858] text-white hover:brightness-95`,
-        on_trial: `${base} bg-[#6366F1] text-white hover:bg-indigo-600`,
-        cancelled: `${base} bg-[#E5E7EB] text-gray-600 opacity-70`,
-    }[status] || `${base} bg-white text-gray-700`;
+        available: `${base} lc-seat-tile--available`,
+        occupied: `${base} lc-seat-tile--occupied`,
+        occupied_custom: `${base} lc-seat-tile--custom`,
+        expiring_soon: `${base} lc-seat-tile--expiring`,
+        expired: `${base} lc-seat-tile--expired`,
+        on_trial: `${base} lc-seat-tile--custom`,
+        cancelled: `${base} lc-seat-tile--available opacity-70`,
+    }[status] || `${base} lc-seat-tile--available`;
 }
 
 function seatStatusLabel(status) {

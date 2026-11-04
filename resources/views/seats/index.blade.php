@@ -112,7 +112,6 @@
                                             type="button"
                                             @click="openSeat(seat); cancelSeatHover(true)"
                                             :class="seatClasses(seat)"
-                                            style="border: 1px solid lightgray;"
                                         >
                                             <span
                                                 x-show="showsTrialDot(seat)"

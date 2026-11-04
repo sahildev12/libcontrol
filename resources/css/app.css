@@ -577,6 +577,49 @@
     background: linear-gradient(#6ee7b7, #10b981);
     color: #fff;
 }
+
+/* Seat map tiles — same raised button look for every status color */
+.lc-seat-tile {
+    border: 0 !important;
+    border-radius: 12px !important;
+    font-weight: 700;
+    box-shadow:
+        inset 0 1px 0 #ffffff59,
+        inset 0 -2px 0 #0003,
+        0 1px 2px #0006;
+    transition: background 0.2s ease, box-shadow 0.15s ease, translate 0.08s ease, filter 0.15s ease;
+}
+.lc-seat-tile:hover {
+    filter: brightness(1.05);
+}
+.lc-seat-tile:active {
+    translate: 0 1px;
+    box-shadow: inset 0 2px 4px #0004;
+}
+.lc-seat-tile--available {
+    background: linear-gradient(#f3f4f6, #d1d5db);
+    color: #374151;
+}
+.lc-seat-tile--occupied {
+    background: linear-gradient(#4caf75, #2f7d4c);
+    color: #fff;
+}
+.lc-seat-tile--custom {
+    background: linear-gradient(#4f9cf9, #2563eb);
+    color: #fff;
+}
+.lc-seat-tile--custom:hover {
+    background: linear-gradient(#6aafff, #3b82f6);
+}
+.lc-seat-tile--expiring {
+    background: linear-gradient(#f0c878, #d9a13a);
+    color: #451a03;
+}
+.lc-seat-tile--expired {
+    background: linear-gradient(#d97878, #b04545);
+    color: #fff;
+}
+
 /* Keep explicit website CTA classes intact under the button-test theme */
 .lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn,
 .lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-web-btn:hover,
@@ -646,12 +689,12 @@
         0 1px 2px #0000001f;
 }
 
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-600']:not(.lc-page-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-500']:not(.lc-page-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-brand-blue']:not(.lc-page-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-violet-600']:not(.lc-page-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-purple-600']:not(.lc-page-btn) {
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn):not(.lc-seat-tile),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-600']:not(.lc-page-btn):not(.lc-seat-tile),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-500']:not(.lc-page-btn):not(.lc-seat-tile),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-brand-blue']:not(.lc-page-btn):not(.lc-seat-tile),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-violet-600']:not(.lc-page-btn):not(.lc-seat-tile),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-purple-600']:not(.lc-page-btn):not(.lc-seat-tile) {
     border: 0 !important;
     border-radius: 12px !important;
     background: var(--lc-web-btn-blue) !important;
@@ -662,14 +705,14 @@
     transition: background 0.2s ease, box-shadow 0.15s ease, translate 0.08s ease, color 0.2s ease !important;
 }
 
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-600']:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-500']:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-brand-blue']:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='hover:bg-indigo-700']:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='hover:bg-brand-navy']:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-violet-600']:not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-purple-600']:not(.lc-page-btn):hover {
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-600']:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-indigo-500']:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-brand-blue']:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='hover:bg-indigo-700']:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='hover:bg-brand-navy']:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-violet-600']:not(.lc-page-btn):not(.lc-seat-tile):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button'])[class*='bg-purple-600']:not(.lc-page-btn):not(.lc-seat-tile):hover {
     background: var(--lc-web-btn-blue-hover) !important;
     color: #fff !important;
     box-shadow: var(--lc-web-btn-shadow) !important;
