@@ -10,10 +10,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/library-website.css', 'resources/js/library-website.js'])
-</head>
-<body class="library-website">
     @if (! empty($isPreview))
-        <div class="sticky top-0 z-[60] border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
+        <style>
+            .lw-is-preview {
+                --lw-preview-h: 3rem;
+            }
+            .lw-is-preview [data-lw-header] {
+                top: var(--lw-preview-h);
+            }
+            .lw-is-preview #home {
+                padding-top: calc(72px + var(--lw-preview-h)) !important;
+            }
+        </style>
+    @endif
+</head>
+<body class="library-website{{ ! empty($isPreview) ? ' lw-is-preview' : '' }}">
+    @if (! empty($isPreview))
+        <div data-lw-preview-banner class="sticky top-0 z-[60] border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
             <strong>Preview mode</strong>
             — only you can see this while logged in.
             @if (empty($websiteEnabled))
@@ -30,5 +43,18 @@
         </button>
         <img data-lw-lightbox-image src="" alt="" class="max-h-[85vh] max-w-5xl rounded-2xl object-contain shadow-2xl">
     </div>
+    @if (! empty($isPreview))
+        <script>
+            (function () {
+                var banner = document.querySelector('[data-lw-preview-banner]');
+                if (! banner) return;
+                var setHeight = function () {
+                    document.documentElement.style.setProperty('--lw-preview-h', banner.offsetHeight + 'px');
+                };
+                setHeight();
+                window.addEventListener('resize', setHeight);
+            })();
+        </script>
+    @endif
 </body>
 </html>
