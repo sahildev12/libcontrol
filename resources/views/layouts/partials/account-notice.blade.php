@@ -34,7 +34,9 @@
             $daysLeft = max(1, (int) ceil(now()->diffInHours($trialTenant->trial_ends_at) / 24));
             $notice = [
                 'urgent' => false,
-                'dismissible' => false,
+                'dismissible' => true,
+                'dismiss_mode' => 'session',
+                'dismiss_key' => 'lc_trial_notice_dismissed',
                 'title' => 'Free trial: '.$daysLeft.' '.($daysLeft === 1 ? 'day' : 'days').' left',
                 'text' => $ownerView ? 'Upgrade any time to keep your library after the trial.' : null,
                 'action' => $upgrade,
@@ -89,8 +91,19 @@
 
 @if ($notice)
     <div
-        x-data="{ open: true, close() { this.open = false; window.axios.post(@js(route('plan-limit.dismiss'))).catch(() => {}); } }"
+        x-data="{
+            open: @js(($notice['dismiss_mode'] ?? '') !== 'session') || (typeof sessionStorage === 'undefined' || !sessionStorage.getItem(@js($notice['dismiss_key'] ?? 'lc_notice_dismissed'))),
+            close() {
+                this.open = false;
+                if (@js(($notice['dismiss_mode'] ?? '') === 'session')) {
+                    try { sessionStorage.setItem(@js($notice['dismiss_key'] ?? 'lc_notice_dismissed'), '1'); } catch (e) {}
+                    return;
+                }
+                window.axios.post(@js(route('plan-limit.dismiss'))).catch(() => {});
+            },
+        }"
         x-show="open"
+        x-cloak
         class="flex items-center gap-3 shadow-sm"
         style="background-color:#082a67;border-radius:14px;padding:12px 14px;{{ $notice['urgent'] ? 'box-shadow:inset 4px 0 0 #f87171;' : '' }}"
         role="alert"

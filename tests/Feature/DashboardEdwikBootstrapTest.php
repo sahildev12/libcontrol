@@ -28,6 +28,9 @@ class DashboardEdwikBootstrapTest extends TestCase
             ->assertSee('lc-ai-banner', false)
             ->assertSee('Create your first branch', false)
             ->assertSee('Create Branch', false)
-            ->assertSee(route('branch.index'), false);
+            ->assertSee(route('branch.index'), false)
+            ->assertSee('Add your Instagram page', false)
+            ->assertSee('lc-ai-banner__badge--locked', false)
+            ->assertDontSee('Dismiss recommendations banner', false);
     }
 }

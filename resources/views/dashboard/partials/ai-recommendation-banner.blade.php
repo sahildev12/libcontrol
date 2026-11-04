@@ -12,9 +12,11 @@
     $rawUnlocked = $recommendations['unlocked'] ?? [];
     $rawLocked = $recommendations['locked'] ?? [];
     $pendingTotal = count($rawUnlocked) + count($rawLocked);
+    $catalog = config('growth.recommendations.items', []);
+    $isBootstrap = (bool) ($combinedGrowth['bootstrap'] ?? false);
 
     $unlocked = collect($rawUnlocked)
-        ->take($freeLimit)
+        ->when(! $isBootstrap, fn ($items) => $items->take($freeLimit))
         ->map(function (array $item) use ($recsUrl, $packagesUrl, $hasPackage) {
             $effort = (string) ($item['effort'] ?? 'medium');
             $impact = match ($effort) {
@@ -42,12 +44,50 @@
                 'expert_service' => $hasPackage ? $expertService : null,
                 'hire_url' => $packagesUrl,
                 'is_premium' => false,
+                'is_locked' => false,
             ];
         })
         ->filter(fn (array $item) => $item['key'] !== '')
         ->values();
 
-    if (! $hasPackage) {
+    $lockedCards = collect($rawLocked)
+        ->map(function (array $item) use ($catalog, $isBootstrap) {
+            $key = (string) ($item['key'] ?? '');
+            $meta = is_array($catalog[$key] ?? null) ? $catalog[$key] : [];
+            $title = trim((string) ($item['title'] ?? $meta['title'] ?? ''));
+            $why = trim((string) ($item['why'] ?? $meta['why'] ?? ''));
+
+            if ($title === '') {
+                $title = 'Growth tip';
+            }
+            if ($why === '') {
+                $why = $isBootstrap
+                    ? 'Create a branch first to unlock this tip.'
+                    : 'Upgrade or complete earlier tips to unlock this recommendation.';
+            }
+
+            return [
+                'key' => $key !== '' ? 'locked_'.$key : '',
+                'title' => $title,
+                'why' => $why,
+                'effort' => (string) ($item['effort'] ?? $meta['effort'] ?? 'medium'),
+                'impact_label' => 'Locked',
+                'impact_class' => 'lc-ai-banner__badge--locked',
+                'gain' => (int) ($item['gain'] ?? 0),
+                'cta_label' => 'Locked',
+                'cta_url' => '#',
+                'show_hire' => false,
+                'hire_mode' => 'packages',
+                'expert_service' => null,
+                'hire_url' => '#',
+                'is_premium' => false,
+                'is_locked' => true,
+            ];
+        })
+        ->filter(fn (array $item) => $item['key'] !== '')
+        ->values();
+
+    if (! $hasPackage && ! $isBootstrap) {
         $unlocked->push([
             'key' => 'upgrade_premium_more_recs',
             'title' => 'Upgrade to Premium to see more recommendations',
@@ -63,10 +103,11 @@
             'expert_service' => null,
             'hire_url' => $packagesUrl,
             'is_premium' => true,
+            'is_locked' => false,
         ]);
     }
 
-    $unlocked = $unlocked->all();
+    $unlocked = $unlocked->concat($lockedCards)->values()->all();
     $botUrl = asset('logo/growth/ai-assistant-bot.png').'?v=3';
     $botVideoMp4Url = asset('logo/growth/ai-assistant-bot-spin.mp4').'?v=21';
 @endphp
@@ -408,6 +449,14 @@
     .lc-ai-banner__badge--medium { background: #fef3c7; color: #92400e; }
     .lc-ai-banner__badge--quick { background: #dcfce7; color: #166534; }
     .lc-ai-banner__badge--premium { background: var(--lc-ai-yellow); color: var(--lc-ai-navy); }
+    .lc-ai-banner__badge--locked { background: #e2e8f0; color: #475569; }
+    .lc-ai-banner__cta--locked {
+        background: #e2e8f0 !important;
+        color: #64748b !important;
+        cursor: default;
+        pointer-events: none;
+    }
+    .lc-ai-banner__card.is-locked { opacity: 0.92; }
     .lc-ai-banner__why {
         margin: 4px 0 0;
         font-size: 0.8125rem;
@@ -589,12 +638,6 @@
     aria-roledescription="carousel"
     aria-label="AI growth recommendations"
 >
-    <button type="button" class="lc-ai-banner__dismiss" @click="dismissBanner()" aria-label="Dismiss recommendations banner">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
-        </svg>
-    </button>
-
     <div class="lc-ai-banner__bot-wrap" aria-hidden="true">
         <div class="lc-ai-banner__bot-frame">
             <canvas
@@ -682,10 +725,13 @@
                         :data-depth="slot.depth"
                         :aria-hidden="slot.depth !== 0 || advancing || reversing"
                     >
-                        <div class="lc-ai-banner__card">
+                        <div class="lc-ai-banner__card" :class="{ 'is-locked': slot.item.is_locked }">
                             <span class="lc-ai-banner__icon" aria-hidden="true">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg x-show="!slot.item.is_locked" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
+                                </svg>
+                                <svg x-show="slot.item.is_locked" x-cloak fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V8a3 3 0 10-6 0v3m-1 0h8a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2z"/>
                                 </svg>
                             </span>
                             <div class="lc-ai-banner__copy">
@@ -694,18 +740,28 @@
                                     <span class="lc-ai-banner__badge" :class="slot.item.impact_class" x-text="slot.item.impact_label"></span>
                                 </div>
                                 <p class="lc-ai-banner__why" x-text="slot.item.why"></p>
-                                <p class="lc-ai-banner__meta" x-show="slot.item.gain > 0" x-cloak>
+                                <p class="lc-ai-banner__meta" x-show="slot.item.gain > 0 && !slot.item.is_locked" x-cloak>
                                     <span x-text="'+' + slot.item.gain + ' growth pts'"></span>
                                 </p>
                             </div>
                             <div class="lc-ai-banner__actions">
-                                <a class="lc-ai-banner__cta" :href="slot.item.cta_url">
-                                    <span x-text="slot.item.cta_label || 'View Details'"></span>
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                                    </svg>
-                                </a>
-                                <template x-if="slot.item.show_hire">
+                                <template x-if="!slot.item.is_locked">
+                                    <a class="lc-ai-banner__cta" :href="slot.item.cta_url">
+                                        <span x-text="slot.item.cta_label || 'View Details'"></span>
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                                        </svg>
+                                    </a>
+                                </template>
+                                <template x-if="slot.item.is_locked">
+                                    <span class="lc-ai-banner__cta lc-ai-banner__cta--locked" aria-disabled="true">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V8a3 3 0 10-6 0v3m-1 0h8a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2z"/>
+                                        </svg>
+                                        <span>Locked</span>
+                                    </span>
+                                </template>
+                                <template x-if="slot.item.show_hire && !slot.item.is_locked">
                                     <button
                                         type="button"
                                         class="lc-ai-banner__hire"

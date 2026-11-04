@@ -72,6 +72,22 @@ class LibraryCombinedGrowthScoreService
             ? route('branch.index')
             : '#';
 
+        $catalog = config('growth.recommendations.items', []);
+        $locked = [];
+        foreach ($catalog as $key => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $locked[] = [
+                'key' => (string) $key,
+                'title' => (string) ($item['title'] ?? 'Growth tip'),
+                'why' => (string) ($item['why'] ?? 'Create a branch to unlock this tip.'),
+                'effort' => (string) ($item['effort'] ?? 'medium'),
+                'gain' => 0,
+            ];
+        }
+
         return [
             'growth_score' => 0,
             'action_progress' => null,
@@ -92,11 +108,11 @@ class LibraryCombinedGrowthScoreService
                     'expert_service' => null,
                     'expert_available' => false,
                 ]],
-                'locked' => [],
+                'locked' => $locked,
                 'locked_gain' => 0,
                 'completed' => [],
                 'completed_count' => 0,
-                'total' => 1,
+                'total' => 1 + count($locked),
             ],
             'action_pct' => 0,
             'business_pct' => 0,
