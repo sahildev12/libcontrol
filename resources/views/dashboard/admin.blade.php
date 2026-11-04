@@ -67,7 +67,7 @@
         <div class="flex min-w-0 flex-1 flex-col gap-6">
             @include('dashboard.partials.admin-kpi-stats')
 
-            @if (config('growth.enabled', true) && ! empty($growthScore) && ! empty($combinedGrowth))
+            @if (config('growth.enabled', true) && ! empty($growthScore) && ! empty($combinedGrowth) && empty($combinedGrowth['bootstrap']))
                 @include('dashboard.partials.growth-score-cards', ['profileCompletionScore' => null])
             @endif
 

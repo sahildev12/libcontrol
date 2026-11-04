@@ -68,6 +68,9 @@ class DashboardController extends Controller
                     $growthScore = $combinedGrowth['action_progress'];
                     $businessPerformance = $combinedGrowth['business_performance'];
                     $growthActions = config('growth.actions', []);
+                } else {
+                    // Still show Edwik with a simple "create a branch" tip.
+                    $combinedGrowth = $combinedGrowthScore->forEmptyLibrary();
                 }
             }
 

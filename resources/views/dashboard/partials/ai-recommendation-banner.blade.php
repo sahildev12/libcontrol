@@ -24,6 +24,8 @@
             };
             $expertService = $item['expert_service'] ?? null;
             $expertAvailable = (bool) ($item['expert_available'] ?? filled($expertService));
+            $ctaUrl = trim((string) ($item['cta_url'] ?? ''));
+            $ctaLabel = trim((string) ($item['cta_label'] ?? ''));
 
             return [
                 'key' => (string) ($item['key'] ?? ''),
@@ -33,8 +35,8 @@
                 'impact_label' => $impact['label'],
                 'impact_class' => $impact['class'],
                 'gain' => (int) ($item['gain'] ?? 0),
-                'cta_label' => 'View Details',
-                'cta_url' => $recsUrl,
+                'cta_label' => $ctaLabel !== '' ? $ctaLabel : 'View Details',
+                'cta_url' => $ctaUrl !== '' ? $ctaUrl : $recsUrl,
                 'show_hire' => $expertAvailable,
                 'hire_mode' => $hasPackage && filled($expertService) ? 'request' : 'packages',
                 'expert_service' => $hasPackage ? $expertService : null,
