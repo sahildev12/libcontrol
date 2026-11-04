@@ -45,7 +45,7 @@ class TrialSignupController extends Controller implements HasMiddleware
     {
         return view('trials.signup', [
             'baseDomain' => (string) config('libcontrol.tenancy.base_domain'),
-            'trialDays' => (int) config('libcontrol.trials.days', 14),
+            'trialDays' => (int) config('libcontrol.trials.days', 15),
             'socialProviders' => SocialLogin::providers(),
             'social' => TrialSocialAuthController::pending($request),
         ]);

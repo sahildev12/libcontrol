@@ -79,7 +79,7 @@ class TrialProvisioningTest extends TestCase
         $this->assertSame(['sunrise'], $this->hosting->subdomains);
         $this->assertNull($tenant->owner_password_hash);
         $this->assertNotNull($tenant->provisioned_at);
-        $this->assertTrue($tenant->trial_ends_at->between(now()->addDays(13), now()->addDays(15)));
+        $this->assertTrue($tenant->trial_ends_at->between(now()->addDays(14), now()->addDays(16)));
 
         $this->app->make(TenantConnectionManager::class)->runOnTenant($tenant, function () {
             $user = User::query()->where('email', 'asha@example.com')->firstOrFail();

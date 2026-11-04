@@ -7,7 +7,7 @@ LibControl is an affordable, professional library management system with AI tool
 ## Product
 
 - [Home](https://libcontrol.in/): Main product site with features, modules, pricing, and growth services
-- [Free trial](https://libcontrol.in/try): Start a free 14-day trial of LibControl
+- [Free trial](https://libcontrol.in/try): Start a free 15-day trial of LibControl
 - [Live demo](https://demo.libcontrol.in/admin/login): Explore the LibControl admin demo online
 - [Documentation](https://libcontrol.in/documentation.html): Product guides and how-to documentation
 - [Support articles](https://libcontrol.in/support-articles.html): Help centre articles for library owners

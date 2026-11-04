@@ -114,7 +114,7 @@ class SubscriptionTrialService
         }
 
         if (! $trialStart && $trialEnd) {
-            $trialStart = $trialEnd->copy()->subDays(14);
+            $trialStart = $trialEnd->copy()->subDays((int) config('libcontrol.trials.days', 15));
         }
 
         $ctaUrl = url('/billing');
@@ -151,7 +151,7 @@ class SubscriptionTrialService
                 continue;
             }
 
-            $trialStart = $trialEnd->copy()->subDays(14);
+            $trialStart = $trialEnd->copy()->subDays((int) config('libcontrol.trials.days', 15));
             $email = $support;
             if (! $email) {
                 continue;

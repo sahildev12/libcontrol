@@ -120,7 +120,7 @@ return [
     */
     'trials' => [
         'enabled' => filter_var(env('LIBCONTROL_TRIALS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
-        'days' => (int) env('LIBCONTROL_TRIAL_DAYS', 14),
+        'days' => (int) env('LIBCONTROL_TRIAL_DAYS', 15),
         'plan_tier' => env('LIBCONTROL_TRIAL_PLAN_TIER', 'pro'),
         'hosting_driver' => env('LIBCONTROL_TRIAL_HOSTING_DRIVER', 'local'),
         // Hostinger account limit is 300 databases; keep headroom for non-trial sites.

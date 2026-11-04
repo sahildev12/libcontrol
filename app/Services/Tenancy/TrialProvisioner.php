@@ -129,7 +129,7 @@ class TrialProvisioner
             'database_name' => '',
             'plan_tier' => (string) config('libcontrol.trials.plan_tier', 'pro'),
             'is_trial' => true,
-            'trial_ends_at' => now()->addDays((int) config('libcontrol.trials.days', 14)),
+            'trial_ends_at' => now()->addDays((int) config('libcontrol.trials.days', 15)),
             'active' => false,
             'status' => Tenant::STATUS_PENDING,
             'signup_ip' => $data['ip'] ?? null,
