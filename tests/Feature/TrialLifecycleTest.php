@@ -130,7 +130,7 @@ class TrialLifecycleTest extends TestCase
         $tenant = $this->readyTrial();
         app(TrialLifecycle::class)->markVerified($tenant);
 
-        $this->travel(15)->days();
+        $this->travel(16)->days();
 
         $this->get(self::LIBRARY.'/profile-completion')->assertOk()->assertSee('Your free trial has ended');
         $this->postJson(self::LIBRARY.'/branch', ['name' => 'Second'])->assertStatus(423);
@@ -150,7 +150,7 @@ class TrialLifecycleTest extends TestCase
         $database = $tenant->database_name;
         Mail::fake();
 
-        $this->travel(11)->days();
+        $this->travel(12)->days();
         $this->travel(12)->hours();
         $this->artisan('libcontrol:trial-lifecycle')->assertSuccessful();
         $this->artisan('libcontrol:trial-lifecycle')->assertSuccessful();
