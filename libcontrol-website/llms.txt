@@ -1,13 +1,14 @@
 # LibControl
 
-> Smart Library Growth System — library management and growth software for reading halls and study centres in India.
+> Best AI library management software for reading halls and study centres in India — free trial and online demo available.
 
-LibControl helps library owners fill seats, improve renewals, manage students and fees, run multi-branch operations, and grow with AI insights and marketing services. Operated and marketed by Katsindia.
+LibControl is an affordable, professional library management system with AI tools for seat tracking, fee management, student register, digital attendance, scheduling, multi-branch operations, mobile access, and business growth. Operated and marketed by Katsindia.
 
 ## Product
 
 - [Home](https://libcontrol.in/): Main product site with features, modules, pricing, and growth services
-- [Live demo](https://demo.libcontrol.in/admin/login): Explore the LibControl admin demo
+- [Free trial](https://libcontrol.in/try): Start a free 14-day trial of LibControl
+- [Live demo](https://demo.libcontrol.in/admin/login): Explore the LibControl admin demo online
 - [Documentation](https://libcontrol.in/documentation.html): Product guides and how-to documentation
 - [Support articles](https://libcontrol.in/support-articles.html): Help centre articles for library owners
 
@@ -33,7 +34,8 @@ LibControl helps library owners fill seats, improve renewals, manage students an
 - Phone / WhatsApp: +91 8076 105 181
 - Location: Hisar, Haryana, India
 - Hours: Mon – Sat, 9am to 6 PM
-- Pre-register: https://libcontrol.in/#contact
+- Free trial: https://libcontrol.in/try
+- Contact: https://libcontrol.in/#contact
 
 ## Social
 
