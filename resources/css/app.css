@@ -173,8 +173,8 @@
 
 .lc-theme .lc-kpi-card {
     border-color: rgb(255 255 255 / 0.1);
-    background: linear-gradient(135deg, var(--lc-navy) 0%, var(--lc-blue) 100%);
-    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow, 0 0 #0000),var(--tw-shadow);
+    background: linear-gradient(135deg, #082a67 0%, #0c3a8a 100%);
+    box-shadow: 0 1px 2px rgb(8 42 103 / 0.18);
 }
 
 .lc-kpi-card__icon {
@@ -221,7 +221,7 @@
 }
 
 .lc-theme .lc-kpi-card__value {
-    color: #a8c4ff;
+    color: #ffffff;
 }
 
 .lc-kpi-row--lg .lc-kpi-card {
@@ -524,7 +524,14 @@
 }
 
 .lc-theme .lc-btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-brand-blue/30 hover:text-brand-blue;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-brand-blue transition;
+    border: 0;
+    background: rgba(8, 42, 103, 0.06);
+    box-shadow: none;
+}
+.lc-theme .lc-btn-secondary:hover {
+    background: rgba(37, 99, 235, 0.12);
+    color: #082a67;
 }
 
 /* Website pricing CTA look (yellow / blue) — use on explicit marketing-style buttons */
@@ -596,9 +603,13 @@
     translate: 0 1px;
     box-shadow: inset 0 2px 4px #0004;
 }
+/* Vacant: same raised button chrome as colored seats */
 .lc-seat-tile--available {
     background: linear-gradient(#f3f4f6, #d1d5db);
     color: #374151;
+}
+.lc-seat-tile--available:hover {
+    background: linear-gradient(#fafafa, #c5cad3);
 }
 .lc-seat-tile--occupied {
     background: linear-gradient(#4caf75, #2f7d4c);
@@ -618,6 +629,44 @@
 .lc-seat-tile--expired {
     background: linear-gradient(#d97878, #b04545);
     color: #fff;
+}
+
+/* Hall filter chips — selected matches blue CTA; idle stays borderless */
+.lc-seat-hall-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 0 !important;
+    border-radius: 999px !important;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, translate 0.08s ease;
+}
+.lc-seat-hall-chip--idle {
+    background: rgba(8, 42, 103, 0.06);
+    color: #082a67;
+    box-shadow: none;
+}
+.lc-seat-hall-chip--idle:hover {
+    background: rgba(37, 99, 235, 0.12);
+    color: #082a67;
+}
+.lc-seat-hall-chip--active {
+    background: linear-gradient(#4f9cf9, #2563eb);
+    color: #fff;
+    box-shadow:
+        inset 0 1px 0 #ffffff59,
+        inset 0 -2px 0 #0003,
+        0 1px 2px #0006;
+}
+.lc-seat-hall-chip--active:hover {
+    background: linear-gradient(#6aafff, #3b82f6);
+    color: #fff;
+}
+.lc-seat-hall-chip--active:active {
+    translate: 0 1px;
+    box-shadow: inset 0 2px 4px #0004;
 }
 
 /* Keep explicit website CTA classes intact under the button-test theme */
@@ -677,16 +726,13 @@
     --lc-web-btn-blue-hover: linear-gradient(#6aafff, #3b82f6);
     --lc-web-btn-yellow: linear-gradient(#ffd84d, #f0b800);
     --lc-web-btn-yellow-hover: linear-gradient(#ffe066, #f5c000);
-    --lc-web-btn-outline: linear-gradient(#ffffff, #eef1f6);
-    --lc-web-btn-outline-hover: linear-gradient(#f8fafc, #e2e8f0);
+    --lc-web-btn-outline: rgba(8, 42, 103, 0.06);
+    --lc-web-btn-outline-hover: rgba(37, 99, 235, 0.12);
     --lc-web-btn-shadow:
         inset 0 1px 0 #ffffff59,
         inset 0 -2px 0 #0003,
         0 1px 2px #0006;
-    --lc-web-btn-shadow-outline:
-        inset 0 1px 0 #ffffffcc,
-        inset 0 -2px 0 #00000014,
-        0 1px 2px #0000001f;
+    --lc-web-btn-shadow-outline: none;
 }
 
 .lc-theme.lc-btn-website-test .lc-main :is(a, button, input[type='submit'], input[type='button']).lc-btn-primary:not(.lc-page-btn):not(.lc-seat-tile),
@@ -770,37 +816,50 @@
     scale: none !important;
 }
 
-.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-200']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-300']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn),
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn) {
-    border: 1.5px solid #062b70 !important;
+/* Seat hall chips / vacant tiles — keep soft theme styles (no navy outline) */
+.lc-theme.lc-btn-website-test .lc-main button.lc-seat-hall-chip,
+.lc-theme.lc-btn-website-test .lc-main button.lc-seat-hall-chip:hover,
+.lc-theme.lc-btn-website-test .lc-main button.lc-seat-hall-chip:active,
+.lc-theme.lc-btn-website-test .lc-main button.lc-seat-tile,
+.lc-theme.lc-btn-website-test .lc-main button.lc-seat-tile:hover,
+.lc-theme.lc-btn-website-test .lc-main button.lc-seat-tile:active {
+    border: 0 !important;
+    scale: none !important;
+    letter-spacing: normal !important;
+}
+
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-200']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):not([class*='size-']),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-300']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):not([class*='size-']),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip),
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip) {
+    border: 0 !important;
     border-radius: 12px !important;
     background: var(--lc-web-btn-outline) !important;
-    color: #062b70 !important;
+    color: #082a67 !important;
     font-weight: 700 !important;
-    box-shadow: var(--lc-web-btn-shadow-outline) !important;
+    box-shadow: none !important;
 }
 
-.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-200']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-300']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not([class*='size-']):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):hover,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):hover {
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-200']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):not([class*='size-']):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class~='bg-white'][class*='border-gray-300']:not(.lc-zoom-btn):not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):not([class*='size-']):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):hover,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):hover {
     background: var(--lc-web-btn-outline-hover) !important;
-    border-color: #062b70 !important;
-    color: #062b70 !important;
+    border: 0 !important;
+    color: #082a67 !important;
+    box-shadow: none !important;
 }
 
-.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):active,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):active,
-.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):active {
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-btn-secondary:not(.lc-icon-btn):not(.lc-page-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-200'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):active,
+.lc-theme.lc-btn-website-test .lc-main :is(a, button)[class*='border-gray-300'][class*='px-4'][class*='py-2']:not(.lc-field-trigger):not(.lc-icon-btn):not(.lc-page-btn):not(.lc-zoom-btn):not(.lc-seat-tile):not(.lc-seat-hall-chip):active {
     translate: 0 1px !important;
-    box-shadow: inset 0 2px 4px #0004 !important;
-    border: 1.5px solid #062b70 !important;
+    box-shadow: inset 0 1px 3px rgba(8, 42, 103, 0.12) !important;
+    border: 0 !important;
     background: var(--lc-web-btn-outline-hover) !important;
-    color: #062b70 !important;
+    color: #082a67 !important;
 }
 
 /* Form field triggers (e.g. student picker) — keep flat input look */
@@ -1038,6 +1097,39 @@
 .lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class~='bg-white']:hover,
 .lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class~='bg-white']:hover {
     background: #f9fafb !important;
+}
+
+/* Row action chips — keep soft faded borders (Edit indigo was forced to solid navy) */
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-indigo'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-indigo']:hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-indigo'],
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-indigo']:hover {
+    border: 1px solid rgb(99 102 241 / 0.28) !important;
+    background: rgb(99 102 241 / 0.08) !important;
+    color: #4338ca !important;
+    box-shadow: none !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-indigo']:hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-indigo']:hover {
+    background: rgb(99 102 241 / 0.12) !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-sky'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-sky']:hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-sky'],
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-sky']:hover {
+    border: 1px solid rgb(14 165 233 / 0.3) !important;
+    background: rgb(14 165 233 / 0.08) !important;
+    color: #0369a1 !important;
+    box-shadow: none !important;
+}
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-red'],
+.lc-theme.lc-btn-website-test .lc-main :is(a, button).lc-icon-btn[class*='border-red']:hover,
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-red'],
+.lc-theme.lc-btn-website-test .lc-main table tbody :is(a, button)[class*='border-red']:hover {
+    border: 1px solid rgb(239 68 68 / 0.28) !important;
+    background: rgb(239 68 68 / 0.08) !important;
+    color: #b91c1c !important;
+    box-shadow: none !important;
 }
 
 /* Don't restyle tiny icon / zoom controls (exclude pagination page numbers) */

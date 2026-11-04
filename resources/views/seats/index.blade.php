@@ -49,8 +49,8 @@
                 <button
                     type="button"
                     @click="setHall('all')"
-                    class="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
-                    :class="selectedHallId === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'"
+                    class="lc-seat-hall-chip"
+                    :class="selectedHallId === 'all' ? 'lc-seat-hall-chip--active' : 'lc-seat-hall-chip--idle'"
                 >
                     All Halls
                 </button>
@@ -58,8 +58,8 @@
                     <button
                         type="button"
                         @click="setHall(hall.id)"
-                        class="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
-                        :class="String(selectedHallId) === String(hall.id) ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'"
+                        class="lc-seat-hall-chip"
+                        :class="String(selectedHallId) === String(hall.id) ? 'lc-seat-hall-chip--active' : 'lc-seat-hall-chip--idle'"
                         x-text="hall.name"
                     ></button>
                 </template>
