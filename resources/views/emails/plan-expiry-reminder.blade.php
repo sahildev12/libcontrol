@@ -11,7 +11,8 @@ Your seat plan at **{{ $libraryName }}** will expire on **{{ $booking->plan_expi
 
 Please contact the library desk to renew your plan.
 
-Thanks,<br>
-{{ $libraryName }}<br>
-<span style="color: #6b7280;">{{ config('libcontrol.product.byline') }}</span>
+Thanks,  
+{{ $libraryName }}
+
+{{ config('libcontrol.product.byline') }}
 </x-mail::message>

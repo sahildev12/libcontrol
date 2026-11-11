@@ -8,16 +8,41 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\TrialSignupController;
+use App\Services\LoginBrandingService;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('branch/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('branch/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
-    Route::redirect('login', '/branch/login');
 
-    Route::get('admin/login', [AuthenticatedSessionController::class, 'create'])->name('admin.login');
-    Route::post('admin/login', [AuthenticatedSessionController::class, 'store'])->name('admin.login.store');
+    // /login always means branch login.
+    Route::get('login', function () {
+        return redirect('/branch/login');
+    })->middleware('redirect_signed_in_library')->name('trials.login');
+
+    Route::get('admin/login', function (Request $request, LoginBrandingService $branding) {
+        // Hub: library-owner login (email / Google / Facebook). Tenant: admin portal login.
+        if (config('libcontrol.tenancy.enabled') && ! TenantContext::isTenantRequest()) {
+            abort_unless(config('libcontrol.trials.enabled'), 404);
+
+            return app(TrialSignupController::class)->login();
+        }
+
+        return app(AuthenticatedSessionController::class)->create($request, $branding);
+    })->middleware('redirect_signed_in_library')->name('admin.login');
+
+    Route::post('admin/login', function (Request $request) {
+        if (config('libcontrol.tenancy.enabled') && ! TenantContext::isTenantRequest()) {
+            abort_unless(config('libcontrol.trials.enabled'), 404);
+
+            return app(TrialSignupController::class)->loginStore($request);
+        }
+
+        return app()->call([app(AuthenticatedSessionController::class), 'store']);
+    })->middleware('throttle:10,1')->name('admin.login.store');
 
     if (config('libcontrol.license_server.enabled')) {
         Route::get('developer/login', [AuthenticatedSessionController::class, 'create'])->name('developer.login');

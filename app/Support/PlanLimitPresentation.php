@@ -56,7 +56,7 @@ class PlanLimitPresentation
 
     public static function libcontrolPricingUrl(): string
     {
-        $companyUrl = rtrim((string) config('libcontrol.product.company_url', 'https://katsindia.com'), '/');
+        $companyUrl = rtrim((string) config('libcontrol.product.company_url', 'https://www.libcontrol.in'), '/');
 
         if (str_contains($companyUrl, 'libcontrol.in')) {
             return $companyUrl.'/#pricing';

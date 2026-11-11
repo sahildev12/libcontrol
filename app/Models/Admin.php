@@ -17,7 +17,18 @@ class Admin extends Model
     protected $fillable = [
         'user_id',
         'admin_type',
+        'tour_completed_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tour_completed_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {

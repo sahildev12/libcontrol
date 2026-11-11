@@ -11,7 +11,7 @@ return [
     'product' => [
         'name' => env('LIBCONTROL_PRODUCT_NAME', 'LibControl'),
         'company' => env('LIBCONTROL_COMPANY_NAME', 'Katsindia'),
-        'company_url' => env('LIBCONTROL_COMPANY_URL', 'https://katsindia.com'),
+        'company_url' => env('LIBCONTROL_COMPANY_URL', 'https://www.libcontrol.in'),
         'byline' => env('LIBCONTROL_PRODUCT_BYLINE', 'LibControl is a product by Katsindia'),
     ],
 

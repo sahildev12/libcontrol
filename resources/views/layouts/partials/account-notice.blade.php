@@ -8,7 +8,7 @@
     $trialTenant = TenantContext::current();
 
     if ($trialTenant?->is_trial && ! ($isDeveloperAdmin ?? false)) {
-        $upgrade = $ownerView ? ['label' => 'Upgrade now', 'url' => app(TrialLifecycle::class)->upgradeUrl($trialTenant), 'external' => true] : null;
+        $upgrade = $ownerView ? ['label' => 'Upgrade now', 'url' => app(TrialLifecycle::class)->upgradeUrl($trialTenant)] : null;
 
         if ($trialTenant->isReadOnly()) {
             $deletesAt = $trialTenant->deletesAt();

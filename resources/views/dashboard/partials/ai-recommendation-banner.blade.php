@@ -2,6 +2,8 @@
     $recommendations = $combinedGrowth['recommendations'] ?? [];
     $hasPackage = (bool) ($recommendations['has_package'] ?? false);
     $freeLimit = max(1, (int) ($recommendations['free_limit'] ?? config('growth.recommendations.free_limit', 3)));
+    $proBannerLimit = max($freeLimit, (int) ($recommendations['pro_banner_limit'] ?? config('growth.recommendations.pro_banner_limit', 8)));
+    $bannerLimit = $hasPackage ? $proBannerLimit : $freeLimit;
     $growthHubUrl = \Illuminate\Support\Facades\Route::has('growth.index') ? route('growth.index') : '#';
     $packagesUrl = $growthHubUrl !== '#' ? $growthHubUrl.'#packages' : '#';
     $recsUrl = $growthHubUrl !== '#' ? $growthHubUrl.'#recommendations' : '#';
@@ -13,10 +15,11 @@
     $rawLocked = $recommendations['locked'] ?? [];
     $pendingTotal = count($rawUnlocked) + count($rawLocked);
     $catalog = config('growth.recommendations.items', []);
+    $proCatalog = config('growth.recommendations.pro_items', []);
     $isBootstrap = (bool) ($combinedGrowth['bootstrap'] ?? false);
 
     $unlocked = collect($rawUnlocked)
-        ->when(! $isBootstrap, fn ($items) => $items->take($freeLimit))
+        ->when(! $isBootstrap, fn ($items) => $items->take($bannerLimit))
         ->map(function (array $item) use ($recsUrl, $packagesUrl, $hasPackage) {
             $effort = (string) ($item['effort'] ?? 'medium');
             $impact = match ($effort) {
@@ -51,9 +54,11 @@
         ->values();
 
     $lockedCards = collect($rawLocked)
-        ->map(function (array $item) use ($catalog, $isBootstrap) {
+        ->map(function (array $item) use ($catalog, $proCatalog, $isBootstrap) {
             $key = (string) ($item['key'] ?? '');
-            $meta = is_array($catalog[$key] ?? null) ? $catalog[$key] : [];
+            $meta = is_array($catalog[$key] ?? null)
+                ? $catalog[$key]
+                : (is_array($proCatalog[$key] ?? null) ? $proCatalog[$key] : []);
             $title = trim((string) ($item['title'] ?? $meta['title'] ?? ''));
             $why = trim((string) ($item['why'] ?? $meta['why'] ?? ''));
 

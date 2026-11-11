@@ -51,7 +51,145 @@ return [
     */
     'recommendations' => [
         'free_limit' => 3,
+        // How many tips the dashboard AI banner shows when a growth package is active.
+        'pro_banner_limit' => 8,
         'effort_order' => ['easy' => 0, 'medium' => 1, 'hard' => 2],
+        /*
+        | Pro-only tips (active growth package). Status comes from Business Performance
+        | factors — completing the DIY work raises Growth Score via the 60% BP mix.
+        | `min_score` = factor score (0–100) at/above which the tip is considered done.
+        | `gain` is a display hint for “+N pts”, not a second scoring ledger.
+        */
+        'pro_items' => [
+            'complete_profile' => [
+                'factor' => 'profile_completion',
+                'min_score' => 80,
+                'effort' => 'easy',
+                'gain' => 10,
+                'title' => 'Complete your library profile',
+                'why' => 'A fuller profile raises Business Performance and builds trust with students.',
+                'diy_steps' => [
+                    'Open Profile completion from the top bar or Settings.',
+                    'Add logo, address, hours, and contact details.',
+                    'Save — your Growth Score updates automatically.',
+                ],
+                'cta_label' => 'Complete profile',
+                'cta_route' => 'profile-completion.index',
+                'cta_route_fallback' => 'settings.index',
+                'expert_service' => null,
+            ],
+            'fill_seats' => [
+                'factor' => 'occupancy',
+                'min_score' => 70,
+                'effort' => 'medium',
+                'gain' => 15,
+                'title' => 'Fill more empty seats',
+                'why' => 'Occupancy is the biggest Business Performance factor — empty seats drag your Growth Score down.',
+                'diy_steps' => [
+                    'Open Seats and find vacant seats on the map.',
+                    'Assign waiting students or convert trials to paid plans.',
+                    'Run a promotion or WhatsApp offer to fill the rest.',
+                ],
+                'cta_label' => 'Open Seats',
+                'cta_route' => 'seats.index',
+                'expert_service' => 'whatsapp_marketing',
+            ],
+            'renew_plans' => [
+                'factor' => 'renewals',
+                'min_score' => 85,
+                'effort' => 'medium',
+                'gain' => 12,
+                'title' => 'Follow up expiring memberships',
+                'why' => 'Renewals keep revenue and retention score high before seats go empty.',
+                'diy_steps' => [
+                    'Open Fee Management and filter plans ending soon.',
+                    'Message those students with a renewal offer.',
+                    'Record the renewal payment when they continue.',
+                ],
+                'cta_label' => 'Open Fee Management',
+                'cta_route' => 'fees.index',
+                'expert_service' => 'whatsapp_marketing',
+            ],
+            'collect_fees' => [
+                'factor' => 'membership_payment',
+                'min_score' => 80,
+                'effort' => 'medium',
+                'gain' => 12,
+                'title' => 'Collect overdue fees',
+                'why' => 'Payment collection directly lifts Membership & Payment on your Growth Score.',
+                'diy_steps' => [
+                    'Open Fee Management and check overdue / partial plans.',
+                    'Collect dues and record each payment in LibControl.',
+                    'Follow up on remaining overdue accounts this week.',
+                ],
+                'cta_label' => 'Open Fee Management',
+                'cta_route' => 'fees.index',
+                'expert_service' => null,
+            ],
+            'log_expenses' => [
+                'factor' => 'expenses_finance',
+                'min_score' => 50,
+                'effort' => 'easy',
+                'gain' => 8,
+                'title' => 'Log this month’s expenses',
+                'why' => 'Finance tracking unlocks Expenses & Finance scoring — missing data leaves points on the table.',
+                'diy_steps' => [
+                    'Open Finance / Expenses.',
+                    'Add rent, utilities, and other costs for this month.',
+                    'Confirm fee income is also being recorded.',
+                ],
+                'cta_label' => 'Open Finance',
+                'cta_route' => 'finance.index',
+                'expert_service' => null,
+            ],
+            'branch_setup' => [
+                'factor' => 'branch_staff',
+                'min_score' => 80,
+                'effort' => 'easy',
+                'gain' => 8,
+                'title' => 'Finish branch & staff setup',
+                'why' => 'Phone, hours, and an active operator improve Branch & Staff score.',
+                'diy_steps' => [
+                    'Open Branch and add phone / address if missing.',
+                    'Set opening hours (or mark 24 hours).',
+                    'Ensure a branch staff or admin account is logging in regularly.',
+                ],
+                'cta_label' => 'Open Branch',
+                'cta_route' => 'branch.index',
+                'expert_service' => null,
+            ],
+            'daily_usage' => [
+                'factor' => 'system_usage',
+                'min_score' => 75,
+                'effort' => 'medium',
+                'gain' => 8,
+                'title' => 'Use LibControl every week',
+                'why' => 'Recent fees, seats, students, or enquiry activity raises System Usage score.',
+                'diy_steps' => [
+                    'Record at least one fee payment, seat assign, or student update this week.',
+                    'Keep student phone numbers filled for most members.',
+                    'Avoid leaving the desk on paper — log work in LibControl.',
+                ],
+                'cta_label' => 'Open Dashboard',
+                'cta_route' => 'dashboard',
+                'expert_service' => null,
+            ],
+            'clear_enquiries' => [
+                'check' => 'stuck_enquiries',
+                'effort' => 'medium',
+                'gain' => 10,
+                'title' => 'Clear stuck enquiries',
+                'why' => 'Old “new” enquiries hurt System Usage and lose admissions.',
+                'diy_steps' => [
+                    'Open Enquiries and sort by oldest new leads.',
+                    'Call or WhatsApp each lead within 2 days.',
+                    'Mark converted, lost, or follow-up so nothing stays stuck.',
+                ],
+                'cta_label' => 'Open Enquiries',
+                'cta_route' => 'enquiries.index',
+                'expert_service' => 'lead_generation',
+            ],
+        ],
         'items' => [
             'instagram' => [
                 'effort' => 'easy',
@@ -59,9 +197,12 @@ return [
                 'why' => 'Students check Instagram before visiting a library.',
                 'diy_steps' => [
                     'Open your library Instagram profile and copy its URL.',
-                    'Paste it in Grow My Library or Settings → Website → Social links.',
+                    'Paste it in Settings → Website → Social links.',
                     'Save to refresh your score.',
                 ],
+                'cta_label' => 'Open Website settings',
+                'cta_route' => 'settings.index',
+                'cta_route_params' => ['tab' => 'website'],
                 'expert_service' => 'social_marketing',
             ],
             'facebook' => [
@@ -70,9 +211,12 @@ return [
                 'why' => 'A Facebook page builds trust with parents and local students.',
                 'diy_steps' => [
                     'Create or open your library Facebook page.',
-                    'Paste the page URL in Grow My Library or Settings → Website.',
+                    'Paste the page URL in Settings → Website.',
                     'Save to refresh your score.',
                 ],
+                'cta_label' => 'Open Website settings',
+                'cta_route' => 'settings.index',
+                'cta_route_params' => ['tab' => 'website'],
                 'expert_service' => 'social_marketing',
             ],
             'website' => [
@@ -84,6 +228,9 @@ return [
                     'Add a tagline and your WhatsApp number.',
                     'Save and share the link with students.',
                 ],
+                'cta_label' => 'Setup Website',
+                'cta_route' => 'settings.index',
+                'cta_route_params' => ['tab' => 'website'],
                 'expert_service' => 'website_landing',
             ],
             'gbp' => [
@@ -93,8 +240,11 @@ return [
                 'diy_steps' => [
                     'Claim your library on Google Business Profile.',
                     'Add photos, the right category, and opening hours.',
-                    'Paste your Google Maps listing link in the Visibility checklist, then tick each item.',
+                    'Paste your Google Maps listing link in Settings → Website.',
                 ],
+                'cta_label' => 'Open Website settings',
+                'cta_route' => 'settings.index',
+                'cta_route_params' => ['tab' => 'website'],
                 'expert_service' => 'gbp_boost',
             ],
             'referral' => [
@@ -106,6 +256,9 @@ return [
                     'Activate it and send the share message to your students.',
                     'Friends enter the student’s ID when they enquire or join — give the reward once they join.',
                 ],
+                'cta_label' => 'Open Students',
+                'cta_route' => 'students.index',
+                'cta_route_fallback' => 'dashboard',
                 'expert_service' => 'referral_campaign',
             ],
             'reviews' => [
@@ -113,10 +266,13 @@ return [
                 'title' => 'Collect more Google reviews',
                 'why' => 'More reviews push you higher in "library near me" searches.',
                 'diy_steps' => [
-                    'Copy your Google review link into Grow My Library.',
+                    'Copy your Google review link into Settings → Website.',
                     'Send the review message to members on WhatsApp.',
                     'Update your review count as it grows.',
                 ],
+                'cta_label' => 'Open Website settings',
+                'cta_route' => 'settings.index',
+                'cta_route_params' => ['tab' => 'website'],
                 'expert_service' => 'reputation',
             ],
             'whatsapp' => [
@@ -128,6 +284,8 @@ return [
                     'Write an offer (new batch, festival discount, renewal reward).',
                     'Send it — it counts toward your score automatically.',
                 ],
+                'cta_label' => 'Open Promotion',
+                'cta_route' => 'promotion.index',
                 'expert_service' => 'whatsapp_marketing',
             ],
             'enquiries' => [
@@ -139,6 +297,8 @@ return [
                     'Add walk-in enquiries in the Enquiries page.',
                     'Follow up on new enquiries within 2 days.',
                 ],
+                'cta_label' => 'Open Enquiries',
+                'cta_route' => 'enquiries.index',
                 'expert_service' => 'lead_generation',
             ],
             'local_seo' => [
@@ -150,6 +310,9 @@ return [
                     'Post updates on Google Business Profile every week.',
                     'Request a managed package for SEO and ads.',
                 ],
+                'cta_label' => 'Open Website settings',
+                'cta_route' => 'settings.index',
+                'cta_route_params' => ['tab' => 'website'],
                 'expert_service' => 'local_seo',
             ],
         ],

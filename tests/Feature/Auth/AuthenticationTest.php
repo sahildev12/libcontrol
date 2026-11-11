@@ -79,8 +79,16 @@ class AuthenticationTest extends TestCase
     {
         $response = $this->get(route('admin.login'));
 
-        $response->assertOk()->assertSee('Admin login');
-        $this->get(route('login'))->assertOk()->assertSee('Branch login');
+        $response->assertOk()
+            ->assertSee('Hello again!')
+            ->assertSee('Sign in');
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Branch login')
+            ->assertDontSee('>Sign up</a>', false)
+            ->assertSee('lc-branch-shell', false)
+            ->assertSee('lc-web-btn--yellow', false);
     }
 
     public function test_platform_admin_cannot_use_branch_login(): void

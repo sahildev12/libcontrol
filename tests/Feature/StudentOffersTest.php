@@ -155,7 +155,7 @@ class StudentOffersTest extends TestCase
             ->withSession(['active_branch_id' => 'all'])
             ->get(route('promotion.index'))
             ->assertOk()
-            ->assertSee('Promotion emails are turned off.', false)
+            ->assertSee('Promotion emails are turned off', false)
             ->assertDontSee('Select a specific branch from the top bar to send promotion emails.', false)
             ->assertDontSee('Compose promotion email', false);
     }

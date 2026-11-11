@@ -1125,6 +1125,136 @@ Alpine.data('adminShell', (config = {}) => ({
     collapsed: false,
     mobileNavOpen: false,
     supportTicketUnread: Number(config.supportTicketUnread) || 0,
+    tipTourEligible: Boolean(config.tipTourEligible),
+    tipTourCompleted: Boolean(config.tipTourCompleted),
+    tipTourCompleteUrl: config.tipTourCompleteUrl || null,
+    tipTourUserId: config.tipTourUserId || null,
+    tipTourOpen: false,
+    tipStepIndex: 0,
+    tipSpotlight: { visible: false, top: 0, left: 0, width: 0, height: 0 },
+    tipCard: { top: 96, left: 240 },
+    tipStepsCatalog: [
+        {
+            key: null,
+            title: 'Welcome to LibControl',
+            body: 'Start by setting up Branch, Halls, Students, and Fees. Growth tools come after the basics are ready.',
+        },
+        {
+            key: 'dashboard',
+            title: 'Dashboard',
+            body: 'Start here for a quick view of seats, students, and what needs attention today.',
+            href: '/dashboard',
+        },
+        {
+            key: 'branch',
+            title: 'Branch',
+            body: 'Add or update your library branch details first — every hall and student belongs to a branch.',
+            href: '/branch',
+        },
+        {
+            key: 'halls',
+            title: 'Halls',
+            body: 'Create study halls and seat capacity for each branch before assigning students.',
+            href: '/halls',
+        },
+        {
+            key: 'seats',
+            title: 'Seats',
+            body: 'See your seat layout and assign seats to students from here.',
+            href: '/seats',
+        },
+        {
+            key: 'trial-seats',
+            title: 'Trial Seats',
+            body: 'Offer short trial seats to new visitors before they take a regular seat.',
+            href: '/trial-seats',
+        },
+        {
+            key: 'students',
+            title: 'Students',
+            body: 'Add students, import a list, and open each profile from this menu.',
+            href: '/students',
+        },
+        {
+            key: 'fees',
+            title: 'Fee Management',
+            body: 'Set fee plans, collect payments, and track renewals for each student.',
+            href: '/fees',
+        },
+        {
+            key: 'finance',
+            title: 'Finance',
+            body: 'View income, expenses, and your library finance statement.',
+            href: '/finance',
+        },
+        {
+            key: 'attendance',
+            title: 'Attendance',
+            body: 'Mark and review student attendance when this add-on is enabled.',
+            href: '/attendance',
+        },
+        {
+            key: 'promotion',
+            title: 'Promotion',
+            body: 'Send offers and promotional messages to your students.',
+            href: '/promotion',
+        },
+        {
+            key: 'enquiries',
+            title: 'Enquiries',
+            body: 'Follow up on website and walk-in enquiries from interested students.',
+            href: '/enquiries',
+        },
+        {
+            key: 'activity-logs',
+            title: 'Activity Log',
+            body: 'Review important actions taken in your library account.',
+            href: '/activity-logs',
+        },
+        {
+            key: 'settings',
+            title: 'Settings',
+            body: 'Open your account menu for website, emails, billing, and library setup.',
+            href: '/settings',
+        },
+        {
+            key: 'growth',
+            title: 'Grow My Library',
+            body: 'After setup, use growth tips and services to fill more seats.',
+            href: '/growth',
+        },
+    ],
+    tipSteps: [],
+    get tipCurrentStep() {
+        return this.tipSteps[this.tipStepIndex] || this.tipStepsCatalog[0];
+    },
+    get tipStepLabel() {
+        const total = this.tipSteps.length || 1;
+
+        return `Tip ${this.tipStepIndex + 1} of ${total}`;
+    },
+    get tipSpotlightStyle() {
+        if (! this.tipSpotlight.visible) {
+            return {
+                display: 'none',
+            };
+        }
+
+        return {
+            display: 'block',
+            top: `${this.tipSpotlight.top}px`,
+            left: `${this.tipSpotlight.left}px`,
+            width: `${this.tipSpotlight.width}px`,
+            height: `${this.tipSpotlight.height}px`,
+            boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.55)',
+        };
+    },
+    get tipCardStyle() {
+        return {
+            top: `${this.tipCard.top}px`,
+            left: `${this.tipCard.left}px`,
+        };
+    },
     init() {
         const stored = localStorage.getItem('LibControl-admin-sidebar-collapsed');
         if (stored === '1') {
@@ -1134,9 +1264,48 @@ Alpine.data('adminShell', (config = {}) => ({
         window.addEventListener('LibControl:support-tickets-updated', (event) => {
             this.supportTicketUnread = Number(event.detail?.unread) || 0;
         });
+
+        this._tipTourOnResize = () => {
+            if (this.tipTourOpen) {
+                this.refreshTipSpotlight();
+            }
+        };
+        window.addEventListener('resize', this._tipTourOnResize);
+        window.addEventListener('scroll', this._tipTourOnResize, true);
+
+        if (this.hasLocalTipTourDone()) {
+            this.tipTourCompleted = true;
+        }
+
+        // Auto-start only once (server flag or local fallback).
+        if (this.tipTourEligible && ! this.tipTourCompleted) {
+            this.$nextTick(() => {
+                setTimeout(() => this.openTipTour(), 450);
+            });
+        }
+    },
+    tipTourStorageKey() {
+        return `LibControl-admin-tip-tour-done:${this.tipTourUserId || '0'}`;
+    },
+    hasLocalTipTourDone() {
+        try {
+            return localStorage.getItem(this.tipTourStorageKey()) === '1';
+        } catch (error) {
+            return false;
+        }
+    },
+    markLocalTipTourDone() {
+        try {
+            localStorage.setItem(this.tipTourStorageKey(), '1');
+        } catch (error) {
+            // Ignore private-mode / quota errors.
+        }
     },
     toggleMobileNav() {
         this.mobileNavOpen = ! this.mobileNavOpen;
+        if (this.tipTourOpen) {
+            this.$nextTick(() => this.refreshTipSpotlight());
+        }
     },
     closeMobileNav() {
         this.mobileNavOpen = false;
@@ -1144,6 +1313,222 @@ Alpine.data('adminShell', (config = {}) => ({
     toggleCollapsed() {
         this.collapsed = ! this.collapsed;
         localStorage.setItem('LibControl-admin-sidebar-collapsed', this.collapsed ? '1' : '0');
+        if (this.tipTourOpen) {
+            this.$nextTick(() => this.refreshTipSpotlight());
+        }
+    },
+    openTipTour() {
+        if (! this.tipTourEligible) {
+            return;
+        }
+
+        if (this.collapsed) {
+            this.collapsed = false;
+            localStorage.setItem('LibControl-admin-sidebar-collapsed', '0');
+        }
+
+        const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+        if (isMobile) {
+            this.mobileNavOpen = true;
+        }
+
+        this.$nextTick(() => {
+            this.tipSteps = this.buildVisibleTipSteps();
+            this.tipStepIndex = 0;
+            this.tipTourOpen = true;
+            this.prepareTipStep();
+        });
+    },
+    buildVisibleTipSteps() {
+        return this.tipStepsCatalog.filter((step) => {
+            if (! step.key) {
+                return true;
+            }
+
+            if (step.key === 'settings') {
+                return Boolean(this.findTipTourTarget('settings', { requireVisible: false }));
+            }
+
+            return Boolean(this.findTipTourTarget(step.key, { requireVisible: false }));
+        });
+    },
+    prepareTipStep() {
+        const key = this.tipCurrentStep?.key || null;
+        const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+
+        if (this.collapsed) {
+            this.collapsed = false;
+            localStorage.setItem('LibControl-admin-sidebar-collapsed', '0');
+        }
+
+        if (isMobile && key && key !== 'settings') {
+            this.mobileNavOpen = true;
+        } else if (! isMobile) {
+            this.mobileNavOpen = false;
+        }
+
+        this.$nextTick(() => {
+            const target = this.findTipTourTarget(key, { requireVisible: false });
+            if (target && typeof target.scrollIntoView === 'function') {
+                target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+
+            requestAnimationFrame(() => {
+                this.refreshTipSpotlight();
+                setTimeout(() => this.refreshTipSpotlight(), 180);
+            });
+        });
+    },
+    findTipTourTarget(key, options = {}) {
+        if (! key) {
+            return null;
+        }
+
+        const requireVisible = options.requireVisible !== false;
+        const nodes = Array.from(document.querySelectorAll(`[data-tour="${key}"]`));
+
+        return nodes.find((node) => {
+            const style = window.getComputedStyle(node);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+                return false;
+            }
+
+            if (! requireVisible) {
+                return true;
+            }
+
+            const rect = node.getBoundingClientRect();
+
+            return rect.width > 0 && rect.height > 0 && style.opacity !== '0';
+        }) || null;
+    },
+    refreshTipSpotlight() {
+        const key = this.tipCurrentStep?.key || null;
+        const target = this.findTipTourTarget(key);
+
+        if (! target) {
+            this.tipSpotlight = { visible: false, top: 0, left: 0, width: 0, height: 0 };
+            this.tipCard = this.computeTipCardPosition(null);
+
+            return;
+        }
+
+        const pad = 8;
+        const rect = target.getBoundingClientRect();
+        this.tipSpotlight = {
+            visible: true,
+            top: Math.max(0, rect.top - pad),
+            left: Math.max(0, rect.left - pad),
+            width: rect.width + (pad * 2),
+            height: rect.height + (pad * 2),
+        };
+        this.tipCard = this.computeTipCardPosition(this.tipSpotlight);
+    },
+    computeTipCardPosition(spotlight) {
+        const margin = 16;
+        const gap = 16;
+        const cardW = Math.min(384, window.innerWidth - (margin * 2));
+        const cardH = 220;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        if (! spotlight || ! spotlight.visible) {
+            const sidebarReserve = window.matchMedia('(min-width: 1024px)').matches ? 236 : 0;
+            const left = Math.max(sidebarReserve + margin, Math.round((vw - cardW) / 2));
+            const top = Math.max(margin, Math.round((vh - cardH) / 2));
+
+            return {
+                top: Math.min(top, vh - cardH - margin),
+                left: Math.min(left, vw - cardW - margin),
+            };
+        }
+
+        const spotRight = spotlight.left + spotlight.width;
+        const spotBottom = spotlight.top + spotlight.height;
+        const spotCenterY = spotlight.top + (spotlight.height / 2);
+
+        // Prefer right of highlight (sidebar items); fall back below / left if needed.
+        let left = spotRight + gap;
+        let top = Math.round(spotCenterY - (cardH / 2));
+
+        if (left + cardW > vw - margin) {
+            left = spotlight.left + spotlight.width - cardW;
+            top = spotBottom + gap;
+
+            if (left < margin) {
+                left = margin;
+            }
+        }
+
+        if (top + cardH > vh - margin) {
+            top = vh - cardH - margin;
+        }
+
+        if (top < margin) {
+            top = margin;
+        }
+
+        // If still overlapping the highlight, shove card fully clear to the right or below.
+        const overlapsX = left < spotRight && (left + cardW) > spotlight.left;
+        const overlapsY = top < spotBottom && (top + cardH) > spotlight.top;
+
+        if (overlapsX && overlapsY) {
+            if (spotRight + gap + cardW <= vw - margin) {
+                left = spotRight + gap;
+            } else if (spotBottom + gap + cardH <= vh - margin) {
+                top = spotBottom + gap;
+                left = Math.min(Math.max(margin, spotlight.left), vw - cardW - margin);
+            } else {
+                left = Math.max(margin, spotlight.left - cardW - gap);
+                top = Math.min(Math.max(margin, spotlight.top), vh - cardH - margin);
+            }
+        }
+
+        return {
+            top: Math.min(Math.max(margin, top), vh - cardH - margin),
+            left: Math.min(Math.max(margin, left), vw - cardW - margin),
+        };
+    },
+    prevTipStep() {
+        if (this.tipStepIndex <= 0) {
+            return;
+        }
+
+        this.tipStepIndex -= 1;
+        this.prepareTipStep();
+    },
+    nextTipStep() {
+        if (this.tipStepIndex >= this.tipSteps.length - 1) {
+            this.finishTipTour();
+
+            return;
+        }
+
+        this.tipStepIndex += 1;
+        this.prepareTipStep();
+    },
+    skipTipTour() {
+        this.finishTipTour();
+    },
+    async finishTipTour() {
+        this.tipTourOpen = false;
+        this.tipSpotlight = { visible: false, top: 0, left: 0, width: 0, height: 0 };
+        this.tipCard = { top: 96, left: 240 };
+        this.mobileNavOpen = false;
+
+        // Persist immediately so refresh/navigation never auto-opens again.
+        this.markLocalTipTourDone();
+        this.tipTourCompleted = true;
+
+        if (! this.tipTourCompleteUrl) {
+            return;
+        }
+
+        try {
+            await window.axios.post(this.tipTourCompleteUrl);
+        } catch (error) {
+            // Local flag already set; server sync can retry on a later manual finish.
+        }
     },
 }));
 
@@ -3431,10 +3816,15 @@ Alpine.data('platformBranchesPage', (config) => ({
     planSnapshot: config.planSnapshot || null,
     storeUrl: config.storeUrl,
     libraryCode: config.libraryCode || '',
+    hallsUrl: config.hallsUrl || '/halls',
+    seatsUrl: config.seatsUrl || '/seats',
+    studentsUrl: config.studentsUrl || '/students',
     pageTab: 'branches',
     createOpen: false,
     editOpen: false,
     viewOpen: false,
+    nextStepsOpen: false,
+    nextStepsBranchName: '',
     passwordResetOpen: false,
     passwordResetBranch: null,
     passwordResetForm: { password: '' },
@@ -3588,6 +3978,8 @@ Alpine.data('platformBranchesPage', (config) => ({
             showToast(response.data.message);
             this.createOpen = false;
             this.resetCreateForm();
+            this.nextStepsBranchName = response.data.branch?.name || 'Your branch';
+            this.nextStepsOpen = true;
         } catch (e) {
             showToast(extractAxiosError(e), 'error');
         } finally {
@@ -7121,12 +7513,6 @@ Alpine.data('settingsPage', (config) => ({
                 this.platformForm.student_code_padding = this.platformSettings.student_code_padding;
             }
 
-            if (this.viewingAll && this.isClientAdmin && this.globalUpdateUrl) {
-                await window.axios.patch(this.globalUpdateUrl, {
-                    expiry_reminder_days: this.form.expiry_reminder_days,
-                });
-            }
-
             if (! this.viewingAll) {
             const response = await window.axios.post(`${this.updateUrl}?_method=PATCH`, this.buildFormData(), {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -7421,6 +7807,20 @@ Alpine.data('settingsPage', (config) => ({
 
         this.emailSaving = true;
         try {
+            if (this.viewingAll && this.isClientAdmin && this.globalUpdateUrl) {
+                const days = Number(this.form.expiry_reminder_days);
+                if (! Number.isFinite(days) || days < 1 || days > 90) {
+                    showToast('Plan expiry reminder days must be between 1 and 90.', 'error');
+                    return;
+                }
+                const globalResponse = await window.axios.patch(this.globalUpdateUrl, {
+                    expiry_reminder_days: days,
+                });
+                if (globalResponse.data.expiry_reminder_days != null) {
+                    this.form.expiry_reminder_days = Number(globalResponse.data.expiry_reminder_days);
+                }
+            }
+
             const response = await window.axios.patch(this.emailNotificationsUpdateUrl, this.emailForm);
             if (response.data.email_notifications) {
                 Object.assign(this.emailForm, response.data.email_notifications);
@@ -8056,14 +8456,19 @@ Alpine.data('studentOffersPage', (config) => ({
     },
 
     toggleSelectAllVisible() {
-        const visibleIds = this.filteredStudents().map((student) => student.id);
+        const visibleIds = this.filteredStudents().map((student) => String(student.id));
 
         if (this.allVisibleSelected()) {
-            this.form.student_ids = this.form.student_ids.filter((id) => ! visibleIds.includes(id));
+            this.form.student_ids = this.form.student_ids
+                .map(String)
+                .filter((id) => ! visibleIds.includes(id));
             return;
         }
 
-        this.form.student_ids = [...new Set([...this.form.student_ids, ...visibleIds])];
+        this.form.student_ids = [...new Set([
+            ...this.form.student_ids.map(String),
+            ...visibleIds,
+        ])];
     },
 
     canSend() {

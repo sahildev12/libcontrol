@@ -43,8 +43,6 @@ class RuntimeSyncController extends Controller
             return $this->unauthorizedResponse();
         }
 
-        LibraryRegistry::upsertFromSyncPayload($payload);
-
         $eventPayload = [
             'domain' => $domain,
             'app_url' => $payload['app_url'] ?? null,
@@ -55,7 +53,7 @@ class RuntimeSyncController extends Controller
         ];
 
         if (LicensedDeployment::isPlaceholderLicenseKey($licenseKey)) {
-            return $this->recordDiscoveryPing($rawBody, $token, $eventPayload);
+            return $this->recordDiscoveryPing($rawBody, $token, $eventPayload, $payload);
         }
 
         $expected = hash_hmac('sha256', $rawBody, $licenseKey);
@@ -63,6 +61,9 @@ class RuntimeSyncController extends Controller
         if (! hash_equals($expected, $token)) {
             return $this->unauthorizedResponse();
         }
+
+        // Registry feeds the public mobile resolver — only mutate after HMAC succeeds.
+        LibraryRegistry::upsertFromSyncPayload($payload);
 
         $deployment = LicensedDeployment::findByLicenseKey($licenseKey);
         $licenseKeyHash = LicensedDeployment::hashKey($licenseKey);
@@ -97,8 +98,9 @@ class RuntimeSyncController extends Controller
 
     /**
      * @param  array<string, mixed>  $eventPayload
+     * @param  array<string, mixed>  $payload
      */
-    private function recordDiscoveryPing(string $rawBody, string $token, array $eventPayload): JsonResponse
+    private function recordDiscoveryPing(string $rawBody, string $token, array $eventPayload, array $payload): JsonResponse
     {
         $secret = (string) config('libcontrol.discovery.secret');
         $expected = hash_hmac('sha256', $rawBody, $secret);
@@ -106,6 +108,8 @@ class RuntimeSyncController extends Controller
         if ($secret === '' || ! hash_equals($expected, $token)) {
             return $this->unauthorizedResponse();
         }
+
+        LibraryRegistry::upsertFromSyncPayload($payload);
 
         InstallationEvent::recordHeartbeat(
             LicensedDeployment::discoveryKeyHash(),

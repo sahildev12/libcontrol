@@ -7,7 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Services\ActivityLogger;
 use App\Services\LoginBrandingService;
 use App\Services\Profile\LibraryProfileCompletionService;
-use App\Support\InstallState;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,15 +16,43 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create(Request $request, LoginBrandingService $branding): View
+    public function create(Request $request, LoginBrandingService $branding): View|RedirectResponse
     {
         $portal = $this->portal($request);
+
+        // Hub has no library DB — branch staff pick their library subdomain first.
+        if (
+            $portal === LoginBrandingService::PORTAL_BRANCH
+            && config('libcontrol.tenancy.enabled')
+            && ! TenantContext::isTenantRequest()
+        ) {
+            abort_unless(config('libcontrol.trials.enabled'), 404);
+
+            return view('auth.hub-branch-login', [
+                'baseDomain' => (string) config('libcontrol.tenancy.base_domain'),
+            ]);
+        }
+
+        if ($portal === LoginBrandingService::PORTAL_ADMIN) {
+            return view('auth.owner-login', [
+                'hub' => false,
+                'libraryTenant' => TenantContext::current(),
+            ]);
+        }
 
         return view('auth.login', $branding->forPortal($portal, $request));
     }
 
     public function store(LoginRequest $request): RedirectResponse
     {
+        if (
+            config('libcontrol.tenancy.enabled')
+            && ! TenantContext::isTenantRequest()
+            && $this->portal($request) === LoginBrandingService::PORTAL_BRANCH
+        ) {
+            return redirect()->route('login');
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();
@@ -133,4 +161,5 @@ class AuthenticatedSessionController extends Controller
 
         return LoginBrandingService::PORTAL_BRANCH;
     }
+
 }

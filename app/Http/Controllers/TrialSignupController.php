@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tenant;
+use App\Models\User;
+use App\Services\Tenancy\TenantConnectionManager;
 use App\Services\Tenancy\TrialLifecycle;
 use App\Services\Tenancy\TrialProvisioner;
 use App\Support\Tenancy\SocialLogin;
@@ -11,7 +13,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -28,6 +32,7 @@ class TrialSignupController extends Controller implements HasMiddleware
     public function __construct(
         private TrialProvisioner $trials,
         private TrialLifecycle $lifecycle,
+        private TenantConnectionManager $connections,
     ) {}
 
     public static function middleware(): array
@@ -41,13 +46,98 @@ class TrialSignupController extends Controller implements HasMiddleware
         ];
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if ($request->query('tab') === 'login') {
+            return redirect()->route('admin.login');
+        }
+
         return view('trials.signup', [
             'baseDomain' => (string) config('libcontrol.tenancy.base_domain'),
             'trialDays' => (int) config('libcontrol.trials.days', 15),
             'socialProviders' => SocialLogin::providers(),
             'social' => TrialSocialAuthController::pending($request),
+        ]);
+    }
+
+    public function login(): View
+    {
+        return view('trials.login', [
+            'baseDomain' => (string) config('libcontrol.tenancy.base_domain'),
+        ]);
+    }
+
+    public function loginStore(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email:rfc', 'max:190'],
+            'password' => ['required', 'string', 'max:100'],
+        ]);
+
+        $limiterKey = 'hub-login:'.$request->ip();
+        if (RateLimiter::tooManyAttempts($limiterKey, 8)) {
+            throw ValidationException::withMessages([
+                'email' => 'Too many login attempts. Please try again shortly.',
+            ]);
+        }
+
+        $email = Str::lower(trim($validated['email']));
+
+        $tenant = Tenant::query()
+            ->whereRaw('LOWER(owner_email) = ?', [$email])
+            ->where('active', true)
+            ->where('status', Tenant::STATUS_READY)
+            ->orderByDesc('id')
+            ->first();
+
+        $passwordOk = $tenant && $this->connections->runOnTenant($tenant, function () use ($email, $validated) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+
+            return $user !== null && Hash::check($validated['password'], (string) $user->password);
+        });
+
+        if (! $passwordOk) {
+            RateLimiter::hit($limiterKey, 60);
+
+            throw ValidationException::withMessages([
+                'email' => 'These credentials do not match our records.',
+            ]);
+        }
+
+        RateLimiter::clear($limiterKey);
+
+        return redirect()->away(
+            $this->tenantUrl($request, $tenant, '/trial/enter/'.$tenant->issueLoginToken())
+        );
+    }
+
+    public function findLibrary(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email:rfc', 'max:190'],
+        ]);
+
+        $email = Str::lower(trim($validated['email']));
+
+        $tenant = Tenant::query()
+            ->whereRaw('LOWER(owner_email) = ?', [$email])
+            ->where('active', true)
+            ->where('status', Tenant::STATUS_READY)
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $tenant) {
+            return response()->json([
+                'found' => false,
+                'message' => 'No library found for that email.',
+            ]);
+        }
+
+        return response()->json([
+            'found' => true,
+            'subdomain' => $tenant->subdomain,
+            'login_url' => $this->tenantUrl($request, $tenant, '/branch/login'),
+            'message' => 'Opening '.$tenant->subdomain.'.'.config('libcontrol.tenancy.base_domain').'…',
         ]);
     }
 

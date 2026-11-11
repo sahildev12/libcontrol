@@ -60,11 +60,76 @@ class TrialSignupTest extends TestCase
 
     public function test_signup_page_is_only_available_when_trials_are_enabled(): void
     {
-        $this->get(self::HUB.'/try')->assertOk()->assertSee('Create my library')->assertSee('.libcontrol.in');
+        $this->get(self::HUB.'/try')
+            ->assertOk()
+            ->assertSee('Create my library')
+            ->assertSee('.libcontrol.in')
+            ->assertDontSee('Continue to branch login');
+
+        $this->get(self::HUB.'/login')->assertRedirect('/branch/login');
+
+        $this->get(self::HUB.'/admin/login')
+            ->assertOk()
+            ->assertSee('Hello again!')
+            ->assertSee('Sign in')
+            ->assertDontSee('Create my library');
+
+        $this->get(self::HUB.'/branch/login')
+            ->assertOk()
+            ->assertSee('Branch staff log in')
+            ->assertSee('Your library address')
+            ->assertSee('email and password');
+
+        $this->get(self::HUB.'/try?tab=login')->assertRedirect(route('admin.login'));
 
         Config::set('libcontrol.trials.enabled', false);
 
         $this->get(self::HUB.'/try')->assertNotFound();
+        $this->get(self::HUB.'/admin/login')->assertNotFound();
+    }
+
+    public function test_hub_login_signs_the_owner_into_their_library_without_a_subdomain(): void
+    {
+        $this->signUp();
+        $tenant = Tenant::query()->where('subdomain', 'sunrise')->firstOrFail();
+        $this->postJson(self::HUB.'/try/'.$tenant->signup_token.'/start')->assertOk();
+        $this->assertSame(Tenant::STATUS_READY, $tenant->refresh()->status);
+
+        $response = $this->post(self::HUB.'/admin/login', [
+            'email' => 'asha@example.com',
+            'password' => 'secret-pass-1',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertMatchesRegularExpression(
+            '#^http://sunrise\.libcontrol\.in/trial/enter/[A-Za-z0-9]{64}$#',
+            $response->headers->get('Location')
+        );
+
+        $this->post(self::HUB.'/admin/login', [
+            'email' => 'asha@example.com',
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors('email');
+    }
+
+    public function test_find_library_by_owner_email(): void
+    {
+        $this->signUp();
+        $tenant = Tenant::query()->where('subdomain', 'sunrise')->firstOrFail();
+        $this->postJson(self::HUB.'/try/'.$tenant->signup_token.'/start')->assertOk();
+        $this->assertSame(Tenant::STATUS_READY, $tenant->refresh()->status);
+
+        $this->getJson(self::HUB.'/try/find-library?email=asha@example.com')
+            ->assertOk()
+            ->assertJson([
+                'found' => true,
+                'subdomain' => 'sunrise',
+                'login_url' => 'http://sunrise.libcontrol.in/branch/login',
+            ]);
+
+        $this->getJson(self::HUB.'/try/find-library?email=nobody@example.com')
+            ->assertOk()
+            ->assertJson(['found' => false]);
     }
 
     public function test_subdomain_availability_check(): void

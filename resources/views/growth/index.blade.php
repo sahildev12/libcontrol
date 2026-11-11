@@ -7,14 +7,28 @@
             ? route('settings.index', ['tab' => 'website'])
             : '#visibility-form';
 
-        $recAction = static function (string $key) use ($settingsWebsiteUrl): array {
+        $recAction = static function (string $key) use ($settingsWebsiteUrl, $recUnlocked): array {
+            $fromRec = collect($recUnlocked)->firstWhere('key', $key);
+            if (is_array($fromRec) && filled($fromRec['cta_url'] ?? null)) {
+                return [
+                    'label' => (string) ($fromRec['cta_label'] ?? 'Open'),
+                    'href' => (string) $fromRec['cta_url'],
+                ];
+            }
+
             return match ($key) {
                 'website' => ['label' => 'Setup Website', 'href' => $settingsWebsiteUrl],
                 'gbp' => ['label' => 'Open Guide', 'href' => '#visibility-form'],
                 'referral' => ['label' => 'Open Guide', 'href' => '#referral-kit'],
                 'reviews' => ['label' => 'Open Guide', 'href' => '#visibility-form'],
                 'whatsapp' => ['label' => 'Open Promotion', 'href' => route('promotion.index')],
-                'enquiries' => ['label' => 'Open Guide', 'href' => \Illuminate\Support\Facades\Route::has('enquiries.index') ? route('enquiries.index') : '#visibility-form'],
+                'enquiries', 'clear_enquiries' => ['label' => 'Open Enquiries', 'href' => \Illuminate\Support\Facades\Route::has('enquiries.index') ? route('enquiries.index') : '#visibility-form'],
+                'complete_profile' => ['label' => 'Complete profile', 'href' => \Illuminate\Support\Facades\Route::has('profile-completion.index') ? route('profile-completion.index') : $settingsWebsiteUrl],
+                'fill_seats' => ['label' => 'Open Seats', 'href' => \Illuminate\Support\Facades\Route::has('seats.index') ? route('seats.index') : '#'],
+                'renew_plans', 'collect_fees' => ['label' => 'Open Fee Management', 'href' => \Illuminate\Support\Facades\Route::has('fees.index') ? route('fees.index') : '#'],
+                'log_expenses' => ['label' => 'Open Finance', 'href' => \Illuminate\Support\Facades\Route::has('finance.index') ? route('finance.index') : '#'],
+                'branch_setup' => ['label' => 'Open Branch', 'href' => \Illuminate\Support\Facades\Route::has('branch.index') ? route('branch.index') : '#'],
+                'daily_usage' => ['label' => 'Open Dashboard', 'href' => route('dashboard')],
                 default => ['label' => 'Open Guide', 'href' => '#visibility-form'],
             };
         };
@@ -157,19 +171,43 @@
         .lc-growth-service__more summary::-webkit-details-marker { display: none; }
         .lc-growth-service__more summary::after { content: ' ▾'; font-size: 10px; opacity: 0.7; }
         .lc-growth-service__more[open] summary::after { content: ' ▴'; }
-        .lc-growth-service__includes { margin: 0; padding-left: 1.1rem; font-size: 11.5px; line-height: 1.45; color: #475569; }
-        .lc-growth-service__includes li + li { margin-top: 4px; }
+        .lc-growth-service__feature-list {
+            margin: 6px 0 0;
+            padding: 0;
+            list-style: none;
+            font-size: 11.5px;
+            line-height: 1.45;
+            color: #334155;
+        }
+        .lc-growth-service__feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .lc-growth-service__feature-list li + li { margin-top: 6px; }
+        .lc-growth-service__feature-list li > span:first-child {
+            flex-shrink: 0;
+            margin-top: 1px;
+            color: var(--lc-blue);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .lc-growth-service__feature-heading {
+            margin: 0;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--lc-blue);
+        }
         .lc-growth-service__tiers { display: flex; flex-direction: column; gap: 8px; }
         .lc-growth-service__tier { border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; padding: 10px 12px; }
         .lc-growth-service__tier-name { margin: 0; font-size: 11.5px; font-weight: 700; color: var(--lc-navy); }
         .lc-growth-service__tier-note { margin: 2px 0 0; font-size: 10.5px; color: var(--lc-muted); }
         .lc-growth-service__tier-list { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11px; line-height: 1.4; color: #475569; }
-        .lc-growth-service__tier-list li { display: flex; gap: 6px; }
+        .lc-growth-service__tier-list li { display: flex; align-items: flex-start; gap: 6px; }
         .lc-growth-service__tier-list li + li { margin-top: 3px; }
         .lc-growth-service__ideal { margin: 0; font-size: 11px; line-height: 1.4; color: var(--lc-muted); }
         .lc-growth-service__note { margin: 0; font-size: 10.5px; line-height: 1.4; color: #64748B; }
-        .lc-growth-service__addons { margin: 0; padding-left: 1.1rem; font-size: 11px; line-height: 1.4; color: #64748B; }
-        .lc-growth-service__addons li + li { margin-top: 3px; }
+        .lc-growth-service__addons { font-size: 11px; color: #64748B; }
         .lc-growth-service__body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
         .lc-growth-service__details { display: flex; flex-direction: column; gap: 8px; }
         .lc-growth-service__toggle {
@@ -446,9 +484,9 @@
                                                     <p class="lc-growth-service__tier-note">{{ $tier['note'] }}</p>
                                                 @endif
                                                 @if (! empty($tier['includes']))
-                                                    <ul class="lc-growth-service__tier-list">
+                                                    <ul class="lc-growth-service__feature-list lc-growth-service__tier-list">
                                                         @foreach ($tier['includes'] as $line)
-                                                            <li><span class="text-[var(--lc-blue)]" aria-hidden="true">✓</span><span>{{ $line }}</span></li>
+                                                            <li><span aria-hidden="true">✓</span><span>{{ $line }}</span></li>
                                                         @endforeach
                                                     </ul>
                                                 @endif
@@ -456,32 +494,44 @@
                                         @endforeach
                                     </div>
                                 @elseif (! empty($service['includes']))
-                                    <details class="lc-growth-service__more" open>
-                                        <summary class="text-xs font-semibold text-[var(--lc-blue)] cursor-pointer select-none">What&rsquo;s included ({{ count($service['includes']) }})</summary>
-                                        <ul class="lc-growth-service__includes">
+                                    <div>
+                                        <p class="lc-growth-service__feature-heading">What&rsquo;s included ({{ count($service['includes']) }})</p>
+                                        <ul class="lc-growth-service__feature-list">
                                             @foreach ($service['includes'] as $line)
-                                                <li>{{ $line }}</li>
+                                                <li><span aria-hidden="true">•</span><span>{{ $line }}</span></li>
                                             @endforeach
                                         </ul>
-                                    </details>
+                                    </div>
                                 @endif
                                 @if (! empty($service['ideal_for']))
-                                    <p class="lc-growth-service__ideal"><span class="font-semibold text-gray-600">Ideal for:</span> {{ $service['ideal_for'] }}</p>
+                                    @php
+                                        $idealFor = is_array($service['ideal_for'])
+                                            ? $service['ideal_for']
+                                            : [$service['ideal_for']];
+                                    @endphp
+                                    <div>
+                                        <p class="lc-growth-service__feature-heading" style="color:#475569">Ideal for</p>
+                                        <ul class="lc-growth-service__feature-list lc-growth-service__ideal">
+                                            @foreach ($idealFor as $audience)
+                                                <li><span aria-hidden="true">•</span><span>{{ $audience }}</span></li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 @endif
                                 @foreach ($service['notes'] ?? [] as $note)
                                     <p class="lc-growth-service__note">{{ $note }}</p>
                                 @endforeach
-                                @if (! empty($service['addons']))
-                                    <details class="lc-growth-service__more">
-                                        <summary class="text-xs font-semibold text-gray-600 cursor-pointer select-none">Optional add-ons ({{ count($service['addons']) }})</summary>
-                                        <ul class="lc-growth-service__addons">
-                                            @foreach ($service['addons'] as $addon)
-                                                <li>{{ $addon }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </details>
-                                @endif
                             </div>
+                            @if (! empty($service['addons']))
+                                <div>
+                                    <p class="lc-growth-service__feature-heading" style="color:#475569">Optional add-ons ({{ count($service['addons']) }})</p>
+                                    <ul class="lc-growth-service__feature-list lc-growth-service__addons">
+                                        @foreach ($service['addons'] as $addon)
+                                            <li><span aria-hidden="true">•</span><span>{{ $addon }}</span></li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                             <button
                                 type="button"
                                 class="lc-growth-service__toggle"

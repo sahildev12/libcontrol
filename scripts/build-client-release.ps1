@@ -174,8 +174,8 @@ VITE_APP_NAME="`${APP_NAME}"
 
 LIBCONTROL_PRODUCT_NAME="$ClientName"
 LIBCONTROL_COMPANY_NAME=Katsindia
-LIBCONTROL_COMPANY_URL=https://katsindia.com
-LIBCONTROL_PRODUCT_BYLINE="LibControl is a product by katsindia.com"
+LIBCONTROL_COMPANY_URL=https://www.libcontrol.in
+LIBCONTROL_PRODUCT_BYLINE="LibControl is a product by Katsindia"
 
 LIBCONTROL_CLIENT_NAME="$ClientName"
 LIBCONTROL_DEPLOYMENT_SLUG=$Slug

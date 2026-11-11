@@ -44,6 +44,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureDeploymentLicensed::class,
         ]);
 
+        // Tenant DB selection must mirror web: mobile student APIs hit trial/client
+        // subdomains on the shared hub docroot and would otherwise query the landlord DB.
+        $middleware->api(prepend: [
+            \App\Http\Middleware\IdentifyTenant::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\SetReferrerPolicyForPayments::class,
             \App\Http\Middleware\EnsureLibraryOperationsAccess::class,

@@ -5,6 +5,10 @@
 @endphp
 
 <div class="space-y-6">
+    @if (config('growth.enabled', true) && ! empty($combinedGrowth))
+        @include('dashboard.partials.ai-recommendation-banner')
+    @endif
+
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="lc-page-title">Dashboard</h1>
@@ -22,44 +26,44 @@
         </div>
     </header>
 
-    {{-- KPI cards: match main dashboard sizing --}}
-    <div class="lc-kpi-row lc-kpi-row--lg grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="lc-kpi-card">
-            <div class="lc-kpi-card__body">
-                <p class="lc-kpi-card__label">Total Seats</p>
-                <p class="lc-kpi-card__value">{{ number_format($stats['total_seats']) }}</p>
+    {{-- Same KPI typography as All-branches dashboard (.lc-dash-stat) --}}
+    <div class="lc-dash-stats">
+        <article class="lc-dash-stat">
+            <div class="lc-dash-stat__head">
+                <p class="lc-dash-stat__label">Total Seats</p>
+                <span class="lc-dash-stat__icon" aria-hidden="true">
+                    <x-admin.kpi-chair-icon />
+                </span>
             </div>
-            <div class="lc-kpi-card__icon">
-                <x-admin.kpi-chair-icon />
+            <p class="lc-dash-stat__value">{{ number_format($stats['total_seats']) }}</p>
+        </article>
+        <article class="lc-dash-stat">
+            <div class="lc-dash-stat__head">
+                <p class="lc-dash-stat__label">Occupied</p>
+                <span class="lc-dash-stat__icon" aria-hidden="true">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </span>
             </div>
-        </div>
-        <div class="lc-kpi-card">
-            <div class="lc-kpi-card__body">
-                <p class="lc-kpi-card__label">Occupied</p>
-                <p class="lc-kpi-card__value">{{ number_format($occupiedActive) }}</p>
+            <p class="lc-dash-stat__value">{{ number_format($occupiedActive) }}</p>
+        </article>
+        <article class="lc-dash-stat">
+            <div class="lc-dash-stat__head">
+                <p class="lc-dash-stat__label">Vacant</p>
+                <span class="lc-dash-stat__icon" aria-hidden="true">
+                    <x-admin.kpi-chair-icon />
+                </span>
             </div>
-            <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <p class="lc-dash-stat__value">{{ number_format($stats['available']) }}</p>
+        </article>
+        <article class="lc-dash-stat">
+            <div class="lc-dash-stat__head">
+                <p class="lc-dash-stat__label">On Trial</p>
+                <span class="lc-dash-stat__icon" aria-hidden="true">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
             </div>
-        </div>
-        <div class="lc-kpi-card">
-            <div class="lc-kpi-card__body">
-                <p class="lc-kpi-card__label">Vacant</p>
-                <p class="lc-kpi-card__value">{{ number_format($stats['available']) }}</p>
-            </div>
-            <div class="lc-kpi-card__icon">
-                <x-admin.kpi-chair-icon />
-            </div>
-        </div>
-        <div class="lc-kpi-card">
-            <div class="lc-kpi-card__body">
-                <p class="lc-kpi-card__label">On Trial</p>
-                <p class="lc-kpi-card__value">{{ number_format($stats['on_trial']) }}</p>
-            </div>
-            <div class="lc-kpi-card__icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-        </div>
+            <p class="lc-dash-stat__value">{{ number_format($stats['on_trial']) }}</p>
+        </article>
     </div>
 
     {{-- Today's Overview @if enquiries enabled + Recent Enquiries --}}
@@ -68,7 +72,7 @@
             <div class="lc-panel-header flex items-center rounded-t-xl border-b border-gray-100 px-5 py-4">
                 <h2 class="text-base font-semibold text-gray-900">Today's Overview</h2>
             </div>
-            <div class="lc-kpi-row lc-kpi-row--lg grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 {{ config('libcontrol.modules.enquiries') ? 'lg:grid-cols-2' : 'lg:grid-cols-3' }}">
+            <div class="lc-kpi-row grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 {{ config('libcontrol.modules.enquiries') ? 'lg:grid-cols-2' : 'lg:grid-cols-3' }}">
                 @if (config('libcontrol.modules.enquiries'))
                 <x-admin.kpi-card label="New Enquiries" :value="number_format($today['enquiries'])">
                     <x-slot:icon>

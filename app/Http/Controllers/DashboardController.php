@@ -93,17 +93,42 @@ class DashboardController extends Controller
 
         $branch = $dashboardService->branchOverview($branchId);
 
+        $growthScore = null;
+        $businessPerformance = null;
+        $profileCompletionScore = null;
+        $growthActions = [];
+        $growthBranch = null;
+        $combinedGrowth = null;
+
+        if (config('growth.enabled', true)) {
+            $growthBranch = $this->optionalActiveBranch($request)
+                ?? ($branchId ? Branch::query()->find($branchId) : null)
+                ?? $this->resolveGrowthBranchForDashboard($request);
+
+            if ($growthBranch) {
+                $combinedGrowth = $combinedGrowthScore->forBranch($growthBranch, $request->user());
+                $growthActions = config('growth.actions', []);
+            } else {
+                $combinedGrowth = $combinedGrowthScore->forEmptyLibrary();
+            }
+
+            $growthScore = $combinedGrowth['action_progress'] ?? null;
+            $businessPerformance = $combinedGrowth['business_performance'] ?? null;
+        }
+
+        $profileCompletionScore = $profileCompletion->scoreForLibrary($request->user());
+
         return view('dashboard', [
             'mode' => 'branch',
             'scopeLabel' => $scopeLabel !== '' ? $scopeLabel : 'Branch',
             'admin' => null,
             'branch' => $branch,
-            'growthScore' => null,
-            'businessPerformance' => null,
-            'profileCompletionScore' => null,
-            'combinedGrowth' => null,
-            'growthActions' => [],
-            'growthBranch' => null,
+            'growthScore' => $growthScore,
+            'businessPerformance' => $businessPerformance,
+            'profileCompletionScore' => $profileCompletionScore,
+            'combinedGrowth' => $combinedGrowth,
+            'growthActions' => $growthActions,
+            'growthBranch' => $growthBranch,
         ]);
     }
 

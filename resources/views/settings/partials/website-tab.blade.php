@@ -1,6 +1,6 @@
 <div x-show="settingsTab === 'website'" x-cloak class="mt-4 space-y-6">
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4">
+        <div class="px-5 py-4">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 class="text-sm font-semibold text-gray-900">Public library website</h2>
@@ -17,64 +17,89 @@
                 </a>
             </div>
         </div>
-        <form class="space-y-4 p-5" novalidate @submit.prevent="saveWebsiteSettings()">
-            <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
-                <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-900">
-                    <input type="checkbox" x-model="websiteForm.website_enabled" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    Enable public website
-                </label>
-                <p class="mt-1 text-xs text-gray-600" x-show="websiteForm.website_enabled">Students can open your public library page and send enquiries.</p>
-                <p class="mt-1 text-xs text-amber-700" x-show="! websiteForm.website_enabled" x-cloak>Website is off — visitors opening your website address are sent to the branch login page, and website enquiries are paused. Use Preview to check the page while you edit.</p>
-            </div>
+    </section>
 
-            <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Library name</label>
-                    <input
-                        type="text"
-                        x-model="websiteForm.display_name"
-                        maxlength="120"
-                        placeholder="e.g. Sunrise Study Hall"
-                        class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                    >
-                    <p class="mt-1 text-xs text-gray-500">Shown on your website and used for profile completion.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Website tagline</label>
-                    <input
-                        type="text"
-                        x-model="websiteForm.website_tagline"
-                        maxlength="255"
-                        placeholder="e.g. Quiet AC study space near MG Road"
-                        class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                    >
-                    <p class="mt-1 text-xs text-gray-500">Needed for Growth Score → Website (with WhatsApp + enable).</p>
+    <form class="space-y-6" novalidate @submit.prevent="saveWebsiteSettings()">
+        {{-- 1. Visibility --}}
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50/80 px-5 py-3.5">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Step 1</p>
+                <h2 class="mt-0.5 text-sm font-semibold text-gray-900">Visibility</h2>
+                <p class="mt-0.5 text-xs text-gray-500">Turn the public page on or off for students.</p>
+            </div>
+            <div class="p-5">
+                <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-4">
+                    <label class="inline-flex items-center gap-2.5 text-sm font-semibold text-gray-900">
+                        <input type="checkbox" x-model="websiteForm.website_enabled" class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        Enable public website
+                    </label>
+                    <p class="mt-2 text-xs text-gray-600" x-show="websiteForm.website_enabled">Students can open your public library page and send enquiries.</p>
+                    <p class="mt-2 text-xs text-amber-700" x-show="! websiteForm.website_enabled" x-cloak>Website is off — visitors opening your website address are sent to the branch login page, and website enquiries are paused. Use Preview to check the page while you edit.</p>
                 </div>
             </div>
+        </section>
 
-            <div>
-                <label for="website-address" class="block text-sm font-medium text-gray-700">Library address</label>
-                <textarea
-                    id="website-address"
-                    x-model="websiteForm.website_address"
-                    rows="3"
-                    maxlength="1000"
-                    placeholder="Street, area, city, PIN"
-                    class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                ></textarea>
-                <p class="mt-1 text-xs text-gray-500">Shown on your public website contact section and used for profile completion.</p>
+        {{-- 2. Library details --}}
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50/80 px-5 py-3.5">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Step 2</p>
+                <h2 class="mt-0.5 text-sm font-semibold text-gray-900">Library details</h2>
+                <p class="mt-0.5 text-xs text-gray-500">Name, tagline, and address shown on your public page.</p>
             </div>
+            <div class="space-y-5 p-5">
+                <div class="grid gap-5 md:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Library name</label>
+                        <input
+                            type="text"
+                            x-model="websiteForm.display_name"
+                            maxlength="120"
+                            placeholder="e.g. Sunrise Study Hall"
+                            class="mt-1.5 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                        >
+                        <p class="mt-1.5 text-xs text-gray-500">Also used for profile completion.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Website tagline</label>
+                        <input
+                            type="text"
+                            x-model="websiteForm.website_tagline"
+                            maxlength="255"
+                            placeholder="e.g. Quiet AC study space near MG Road"
+                            class="mt-1.5 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                        >
+                        <p class="mt-1.5 text-xs text-gray-500">Needed for Growth Score → Website (with WhatsApp + enable).</p>
+                    </div>
+                </div>
+                <div>
+                    <label for="website-address" class="block text-sm font-medium text-gray-700">Library address</label>
+                    <textarea
+                        id="website-address"
+                        x-model="websiteForm.website_address"
+                        rows="3"
+                        maxlength="1000"
+                        placeholder="Street, area, city, PIN"
+                        class="mt-1.5 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                    ></textarea>
+                    <p class="mt-1.5 text-xs text-gray-500">Shown in the contact section of your public website.</p>
+                </div>
+            </div>
+        </section>
 
-            <div>
+        {{-- 3. Amenities --}}
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50/80 px-5 py-3.5">
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Amenities</label>
-                        <p class="mt-0.5 text-xs text-gray-500">Select the facilities available at your library. These may be displayed on your public website.</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Step 3</p>
+                        <h2 class="mt-0.5 text-sm font-semibold text-gray-900">Amenities</h2>
+                        <p class="mt-0.5 text-xs text-gray-500">Select facilities available at your library. These may appear on your public website.</p>
                     </div>
-                    <p class="text-xs font-semibold text-gray-600" x-text="'Selected (' + (websiteForm.website_amenities || []).length + ')'"></p>
+                    <p class="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-800" x-text="'Selected (' + (websiteForm.website_amenities || []).length + ')'"></p>
                 </div>
-
-                <div class="relative mt-3">
+            </div>
+            <div class="space-y-4 p-5">
+                <div class="relative">
                     <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400" aria-hidden="true">
                         <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"/></svg>
                     </span>
@@ -83,11 +108,11 @@
                         x-model="amenitySearch"
                         placeholder="Search amenities..."
                         aria-label="Search amenities"
-                        class="block w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                        class="block w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                     >
                 </div>
 
-                <div class="mt-3 flex flex-wrap items-center gap-2" x-show="(websiteForm.website_amenities || []).length > 0">
+                <div class="flex flex-wrap items-center gap-2" x-show="(websiteForm.website_amenities || []).length > 0">
                     <template x-for="amenity in websiteForm.website_amenities" :key="'chip-' + amenity">
                         <span class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-900">
                             <span x-text="amenity"></span>
@@ -104,12 +129,12 @@
                     <button type="button" @click="clearAmenities()" class="text-xs font-semibold text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">Clear all</button>
                 </div>
 
-                <div class="mt-3 space-y-2">
+                <div class="space-y-2.5">
                     <template x-for="category in filteredAmenityCategories()" :key="category.key">
-                        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
                             <button
                                 type="button"
-                                class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                                class="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
                                 @click="toggleAmenityCategory(category.key)"
                                 :aria-expanded="isAmenityCategoryOpen(category.key)"
                             >
@@ -126,7 +151,7 @@
                                     <svg class="size-4 text-gray-500 transition-transform" :class="isAmenityCategoryOpen(category.key) ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 </span>
                             </button>
-                            <div x-show="isAmenityCategoryOpen(category.key)" x-cloak class="border-t border-gray-100 px-3 py-3">
+                            <div x-show="isAmenityCategoryOpen(category.key)" x-cloak class="border-t border-gray-100 px-3.5 py-3.5">
                                 <div class="mb-3 flex items-center justify-between gap-2">
                                     <p class="text-xs text-gray-500" x-text="selectedCountInCategory(category) + ' of ' + category.items.length + ' selected'"></p>
                                     <button
@@ -161,21 +186,21 @@
                     </p>
                 </div>
 
-                <div class="mt-3">
+                <div>
                     <button
                         type="button"
                         class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
                         @click="showCustomAmenityInput = !showCustomAmenityInput; if (showCustomAmenityInput) { $nextTick(() => { if ($refs.customAmenityInput) $refs.customAmenityInput.focus() }) }"
                         x-text="showCustomAmenityInput ? 'Hide custom amenity' : '+ Add custom amenity'"
                     ></button>
-                    <div x-show="showCustomAmenityInput" x-cloak class="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <div x-show="showCustomAmenityInput" x-cloak class="mt-2.5 flex flex-col gap-2 sm:flex-row">
                         <input
                             type="text"
                             x-ref="customAmenityInput"
                             x-model="customAmenityInput"
                             maxlength="120"
                             placeholder="e.g. Dedicated mentoring desk"
-                            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                            class="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                             @keydown.enter.prevent="addCustomAmenity()"
                         >
                         <button
@@ -186,13 +211,19 @@
                             Add
                         </button>
                     </div>
-                    <p x-show="customAmenityError" x-cloak class="mt-1 text-xs font-medium text-red-600" x-text="customAmenityError"></p>
+                    <p x-show="customAmenityError" x-cloak class="mt-1.5 text-xs font-medium text-red-600" x-text="customAmenityError"></p>
                 </div>
             </div>
+        </section>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Social links</label>
-                <p class="mt-0.5 text-xs text-gray-500">Add the channels students can use to reach your library.</p>
+        {{-- 4. Contact & social --}}
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50/80 px-5 py-3.5">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Step 4</p>
+                <h2 class="mt-0.5 text-sm font-semibold text-gray-900">Contact &amp; social links</h2>
+                <p class="mt-0.5 text-xs text-gray-500">WhatsApp and social channels students can use to reach your library.</p>
+            </div>
+            <div class="p-5">
                 @php
                     $socialFields = [
                         'facebook' => ['Facebook URL', 'https://facebook.com/yourlibrary'],
@@ -202,11 +233,11 @@
                         'website' => ['Website URL', 'https://yourlibrary.com'],
                     ];
                 @endphp
-                <div class="mt-3 grid gap-4 md:grid-cols-2">
+                <div class="grid gap-5 md:grid-cols-2">
                     <div>
                         <label for="website-whatsapp" class="block text-sm font-medium text-gray-700">WhatsApp number</label>
                         <div
-                            class="mt-1 flex rounded-lg border focus-within:ring-2"
+                            class="mt-1.5 flex rounded-lg border focus-within:ring-2"
                             :class="websiteErrors.website_whatsapp ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-500/20' : 'border-gray-300 focus-within:border-indigo-500 focus-within:ring-indigo-500/30'"
                         >
                             <span class="inline-flex items-center border-r border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 rounded-l-lg">+91</span>
@@ -221,10 +252,10 @@
                                 autocomplete="tel-national"
                                 placeholder="10-digit mobile"
                                 :aria-invalid="websiteErrors.website_whatsapp ? 'true' : 'false'"
-                                class="block w-full rounded-r-lg border-0 px-3 py-2 text-sm focus:outline-none focus:ring-0"
+                                class="block w-full rounded-r-lg border-0 px-3 py-2.5 text-sm focus:outline-none focus:ring-0"
                             >
                         </div>
-                        <p x-show="websiteErrors.website_whatsapp" x-cloak class="mt-1 text-xs font-medium text-red-600" x-text="websiteErrors.website_whatsapp"></p>
+                        <p x-show="websiteErrors.website_whatsapp" x-cloak class="mt-1.5 text-xs font-medium text-red-600" x-text="websiteErrors.website_whatsapp"></p>
                     </div>
                     @foreach ($socialFields as $key => [$label, $placeholder])
                         <div>
@@ -239,33 +270,45 @@
                                 @blur="validateWebsiteField('website_social_links.{{ $key }}')"
                                 placeholder="{{ $placeholder }}"
                                 :aria-invalid="websiteErrors['website_social_links.{{ $key }}'] ? 'true' : 'false'"
-                                class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                                class="mt-1.5 block w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2"
                                 :class="websiteErrors['website_social_links.{{ $key }}'] ? 'border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500/30'"
                             >
-                            <p x-show="websiteErrors['website_social_links.{{ $key }}']" x-cloak class="mt-1 text-xs font-medium text-red-600" x-text="websiteErrors['website_social_links.{{ $key }}']"></p>
+                            <p x-show="websiteErrors['website_social_links.{{ $key }}']" x-cloak class="mt-1.5 text-xs font-medium text-red-600" x-text="websiteErrors['website_social_links.{{ $key }}']"></p>
                         </div>
                     @endforeach
                 </div>
             </div>
+        </section>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Website logo</label>
-                <div class="mt-2 flex items-center gap-4">
+        {{-- 5. Logo --}}
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50/80 px-5 py-3.5">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Step 5</p>
+                <h2 class="mt-0.5 text-sm font-semibold text-gray-900">Website logo</h2>
+                <p class="mt-0.5 text-xs text-gray-500">Shown in the header of your public library page.</p>
+            </div>
+            <div class="p-5">
+                <div class="flex flex-wrap items-center gap-4">
                     <img x-show="websiteForm.website_logo_url" :src="websiteForm.website_logo_url" alt="Website logo" class="h-16 w-auto rounded border border-gray-200 bg-white p-2">
                     <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" @change="setWebsiteLogoFile($event)" class="text-sm">
                 </div>
             </div>
+        </section>
 
-            <div>
+        {{-- 6. Gallery --}}
+        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50/80 px-5 py-3.5">
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Gallery photos</label>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Step 6</p>
+                        <h2 class="mt-0.5 text-sm font-semibold text-gray-900">Gallery photos</h2>
                         <p class="mt-0.5 text-xs text-gray-500">Upload up to 10 photos for your public website gallery. JPG or PNG, max 4&nbsp;MB each.</p>
                     </div>
                     <p class="text-xs font-semibold text-gray-600" x-text="gallerySlotLabel()"></p>
                 </div>
-
-                <div class="mt-3 flex flex-wrap gap-3">
+            </div>
+            <div class="space-y-4 p-5">
+                <div class="flex flex-wrap gap-3">
                     <template x-for="photo in (websiteForm.website_gallery || [])" :key="'saved-' + photo.path">
                         <div
                             x-show="photo.path && ! websiteGalleryRemove.includes(photo.path)"
@@ -309,7 +352,7 @@
                     </template>
                 </div>
 
-                <div class="mt-3" x-show="galleryRemainingSlots() > 0">
+                <div x-show="galleryRemainingSlots() > 0">
                     <input
                         type="file"
                         x-ref="galleryFileInput"
@@ -327,15 +370,15 @@
                         Add photos
                     </button>
                 </div>
-                <p x-show="galleryError" x-cloak class="mt-2 text-xs font-medium text-red-600" x-text="galleryError"></p>
+                <p x-show="galleryError" x-cloak class="text-xs font-medium text-red-600" x-text="galleryError"></p>
             </div>
+        </section>
 
-            <div class="flex justify-end">
-                <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" :disabled="websiteSaving">
-                    <span x-show="! websiteSaving">Save website</span>
-                    <span x-show="websiteSaving">Saving...</span>
-                </button>
-            </div>
-        </form>
-    </section>
+        <div class="flex justify-end rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+            <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700" :disabled="websiteSaving">
+                <span x-show="! websiteSaving">Save website</span>
+                <span x-show="websiteSaving">Saving...</span>
+            </button>
+        </div>
+    </form>
 </div>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminTipTourController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
@@ -70,10 +71,15 @@ Route::get('/llms.txt', [LibcontrolMarketingSiteController::class, 'file'])->def
 Route::get('/register/{token}', [PublicStudentRegistrationController::class, 'show'])->name('students.register.show');
 Route::post('/register/{token}', [PublicStudentRegistrationController::class, 'store'])->name('students.register.store');
 
+Route::middleware('landlord_host')->post('/login', [TrialSignupController::class, 'loginStore'])
+    ->middleware(['throttle:10,1', 'redirect_signed_in_library'])
+    ->name('trials.login.store');
+
 Route::middleware('landlord_host')->prefix('try')->name('trials.')->group(function () {
     Route::get('/', [TrialSignupController::class, 'create'])->middleware('redirect_signed_in_library')->name('create');
     Route::post('/', [TrialSignupController::class, 'store'])->middleware(['throttle:10,1', 'redirect_signed_in_library'])->name('store');
     Route::get('/check', [TrialSignupController::class, 'check'])->middleware('throttle:40,1')->name('check');
+    Route::get('/find-library', [TrialSignupController::class, 'findLibrary'])->middleware('throttle:20,1')->name('find');
     Route::get('/{token}', [TrialSignupController::class, 'building'])->where('token', '[A-Za-z0-9]{48}')->name('building');
     Route::get('/{token}/status', [TrialSignupController::class, 'status'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:120,1')->name('status');
     Route::post('/{token}/start', [TrialSignupController::class, 'start'])->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:10,1')->name('start');
@@ -231,6 +237,8 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/bulk-delete', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk-destroy');
+
+    Route::post('/admin-tour/complete', [AdminTipTourController::class, 'complete'])->name('admin-tour.complete');
 
     Route::get('/help-support', [HelpSupportController::class, 'index'])->name('help-support.index');
     Route::get('/help-support/sync', [HelpSupportController::class, 'sync'])->name('help-support.sync');

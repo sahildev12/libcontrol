@@ -220,6 +220,12 @@ class TrialProvisioner
                 'active' => true,
                 'provision_error' => $sslReady ? null : 'SSL was still installing when the trial went live.',
             ]);
+
+            try {
+                app(TrialLifecycle::class)->sendWelcome($tenant->refresh());
+            } catch (\Throwable $e) {
+                report($e);
+            }
         } catch (\Throwable $e) {
             Log::error('Trial provisioning failed', ['tenant' => $tenant->id, 'step' => $tenant->provision_step, 'error' => $e->getMessage()]);
             $this->rollback($tenant, $e);

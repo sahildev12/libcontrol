@@ -91,8 +91,9 @@ class TrialLifecycleTest extends TestCase
     {
         $tenant = $this->readyTrial(signIn: false);
 
-        $mail = Mail::sent(AutomationAlertMail::class, fn (AutomationAlertMail $mail) => $mail->hasTo('asha@example.com'))->first();
+        $mail = Mail::sent(AutomationAlertMail::class, fn (AutomationAlertMail $mail) => str_contains((string) $mail->ctaUrl, '/try/verify/'))->first();
         $this->assertNotNull($mail);
+        $this->assertTrue($mail->hasTo('asha@example.com'));
         $this->assertStringStartsWith(self::HUB.'/try/verify/'.$tenant->id.'/', $mail->ctaUrl);
 
         $this->get(str_replace('signature=', 'signature=0', $mail->ctaUrl))
@@ -102,6 +103,34 @@ class TrialLifecycleTest extends TestCase
 
         $this->get($mail->ctaUrl)->assertOk()->assertSee('Email verified')->assertSee('Open my library');
         $this->assertNotNull($tenant->refresh()->owner_email_verified_at);
+    }
+
+    public function test_ready_library_gets_a_welcome_email_with_login_url(): void
+    {
+        Config::set('libcontrol.public_url', self::HUB);
+        $tenant = $this->readyTrial(signIn: false);
+
+        $welcome = Mail::sent(
+            AutomationAlertMail::class,
+            fn (AutomationAlertMail $mail) => $mail->subjectLine === 'Welcome to LibControl — Sunrise Library is ready'
+        )->first();
+
+        $this->assertNotNull($welcome);
+        $this->assertTrue($welcome->hasTo('asha@example.com'));
+        $this->assertSame(self::HUB.'/admin/login', $welcome->ctaUrl);
+        $this->assertSame('Log in to your library', $welcome->ctaLabel);
+        $this->assertStringContainsString(self::HUB.'/admin/login', $welcome->bodyText);
+        $this->assertStringContainsString('https://sunrise.libcontrol.in', $welcome->bodyText);
+        $this->assertTrue(
+            EmailAutomationLog::query()
+                ->where('related_id', $tenant->id)
+                ->where('template_key', 'trial_welcome')
+                ->exists()
+        );
+
+        Mail::fake();
+        app(TrialLifecycle::class)->sendWelcome($tenant->refresh());
+        Mail::assertNothingSent();
     }
 
     public function test_unverified_library_is_paused_after_the_window_until_the_owner_verifies(): void

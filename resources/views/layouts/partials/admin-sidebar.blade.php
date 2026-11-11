@@ -112,6 +112,22 @@
                     }
                     $isActive = AdminNav::isActive($currentRoute, $item);
                     $disabled = ($item['disabled'] ?? false) || empty($item['route']);
+                    $tourKey = match ($item['route'] ?? '') {
+                        'dashboard' => 'dashboard',
+                        'branch.index' => 'branch',
+                        'halls.index' => 'halls',
+                        'seats.index' => 'seats',
+                        'trial-seats.index' => 'trial-seats',
+                        'students.index' => 'students',
+                        'fees.index' => 'fees',
+                        'finance.index' => 'finance',
+                        'attendance.index' => 'attendance',
+                        'promotion.index' => 'promotion',
+                        'growth.index' => 'growth',
+                        'enquiries.index' => 'enquiries',
+                        'activity-logs.index' => 'activity-logs',
+                        default => null,
+                    };
                 @endphp
                 <li>
                     @if ($disabled)
@@ -127,6 +143,7 @@
                         <a
                             href="{{ route($item['route']) }}"
                             title="{{ $item['label'] }}"
+                            @if ($tourKey) data-tour="{{ $tourKey }}" @endif
                             class="flex items-center {{ $lcTheme ? 'rounded-xl' : 'rounded-lg' }} py-2.5 text-[13px] font-medium transition-colors {{ $isActive ? $navActiveClass : $navInactiveClass }}"
                             :class="collapsed ? 'justify-center px-1.5' : 'gap-2 px-2.5'"
                         >
@@ -244,6 +261,22 @@
                         }
                         $isActive = AdminNav::isActive($currentRoute, $item);
                         $disabled = ($item['disabled'] ?? false) || empty($item['route']);
+                        $tourKey = match ($item['route'] ?? '') {
+                            'dashboard' => 'dashboard',
+                            'branch.index' => 'branch',
+                            'halls.index' => 'halls',
+                            'seats.index' => 'seats',
+                            'trial-seats.index' => 'trial-seats',
+                            'students.index' => 'students',
+                            'fees.index' => 'fees',
+                            'finance.index' => 'finance',
+                            'attendance.index' => 'attendance',
+                            'promotion.index' => 'promotion',
+                            'growth.index' => 'growth',
+                            'enquiries.index' => 'enquiries',
+                            'activity-logs.index' => 'activity-logs',
+                            default => null,
+                        };
                     @endphp
                     <li>
                         @if ($disabled)
@@ -255,6 +288,7 @@
                             <a
                                 href="{{ route($item['route']) }}"
                                 @click="closeMobileNav()"
+                                @if ($tourKey) data-tour="{{ $tourKey }}" @endif
                                 class="flex items-center gap-2.5 {{ $lcTheme ? 'rounded-xl' : 'rounded-lg' }} px-3 py-2.5 text-[13px] font-medium transition-colors {{ $isActive ? $navActiveClass : $navInactiveClass }}"
                             >
                                 @include('layouts.partials.admin-nav-icon', ['icon' => $item['icon'], 'active' => $isActive, 'lcTheme' => $lcTheme])

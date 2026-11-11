@@ -1,12 +1,16 @@
-<x-guest-layout
-    portal="auth"
-    compact
-    title="Start your free {{ $trialDays }}-day trial"
-    subtitle="Full Pro plan · No card needed · Ready in about a minute"
->
+@php
+    $socialProviders = $socialProviders ?? \App\Support\Tenancy\SocialLogin::providers();
+    $social = $social ?? null;
+@endphp
+<x-layouts.auth-owner-split title="Start free trial" active-tab="signup">
+    <p class="lc-owner-lead">
+        Free {{ $trialDays }}-day Pro trial · No card · Ready in about a minute
+    </p>
+
     <form
         method="POST"
         action="{{ route('trials.store') }}"
+        class="lc-owner-form"
         x-data="trialSignup(@js([
             'libraryName' => old('library_name', ''),
             'subdomain' => old('subdomain', ''),
@@ -19,30 +23,16 @@
         @csrf
 
         @if (session('trial_social_error'))
-            <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{{ session('trial_social_error') }}</div>
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{{ session('trial_social_error') }}</div>
         @endif
 
         @if ($social)
-            <div class="mb-5 flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm" data-social-account>
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm" data-social-account>
                 <div class="min-w-0">
                     <p class="font-semibold text-emerald-800">Signed in with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}</p>
                     <p class="truncate text-emerald-700">{{ $social['email'] }}</p>
                 </div>
                 <button type="submit" form="trial-social-forget" class="shrink-0 text-xs font-semibold text-emerald-800 underline hover:text-emerald-950">Use another account</button>
-            </div>
-        @elseif ($socialProviders)
-            <div class="grid gap-2 {{ count($socialProviders) > 1 ? 'sm:grid-cols-2' : '' }}">
-                @foreach ($socialProviders as $provider => $label)
-                    <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:py-2" data-social-provider="{{ $provider }}">
-                        @include('trials.partials.social-icon', ['provider' => $provider])
-                        <span>@if (count($socialProviders) > 1)<span class="sm:hidden">Continue with </span>@else Continue with @endif{{ $label }}</span>
-                    </a>
-                @endforeach
-            </div>
-            <div class="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400 sm:my-3">
-                <span class="h-px flex-1 bg-gray-200"></span>
-                or sign up with email
-                <span class="h-px flex-1 bg-gray-200"></span>
             </div>
         @endif
 
@@ -51,15 +41,29 @@
             <input id="website" type="text" name="website" tabindex="-1" autocomplete="off">
         </div>
 
-        <div>
-            <x-input-label for="library_name" value="Library name" />
-            <x-text-input id="library_name" class="mt-1 block w-full" type="text" name="library_name" x-model="libraryName" x-on:input="suggest()" required autofocus maxlength="120" placeholder="Sunrise Study Library" />
+        <div class="lc-owner-field-block">
+            <label for="library_name" class="lc-owner-label">Library name</label>
+            <div class="lc-owner-field">
+                <svg class="lc-owner-field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <input
+                    id="library_name"
+                    class="lc-owner-input"
+                    type="text"
+                    name="library_name"
+                    x-model="libraryName"
+                    x-on:input="suggest()"
+                    required
+                    autofocus
+                    maxlength="120"
+                    placeholder="Sunrise Study Library"
+                >
+            </div>
             <x-input-error :messages="$errors->get('library_name')" class="mt-2" />
         </div>
 
-        <div class="mt-3">
-            <x-input-label for="subdomain" value="Your library address" />
-            <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="lc-owner-field-block">
+            <label for="subdomain" class="lc-owner-label">Your library address</label>
+            <div class="lc-owner-address">
                 <div class="relative min-w-0 flex-1">
                     <input
                         id="subdomain"
@@ -71,8 +75,8 @@
                         maxlength="30"
                         autocomplete="off"
                         spellcheck="false"
-                        class="block w-full rounded-l-md border-gray-300 pr-9 lowercase focus:border-indigo-500 focus:ring-indigo-500"
-                        x-bind:class="state === 'available' ? 'border-emerald-400' : (state === 'taken' ? 'border-rose-400' : '')"
+                        class="lc-owner-address__input"
+                        x-bind:class="state === 'available' ? 'text-emerald-700' : (state === 'taken' ? 'text-rose-700' : '')"
                         placeholder="sunrise"
                     >
                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3" aria-hidden="true">
@@ -81,7 +85,7 @@
                         <svg x-cloak x-show="state === 'taken'" class="h-4 w-4 text-rose-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.3 4.3a1 1 0 0 1 1.4 0L10 8.6l4.3-4.3a1 1 0 1 1 1.4 1.4L11.4 10l4.3 4.3a1 1 0 0 1-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 0 1-1.4-1.4L8.6 10 4.3 5.7a1 1 0 0 1 0-1.4z" clip-rule="evenodd"/></svg>
                     </span>
                 </div>
-                <span class="inline-flex shrink-0 items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-2 text-xs text-gray-500 sm:px-3 sm:text-sm">.{{ $baseDomain }}</span>
+                <span class="lc-owner-address__suffix">.{{ $baseDomain }}</span>
             </div>
             <p class="mt-1.5 text-xs text-gray-500" x-cloak x-show="state === 'checking'">Checking availability…</p>
             <p class="mt-1.5 text-xs" x-cloak x-show="state === 'available' || state === 'taken'" :class="state === 'available' ? 'text-emerald-600' : 'text-rose-600'" data-subdomain-message>
@@ -95,38 +99,83 @@
 
         @if ($social)
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            <p class="mt-3 text-xs text-gray-500">You'll sign in to your library with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}. You can also set a password later using "Forgot password" on your library's login page.</p>
+            <p class="text-xs text-slate-500">You'll sign in to your library with {{ \App\Support\Tenancy\SocialLogin::label($social['provider']) }}. You can also set a password later using "Forgot password" on your library's login page.</p>
         @else
-            <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                <div>
-                    <x-input-label for="email" value="Email" />
-                    <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required maxlength="190" autocomplete="email" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="lc-owner-field-block">
+                    <label for="email" class="lc-owner-label">Email</label>
+                    <div class="lc-owner-field">
+                        <svg class="lc-owner-field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <input id="email" class="lc-owner-input" type="email" name="email" value="{{ old('email') }}" required maxlength="190" autocomplete="email" placeholder="you@library.com">
+                    </div>
                     <x-input-error :messages="$errors->get('email')" class="mt-2" />
                 </div>
 
-                <div>
-                    <x-input-label for="password" value="Choose a password" />
-                    <x-password-input id="password" name="password" autocomplete="new-password" minlength="8" />
+                <div class="lc-owner-field-block">
+                    <label for="password" class="lc-owner-label">Password</label>
+                    <div class="lc-owner-field" x-data="{ show: false }">
+                        <svg class="lc-owner-field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <input
+                            id="password"
+                            class="lc-owner-input !pr-11"
+                            :type="show ? 'text' : 'password'"
+                            name="password"
+                            required
+                            minlength="8"
+                            autocomplete="new-password"
+                            placeholder="At least 8 characters"
+                        >
+                        <button
+                            type="button"
+                            class="absolute inset-y-0 right-0 z-[1] flex items-center px-3 text-slate-400 hover:text-slate-700"
+                            @click="show = ! show"
+                            :aria-label="show ? 'Hide password' : 'Show password'"
+                        >
+                            <svg x-show="! show" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            <svg x-show="show" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                        </button>
+                    </div>
                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                 </div>
             </div>
-            <p class="mt-1.5 text-xs text-gray-500">Password: at least 8 characters. You'll use these to log in as admin.</p>
         @endif
 
-        <div class="mt-5 sm:mt-4">
-            <x-primary-button class="w-full justify-center" x-bind:disabled="submitting" x-bind:class="submitting && 'opacity-70'">
-                <span x-show="! submitting">Create my library</span>
-                <span x-show="submitting" x-cloak>Starting…</span>
-            </x-primary-button>
-        </div>
+        <button type="submit" class="lc-owner-btn" x-bind:disabled="submitting">
+            <span x-show="! submitting">Create my library</span>
+            <span x-show="submitting" x-cloak>Starting…</span>
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </button>
 
-        <p class="mt-3 text-center text-xs text-gray-500">
+        <p class="lc-owner-foot" style="margin-top:0">
             By continuing you agree to our
-            <a href="/terms-and-conditions.html" target="_blank" class="font-semibold text-indigo-600 hover:text-indigo-800">terms</a>
+            <a href="/terms-and-conditions.html" target="_blank" class="font-semibold text-[#2563eb] hover:underline">terms</a>
             and
-            <a href="/privacy-policy.html" target="_blank" class="font-semibold text-indigo-600 hover:text-indigo-800">privacy policy</a>.
+            <a href="/privacy-policy.html" target="_blank" class="font-semibold text-[#2563eb] hover:underline">privacy policy</a>.
         </p>
     </form>
+
+    @if (! $social && $socialProviders)
+        <div class="lc-owner-social-block" data-library-social-login>
+            <div class="lc-owner-social-divider">
+                <span class="h-px flex-1 bg-slate-200"></span>
+                Or continue with
+                <span class="h-px flex-1 bg-slate-200"></span>
+            </div>
+            <div class="flex items-center justify-center gap-2.5">
+                @foreach ($socialProviders as $provider => $label)
+                    <a
+                        href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider) }}"
+                        class="lc-owner-social"
+                        title="Continue with {{ $label }}"
+                        aria-label="Continue with {{ $label }}"
+                        data-social-provider="{{ $provider }}"
+                    >
+                        @include('trials.partials.social-icon', ['provider' => $provider])
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     @if ($social)
         <form id="trial-social-forget" method="POST" action="{{ route('trials.social.forget') }}" class="hidden">@csrf</form>
@@ -198,4 +247,4 @@
             };
         }
     </script>
-</x-guest-layout>
+</x-layouts.auth-owner-split>

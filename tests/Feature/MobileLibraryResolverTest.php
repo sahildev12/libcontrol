@@ -143,6 +143,55 @@ class MobileLibraryResolverTest extends TestCase
         ]);
     }
 
+    public function test_runtime_sync_does_not_upsert_registry_before_hmac_succeeds(): void
+    {
+        Config::set('libcontrol.discovery.secret', 'test-discovery-secret');
+
+        LibraryRegistry::query()->create([
+            'library_code' => '999001',
+            'domain' => 'legit.example.com',
+            'app_url' => 'https://legit.example.com',
+            'client_name' => 'Legit Library',
+            'last_seen_at' => now(),
+        ]);
+
+        $payload = [
+            'domain' => 'evil.example',
+            'app_url' => 'https://evil.example',
+            'fingerprint' => hash('sha256', 'attacker'),
+            'meta' => [
+                'library_code' => '999001',
+                'client_name' => 'Phish Library',
+            ],
+        ];
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+
+        $this->call(
+            'POST',
+            '/api/runtime/sync',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+                'HTTP_X_SYNC_TOKEN' => 'deadbeef-not-a-valid-hmac',
+            ],
+            $body,
+        )->assertOk()->assertJsonPath('status', 'pending');
+
+        $this->assertDatabaseHas('library_registry', [
+            'library_code' => '999001',
+            'domain' => 'legit.example.com',
+            'app_url' => 'https://legit.example.com',
+            'client_name' => 'Legit Library',
+        ]);
+        $this->assertDatabaseMissing('library_registry', [
+            'library_code' => '999001',
+            'domain' => 'evil.example',
+        ]);
+    }
+
     public function test_runtime_sync_rewrites_localhost_app_url_to_https_domain(): void
     {
         Config::set('libcontrol.discovery.secret', 'test-discovery-secret');

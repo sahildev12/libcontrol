@@ -97,6 +97,11 @@ class AppServiceProvider extends ServiceProvider
 
             $supportTicketUnreadCount = $notificationService->supportTicketUnreadCount($user);
 
+            // Client admins only (admins.tour_completed_at). Branch staff have no admin row.
+            $adminTourEligible = $user->isClientAdmin();
+            $adminTourCompleted = $adminTourEligible
+                && $user->adminProfile?->tour_completed_at !== null;
+
             $topbarProfileCompletionPct = null;
             if (! $user->isDeveloperAdmin()) {
                 try {
@@ -149,6 +154,8 @@ class AppServiceProvider extends ServiceProvider
                 'recentAlerts' => $recentAlerts,
                 'alertCount' => $alertCount,
                 'supportTicketUnreadCount' => $supportTicketUnreadCount,
+                'adminTourEligible' => $adminTourEligible,
+                'adminTourCompleted' => $adminTourCompleted,
                 'topbarProfileCompletionPct' => $topbarProfileCompletionPct,
                 'planSnapshot' => $planSnapshot,
                 'planLimitCapped' => $planLimitCapped,

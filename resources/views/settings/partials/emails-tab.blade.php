@@ -7,6 +7,22 @@
         </div>
     @endif
 
+    @if (($viewingAll ?? false) && ($isClientAdmin ?? false))
+    <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="text-sm font-semibold text-gray-900">Plan expiry emails</h2>
+            <p class="mt-1 text-xs text-gray-500">A reminder email is sent in the morning, this many days before a plan ends. Applies to all branches.</p>
+        </div>
+        <div class="space-y-4 p-5">
+            <div class="max-w-xs">
+                <label class="block text-sm font-medium text-gray-700">Send reminder days before expiry</label>
+                <input type="number" min="1" max="90" x-model.number="form.expiry_reminder_days" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+            </div>
+            <p class="text-xs text-gray-500">Saved with “Save email settings” below.</p>
+        </div>
+    </section>
+    @endif
+
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="border-b border-gray-200 px-5 py-4">
             <h2 class="text-sm font-semibold text-gray-900">Student email notifications</h2>

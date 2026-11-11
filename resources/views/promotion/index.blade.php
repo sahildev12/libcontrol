@@ -207,7 +207,7 @@
                 <div class="max-h-[28rem] space-y-2 overflow-y-auto p-4">
                     <template x-for="student in filteredStudents()" :key="student.id">
                         <label class="flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2 hover:bg-gray-50">
-                            <input type="checkbox" :value="student.id" x-model="form.student_ids" class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <input type="checkbox" :value="String(student.id)" x-model="form.student_ids" class="mt-1 size-4 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <span class="min-w-0">
                                 <span class="block text-sm font-medium text-gray-900" x-text="student.name"></span>
                                 <span class="block text-xs text-gray-500" x-text="`${student.student_code} · ${student.email}`"></span>

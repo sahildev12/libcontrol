@@ -119,7 +119,7 @@
                 @elseif ($isClientAdmin && $branch)
                     Library hours for {{ $branch->display_name ?: $branch->name }}.
                 @elseif ($branch)
-                    Library hours and expiry reminders for {{ $branch->display_name ?: $branch->name }}.
+                    Library hours for {{ $branch->display_name ?: $branch->name }}.
                 @endif
             </p>
         </header>
@@ -256,21 +256,6 @@
                             <li x-text="`Full Day (${formatClock(form.library_open_time)} – ${formatClock(form.library_close_time)})`"></li>
                             <li x-text="`Custom Hours (${formatClock(form.library_open_time)} – ${formatClock(form.library_close_time)})`"></li>
                         </ul>
-                    </div>
-                </div>
-            </section>
-            @endif
-
-            @if (($viewingAll ?? false) && $isClientAdmin)
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div class="border-b border-gray-200 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Plan expiry emails</h2>
-                    <p class="mt-1 text-xs text-gray-500">A reminder email is sent in the morning, this many days before a plan ends. Applies to all branches.</p>
-                </div>
-                <div class="space-y-4 p-5">
-                    <div class="max-w-xs">
-                        <label class="block text-sm font-medium text-gray-700">Send reminder days before expiry</label>
-                        <input type="number" min="1" max="90" x-model.number="form.expiry_reminder_days" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
                     </div>
                 </div>
             </section>

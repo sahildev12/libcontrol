@@ -5,6 +5,9 @@
             planSnapshot: @js($planSnapshot),
             storeUrl: @js(route('branch.store')),
             libraryCode: @js($libraryCode),
+            hallsUrl: @js(route('halls.index')),
+            seatsUrl: @js(route('seats.index')),
+            studentsUrl: @js(route('students.index')),
         })"
         x-init="init()"
     >
@@ -194,6 +197,50 @@
                         <button type="submit" :disabled="saving" class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50" x-text="saving ? 'Saving...' : 'Set Password'"></button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        {{-- After create: next setup steps --}}
+        <div x-show="nextStepsOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-gray-900/50" @click="nextStepsOpen = false"></div>
+            <div class="relative w-full max-w-md overflow-hidden rounded-xl bg-white shadow-xl">
+                <div class="border-b border-gray-200 px-5 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Branch ready — what’s next?</h3>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{-- No text-* color: theme paints this header blue and lightens > p; a gray class would stay black on blue. --}}
+                        <span class="font-semibold text-white" x-text="nextStepsBranchName"></span>
+                        is set up. Follow these steps so students can get a seat when they join.
+                    </p>
+                </div>
+                <ol class="divide-y divide-gray-100 px-5 text-sm text-gray-700">
+                    <li class="flex items-center gap-3 py-3">
+                        <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">1</span>
+                        <span>Add a hall</span>
+                    </li>
+                    <li class="flex items-center gap-3 py-3">
+                        <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">2</span>
+                        <span>Add seats in that hall</span>
+                    </li>
+                    <li class="flex items-center gap-3 py-3">
+                        <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">3</span>
+                        <span>Add students and assign seats</span>
+                    </li>
+                </ol>
+                <div class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-4">
+                    <button
+                        type="button"
+                        @click="nextStepsOpen = false"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >Stay here</button>
+                    <a
+                        :href="studentsUrl"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >Add students</a>
+                    <a
+                        :href="hallsUrl"
+                        class="inline-flex h-9 items-center justify-center rounded-lg border border-transparent bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                    >Add a hall</a>
+                </div>
             </div>
         </div>
 

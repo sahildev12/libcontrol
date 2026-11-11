@@ -39,7 +39,13 @@
     {{-- lc-btn-website-test: temporary website-style buttons (exclude datatables). Remove class to revert. --}}
     <body class="font-sans antialiased overflow-hidden lc-theme lc-btn-website-test">
         <div
-            x-data="adminShell({ supportTicketUnread: @js($supportTicketUnreadCount ?? 0) })"
+            x-data="adminShell({
+                supportTicketUnread: @js($supportTicketUnreadCount ?? 0),
+                tipTourEligible: @js((bool) ($adminTourEligible ?? false)),
+                tipTourCompleted: @js((bool) ($adminTourCompleted ?? false)),
+                tipTourCompleteUrl: @js(($adminTourEligible ?? false) ? route('admin-tour.complete') : null),
+                tipTourUserId: @js(auth()->id()),
+            })"
             x-init="init()"
             @toggle-mobile-nav.window="toggleMobileNav()"
             class="h-svh overflow-hidden bg-slate-100/80"
@@ -59,6 +65,8 @@
                     </div>
                 </main>
             </div>
+
+            @include('layouts.partials.admin-tip-tour')
         </div>
 
         @include('layouts.partials.admin-toasts')

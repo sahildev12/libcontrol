@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AutomationAlertMail;
 use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\Enquiry;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\Growth\LibraryGrowthScoreService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class GrowthHubTest extends TestCase
@@ -188,6 +190,11 @@ class GrowthHubTest extends TestCase
         Branch::factory()->create();
         \App\Models\PlatformSetting::current()->update(['website_enabled' => true]);
 
+        $owner = User::factory()->create(['email' => 'owner@example.com']);
+        Admin::query()->create(['user_id' => $owner->id, 'admin_type' => Admin::TYPE_CLIENT]);
+
+        Mail::fake();
+
         $this->postJson(route('website.enquiries.store'), [
             'name' => 'Website Lead',
             'phone' => '9876543210',
@@ -202,6 +209,16 @@ class GrowthHubTest extends TestCase
             'phone' => '9876543210',
             'status' => 'new',
         ]);
+
+        Mail::assertSent(AutomationAlertMail::class, function (AutomationAlertMail $mail) {
+            return $mail->hasTo('lead@example.com')
+                && $mail->subjectLine === 'We received your enquiry — '.\App\Models\PlatformSetting::current()->displayName();
+        });
+
+        Mail::assertSent(AutomationAlertMail::class, function (AutomationAlertMail $mail) {
+            return $mail->hasTo('owner@example.com')
+                && str_contains($mail->subjectLine, 'New enquiry from Website Lead');
+        });
     }
 
     public function test_referral_campaign_updates_profile(): void

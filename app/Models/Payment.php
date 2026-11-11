@@ -40,6 +40,7 @@ class Payment extends Model
         'payment_mode',
         'error_code',
         'licensed_deployment_id',
+        'tenant_id',
         'deployment_domain',
         'library_code',
         'library_name',
@@ -68,6 +69,15 @@ class Payment extends Model
         ];
     }
 
+    public function getConnectionName(): ?string
+    {
+        if (config('libcontrol.tenancy.enabled')) {
+            return (string) (config('libcontrol.tenancy.landlord_connection') ?: config('database.default'));
+        }
+
+        return parent::getConnectionName();
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Payment $payment) {
@@ -84,6 +94,11 @@ class Payment extends Model
     public function deployment(): BelongsTo
     {
         return $this->belongsTo(LicensedDeployment::class, 'licensed_deployment_id');
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     public function growthOrder(): BelongsTo

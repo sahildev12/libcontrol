@@ -6,7 +6,6 @@ use App\Mail\AutomationAlertMail;
 use App\Models\EmailAutomationLog;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Support\WhatsAppLink;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -38,10 +37,18 @@ class TrialLifecycle
 
     public function upgradeUrl(Tenant $tenant): string
     {
-        return WhatsAppLink::url(
-            (string) config('libcontrol.support.whatsapp'),
-            "Hi, I'd like to upgrade my LibControl library {$tenant->host()}.",
-        ) ?: 'mailto:'.$this->supportEmail();
+        return 'https://'.$tenant->host().'/billing';
+    }
+
+    public function hubLoginUrl(): string
+    {
+        $base = rtrim((string) (
+            config('libcontrol.public_url')
+            ?: config('app.url')
+            ?: ('https://'.config('libcontrol.tenancy.base_domain', 'libcontrol.in'))
+        ), '/');
+
+        return $base.'/admin/login';
     }
 
     public function sendVerification(Tenant $tenant): bool
@@ -56,6 +63,47 @@ class TrialLifecycle
             'Verify my email',
             $this->verificationUrl($tenant),
         );
+    }
+
+    /**
+     * Sent once when the trial library is ready. Includes the hub login URL (email + password).
+     */
+    public function sendWelcome(Tenant $tenant): bool
+    {
+        if (! $tenant->isReady() || blank($tenant->owner_email)) {
+            return false;
+        }
+
+        if ($this->logs($tenant)->where('template_key', 'trial_welcome')->exists()) {
+            return true;
+        }
+
+        $loginUrl = $this->hubLoginUrl();
+        $libraryUrl = $tenant->url();
+        $sent = $this->mail(
+            $tenant,
+            'Welcome to LibControl — '.$tenant->client_name.' is ready',
+            'Your library is ready',
+            "Hi {$this->firstName($tenant)},\n\nWelcome to LibControl. {$tenant->client_name} is live.\n\n"
+            ."Your library: {$libraryUrl}\n\n"
+            ."Log in with the email and password you chose at signup:\n{$loginUrl}",
+            'Log in to your library',
+            $loginUrl,
+        );
+
+        if (! $sent) {
+            return false;
+        }
+
+        $this->logs($tenant)->create([
+            'template_key' => 'trial_welcome',
+            'recipient_email' => (string) $tenant->owner_email,
+            'related_type' => Tenant::class,
+            'related_id' => $tenant->id,
+            'sent_at' => now(),
+        ]);
+
+        return true;
     }
 
     public function markVerified(Tenant $tenant): void

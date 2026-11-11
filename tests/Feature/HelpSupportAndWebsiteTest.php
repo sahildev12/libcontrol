@@ -33,6 +33,7 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertSee('Support Documentation', false)
             ->assertSee('libcontrol.in/support-articles.html', false)
             ->assertSee('libcontrol.in/documentation.html', false)
+            ->assertSee('https://www.libcontrol.in', false)
             ->assertSee('wa.me/918076105181', false);
     }
 

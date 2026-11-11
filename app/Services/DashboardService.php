@@ -271,7 +271,7 @@ class DashboardService
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with(['student:id,name,student_code'])
             ->latest('id')
-            ->limit(5)
+            ->limit(4)
             ->get()
             ->map(fn (Enquiry $enquiry) => [
                 'name' => $enquiry->name,

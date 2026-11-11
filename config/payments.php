@@ -53,4 +53,13 @@ return [
         'pro' => 2,
         'custom' => 3,
     ],
+
+    /*
+    | Hosted trial libraries on libcontrol.in pay through PhonePe without a LicensedDeployment.
+    | Set LIBCONTROL_TRIAL_UPGRADE_TEST_PAISE=100 to charge ₹1 while PhonePe dashboard/test mode
+    | is unavailable (production credentials still apply).
+    */
+    'trial_upgrade' => [
+        'test_amount_paise' => (int) env('LIBCONTROL_TRIAL_UPGRADE_TEST_PAISE', 0),
+    ],
 ];

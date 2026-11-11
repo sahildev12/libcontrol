@@ -41,6 +41,8 @@ class GrowthRecommendationsTest extends TestCase
             $this->assertNull($rec['expert_service']);
             $this->assertTrue($rec['expert_available'] ?? false);
             $this->assertNotEmpty($rec['diy_steps']);
+            $this->assertNotEmpty($rec['cta_url'] ?? null);
+            $this->assertStringNotContainsString('growth#recommendations', (string) $rec['cta_url']);
         }
 
         foreach ($recs['locked'] as $rec) {
@@ -65,9 +67,78 @@ class GrowthRecommendationsTest extends TestCase
         $this->assertSame([], $recs['locked']);
         $this->assertNotEmpty($recs['unlocked']);
 
-        foreach ($recs['unlocked'] as $rec) {
+        $actionUnlocked = collect($recs['unlocked'])->where('source', 'action');
+        $this->assertNotEmpty($actionUnlocked);
+        foreach ($actionUnlocked as $rec) {
             $this->assertNotEmpty($rec['expert_service']);
         }
+    }
+
+    public function test_free_library_does_not_see_pro_system_tips(): void
+    {
+        $branch = Branch::factory()->create();
+
+        $keys = collect($this->recommendationsFor($branch)['unlocked'])->pluck('key');
+
+        $this->assertFalse($keys->contains('fill_seats'));
+        $this->assertFalse($keys->contains('collect_fees'));
+        $this->assertFalse($keys->contains('complete_profile'));
+    }
+
+    public function test_active_package_includes_pro_system_tips_when_score_low(): void
+    {
+        $branch = Branch::factory()->create();
+        LibraryGrowthProfile::query()->create([
+            'branch_id' => $branch->id,
+            'active_package' => 'starter',
+            'package_active_until' => now()->addMonth(),
+        ]);
+
+        $recs = $this->recommendationsFor($branch);
+        $keys = collect($recs['unlocked'])->pluck('key');
+
+        $this->assertTrue($recs['has_package']);
+        $this->assertTrue(
+            $keys->contains('fill_seats')
+            || $keys->contains('complete_profile')
+            || $keys->contains('branch_setup')
+            || $keys->contains('log_expenses')
+            || $keys->contains('daily_usage'),
+            'Expected at least one Pro system-use tip for a new library with a package.'
+        );
+
+        $pro = collect($recs['unlocked'])->firstWhere('source', 'pro');
+        $this->assertNotNull($pro);
+        $this->assertNotEmpty($pro['diy_steps'] ?? []);
+        $this->assertArrayHasKey('cta_url', $pro);
+    }
+
+    public function test_active_growth_order_unlocks_even_if_profile_package_null(): void
+    {
+        $branch = Branch::factory()->create();
+        LibraryGrowthProfile::query()->create([
+            'branch_id' => $branch->id,
+            'active_package' => null,
+            'package_active_until' => null,
+        ]);
+
+        \App\Models\GrowthOrder::query()->create([
+            'branch_id' => $branch->id,
+            'order_type' => 'package',
+            'item_key' => 'starter',
+            'item_name' => 'Starter',
+            'status' => \App\Models\GrowthOrder::STATUS_ACTIVE,
+            'contact_name' => 'Test',
+            'contact_email' => 'test@example.com',
+        ]);
+
+        $recs = $this->recommendationsFor($branch);
+
+        $this->assertTrue($recs['has_package']);
+        $this->assertSame(
+            'starter',
+            LibraryGrowthProfile::query()->where('branch_id', $branch->id)->value('active_package')
+        );
     }
 
     public function test_expired_package_does_not_unlock(): void
@@ -100,7 +171,9 @@ class GrowthRecommendationsTest extends TestCase
         $reviews = collect($score['items'])->firstWhere('key', 'reviews');
         $this->assertSame($reviews['max_points'], $reviews['points']);
 
-        $after = app(LibraryGrowthRecommendationService::class)->fromActionProgress($score);
+        $business = app(\App\Services\Growth\LibraryBusinessPerformanceService::class)
+            ->scoreForLibrary(null, $branch->id);
+        $after = app(LibraryGrowthRecommendationService::class)->fromActionProgress($score, $business);
         $this->assertContains('reviews', collect($after['completed'])->pluck('key')->all());
         $this->assertNotContains('reviews', collect($after['locked'])->pluck('key')->all());
     }
@@ -157,7 +230,7 @@ class GrowthRecommendationsTest extends TestCase
             'admin_type' => Admin::TYPE_CLIENT,
         ]);
 
-        $lockedTitle = (string) config('growth.recommendations.items.instagram.title');
+        $proOnlyTitle = (string) config('growth.recommendations.pro_items.fill_seats.title');
 
         $this->actingAs($user)
             ->get(route('dashboard'))
@@ -170,7 +243,7 @@ class GrowthRecommendationsTest extends TestCase
             ->assertDontSee('Locked recommendation', false)
             ->assertDontSee('Do it yourself', false)
             ->assertSee('lc-rec-hire-pro', false)
-            ->assertDontSee($lockedTitle, false);
+            ->assertDontSee($proOnlyTitle, false);
     }
 
     public function test_growth_hub_does_not_expose_locked_checklist_details_in_html(): void
@@ -219,7 +292,9 @@ class GrowthRecommendationsTest extends TestCase
     private function recommendationsFor(Branch $branch): array
     {
         $score = app(LibraryGrowthScoreService::class)->scoreForBranch($branch, false);
+        $business = app(\App\Services\Growth\LibraryBusinessPerformanceService::class)
+            ->scoreForLibrary(null, $branch->id);
 
-        return app(LibraryGrowthRecommendationService::class)->fromActionProgress($score);
+        return app(LibraryGrowthRecommendationService::class)->fromActionProgress($score, $business);
     }
 }

@@ -42,7 +42,7 @@ class LibraryCombinedGrowthScoreService
             'growth_score' => max(0, min(100, $growth)),
             'action_progress' => $action,
             'business_performance' => $business,
-            'recommendations' => $this->recommendations->fromActionProgress($action),
+            'recommendations' => $this->recommendations->fromActionProgress($action, $business),
             'action_pct' => $actionPct,
             'business_pct' => $businessPct,
             'formula' => [
@@ -124,6 +124,11 @@ class LibraryCombinedGrowthScoreService
                     'detail' => 'Add a branch to unlock halls, seats, students, and more AI growth tips for your library.',
                     'effort' => 'easy',
                     'gain' => 0,
+                    'diy_steps' => [
+                        'Open Branch from the sidebar.',
+                        'Create your first library branch with name and address.',
+                        'Then add halls, seats, students, and fees.',
+                    ],
                     'cta_label' => 'Create Branch',
                     'cta_url' => $createBranchUrl,
                     'expert_service' => null,

@@ -16,6 +16,7 @@ class EnforceTrialAccess
         'login', 'login.store', 'admin.login', 'admin.login.store', 'logout',
         'password.request', 'password.email', 'password.reset', 'password.store',
         'trials.resend-verification', 'plan-limit.dismiss', 'active-branch.switch',
+        'billing.index', 'billing.pay',
     ];
 
     /**

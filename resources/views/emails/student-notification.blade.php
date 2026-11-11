@@ -10,7 +10,8 @@
 **Student code:** {{ $student->student_code }}
 @endif
 
-Thanks,<br>
-{{ $libraryName }}<br>
-<span style="color: #6b7280;">{{ config('libcontrol.product.byline') }}</span>
+Thanks,  
+{{ $libraryName }}
+
+{{ config('libcontrol.product.byline') }}
 </x-mail::message>

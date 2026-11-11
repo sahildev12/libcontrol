@@ -221,7 +221,7 @@
                                 @if ($rec['why'] !== '')
                                     <p style="margin:0 0 8px;font-size:12px;line-height:1.45;color:#64748B;">{{ $rec['why'] }}</p>
                                 @endif
-                                @if ($rec['diy_steps'] !== [])
+                                @if (! empty($rec['diy_steps']))
                                     <ul class="lc-rec-steps">
                                         @foreach ($rec['diy_steps'] as $step)
                                             <li>{{ $step }}</li>

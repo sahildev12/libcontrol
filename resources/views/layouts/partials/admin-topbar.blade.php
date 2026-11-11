@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <div class="hidden min-w-0 flex-1 lg:block" x-data="branchSwitcher({ switchUrl: @js(route('active-branch.switch')) })" @if (($isAnyAdmin ?? false) && ! ($isDeveloperAdmin ?? false)) x-init="init()" @endif>
+    <div class="relative z-10 hidden min-w-0 flex-1 lg:block" x-data="branchSwitcher({ switchUrl: @js(route('active-branch.switch')) })" @if (($isAnyAdmin ?? false) && ! ($isDeveloperAdmin ?? false)) x-init="init()" @endif>
         @if ($isDeveloperAdmin ?? false)
             <p class="text-[11px] font-medium uppercase tracking-wide text-gray-400">Katsindia hub</p>
             <p class="truncate text-sm font-semibold text-brand-navy">Developer panel</p>
@@ -61,10 +61,15 @@
                 : (\Illuminate\Support\Facades\Route::has('settings.index') ? route('settings.index') : null);
             $navyFill = $profilePct !== null ? max(0, min(100, $profilePct)) : 0;
         @endphp
-        <div class="pointer-events-none absolute inset-x-0 top-0 hidden h-16 items-center justify-center px-4 lg:flex">
+        {{-- Inset left/right so the carousel never sits under Branch / account controls.
+             Use lg:flex (present in built CSS). Avoid xl:/2xl: utilities that are not in the current asset build. --}}
+        <div
+            class="pointer-events-none absolute inset-y-0 hidden items-center justify-center lg:flex"
+            style="left:20rem;right:16rem;"
+        >
             <div
-                class="pointer-events-auto overflow-hidden"
-                style="perspective:900px;height:52px;width:min(42rem,calc(100vw - 34rem));"
+                class="pointer-events-auto w-full max-w-xl overflow-hidden"
+                style="perspective:900px;height:52px;"
                 @if ($profilePct !== null)
                     x-data="{
                         face: 0,
@@ -102,13 +107,13 @@
                     </div>
 
                     @if ($profilePct !== null)
-                        {{-- Face 1: Profile completion --}}
+                        {{-- Face 1: Profile completion (compact copy so it fits the inset slot) --}}
                         <div
                             class="absolute inset-0 flex items-center justify-center"
                             style="backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateX(180deg);"
                         >
                             <div
-                                class="flex w-full items-center gap-3 rounded-xl border px-3 shadow-sm"
+                                class="flex w-full min-w-0 items-center gap-2 rounded-xl border px-2.5 shadow-sm"
                                 style="height:48px;background-color:#F4F8FF;border-color:#DCE6F5;"
                             >
                                 <span
@@ -121,12 +126,11 @@
                                     </svg>
                                 </span>
 
-                                <div class="min-w-0 shrink-0" style="max-width:11.5rem;">
+                                <div class="min-w-0" style="max-width:9.5rem;">
                                     <p class="truncate font-bold" style="margin:0;font-size:13px;line-height:1.2;color:#082a67;">Profile completion</p>
-                                    <p class="truncate" style="margin:2px 0 0;font-size:11px;line-height:1.25;color:#7B8BA5;">Complete your profile to unlock all features</p>
                                 </div>
 
-                                <span class="relative mx-1 h-2.5 min-w-0 flex-1 overflow-hidden rounded-full" style="background-color:#E2E8F0;" aria-hidden="true" data-profile-completion-track>
+                                <span class="relative mx-0.5 h-2.5 min-w-0 flex-1 overflow-hidden rounded-full" style="background-color:#E2E8F0;" aria-hidden="true" data-profile-completion-track>
                                     <span
                                         class="absolute inset-y-0 left-0 rounded-full"
                                         style="width:{{ $navyFill }}%;background-color:#FFCC00;"
@@ -141,7 +145,7 @@
                                     class="inline-flex shrink-0 items-center gap-1 rounded-lg border bg-white font-semibold transition hover:bg-slate-50"
                                     style="height:30px;padding:0 10px;border-color:#D5DEEB;color:#082a67;font-size:12px;text-decoration:none;"
                                 >
-                                    Complete Profile
+                                    Complete
                                     <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M9 5l7 7-7 7"/>
                                     </svg>
@@ -161,7 +165,7 @@
         </div>
     @endif
 
-    <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+    <div class="relative z-10 flex shrink-0 items-center gap-2 sm:gap-3">
         <div
             class="relative"
             x-data="notificationBell({
@@ -236,7 +240,7 @@
 
         <x-dropdown align="right" :width="$lcTheme ? 'w-72 min-w-[17rem]' : '48'">
             <x-slot name="trigger">
-                <button type="button" class="inline-flex size-10 items-center justify-center rounded-full text-xs font-semibold text-white {{ $lcTheme ? 'bg-brand-blue ring-2 ring-brand-yellow/80 hover:bg-brand-navy' : 'bg-indigo-600 hover:bg-indigo-700' }}" aria-label="Account menu">
+                <button type="button" data-tour="settings" class="inline-flex size-10 items-center justify-center rounded-full text-xs font-semibold text-white {{ $lcTheme ? 'bg-brand-blue ring-2 ring-brand-yellow/80 hover:bg-brand-navy' : 'bg-indigo-600 hover:bg-indigo-700' }}" aria-label="Account menu">
                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                 </button>
             </x-slot>
@@ -262,10 +266,14 @@
                             <span>Branch Settings</span>
                         </a>
                     @endif
-                    @if (! ($licenseServerEnabled ?? false) && Auth::user()->isClientAdmin() && \Illuminate\Support\Facades\Route::has('billing.index'))
+                    @if (
+                        Auth::user()->isClientAdmin()
+                        && \Illuminate\Support\Facades\Route::has('billing.index')
+                        && (! ($licenseServerEnabled ?? false) || \App\Support\Tenancy\TenantContext::current() !== null)
+                    )
                         <a href="{{ route('billing.index') }}" class="{{ $profileMenuLinkClass }}">
                             <svg class="size-[18px] shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                            <span>Subscription &amp; Billing</span>
+                            <span>{{ \App\Support\Tenancy\TenantContext::current()?->is_trial ? 'Upgrade & Billing' : 'Subscription & Billing' }}</span>
                         </a>
                     @endif
                     @if (! ($isDeveloperAdmin ?? false) && \Illuminate\Support\Facades\Route::has('help-support.index'))

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\Enquiry;
 use App\Models\PlatformSetting;
+use App\Services\EnquiryMailService;
 use App\Services\Growth\ReferralService;
 use App\Support\ValidationRules;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Schema;
 
 class PublicWebsiteEnquiryController extends Controller
 {
-    public function store(Request $request, ReferralService $referrals): JsonResponse
+    public function store(Request $request, ReferralService $referrals, EnquiryMailService $enquiryMail): JsonResponse
     {
         abort_unless(config('libcontrol.modules.enquiries'), 404);
         abort_unless(PlatformSetting::current()->website_enabled, 404);
@@ -54,6 +55,8 @@ class PublicWebsiteEnquiryController extends Controller
                 $referrals->recordFromEnquiry($enquiry, $referrer);
             }
         }
+
+        $enquiryMail->notifyNewEnquiry($enquiry);
 
         return response()->json([
             'message' => 'Thank you! We received your enquiry and will contact you soon.',

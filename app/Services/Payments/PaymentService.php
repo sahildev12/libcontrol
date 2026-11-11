@@ -5,8 +5,11 @@ namespace App\Services\Payments;
 use App\Models\GrowthOrder;
 use App\Models\LicensedDeployment;
 use App\Models\Payment;
+use App\Models\PlatformSetting;
+use App\Models\Tenant;
 use App\Services\Developer\DeploymentCommandService;
 use App\Services\Growth\GrowthOrderService;
+use App\Services\Tenancy\TenantConnectionManager;
 use App\Support\GrowthCatalog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +27,13 @@ class PaymentService
     public function __construct(
         private PhonePeClient $phonePe,
         private DeploymentCommandService $commands,
+        private TenantConnectionManager $tenants,
     ) {}
+
+    public function available(): bool
+    {
+        return $this->phonePe->configured();
+    }
 
     /**
      * @param  array{
@@ -44,9 +53,7 @@ class PaymentService
      */
     public function startCheckout(LicensedDeployment $deployment, array $input): array
     {
-        if (! $this->phonePe->configured()) {
-            throw ValidationException::withMessages(['payment' => 'Online payments are not available right now. Please contact Katsindia.']);
-        }
+        $this->assertPhonePeReady();
 
         $priced = $this->price($deployment, $input);
 
@@ -69,38 +76,117 @@ class PaymentService
             'return_url' => $this->safeReturnUrl($deployment, $input['return_url'] ?? null),
         ]);
 
-        try {
-            $order = $this->phonePe->createOrder(
-                $payment->merchant_order_id,
-                $payment->amount_paise,
-                route('payments.return', $payment->uuid),
-                'LibControl: '.$payment->item_name,
-                [
-                    'udf1' => $payment->purpose,
-                    'udf2' => $payment->item_key,
-                    'udf3' => (string) $deployment->id,
-                    'udf4' => (string) $payment->library_name,
-                ],
-            );
-        } catch (\Throwable $e) {
-            $payment->update(['status' => Payment::STATUS_FAILED, 'error_code' => 'CREATE_FAILED']);
+        return $this->launchPhonePe(
+            $payment,
+            [
+                'udf1' => $payment->purpose,
+                'udf2' => $payment->item_key,
+                'udf3' => (string) $deployment->id,
+                'udf4' => (string) $payment->library_name,
+            ],
+        );
+    }
 
-            throw ValidationException::withMessages(['payment' => $e->getMessage()]);
-        }
+    /**
+     * Hosted trial / tenant libraries on the hub — no LicensedDeployment required.
+     *
+     * @param  array{
+     *     item_key: string,
+     *     billing_cycle: string,
+     *     payer_name?: string|null,
+     *     payer_email?: string|null,
+     *     payer_phone?: string|null,
+     *     return_url?: string|null,
+     * }  $input
+     * @return array{payment: Payment, redirect_url: string}
+     */
+    public function startTenantCheckout(Tenant $tenant, array $input): array
+    {
+        $this->assertPhonePeReady();
 
-        $phonePeRedirect = (string) $order['redirect_url'];
+        $priced = $this->priceTenantPlan($tenant, $input);
 
-        $payment->update([
-            'status' => Payment::STATUS_PENDING,
-            'gateway_order_id' => $order['order_id'] ?: null,
-            'meta' => array_merge($payment->meta ?? [], [
-                'phonepe_redirect_url' => $phonePeRedirect,
+        $payment = Payment::query()->create([
+            'gateway' => 'phonepe',
+            'purpose' => Payment::PURPOSE_SOFTWARE_PLAN,
+            'item_key' => $priced['item_key'],
+            'item_name' => $priced['item_name'],
+            'billing_cycle' => $priced['billing_cycle'],
+            'amount_paise' => $priced['amount_paise'],
+            'status' => Payment::STATUS_CREATED,
+            'tenant_id' => $tenant->id,
+            'deployment_domain' => $tenant->host(),
+            'library_name' => $tenant->client_name,
+            'payer_name' => $this->clip($input['payer_name'] ?? null, 255),
+            'payer_email' => filter_var($input['payer_email'] ?? null, FILTER_VALIDATE_EMAIL) ?: null,
+            'payer_phone' => $this->clip(preg_replace('/[^0-9+]/', '', (string) ($input['payer_phone'] ?? '')), 20),
+            'return_url' => $this->safeTenantReturnUrl($tenant, $input['return_url'] ?? null),
+            'meta' => array_filter([
+                'tenant_id' => $tenant->id,
+                'was_trial' => (bool) $tenant->is_trial,
+                'test_amount' => $priced['test_amount'] ? true : null,
             ]),
         ]);
 
+        return $this->launchPhonePe(
+            $payment,
+            [
+                'udf1' => $payment->purpose,
+                'udf2' => $payment->item_key,
+                'udf3' => 'tenant:'.$tenant->id,
+                'udf4' => (string) $payment->library_name,
+            ],
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function summaryForTenant(Tenant $tenant, ?string $refreshPaymentUuid = null): array
+    {
+        $this->refreshStalePendingForTenant($tenant);
+
+        if ($refreshPaymentUuid) {
+            $payment = Payment::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('uuid', $refreshPaymentUuid)
+                ->first();
+
+            if ($payment) {
+                try {
+                    $this->refreshStatus($payment);
+                } catch (\Throwable $e) {
+                    Log::info('Tenant payment return refresh failed.', [
+                        'payment' => $payment->uuid,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        $tenant->refresh();
+
         return [
-            'payment' => $payment->fresh(),
-            'redirect_url' => $this->signedLaunchUrl($payment->fresh()),
+            'plan' => [
+                'plan_tier' => $tenant->planTier(),
+                'plan_label' => config('libcontrol.plans.'.$tenant->planTier().'.label', ucfirst($tenant->planTier())),
+                'plan_paid_until' => $this->tenants->runOnTenant(
+                    $tenant,
+                    fn () => PlatformSetting::current()->plan_paid_until?->toIso8601String(),
+                ),
+                'is_trial' => (bool) $tenant->is_trial,
+            ],
+            'prices' => config('payments.software_plans', []),
+            'payments_enabled' => $this->available(),
+            'test_amount_paise' => $this->trialTestAmountPaise($tenant),
+            'payments' => Payment::query()
+                ->where('tenant_id', $tenant->id)
+                ->orderByDesc('id')
+                ->limit(25)
+                ->get()
+                ->map(fn (Payment $p) => $this->publicPayload($p))
+                ->values()
+                ->all(),
         ];
     }
 
@@ -129,8 +215,9 @@ class PaymentService
         }
 
         $remote = $this->phonePe->orderStatus($payment->merchant_order_id);
+        $connection = $payment->getConnectionName() ?: (string) config('database.default');
 
-        return DB::transaction(function () use ($payment, $remote) {
+        return DB::connection($connection)->transaction(function () use ($payment, $remote) {
             /** @var Payment $locked */
             $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
             $locked->last_checked_at = now();
@@ -403,6 +490,12 @@ class PaymentService
 
     private function fulfilPlan(Payment $payment): void
     {
+        if ($payment->tenant_id) {
+            $this->fulfilTenantPlan($payment);
+
+            return;
+        }
+
         /** @var LicensedDeployment|null $deployment */
         $deployment = LicensedDeployment::query()->whereKey($payment->licensed_deployment_id)->lockForUpdate()->first();
 
@@ -440,6 +533,43 @@ class PaymentService
             'max_branches_override' => $deployment->max_branches_override,
             'plan_paid_until' => $paidUntil->toIso8601String(),
         ]);
+    }
+
+    private function fulfilTenantPlan(Payment $payment): void
+    {
+        /** @var Tenant|null $tenant */
+        $tenant = Tenant::query()->whereKey($payment->tenant_id)->lockForUpdate()->first();
+
+        if (! $tenant) {
+            Log::error('Paid tenant plan has no tenant.', ['payment' => $payment->uuid]);
+
+            return;
+        }
+
+        $tier = $payment->item_key;
+        $currentPaidUntil = $this->tenants->runOnTenant(
+            $tenant,
+            fn () => PlatformSetting::current()->plan_paid_until,
+        );
+
+        $start = (! $tenant->is_trial && $tenant->planTier() === $tier && $currentPaidUntil?->isFuture())
+            ? Carbon::parse($currentPaidUntil)
+            : now();
+        $paidUntil = $payment->billing_cycle === 'yearly' ? $start->copy()->addYear() : $start->copy()->addMonth();
+
+        $tenant->forceFill([
+            'is_trial' => false,
+            'trial_ends_at' => null,
+            'locked_at' => null,
+            'plan_tier' => $tier,
+        ])->save();
+
+        $this->tenants->runOnTenant($tenant, function () use ($tier, $paidUntil): void {
+            PlatformSetting::current()->forceFill([
+                'plan_tier' => $tier,
+                'plan_paid_until' => $paidUntil,
+            ])->save();
+        });
     }
 
     private function fulfilGrowth(Payment $payment): void
@@ -521,6 +651,25 @@ class PaymentService
 
     private function safeReturnUrl(LicensedDeployment $deployment, mixed $url): ?string
     {
+        $url = $this->normalizeReturnUrl($url);
+
+        return $url && $deployment->allowsDomain((string) parse_url($url, PHP_URL_HOST)) ? $url : null;
+    }
+
+    private function safeTenantReturnUrl(Tenant $tenant, mixed $url): ?string
+    {
+        $url = $this->normalizeReturnUrl($url);
+        if (! $url) {
+            return 'https://'.$tenant->host().'/billing';
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return $host === strtolower($tenant->host()) ? $url : 'https://'.$tenant->host().'/billing';
+    }
+
+    private function normalizeReturnUrl(mixed $url): ?string
+    {
         $url = trim((string) $url);
         if ($url === '' || strlen($url) > 500 || ! filter_var($url, FILTER_VALIDATE_URL)) {
             return null;
@@ -537,7 +686,164 @@ class PaymentService
             return null;
         }
 
-        return $deployment->allowsDomain($host) ? $url : null;
+        return $url;
+    }
+
+    /**
+     * @param  array{
+     *     item_key: string,
+     *     billing_cycle: string,
+     * }  $input
+     * @return array{item_key: string, item_name: string, billing_cycle: string, amount_paise: int, test_amount: bool}
+     */
+    private function priceTenantPlan(Tenant $tenant, array $input): array
+    {
+        $key = (string) ($input['item_key'] ?? '');
+        $cycle = (string) ($input['billing_cycle'] ?? '');
+        $plan = config("payments.software_plans.{$key}");
+
+        if (! is_array($plan) || ! in_array($cycle, ['monthly', 'yearly'], true) || (int) ($plan[$cycle] ?? 0) < 100) {
+            throw ValidationException::withMessages(['payment' => 'Choose a valid LibControl plan.']);
+        }
+
+        if (! $tenant->is_trial) {
+            $this->assertTenantPlanChangeAllowed($tenant, $key);
+        }
+
+        $amount = (int) $plan[$cycle];
+        $testAmount = $this->trialTestAmountPaise($tenant);
+        $usingTest = $testAmount !== null;
+
+        if ($usingTest) {
+            $amount = $testAmount;
+        }
+
+        return [
+            'item_key' => $key,
+            'item_name' => 'LibControl '.$plan['label'].' ('.($cycle === 'yearly' ? 'Yearly' : 'Monthly').')'
+                .($usingTest ? ' — test ₹1' : ''),
+            'billing_cycle' => $cycle,
+            'amount_paise' => $amount,
+            'test_amount' => $usingTest,
+        ];
+    }
+
+    private function assertTenantPlanChangeAllowed(Tenant $tenant, string $newTier): void
+    {
+        $current = $tenant->planTier();
+        $ranks = (array) config('payments.plan_rank', []);
+
+        if ($current === 'custom') {
+            throw ValidationException::withMessages(['payment' => 'Your library is on a custom plan. Contact Katsindia to renew.']);
+        }
+
+        $paidUntil = $this->tenants->runOnTenant(
+            $tenant,
+            fn () => PlatformSetting::current()->plan_paid_until,
+        );
+        $downgrade = ($ranks[$newTier] ?? 0) < ($ranks[$current] ?? 0);
+
+        if ($downgrade && $paidUntil && $paidUntil->isFuture()) {
+            throw ValidationException::withMessages([
+                'payment' => 'Your '.ucfirst($current).' plan is paid until '.$paidUntil->format('d M Y').'. You can switch to '.ucfirst($newTier).' after that date.',
+            ]);
+        }
+    }
+
+    private function trialTestAmountPaise(Tenant $tenant): ?int
+    {
+        $test = (int) config('payments.trial_upgrade.test_amount_paise', 0);
+
+        if ($test < 100) {
+            return null;
+        }
+
+        // Test pricing while PhonePe dashboard/sandbox is unavailable — charge ₹1 for hosted trials.
+        return $tenant->is_trial ? $test : null;
+    }
+
+    private function refreshStalePendingForTenant(Tenant $tenant): void
+    {
+        $stale = Payment::query()
+            ->where('tenant_id', $tenant->id)
+            ->whereIn('status', [Payment::STATUS_CREATED, Payment::STATUS_PENDING])
+            ->where('created_at', '<=', now()->subSeconds(30))
+            ->where(fn ($q) => $q->whereNull('last_checked_at')->orWhere('last_checked_at', '<=', now()->subMinute()))
+            ->orderByDesc('id')
+            ->limit(3)
+            ->get();
+
+        foreach ($stale as $payment) {
+            try {
+                $this->refreshStatus($payment);
+            } catch (\Throwable $e) {
+                Log::info('Pending tenant payment re-check failed.', [
+                    'payment' => $payment->uuid,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $metaInfo
+     * @return array{payment: Payment, redirect_url: string}
+     */
+    private function launchPhonePe(Payment $payment, array $metaInfo): array
+    {
+        try {
+            $order = $this->phonePe->createOrder(
+                $payment->merchant_order_id,
+                $payment->amount_paise,
+                $this->hubPaymentReturnUrl($payment),
+                'LibControl: '.$payment->item_name,
+                $metaInfo,
+            );
+        } catch (\Throwable $e) {
+            $payment->update(['status' => Payment::STATUS_FAILED, 'error_code' => 'CREATE_FAILED']);
+
+            throw ValidationException::withMessages(['payment' => $e->getMessage()]);
+        }
+
+        $phonePeRedirect = (string) $order['redirect_url'];
+
+        $payment->update([
+            'status' => Payment::STATUS_PENDING,
+            'gateway_order_id' => $order['order_id'] ?: null,
+            'meta' => array_merge($payment->meta ?? [], [
+                'phonepe_redirect_url' => $phonePeRedirect,
+            ]),
+        ]);
+
+        return [
+            'payment' => $payment->fresh(),
+            'redirect_url' => $this->signedLaunchUrl($payment->fresh()),
+        ];
+    }
+
+    private function assertPhonePeReady(): void
+    {
+        if (! $this->phonePe->configured()) {
+            throw ValidationException::withMessages([
+                'payment' => 'Online payments are not available right now. Please contact Katsindia.',
+            ]);
+        }
+    }
+
+    /**
+     * PhonePe must return to the hub origin even when checkout starts on a tenant host.
+     */
+    private function hubPaymentReturnUrl(Payment $payment): string
+    {
+        $origin = (string) config('payments.phonepe.checkout_origin', config('app.url'));
+        $previous = URL::to('/');
+        URL::forceRootUrl(rtrim($origin, '/'));
+
+        try {
+            return route('payments.return', $payment->uuid, absolute: true);
+        } finally {
+            URL::forceRootUrl($previous);
+        }
     }
 
     private function clip(mixed $value, int $max): ?string

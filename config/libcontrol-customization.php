@@ -91,8 +91,8 @@ return [
         ],
         'onboarding_tooltips' => [
             'label' => 'New-user tooltips',
-            'status' => 'pending',
-            'notes' => 'Client checklist item.',
+            'status' => 'custom',
+            'notes' => 'First-login tip tour (dim + highlight) with floating ? replay; admins.tour_completed_at.',
         ],
         'help_support_tab' => [
             'label' => 'Help / Support tab',

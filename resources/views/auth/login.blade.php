@@ -15,7 +15,19 @@
                 ? ['label' => 'Library admin', 'email' => config('libcontrol.demo.admin_email'), 'password' => config('libcontrol.demo.admin_password')]
                 : ['label' => 'Branch staff', 'email' => config('libcontrol.demo.branch_email'), 'password' => config('libcontrol.demo.branch_password')])
             : null;
+
+        // Sign up tab is admin-only (branch staff do not self-register).
+        $publicBase = rtrim((string) (config('libcontrol.public_url') ?: ('https://'.config('libcontrol.tenancy.base_domain', 'libcontrol.in'))), '/');
+        $trialSignupUrl = $portal === 'admin' ? $publicBase.'/try' : null;
     @endphp
+
+    @if ($trialSignupUrl)
+        @include('auth.partials.login-signup-tabs', [
+            'active' => 'login',
+            'loginHref' => route('admin.login'),
+            'signupHref' => $trialSignupUrl,
+        ])
+    @endif
 
     @if ($demoLogin)
         <div
@@ -76,13 +88,20 @@
         </div>
 
         <div class="mt-6 sm:mt-4">
-            <x-primary-button class="w-full justify-center">
-                {{ match($portal) {
-                    'developer' => 'Developer log in',
-                    'admin' => 'Admin log in',
-                    default => 'Branch log in',
-                } }}
-            </x-primary-button>
+            @if ($portal === 'branch')
+                <button type="submit" class="lc-web-btn lc-web-btn--yellow w-full uppercase tracking-wide">
+                    Branch log in
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                </button>
+            @else
+                <x-primary-button class="w-full justify-center">
+                    {{ match($portal) {
+                        'developer' => 'Developer log in',
+                        'admin' => 'Admin log in',
+                        default => 'Branch log in',
+                    } }}
+                </x-primary-button>
+            @endif
         </div>
 
         <p class="mt-4 text-center text-xs text-gray-500 sm:mt-3">
@@ -100,14 +119,10 @@
     </form>
 
     @php
+        // Social login is admin-only (library owner). Branch staff use email/password.
+        // On a library subdomain we pass ?library=…; on the hub OAuth finds the owner's library.
+        $adminSocial = $portal === 'admin' ? \App\Support\Tenancy\SocialLogin::providers() : [];
         $libraryTenant = $portal === 'admin' ? \App\Support\Tenancy\TenantContext::current() : null;
-        $librarySocial = $libraryTenant
-            ? array_filter(
-                \App\Support\Tenancy\SocialLogin::providers(),
-                fn ($label, $provider) => $provider === 'google' || $provider === $libraryTenant->signup_source,
-                ARRAY_FILTER_USE_BOTH,
-            )
-            : [];
         $signinError = match (request()->query('signin')) {
             'cancelled' => 'Sign-in was cancelled.',
             'failed' => "We couldn't sign you in. Please try again.",
@@ -117,7 +132,7 @@
         };
     @endphp
 
-    @if ($librarySocial)
+    @if ($adminSocial !== [])
         <div class="mt-6 sm:mt-4" data-library-social-login>
             @if ($signinError)
                 <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 sm:mb-3" role="alert">{{ $signinError }}</div>
@@ -128,13 +143,18 @@
                 <span class="h-px flex-1 bg-gray-200"></span>
             </div>
             <div class="space-y-2">
-                @foreach ($librarySocial as $provider => $label)
-                    <a href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider, $libraryTenant->subdomain) }}" class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                @foreach ($adminSocial as $provider => $label)
+                    <a
+                        href="{{ \App\Support\Tenancy\SocialLogin::redirectUrl($provider, $libraryTenant?->subdomain) }}"
+                        class="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                        data-social-provider="{{ $provider }}"
+                    >
                         @include('trials.partials.social-icon', ['provider' => $provider])
                         Continue with {{ $label }}
                     </a>
                 @endforeach
             </div>
+            <p class="mt-3 text-center text-xs text-gray-500">For the library owner only. Branch staff should use email and password.</p>
         </div>
     @endif
 </x-guest-layout>

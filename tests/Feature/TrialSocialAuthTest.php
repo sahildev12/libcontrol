@@ -115,6 +115,42 @@ class TrialSocialAuthTest extends TestCase
         $this->get(self::HUB.'/auth/facebook/redirect')->assertNotFound();
     }
 
+    public function test_admin_login_shows_google_and_facebook_but_branch_login_does_not(): void
+    {
+        $tenant = $this->build($this->signUpWith('google', 'g-admin', 'owner@example.com'));
+        $library = 'http://'.$tenant->host();
+
+        $this->get(self::HUB.'/login')
+            ->assertRedirect('/branch/login');
+
+        $this->get(self::HUB.'/admin/login')
+            ->assertOk()
+            ->assertSee('Hello again!', false)
+            ->assertSee('Sign in', false)
+            ->assertSee('data-social-provider="google"', false)
+            ->assertSee('data-social-provider="facebook"', false);
+
+        $this->get(self::HUB.'/branch/login')
+            ->assertOk()
+            ->assertSee('Branch staff log in', false)
+            ->assertDontSee('Continue with Google', false)
+            ->assertDontSee('Continue with Facebook', false);
+
+        $this->get($library.'/admin/login')
+            ->assertOk()
+            ->assertSee('data-library-social-login', false)
+            ->assertSee('data-social-provider="google"', false)
+            ->assertSee('data-social-provider="facebook"', false)
+            ->assertSee('Continue with Google', false)
+            ->assertSee('Continue with Facebook', false);
+
+        $this->get($library.'/branch/login')
+            ->assertOk()
+            ->assertDontSee('data-library-social-login', false)
+            ->assertDontSee('Continue with Google', false)
+            ->assertDontSee('Continue with Facebook', false);
+    }
+
     public function test_google_signup_skips_email_and_password_and_is_verified(): void
     {
         $this->fakeAccount('google', 'g-1', 'Asha@Example.com');

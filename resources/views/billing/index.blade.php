@@ -13,20 +13,36 @@
     @endphp
 
     <header class="flex flex-col gap-2">
-        <h1 class="text-2xl font-bold tracking-tight text-[#082D70]">Subscription &amp; Billing</h1>
-        <p class="text-sm text-gray-500">Your LibControl plan, limits and payments. Payments are processed securely by PhonePe for Katsindia.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-[#082D70]">
+            {{ ($isTrialUpgrade ?? false) ? 'Upgrade your library' : 'Subscription & Billing' }}
+        </h1>
+        <p class="text-sm text-gray-500">
+            @if ($isTrialUpgrade ?? false)
+                Choose a plan and pay securely with PhonePe. Your trial unlocks as soon as payment succeeds.
+            @else
+                Your LibControl plan, limits and payments. Payments are processed securely by PhonePe for Katsindia.
+            @endif
+        </p>
     </header>
 
     @error('payment')
         <div class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{{ $message }}</div>
     @enderror
 
+    @if (($testAmountPaise ?? null) && ($isTrialUpgrade ?? false))
+        <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+            Test checkout is on: you will be charged <strong>{{ $rupees((int) $testAmountPaise) }}</strong> only (instead of the listed plan price) so we can verify PhonePe end-to-end.
+        </div>
+    @endif
+
     <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Current plan</p>
             <p class="mt-2 text-2xl font-bold text-[#082D70]">{{ $limits['plan_label'] }}</p>
             <p class="mt-1 text-sm text-gray-600">
-                @if ($paidUntil)
+                @if ($isTrialUpgrade ?? false)
+                    Free trial — upgrade to keep full access
+                @elseif ($paidUntil)
                     Paid until <span class="font-semibold {{ $paidUntil->isPast() ? 'text-red-600' : 'text-gray-900' }}">{{ $paidUntil->format('d M Y') }}</span>
                     @if ($paidUntil->isPast()) <span class="text-red-600">(expired — please renew)</span> @endif
                 @else
@@ -49,8 +65,14 @@
     </section>
 
     <section id="plans" class="mt-8 scroll-mt-4">
-        <h2 class="text-lg font-bold text-[#082D70]">Choose or renew your plan</h2>
-        <p class="mt-1 text-sm text-gray-500">Renewing the same plan adds time to your current period. Upgrades apply immediately after payment.</p>
+        <h2 class="text-lg font-bold text-[#082D70]">{{ ($isTrialUpgrade ?? false) ? 'Choose your plan' : 'Choose or renew your plan' }}</h2>
+        <p class="mt-1 text-sm text-gray-500">
+            @if ($isTrialUpgrade ?? false)
+                Pick Starter or Pro. After PhonePe confirms payment, this library leaves trial mode and unlocks immediately.
+            @else
+                Renewing the same plan adds time to your current period. Upgrades apply immediately after payment.
+            @endif
+        </p>
 
         @if (! $paymentsAvailable)
             <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -89,7 +111,13 @@
                                     <input type="hidden" name="plan" value="{{ $key }}">
                                     <input type="hidden" name="cycle" value="{{ $cycle }}">
                                     <button type="submit" @disabled(! $paymentsAvailable) :disabled="busy" class="w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 {{ $cycle === 'monthly' ? 'bg-[#082D70] text-white hover:bg-[#0b3a8f]' : 'border border-[#082D70] bg-white text-[#082D70] hover:bg-indigo-50' }}">
-                                        <span x-show="!busy">{{ $cta }} · {{ $rupees((int) $price[$cycle]) }}</span>
+                                        <span x-show="!busy">
+                                            @if (($testAmountPaise ?? null) && ($isTrialUpgrade ?? false))
+                                                {{ $cta }} · {{ $rupees((int) $testAmountPaise) }} test
+                                            @else
+                                                {{ $cta }} · {{ $rupees((int) $price[$cycle]) }}
+                                            @endif
+                                        </span>
                                         <span x-show="busy" x-cloak>Opening PhonePe…</span>
                                     </button>
                                 </form>
