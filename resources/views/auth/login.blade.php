@@ -17,8 +17,7 @@
             : null;
 
         // Sign up tab is admin-only (branch staff do not self-register).
-        $publicBase = rtrim((string) (config('libcontrol.public_url') ?: ('https://'.config('libcontrol.tenancy.base_domain', 'libcontrol.in'))), '/');
-        $trialSignupUrl = $portal === 'admin' ? $publicBase.'/try' : null;
+        $trialSignupUrl = $portal === 'admin' ? \App\Support\LibcontrolMarketingSite::trialSignupUrl() : null;
     @endphp
 
     @if ($trialSignupUrl)

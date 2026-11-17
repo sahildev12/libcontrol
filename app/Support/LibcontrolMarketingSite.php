@@ -32,6 +32,40 @@ class LibcontrolMarketingSite
         return in_array($host, $hosts, true);
     }
 
+    /**
+     * Trial signup lives on the marketing host. Tenant logins must not link to /try on their own host.
+     */
+    public static function trialSignupUrl(?Request $request = null): string
+    {
+        $request ??= request();
+        $host = strtolower($request->getHost());
+
+        if (! TenantContext::isTenantRequest() && (static::isMarketingHost($host) || TenantContext::isLandlordRequest())) {
+            return route('trials.create');
+        }
+
+        return 'https://'.static::preferredMarketingHost().'/try';
+    }
+
+    public static function preferredMarketingHost(): string
+    {
+        $hosts = collect(config('libcontrol.marketing_site.hosts', []))
+            ->map(fn ($value) => strtolower(trim((string) $value)))
+            ->filter()
+            ->values();
+
+        $apex = $hosts->first(fn (string $host) => ! str_starts_with($host, 'www.')
+            && ! in_array($host, ['localhost', '127.0.0.1', '::1'], true));
+
+        if (is_string($apex) && $apex !== '') {
+            return $apex;
+        }
+
+        $fallback = $hosts->first(fn (string $host) => ! in_array($host, ['localhost', '127.0.0.1', '::1'], true));
+
+        return is_string($fallback) && $fallback !== '' ? $fallback : 'libcontrol.in';
+    }
+
     public static function shouldServe(Request $request): bool
     {
         if (! static::enabled()) {

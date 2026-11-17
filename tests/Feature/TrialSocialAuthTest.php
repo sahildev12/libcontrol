@@ -127,6 +127,7 @@ class TrialSocialAuthTest extends TestCase
             ->assertOk()
             ->assertSee('Hello again!', false)
             ->assertSee('Sign in', false)
+            ->assertSee('href="'.self::HUB.'/try"', false)
             ->assertSee('data-social-provider="google"', false)
             ->assertSee('data-social-provider="facebook"', false);
 
@@ -138,6 +139,8 @@ class TrialSocialAuthTest extends TestCase
 
         $this->get($library.'/admin/login')
             ->assertOk()
+            ->assertSee('href="https://libcontrol.in/try"', false)
+            ->assertDontSee('href="'.$library.'/try"', false)
             ->assertSee('data-library-social-login', false)
             ->assertSee('data-social-provider="google"', false)
             ->assertSee('data-social-provider="facebook"', false)

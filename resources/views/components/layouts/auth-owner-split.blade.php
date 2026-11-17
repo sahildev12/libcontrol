@@ -6,7 +6,7 @@
     use App\Support\LibControlBrand;
     $sidebarArt = asset('images/auth/owner-login-sidebar.jpg').'?v=6';
     $loginUrl = route('admin.login');
-    $signupUrl = route('trials.create');
+    $signupUrl = \App\Support\LibcontrolMarketingSite::trialSignupUrl();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
