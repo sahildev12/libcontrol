@@ -6,7 +6,12 @@
         $socialProviders = [];
     }
     $formAction = route('admin.login.store');
-    $forgotUrl = route('password.request', ['from' => 'admin']);
+    $forgotUrl = route('password.request');
+    $loginTitle = 'Admin log in';
+    if ($libraryTenant) {
+        $libraryName = trim((string) ($libraryTenant->client_name ?? ''));
+        $loginTitle = ($libraryName !== '' ? $libraryName : 'Library').' log in';
+    }
     $signinError = match (request()->query('signin')) {
         'cancelled' => 'Sign-in was cancelled.',
         'failed' => "We couldn't sign you in. Please try again.",
@@ -15,7 +20,7 @@
         default => null,
     };
 @endphp
-<x-layouts.auth-owner-split title="Admin log in" active-tab="login">
+<x-layouts.auth-owner-split :title="$loginTitle" active-tab="login">
     <h1 class="lc-owner-hello">Hello again!</h1>
     <p class="lc-owner-hello-sub">
         {{ $hub
@@ -53,7 +58,7 @@
         <div class="lc-owner-field-block">
             <div class="lc-owner-label-row">
                 <label for="password" class="lc-owner-label">Password</label>
-                <a href="{{ $forgotUrl }}" class="text-xs font-semibold text-[#2563eb] hover:underline">Recovery password</a>
+                <a href="{{ $forgotUrl }}" class="text-xs font-semibold text-[#2563eb] hover:underline">Forgot password</a>
             </div>
             <div class="lc-owner-field" x-data="{ show: false }">
                 <svg class="lc-owner-field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>

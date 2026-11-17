@@ -11,11 +11,19 @@ use Illuminate\View\View;
 
 class PasswordResetLinkController extends Controller
 {
-    public function create(Request $request, LoginBrandingService $branding): View
+    public function create(Request $request, LoginBrandingService $branding): View|RedirectResponse
     {
+        if ($request->query() !== []) {
+            return redirect()->route('password.request', status: 301);
+        }
+
+        $host = strtolower($request->getHost());
+
         return view('auth.forgot-password', array_merge(
             $branding->forPasswordReset(),
-            ['loginReturn' => $this->loginReturnRoute($request)],
+            [
+                'resetIntro' => $this->resetIntro($host),
+            ],
         ));
     }
 
@@ -33,10 +41,12 @@ class PasswordResetLinkController extends Controller
                 ->withErrors(['email' => __($status)]);
     }
 
-    private function loginReturnRoute(Request $request): string
+    private function resetIntro(string $host): string
     {
-        return $request->query('from') === 'admin'
-            ? route('admin.login')
-            : route('login');
+        if (str_ends_with($host, '.libcontrol.in') && $host !== 'www.libcontrol.in') {
+            return 'Reset a password for the library at '.$host.'. This login is separate from the LibControl marketing site.';
+        }
+
+        return 'Reset a LibControl account password for the main site at '.$host.'.';
     }
 }

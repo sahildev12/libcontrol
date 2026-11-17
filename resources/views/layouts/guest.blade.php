@@ -14,6 +14,9 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ $title ?: $name }}</title>
+        @if ($robots !== '')
+            <meta name="robots" content="{{ $robots }}">
+        @endif
 
         <x-favicon-links :custom-url="$faviconUrl" :custom="$faviconCustom" />
 

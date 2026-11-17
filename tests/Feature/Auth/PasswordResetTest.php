@@ -48,7 +48,18 @@ class PasswordResetTest extends TestCase
     public function test_admin_forgot_password_url_redirects_to_shared_page(): void
     {
         $this->get('/admin/forgot-password')
-            ->assertRedirect('/forgot-password?from=admin');
+            ->assertRedirect('/forgot-password');
+    }
+
+    public function test_forgot_password_query_collapses_to_one_page(): void
+    {
+        $this->get('/forgot-password?from=admin')
+            ->assertRedirect('/forgot-password');
+
+        $this->get('/forgot-password')
+            ->assertOk()
+            ->assertSee('noindex, nofollow', false)
+            ->assertSee('Reset a LibControl account password', false);
     }
 
     public function test_reset_password_screen_can_be_rendered(): void

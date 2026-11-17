@@ -6,10 +6,9 @@
     :logo-url="$logo_url"
     :favicon-url="$favicon_url"
     :favicon-custom="$favicon_custom"
+    robots="noindex, nofollow"
 >
-    <p class="mb-4 text-sm text-gray-600">
-        Enter the email for your account. We will send a reset link if it matches.
-    </p>
+    <p class="mb-4 text-sm text-gray-600">{{ $resetIntro }}</p>
     <p class="mb-4 text-xs text-gray-500">{{ config('libcontrol.product.byline') }}</p>
 
     <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -24,7 +23,11 @@
         </div>
 
         <div class="mt-6 flex items-center justify-between">
-            <a href="{{ $loginReturn }}" class="text-sm text-gray-600 hover:text-gray-900">Back to login</a>
+            <span class="text-sm text-gray-600">
+                <a href="{{ route('admin.login') }}" class="hover:text-gray-900">Owner login</a>
+                <span aria-hidden="true"> · </span>
+                <a href="{{ route('login') }}" class="hover:text-gray-900">Branch login</a>
+            </span>
             <x-primary-button>
                 {{ __('Email Password Reset Link') }}
             </x-primary-button>

@@ -19,6 +19,17 @@ class LoginBrandingService
         private BranchBrandService $branchBrandService,
     ) {}
 
+    private function passwordResetTitle(): string
+    {
+        $host = strtolower(request()->getHost());
+
+        if (str_ends_with($host, '.libcontrol.in') && $host !== 'www.libcontrol.in') {
+            return 'Forgot password · '.$host;
+        }
+
+        return 'Forgot password';
+    }
+
     /**
      * @return array{portal: string, title: string, subtitle: string, name: string, logo_url: string|null, favicon_url: string|null, favicon_custom: bool}
      */
@@ -28,7 +39,7 @@ class LoginBrandingService
 
         return [
             'portal' => 'auth',
-            'title' => 'Forgot password',
+            'title' => $this->passwordResetTitle(),
             'subtitle' => config('libcontrol.product.byline'),
             'name' => $settings->displayName(),
             'logo_url' => $settings->logoUrl(),
