@@ -10,7 +10,9 @@
     $loginTitle = 'Admin log in';
     if ($libraryTenant) {
         $libraryName = trim((string) ($libraryTenant->client_name ?? ''));
-        $loginTitle = ($libraryName !== '' ? $libraryName : 'Library').' log in';
+        $loginTitle = ($libraryName !== '' ? $libraryName : request()->getHost()).' log in';
+    } elseif (! $hub) {
+        $loginTitle = request()->getHost().' log in';
     }
     $signinError = match (request()->query('signin')) {
         'cancelled' => 'Sign-in was cancelled.',
