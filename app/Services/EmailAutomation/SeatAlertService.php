@@ -32,6 +32,7 @@ class SeatAlertService
         private BranchBrandService $branchBrandService,
         private DashboardService $dashboardService,
         private OwnerRecipientResolver $owners,
+        private EmailTemplateService $templates,
     ) {}
 
     public function sendScheduledAlerts(?int $branchId = null): int
@@ -71,14 +72,20 @@ class SeatAlertService
             ? $this->branchBrandService->displayName($branch)
             : PlatformSetting::current()->displayName();
 
-        $body = "Hi {$student->name},\n\n"
-            ."Your seat has been confirmed at {$libraryName}. We look forward to seeing you!";
+        $resolved = $this->templates->resolve('seat_booking_confirmed', [
+            'name' => $student->name ?: 'Student',
+            'library' => $libraryName,
+            'student_code' => (string) ($student->student_code ?: ''),
+            'hall' => $booking->seat?->hall?->name ?? '—',
+            'seat' => (string) ($booking->seat?->seat_number ?? '—'),
+            'plan_ends' => $booking->plan_expiry_date?->format('M d, Y') ?? '—',
+        ]);
 
         try {
             Mail::to($email)->send(new AutomationAlertMail(
-                subjectLine: 'Seat Booking Confirmed',
-                headline: 'Booking confirmed',
-                bodyText: $body,
+                subjectLine: $resolved['subject'],
+                headline: $resolved['headline'] ?: 'Booking confirmed',
+                bodyText: $resolved['body'],
                 libraryName: $libraryName,
                 context: [
                     'Student' => $student->name.($student->student_code ? " ({$student->student_code})" : ''),
@@ -156,14 +163,20 @@ class SeatAlertService
         }
 
         $libraryName = $this->branchBrandService->displayName($branch);
-        $body = "Hi {$student->name},\n\n"
-            ."Your seat plan at {$libraryName} is ending soon. Please renew to keep your seat.";
+        $resolved = $this->templates->resolve($template['key'], [
+            'name' => $student->name ?: 'Student',
+            'library' => $libraryName,
+            'student_code' => (string) ($student->student_code ?: ''),
+            'hall' => $booking->seat?->hall?->name ?? '—',
+            'seat' => (string) ($booking->seat?->seat_number ?? '—'),
+            'plan_ends' => $booking->plan_expiry_date?->format('M d, Y') ?? '—',
+        ]);
 
         try {
             Mail::to($email)->send(new AutomationAlertMail(
-                subjectLine: $template['subject'],
-                headline: $template['headline'],
-                bodyText: $body,
+                subjectLine: $resolved['subject'],
+                headline: $resolved['headline'] ?: $template['headline'],
+                bodyText: $resolved['body'],
                 libraryName: $libraryName,
                 context: [
                     'Student' => $student->name.($student->student_code ? " ({$student->student_code})" : ''),

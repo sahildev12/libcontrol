@@ -118,8 +118,10 @@ class PhonePePaymentsTest extends TestCase
         $this->assertStringStartsWith('https://mercury-uat.phonepe.com/', $payment->meta['phonepe_redirect_url'] ?? '');
         $this->get($launchUrl)
             ->assertOk()
-            ->assertSee('libcontrol.in', false)
-            ->assertSee('mercury-uat.phonepe.com', false);
+            ->assertHeader('Referrer-Policy', 'origin')
+            ->assertSee('location.replace', false)
+            ->assertSee($payment->meta['phonepe_redirect_url'], false)
+            ->assertDontSee('LibControl', false);
 
         $this->assertSame(99900, $payment->amount_paise);
         $this->assertSame(Payment::STATUS_PENDING, $payment->status);

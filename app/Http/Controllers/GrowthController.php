@@ -12,10 +12,13 @@ use App\Services\Growth\LibraryGrowthRecommendationService;
 use App\Services\Growth\LibraryGrowthScoreService;
 use App\Services\Growth\ReferralService;
 use App\Services\LibraryWebsiteService;
+use App\Models\Tenant;
 use App\Services\Payments\HubPaymentClient;
+use App\Services\Payments\PaymentService;
 use App\Services\Profile\LibraryProfileCompletionService;
 use App\Services\SupportTicketSyncService;
 use App\Support\GrowthCatalog;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +38,7 @@ class GrowthController extends Controller
         LibraryProfileCompletionService $profileCompletion,
         GrowthOrderService $orderService,
         HubPaymentClient $hubPayments,
+        PaymentService $payments,
         ReferralService $referrals,
         LibraryWebsiteService $website,
         SupportTicketSyncService $ticketSync,
@@ -42,12 +46,19 @@ class GrowthController extends Controller
         $branch = $this->resolveGrowthBranch($request);
         $settings = PlatformSetting::current();
         $socialLinks = $website->settingsPayload($settings)['website_social_links'] ?? [];
+        $tenant = TenantContext::current();
+        $paymentsAvailable = $this->growthPaymentsAvailable($hubPayments, $payments, $tenant);
 
         $returnedPayment = null;
         $paymentUuid = $request->query('payment');
         if (is_string($paymentUuid) && $paymentUuid !== '') {
-            $summary = $hubPayments->summary($paymentUuid);
-            $returnedPayment = collect($summary['payments'] ?? [])->firstWhere('uuid', $paymentUuid);
+            if ($tenant && $payments->available()) {
+                $summary = $payments->summaryForTenantPayment($tenant, $paymentUuid);
+                $returnedPayment = collect($summary['payments'] ?? [])->firstWhere('uuid', $paymentUuid);
+            } else {
+                $summary = $hubPayments->summary($paymentUuid);
+                $returnedPayment = collect($summary['payments'] ?? [])->firstWhere('uuid', $paymentUuid);
+            }
         }
 
         $ticketSync->pullUpdates($request->user());
@@ -55,7 +66,6 @@ class GrowthController extends Controller
         $score = $combinedGrowth['action_progress'];
         $recommendations = $combinedGrowth['recommendations'];
         $profileCompletionScore = $profileCompletion->scoreForLibrary($request->user());
-        $paymentsAvailable = $hubPayments->available();
         $orders = GrowthOrder::query()
             ->with('requester:id,name')
             ->when($branch->id, fn ($q) => $q->where('branch_id', $branch->id))
@@ -181,12 +191,17 @@ class GrowthController extends Controller
         Request $request,
         GrowthOrderService $orderService,
         HubPaymentClient $hubPayments,
+        PaymentService $payments,
     ): JsonResponse {
-        return $this->requestItem($request, $orderService, $hubPayments, 'package');
+        return $this->requestItem($request, $orderService, $hubPayments, $payments, 'package');
     }
 
-    public function payOrder(Request $request, GrowthOrder $growthOrder, HubPaymentClient $hubPayments): JsonResponse
-    {
+    public function payOrder(
+        Request $request,
+        GrowthOrder $growthOrder,
+        HubPaymentClient $hubPayments,
+        PaymentService $payments,
+    ): JsonResponse {
         if ($growthOrder->branch_id) {
             $this->assertCanAccessBranch($request, $growthOrder->branch_id);
         } else {
@@ -199,7 +214,7 @@ class GrowthController extends Controller
                 : 'This request is not ready for payment yet. Katsindia will share a quote first.'], 422);
         }
 
-        $checkout = $this->startGrowthCheckout($request, $hubPayments, $growthOrder);
+        $checkout = $this->startGrowthCheckout($request, $hubPayments, $payments, $growthOrder);
 
         if (! $checkout['ok']) {
             return response()->json(['message' => $checkout['message']], 422);
@@ -212,6 +227,7 @@ class GrowthController extends Controller
         Request $request,
         GrowthOrderService $orderService,
         HubPaymentClient $hubPayments,
+        PaymentService $payments,
         LibraryGrowthScoreService $scoreService,
         LibraryGrowthRecommendationService $recommendations,
     ): JsonResponse {
@@ -225,7 +241,7 @@ class GrowthController extends Controller
             }
         }
 
-        return $this->requestItem($request, $orderService, $hubPayments, 'service');
+        return $this->requestItem($request, $orderService, $hubPayments, $payments, 'service');
     }
 
     public function startReferralCampaign(Request $request, LibraryGrowthScoreService $scoreService): RedirectResponse
@@ -302,29 +318,65 @@ class GrowthController extends Controller
     /**
      * @return array{ok: bool, redirect_url: ?string, message: ?string}
      */
-    private function startGrowthCheckout(Request $request, HubPaymentClient $hubPayments, GrowthOrder $order): array
-    {
+    private function startGrowthCheckout(
+        Request $request,
+        HubPaymentClient $hubPayments,
+        PaymentService $payments,
+        GrowthOrder $order,
+    ): array {
         $user = $request->user();
-        $result = $hubPayments->checkout([
+        $payload = [
             'purpose' => $order->order_type === 'package' ? 'growth_package' : 'growth_service',
             'growth_order_uuid' => $order->uuid,
             'payer_name' => $order->contact_name ?: $user?->name,
             'payer_email' => $order->contact_email ?: $user?->email,
             'payer_phone' => $order->contact_phone,
             'return_url' => route('growth.index').'#growth-requests',
-        ]);
+        ];
+
+        if ($hubPayments->available()) {
+            $result = $hubPayments->checkout($payload);
+        } else {
+            $tenant = TenantContext::current();
+            if (! $tenant || ! $payments->available()) {
+                return [
+                    'ok' => false,
+                    'redirect_url' => null,
+                    'message' => 'Online payments are not available right now. Use WhatsApp or try again later.',
+                ];
+            }
+
+            $result = $payments->startTenantGrowthCheckout($tenant, $payload);
+        }
 
         if ($result['ok']) {
             $this->logActivity($request, 'growth.checkout_started', "Started PhonePe payment for {$order->item_name}.", $order, $order->branch_id);
         }
 
-        return $result;
+        return [
+            'ok' => (bool) $result['ok'],
+            'redirect_url' => $result['redirect_url'] ?? null,
+            'message' => $result['message'] ?? null,
+        ];
+    }
+
+    private function growthPaymentsAvailable(
+        HubPaymentClient $hubPayments,
+        PaymentService $payments,
+        ?Tenant $tenant,
+    ): bool {
+        if ($hubPayments->available()) {
+            return true;
+        }
+
+        return $tenant !== null && $payments->available();
     }
 
     private function requestItem(
         Request $request,
         GrowthOrderService $orderService,
         HubPaymentClient $hubPayments,
+        PaymentService $payments,
         string $type,
     ): JsonResponse {
         $validated = $request->validate([
@@ -347,10 +399,15 @@ class GrowthController extends Controller
         ]);
 
         $checkout = null;
-        if ($type === 'package' && $request->boolean('with_checkout') && $hubPayments->available()) {
-            $checkout = $result['ticket_synced']
-                ? $this->startGrowthCheckout($request, $hubPayments, $result['order'])
-                : ['ok' => false, 'redirect_url' => null, 'message' => 'Request saved, but online payment needs a connection to Katsindia. Try "Pay" from Your growth requests shortly.'];
+        if ($type === 'package' && $request->boolean('with_checkout')) {
+            $tenant = TenantContext::current();
+            if ($hubPayments->available()) {
+                $checkout = $result['ticket_synced']
+                    ? $this->startGrowthCheckout($request, $hubPayments, $payments, $result['order'])
+                    : ['ok' => false, 'redirect_url' => null, 'message' => 'Request saved, but online payment needs a connection to Katsindia. Try "Pay" from Your growth requests shortly.'];
+            } elseif ($tenant && $payments->available()) {
+                $checkout = $this->startGrowthCheckout($request, $hubPayments, $payments, $result['order']);
+            }
         }
 
         return response()->json([

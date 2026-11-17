@@ -45,6 +45,7 @@ class FeeAlertService
     public function __construct(
         private EmailAutomationLogger $logger,
         private BranchBrandService $branchBrandService,
+        private EmailTemplateService $templates,
     ) {}
 
     public function sendScheduledAlerts(?int $branchId = null): int
@@ -125,9 +126,13 @@ class FeeAlertService
         $dueDate = $installment->due_date?->format('M d, Y') ?? 'N/A';
         $support = config('libcontrol.support.public_email') ?: config('libcontrol.support.email');
 
-        $body = "Hi {$student->name},\n\n"
-            ."This is a reminder about your library fee at {$libraryName}.\n\n"
-            ."Please settle the outstanding amount by the due date, or contact the library if you have already paid.";
+        $resolved = $this->templates->resolve($template['key'], [
+            'name' => $student->name ?: 'Student',
+            'library' => $libraryName,
+            'student_code' => (string) ($student->student_code ?: ''),
+            'amount' => $amount,
+            'due_date' => $dueDate,
+        ]);
 
         $context = [
             'Student' => $student->name.($student->student_code ? " ({$student->student_code})" : ''),
@@ -139,9 +144,9 @@ class FeeAlertService
 
         try {
             Mail::to($email)->send(new AutomationAlertMail(
-                subjectLine: $template['subject'],
-                headline: $template['headline'],
-                bodyText: $body,
+                subjectLine: $resolved['subject'],
+                headline: $resolved['headline'] ?: $template['headline'],
+                bodyText: $resolved['body'],
                 libraryName: $libraryName,
                 context: $context,
             ));
@@ -188,14 +193,20 @@ class FeeAlertService
         $paidOn = $payment->payment_date?->format('M d, Y') ?? now()->format('M d, Y');
         $reference = $payment->reference ?: ('PAY-'.$payment->id);
 
-        $body = "Hi {$student->name},\n\n"
-            ."We have received your payment at {$libraryName}. Thank you!";
+        $resolved = $this->templates->resolve('fee_payment_received', [
+            'name' => $student->name ?: 'Student',
+            'library' => $libraryName,
+            'student_code' => (string) ($student->student_code ?: ''),
+            'amount' => $amount,
+            'payment_date' => $paidOn,
+            'reference' => $reference,
+        ]);
 
         try {
             Mail::to($email)->send(new AutomationAlertMail(
-                subjectLine: 'Payment Received - Thank You!',
-                headline: 'Payment received',
-                bodyText: $body,
+                subjectLine: $resolved['subject'],
+                headline: $resolved['headline'] ?: 'Payment received',
+                bodyText: $resolved['body'],
                 libraryName: $libraryName,
                 context: [
                     'Student' => $student->name.($student->student_code ? " ({$student->student_code})" : ''),

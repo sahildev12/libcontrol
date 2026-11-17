@@ -163,6 +163,34 @@ class ModulesTest extends TestCase
         $conflict->assertStatus(422);
     }
 
+    public function test_seat_assignment_rejects_zero_fee_amount(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $hall = Hall::factory()->create(['branch_id' => $branch->id]);
+        $seat = Seat::factory()->create(['hall_id' => $hall->id, 'seat_number' => 11]);
+        $student = Student::factory()->create(['branch_id' => $branch->id]);
+
+        $response = $this->actingAs($user)->postJson(route('seat-assignments.store'), [
+            'student_id' => $student->id,
+            'hall_id' => $hall->id,
+            'seat_id' => $seat->id,
+            'time_slot' => 'full_day',
+            'fee_type' => 'monthly',
+            'fee_amount' => 0,
+            'payment_plan' => 'full',
+            'joining_date' => now()->toDateString(),
+            'plan_expiry_date' => now()->addMonth()->toDateString(),
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['fee_amount']);
+        $this->assertDatabaseMissing('seat_bookings', [
+            'student_id' => $student->id,
+            'seat_id' => $seat->id,
+            'fee_amount' => 0,
+        ]);
+    }
+
     public function test_seat_transfer_closes_old_booking_preserves_fees_and_rejects_conflicts(): void
     {
         $branch = Branch::factory()->create();

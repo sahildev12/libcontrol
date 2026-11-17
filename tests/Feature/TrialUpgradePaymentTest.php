@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Branch;
+use App\Models\GrowthOrder;
 use App\Models\Payment;
 use App\Models\PlatformSetting;
 use App\Models\Tenant;
@@ -173,6 +175,56 @@ class TrialUpgradePaymentTest extends TestCase
             ->assertSee('Upgrade your library', false)
             ->assertSee('Test checkout is on', false)
             ->assertSee('₹1 test', false);
+    }
+
+    public function test_tenant_growth_page_shows_pay_and_fulfills_order_via_phonepe(): void
+    {
+        Config::set('growth.enabled', true);
+        $tenant = $this->readyTrial();
+        $tenants = app(TenantConnectionManager::class);
+
+        $order = $tenants->runOnTenant($tenant, function () {
+            $branch = Branch::query()->first() ?? Branch::factory()->create();
+
+            return GrowthOrder::query()->create([
+                'branch_id' => $branch->id,
+                'order_type' => 'package',
+                'item_key' => 'grow',
+                'item_name' => 'Grow',
+                'status' => GrowthOrder::STATUS_NEW,
+                'amount_paise' => 799900,
+                'contact_name' => 'Asha Rao',
+                'contact_email' => 'asha@example.com',
+            ]);
+        });
+
+        $this->get(self::LIBRARY.'/growth')
+            ->assertOk()
+            ->assertSee('Pay ₹7,999', false);
+
+        $this->postJson(self::LIBRARY.'/growth/orders/'.$order->id.'/pay')
+            ->assertOk()
+            ->assertJsonStructure(['checkout_url']);
+
+        $payment = Payment::query()->where('purpose', Payment::PURPOSE_GROWTH_PACKAGE)->sole();
+        $this->assertSame($tenant->id, $payment->tenant_id);
+        $this->assertSame($order->uuid, $payment->growth_order_uuid);
+        $this->assertSame(799900, $payment->amount_paise);
+
+        $this->remoteState = 'COMPLETED';
+        $this->get('https://libcontrol.in/payments/'.$payment->uuid.'/return')
+            ->assertRedirect();
+
+        $payment->refresh();
+        $this->assertSame(Payment::STATUS_COMPLETED, $payment->status);
+        $this->assertNotNull($payment->fulfilled_at);
+
+        $fulfilled = $tenants->runOnTenant(
+            $tenant,
+            fn () => GrowthOrder::query()->where('uuid', $order->uuid)->first(),
+        );
+        $this->assertSame('paid', $fulfilled->payment_status);
+        $this->assertSame(GrowthOrder::STATUS_ACTIVE, $fulfilled->status);
     }
 
     private function readyTrial(bool $signIn = true): Tenant

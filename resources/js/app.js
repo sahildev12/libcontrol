@@ -2522,12 +2522,17 @@ Alpine.data('seatMap', (config) => ({
     },
 
     assignPaymentError() {
+        const total = Number(this.assignForm.fee_amount || 0);
+
+        if (! Number.isFinite(total) || total < 0.01) {
+            return 'Enter a fee amount greater than ₹0. Use Trial Seats for free trials.';
+        }
+
         if (! this.assignForm.receive_payment) {
             return '';
         }
 
         const amount = Number(this.assignForm.amount_received || 0);
-        const total = Number(this.assignForm.fee_amount || 0);
 
         if (! amount || amount <= 0) {
             return 'Payment amount must be greater than 0.';
@@ -5336,12 +5341,17 @@ Alpine.data('feeTable', (config) => ({
     },
 
     feePaymentError() {
+        const feeAmount = Number(this.form.fee_amount || 0);
+
+        if (! Number.isFinite(feeAmount) || feeAmount < 0.01) {
+            return 'Enter a fee amount greater than ₹0.';
+        }
+
         if (! this.form.receive_payment) {
             return '';
         }
 
         const amount = Number(this.form.amount_received || 0);
-        const feeAmount = Number(this.form.fee_amount || 0);
 
         if (amount <= 0) {
             return 'Enter the amount received.';
@@ -6784,6 +6794,21 @@ Alpine.data('settingsPage', (config) => ({
     customAmenityInput: '',
     customAmenityError: '',
     emailNotificationsUpdateUrl: config.emailNotificationsUpdateUrl || '',
+    emailTemplates: Array.isArray(config.emailTemplates) ? config.emailTemplates : [],
+    emailTemplateUpdateUrlTemplate: config.emailTemplateUpdateUrlTemplate || '',
+    emailTemplateResetUrlTemplate: config.emailTemplateResetUrlTemplate || '',
+    emailTemplateTestUrlTemplate: config.emailTemplateTestUrlTemplate || '',
+    emailTemplateEditor: {
+        open: false,
+        saving: false,
+        key: '',
+        label: '',
+        subject: '',
+        body: '',
+        headline: '',
+        placeholders: [],
+        supportsHeadline: false,
+    },
     globalUpdateUrl: config.globalUpdateUrl || '',
     globalExpiryReminderDays: config.globalExpiryReminderDays ?? null,
     emailForm: {
@@ -7830,6 +7855,126 @@ Alpine.data('settingsPage', (config) => ({
             showToast(extractAxiosError(e), 'error');
         } finally {
             this.emailSaving = false;
+        }
+    },
+
+    emailTemplateUrl(template, key) {
+        return String(template || '').replace('__KEY__', encodeURIComponent(key));
+    },
+
+    openEmailTemplateEditor(tpl) {
+        this.emailTemplateEditor = {
+            open: true,
+            saving: false,
+            key: tpl.key,
+            label: tpl.label,
+            subject: tpl.subject || '',
+            body: tpl.body || '',
+            headline: tpl.headline || '',
+            placeholders: Array.isArray(tpl.placeholders) ? tpl.placeholders : [],
+            supportsHeadline: tpl.default_headline != null || tpl.headline != null || ['fee', 'seat'].includes(tpl.group),
+        };
+    },
+
+    closeEmailTemplateEditor() {
+        if (this.emailTemplateEditor.saving) {
+            return;
+        }
+        this.emailTemplateEditor.open = false;
+    },
+
+    applyEmailTemplates(templates, key) {
+        if (Array.isArray(templates)) {
+            this.emailTemplates = templates;
+        }
+        if (! key) {
+            return;
+        }
+        const current = (this.emailTemplates || []).find((item) => item.key === key);
+        if (current && this.emailTemplateEditor.open && this.emailTemplateEditor.key === key) {
+            this.emailTemplateEditor.subject = current.subject || '';
+            this.emailTemplateEditor.body = current.body || '';
+            this.emailTemplateEditor.headline = current.headline || '';
+        }
+    },
+
+    async saveEmailTemplate() {
+        if (! this.emailTemplateEditor.key || this.emailTemplateEditor.saving) {
+            return;
+        }
+        const url = this.emailTemplateUrl(this.emailTemplateUpdateUrlTemplate, this.emailTemplateEditor.key);
+        if (! url) {
+            return;
+        }
+        this.emailTemplateEditor.saving = true;
+        try {
+            const payload = {
+                subject: this.emailTemplateEditor.subject,
+                body: this.emailTemplateEditor.body,
+            };
+            if (this.emailTemplateEditor.supportsHeadline) {
+                payload.headline = this.emailTemplateEditor.headline || null;
+            }
+            const response = await window.axios.put(url, payload);
+            this.applyEmailTemplates(response.data.templates, this.emailTemplateEditor.key);
+            showToast(response.data.message || 'Email template saved.');
+            this.emailTemplateEditor.open = false;
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.emailTemplateEditor.saving = false;
+        }
+    },
+
+    async resetEmailTemplate() {
+        if (! this.emailTemplateEditor.key || this.emailTemplateEditor.saving) {
+            return;
+        }
+        const url = this.emailTemplateUrl(this.emailTemplateResetUrlTemplate, this.emailTemplateEditor.key);
+        if (! url) {
+            return;
+        }
+        this.emailTemplateEditor.saving = true;
+        try {
+            const response = await window.axios.post(url);
+            this.applyEmailTemplates(response.data.templates, this.emailTemplateEditor.key);
+            showToast(response.data.message || 'Email template reset.');
+            this.emailTemplateEditor.open = false;
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.emailTemplateEditor.saving = false;
+        }
+    },
+
+    async sendTestEmailTemplate() {
+        if (! this.emailTemplateEditor.key || this.emailTemplateEditor.saving) {
+            return;
+        }
+        const url = this.emailTemplateUrl(this.emailTemplateTestUrlTemplate, this.emailTemplateEditor.key);
+        if (! url) {
+            return;
+        }
+        this.emailTemplateEditor.saving = true;
+        try {
+            if (this.emailTemplateUpdateUrlTemplate) {
+                const saveUrl = this.emailTemplateUrl(this.emailTemplateUpdateUrlTemplate, this.emailTemplateEditor.key);
+                const payload = {
+                    subject: this.emailTemplateEditor.subject,
+                    body: this.emailTemplateEditor.body,
+                };
+                if (this.emailTemplateEditor.supportsHeadline) {
+                    payload.headline = this.emailTemplateEditor.headline || null;
+                }
+                const saveResponse = await window.axios.put(saveUrl, payload);
+                this.applyEmailTemplates(saveResponse.data.templates, this.emailTemplateEditor.key);
+            }
+            const response = await window.axios.post(url);
+            showToast(response.data.message || 'Test email sent.');
+        } catch (e) {
+            showToast(extractAxiosError(e), 'error');
+        } finally {
+            this.emailTemplateEditor.saving = false;
         }
     },
 }));

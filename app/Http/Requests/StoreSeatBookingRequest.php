@@ -75,7 +75,8 @@ class StoreSeatBookingRequest extends FormRequest
             'custom_start_time' => ['nullable', 'required_if:time_slot,custom_hours', 'date_format:H:i'],
             'custom_end_time' => ['nullable', 'required_if:time_slot,custom_hours', 'date_format:H:i', 'after:custom_start_time'],
             'fee_type' => ['required', Rule::in(['monthly', 'yearly', 'custom', 'one_time', 'membership', 'installment'])],
-            'fee_amount' => ['required', 'numeric', 'min:0'],
+            // Regular seat plans must have a real fee. ₹0 assignments skip Fee Management and look "paid".
+            'fee_amount' => ['required', 'numeric', 'min:0.01'],
             'joining_date' => ['required', 'date'],
             'plan_expiry_date' => [
                 'required',
@@ -112,6 +113,13 @@ class StoreSeatBookingRequest extends FormRequest
             $amountReceived = round((float) $this->input('amount_received', 0), 2);
             $feeAmount = round((float) $this->input('fee_amount', 0), 2);
 
+            if ($feeAmount < 0.01) {
+                $validator->errors()->add(
+                    'fee_amount',
+                    'Enter a fee amount greater than ₹0. Use Trial Seats for free trial assignments.',
+                );
+            }
+
             if ($amountReceived < 0) {
                 $validator->errors()->add('amount_received', 'Payment amount must be greater than or equal to 0.');
             }
@@ -124,5 +132,16 @@ class StoreSeatBookingRequest extends FormRequest
                 $validator->errors()->add('amount_received', 'Payment amount must be greater than 0.');
             }
         });
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'fee_amount.min' => 'Enter a fee amount greater than ₹0. Use Trial Seats for free trial assignments.',
+            'fee_amount.required' => 'Fee amount is required for seat assignment.',
+        ];
     }
 }

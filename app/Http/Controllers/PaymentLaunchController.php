@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Services\Payments\PhonePeClient;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
- * Checkout runs on the approved merchant host (libcontrol.in) before / inside PhonePe UI.
+ * Blank hub hop so PhonePe sees the onboarded origin (libcontrol.in) as document.referrer.
+ * A 302 is not enough — browsers keep the tenant referrer. JS replace from this page fixes QR.
  */
 class PaymentLaunchController extends Controller
 {
-    public function __invoke(string $uuid, PhonePeClient $phonePe): View
+    public function __invoke(string $uuid): View|Response
     {
         $payment = Payment::query()->where('uuid', $uuid)->firstOrFail();
 
@@ -27,13 +28,9 @@ class PaymentLaunchController extends Controller
             abort(404, 'Payment session not found.');
         }
 
-        $env = $phonePe->environment();
-
-        return view('payments.launch', [
-            'payment' => $payment,
-            'phonePeUrl' => $redirect,
-            'checkoutScript' => (string) config("payments.phonepe.checkout_js.{$env}"),
-        ]);
+        return response()
+            ->view('payments.launch', ['phonePeUrl' => $redirect])
+            ->header('Referrer-Policy', 'origin');
     }
 
     private function isPhonePeUrl(string $url): bool

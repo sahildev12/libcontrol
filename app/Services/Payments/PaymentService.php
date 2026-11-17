@@ -140,6 +140,99 @@ class PaymentService
     }
 
     /**
+     * Hub-hosted tenant growth package/service checkout (PhonePe on landlord DB, order in tenant DB).
+     *
+     * @param  array{
+     *     purpose: string,
+     *     growth_order_uuid: string,
+     *     payer_name?: string|null,
+     *     payer_email?: string|null,
+     *     payer_phone?: string|null,
+     *     return_url?: string|null,
+     * }  $input
+     * @return array{ok: bool, redirect_url: ?string, message: ?string, payment: ?Payment}
+     */
+    public function startTenantGrowthCheckout(Tenant $tenant, array $input): array
+    {
+        try {
+            $this->assertPhonePeReady();
+            $priced = $this->priceTenantGrowth($tenant, $input);
+
+            $payment = Payment::query()->create([
+                'gateway' => 'phonepe',
+                'purpose' => $priced['purpose'],
+                'item_key' => $priced['item_key'],
+                'item_name' => $priced['item_name'],
+                'billing_cycle' => null,
+                'amount_paise' => $priced['amount_paise'],
+                'status' => Payment::STATUS_CREATED,
+                'tenant_id' => $tenant->id,
+                'deployment_domain' => $tenant->host(),
+                'library_name' => $tenant->client_name,
+                'growth_order_uuid' => $priced['growth_order_uuid'],
+                'payer_name' => $this->clip($input['payer_name'] ?? null, 255),
+                'payer_email' => filter_var($input['payer_email'] ?? null, FILTER_VALIDATE_EMAIL) ?: null,
+                'payer_phone' => $this->clip(preg_replace('/[^0-9+]/', '', (string) ($input['payer_phone'] ?? '')), 20),
+                'return_url' => $this->safeTenantReturnUrl($tenant, $input['return_url'] ?? null),
+                'meta' => [
+                    'tenant_id' => $tenant->id,
+                    'growth_order_uuid' => $priced['growth_order_uuid'],
+                ],
+            ]);
+
+            $launched = $this->launchPhonePe(
+                $payment,
+                [
+                    'udf1' => $payment->purpose,
+                    'udf2' => $payment->item_key,
+                    'udf3' => 'tenant:'.$tenant->id,
+                    'udf4' => (string) $payment->growth_order_uuid,
+                ],
+            );
+
+            return [
+                'ok' => true,
+                'redirect_url' => $launched['redirect_url'],
+                'message' => null,
+                'payment' => $launched['payment'],
+            ];
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?: 'Payment could not be started.';
+
+            return ['ok' => false, 'redirect_url' => null, 'message' => (string) $message, 'payment' => null];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function summaryForTenantPayment(Tenant $tenant, string $paymentUuid): ?array
+    {
+        $payment = Payment::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('uuid', $paymentUuid)
+            ->first();
+
+        if (! $payment) {
+            return null;
+        }
+
+        try {
+            $payment = $this->refreshStatus($payment);
+        } catch (\Throwable $e) {
+            Log::info('Tenant growth payment return refresh failed.', [
+                'payment' => $payment->uuid,
+                'error' => $e->getMessage(),
+            ]);
+            $payment->refresh();
+        }
+
+        return [
+            'payments' => [$this->publicPayload($payment)],
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function summaryForTenant(Tenant $tenant, ?string $refreshPaymentUuid = null): array
@@ -574,34 +667,51 @@ class PaymentService
 
     private function fulfilGrowth(Payment $payment): void
     {
-        $order = GrowthOrder::query()->where('uuid', $payment->growth_order_uuid)->lockForUpdate()->first();
+        $apply = function () use ($payment): void {
+            $order = GrowthOrder::query()->where('uuid', $payment->growth_order_uuid)->lockForUpdate()->first();
 
-        if (! $order) {
-            Log::error('Paid growth order not found.', ['payment' => $payment->uuid]);
+            if (! $order) {
+                Log::error('Paid growth order not found.', ['payment' => $payment->uuid]);
+
+                return;
+            }
+
+            $order->payment_status = 'paid';
+            $order->amount_paise = $payment->amount_paise;
+
+            if (in_array($order->status, [GrowthOrder::STATUS_NEW, GrowthOrder::STATUS_QUOTED, GrowthOrder::STATUS_PAUSED], true)) {
+                $order->status = GrowthOrder::STATUS_ACTIVE;
+            }
+            $order->activated_at ??= now();
+
+            $note = 'Payment of '.$payment->amountLabel().' received via PhonePe (ref '.$payment->merchant_order_id.'). Our team will start shortly.';
+            $order->admin_notes = trim(($order->admin_notes ? $order->admin_notes."\n\n" : '').$note);
+            $order->save();
+
+            app(GrowthOrderService::class)->applyStatusToProfile($order);
+
+            if ($ticket = $order->supportTicket) {
+                $ticket->forceFill([
+                    'status' => $order->ticketStatus(),
+                    'admin_notes' => $order->admin_notes,
+                ])->save();
+            }
+        };
+
+        if ($payment->tenant_id) {
+            $tenant = Tenant::query()->whereKey($payment->tenant_id)->first();
+            if (! $tenant) {
+                Log::error('Paid tenant growth has no tenant.', ['payment' => $payment->uuid]);
+
+                return;
+            }
+
+            $this->tenants->runOnTenant($tenant, $apply);
 
             return;
         }
 
-        $order->payment_status = 'paid';
-        $order->amount_paise = $payment->amount_paise;
-
-        if (in_array($order->status, [GrowthOrder::STATUS_NEW, GrowthOrder::STATUS_QUOTED, GrowthOrder::STATUS_PAUSED], true)) {
-            $order->status = GrowthOrder::STATUS_ACTIVE;
-        }
-        $order->activated_at ??= now();
-
-        $note = 'Payment of '.$payment->amountLabel().' received via PhonePe (ref '.$payment->merchant_order_id.'). Our team will start shortly.';
-        $order->admin_notes = trim(($order->admin_notes ? $order->admin_notes."\n\n" : '').$note);
-        $order->save();
-
-        app(GrowthOrderService::class)->applyStatusToProfile($order);
-
-        if ($ticket = $order->supportTicket) {
-            $ticket->forceFill([
-                'status' => $order->ticketStatus(),
-                'admin_notes' => $order->admin_notes,
-            ])->save();
-        }
+        $apply();
     }
 
     private function notifyTeam(Payment $payment): void
@@ -687,6 +797,83 @@ class PaymentService
         }
 
         return $url;
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array{purpose: string, item_key: string, item_name: string, amount_paise: int, growth_order_uuid: string}
+     */
+    private function priceTenantGrowth(Tenant $tenant, array $input): array
+    {
+        $purpose = (string) ($input['purpose'] ?? '');
+        if (! in_array($purpose, [Payment::PURPOSE_GROWTH_PACKAGE, Payment::PURPOSE_GROWTH_SERVICE], true)) {
+            throw ValidationException::withMessages(['payment' => 'Unknown payment type.']);
+        }
+
+        $uuid = (string) ($input['growth_order_uuid'] ?? '');
+        if ($uuid === '') {
+            throw ValidationException::withMessages(['payment' => 'Missing growth request.']);
+        }
+
+        $order = $this->tenants->runOnTenant(
+            $tenant,
+            fn () => GrowthOrder::query()->where('uuid', $uuid)->first(),
+        );
+
+        if (! $order) {
+            throw ValidationException::withMessages(['payment' => 'This growth request was not found.']);
+        }
+
+        $expectedType = $purpose === Payment::PURPOSE_GROWTH_PACKAGE ? 'package' : 'service';
+        if ($order->order_type !== $expectedType) {
+            throw ValidationException::withMessages(['payment' => 'This request cannot be paid here.']);
+        }
+
+        if ($order->payment_status === 'paid') {
+            throw ValidationException::withMessages(['payment' => 'This request is already paid.']);
+        }
+
+        if (in_array($order->status, [GrowthOrder::STATUS_CANCELLED, GrowthOrder::STATUS_COMPLETED], true)) {
+            throw ValidationException::withMessages(['payment' => 'This request is closed.']);
+        }
+
+        if ($expectedType === 'package') {
+            $package = GrowthCatalog::package($order->item_key);
+            if (! is_array($package)) {
+                throw ValidationException::withMessages(['payment' => 'Unknown growth package.']);
+            }
+
+            if (! empty($package['demo_only']) && ! GrowthCatalog::paymentTestCheckoutAllowed($tenant->host())) {
+                throw ValidationException::withMessages([
+                    'payment' => 'The payment test package is only available on demo.libcontrol.in.',
+                ]);
+            }
+
+            $price = (int) ($package['price'] ?? 0);
+            if ($price <= 0) {
+                throw ValidationException::withMessages(['payment' => 'Unknown growth package.']);
+            }
+            $amount = $price * 100;
+            if ((int) $order->amount_paise !== $amount) {
+                $this->tenants->runOnTenant($tenant, function () use ($order, $amount): void {
+                    $locked = GrowthOrder::query()->whereKey($order->id)->lockForUpdate()->first();
+                    $locked?->forceFill(['amount_paise' => $amount])->save();
+                });
+            }
+        } else {
+            $amount = (int) $order->amount_paise;
+            if ($amount < 100 || $order->status === GrowthOrder::STATUS_NEW) {
+                throw ValidationException::withMessages(['payment' => 'Katsindia will share a quote first. You can pay once the quote is ready.']);
+            }
+        }
+
+        return [
+            'purpose' => $purpose,
+            'item_key' => $order->item_key,
+            'item_name' => $order->item_name,
+            'amount_paise' => $amount,
+            'growth_order_uuid' => $order->uuid,
+        ];
     }
 
     /**
@@ -807,6 +994,14 @@ class PaymentService
 
         $phonePeRedirect = (string) $order['redirect_url'];
 
+        if ($phonePeRedirect === '' || ! $this->isPhonePeCheckoutUrl($phonePeRedirect)) {
+            $payment->update(['status' => Payment::STATUS_FAILED, 'error_code' => 'BAD_REDIRECT']);
+
+            throw ValidationException::withMessages([
+                'payment' => 'PhonePe did not return a valid checkout URL. Please try again.',
+            ]);
+        }
+
         $payment->update([
             'status' => Payment::STATUS_PENDING,
             'gateway_order_id' => $order['order_id'] ?: null,
@@ -815,10 +1010,24 @@ class PaymentService
             ]),
         ]);
 
+        // PhonePe production blocks QR when checkout opens from a tenant host
+        // (INTERNAL_SECURITY_BLOCK_1: onboarded libcontrol.in vs transacting kats1…).
+        // Hop via a signed hub URL that 302s straight to PhonePe — no LibControl UI.
         return [
             'payment' => $payment->fresh(),
             'redirect_url' => $this->signedLaunchUrl($payment->fresh()),
         ];
+    }
+
+    private function isPhonePeCheckoutUrl(string $url): bool
+    {
+        if (! filter_var($url, FILTER_VALIDATE_URL) || strtolower((string) parse_url($url, PHP_URL_SCHEME)) !== 'https') {
+            return false;
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return $host === 'phonepe.com' || str_ends_with($host, '.phonepe.com');
     }
 
     private function assertPhonePeReady(): void

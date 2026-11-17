@@ -72,6 +72,20 @@ class TenantPortalSettingsController extends Controller
         );
     }
 
+    public function updateEmailTemplate(Request $request, Tenant $tenant, string $template): JsonResponse
+    {
+        return response()->json(
+            $this->portalSettings->updateEmailTemplate($tenant, $request, $template, $request->user()),
+        );
+    }
+
+    public function resetEmailTemplate(Request $request, Tenant $tenant, string $template): JsonResponse
+    {
+        return response()->json(
+            $this->portalSettings->resetEmailTemplate($tenant, $request, $template, $request->user()),
+        );
+    }
+
     public function updateGlobal(Request $request, Tenant $tenant): JsonResponse
     {
         return response()->json(

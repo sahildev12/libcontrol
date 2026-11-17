@@ -15,6 +15,8 @@ Route::middleware(['auth', 'developer_admin', 'landlord_host'])
         Route::patch('/{tenant}/settings/platform', [TenantPortalSettingsController::class, 'updatePlatform'])->name('settings.platform.update');
         Route::post('/{tenant}/settings/website', [TenantPortalSettingsController::class, 'updateWebsite'])->name('settings.website.update');
         Route::patch('/{tenant}/settings/email-notifications', [TenantPortalSettingsController::class, 'updateEmailNotifications'])->name('settings.email-notifications.update');
+        Route::put('/{tenant}/settings/email-templates/{template}', [TenantPortalSettingsController::class, 'updateEmailTemplate'])->name('settings.email-templates.update');
+        Route::post('/{tenant}/settings/email-templates/{template}/reset', [TenantPortalSettingsController::class, 'resetEmailTemplate'])->name('settings.email-templates.reset');
         Route::patch('/{tenant}/settings/global', [TenantPortalSettingsController::class, 'updateGlobal'])->name('settings.global.update');
     });
 

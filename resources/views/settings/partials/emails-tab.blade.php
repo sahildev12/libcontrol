@@ -114,4 +114,73 @@
             </div>
         </form>
     </section>
+
+    <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="text-sm font-semibold text-gray-900">Email templates</h2>
+            <p class="mt-1 text-xs text-gray-500">Edit subject and body wording. Use placeholders like <code class="rounded bg-gray-100 px-1">{name}</code>, <code class="rounded bg-gray-100 px-1">{library}</code>, and <code class="rounded bg-gray-100 px-1">{student_code}</code>.</p>
+        </div>
+        <div class="divide-y divide-gray-100">
+            <template x-for="tpl in emailTemplates" :key="tpl.key">
+                <div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="text-sm font-semibold text-gray-900" x-text="tpl.label"></p>
+                            <span
+                                class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                                :class="tpl.customized ? 'bg-amber-50 text-amber-800' : 'bg-gray-100 text-gray-600'"
+                                x-text="tpl.customized ? 'Custom' : 'Default'"
+                            ></span>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500" x-text="tpl.description"></p>
+                        <p class="mt-2 truncate text-xs text-gray-600"><span class="font-medium text-gray-700">Subject:</span> <span x-text="tpl.subject"></span></p>
+                    </div>
+                    <div class="flex shrink-0 gap-2">
+                        <button type="button" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50" @click="openEmailTemplateEditor(tpl)">Edit</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </section>
+
+    <div
+        x-show="emailTemplateEditor.open"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4"
+        @keydown.escape.window="closeEmailTemplateEditor()"
+    >
+        <div class="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl" @click.outside="closeEmailTemplateEditor()">
+            <div class="border-b border-gray-200 px-5 py-4">
+                <h3 class="text-base font-semibold text-gray-900" x-text="emailTemplateEditor.label || 'Edit template'"></h3>
+                <p class="mt-1 text-xs text-gray-500">Placeholders: <span x-text="(emailTemplateEditor.placeholders || []).map(p => '{' + p + '}').join(', ')"></span></p>
+            </div>
+            <div class="space-y-4 px-5 py-4">
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700">Subject</span>
+                    <input type="text" x-model="emailTemplateEditor.subject" maxlength="200" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                </label>
+                <label class="block" x-show="emailTemplateEditor.supportsHeadline">
+                    <span class="text-sm font-medium text-gray-700">Headline</span>
+                    <input type="text" x-model="emailTemplateEditor.headline" maxlength="200" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                </label>
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700">Body</span>
+                    <textarea x-model="emailTemplateEditor.body" rows="10" maxlength="10000" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm"></textarea>
+                </label>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4">
+                <div class="flex gap-2">
+                    <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-white" @click="resetEmailTemplate()" :disabled="emailTemplateEditor.saving">Reset to default</button>
+                    <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-white" @click="sendTestEmailTemplate()" :disabled="emailTemplateEditor.saving">Send test</button>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-white" @click="closeEmailTemplateEditor()" :disabled="emailTemplateEditor.saving">Cancel</button>
+                    <button type="button" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700" @click="saveEmailTemplate()" :disabled="emailTemplateEditor.saving">
+                        <span x-show="! emailTemplateEditor.saving">Save template</span>
+                        <span x-show="emailTemplateEditor.saving">Saving...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

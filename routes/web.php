@@ -252,6 +252,9 @@ Route::middleware(['auth', 'branch', 'page.activity'])->group(function () {
     Route::get('/website/preview', [LibraryWebsiteController::class, 'preview'])->name('website.preview')->middleware('platform_admin');
     Route::post('/settings/website', [LibraryWebsiteController::class, 'update'])->name('settings.website.update')->middleware('platform_admin');
     Route::patch('/settings/email-notifications', [SettingsController::class, 'updateEmailNotifications'])->name('settings.email-notifications.update')->middleware('platform_admin');
+    Route::put('/settings/email-templates/{template}', [SettingsController::class, 'updateEmailTemplate'])->name('settings.email-templates.update')->middleware('platform_admin');
+    Route::post('/settings/email-templates/{template}/reset', [SettingsController::class, 'resetEmailTemplate'])->name('settings.email-templates.reset')->middleware('platform_admin');
+    Route::post('/settings/email-templates/{template}/test', [SettingsController::class, 'sendTestEmailTemplate'])->name('settings.email-templates.test')->middleware('platform_admin');
     Route::patch('/settings/platform/plan', [SettingsController::class, 'updatePlatformPlan'])->name('settings.platform.plan.update')->middleware('developer_admin');
     Route::post('/settings/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.clear-cache')->middleware('developer_admin');
     Route::post('/settings/sync-runtime', [SettingsController::class, 'syncRuntime'])->name('settings.sync-runtime')->middleware('developer_admin');

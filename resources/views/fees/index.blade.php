@@ -488,7 +488,7 @@
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <p class="text-sm font-semibold text-indigo-700">Receive Payment</p>
-                                <p class="text-xs text-gray-500">Optional — leave off to create an unpaid fee.</p>
+                                    <p class="text-xs text-gray-500">Optional — leave off to save as unpaid. Fee amount must still be greater than ₹0.</p>
                             </div>
                             <button
                                 type="button"

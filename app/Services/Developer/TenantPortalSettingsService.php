@@ -10,6 +10,7 @@ use App\Models\PlatformSetting;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\EmailAutomation\EmailTemplateService;
 use App\Services\LibraryWebsiteService;
 use App\Services\MailDeliveryService;
 use App\Services\PlanLimitService;
@@ -31,6 +32,7 @@ class TenantPortalSettingsService
         private LibraryWebsiteService $libraryWebsiteService,
         private MailDeliveryService $mailDelivery,
         private PlatformBrandService $platformBrand,
+        private EmailTemplateService $emailTemplates,
     ) {}
 
     public function ensureManageable(Tenant $tenant): void
@@ -80,6 +82,7 @@ class TenantPortalSettingsService
             $planSnapshot = $this->planLimitService->snapshot();
             $websiteSettings = $this->libraryWebsiteService->settingsPayload($platformSettings);
             $emailNotificationSettings = $this->settingsPayload->serializeEmailNotificationSettings($platformSettings);
+            $emailTemplates = $this->emailTemplates->listForSettings($platformSettings);
             $globalExpiryReminderDays = $viewingAll
                 ? (int) (Branch::query()->value('expiry_reminder_days') ?: config('libcontrol.defaults.expiry_reminder_days', 10))
                 : null;
@@ -109,6 +112,7 @@ class TenantPortalSettingsService
                 'deploymentInfo' => $deploymentInfo,
                 'websiteSettings' => $websiteSettings,
                 'emailNotificationSettings' => $emailNotificationSettings,
+                'emailTemplates' => $emailTemplates,
                 'mailDeliveryStatus' => $this->mailDelivery->status(),
                 'globalExpiryReminderDays' => $globalExpiryReminderDays,
                 'portalContext' => true,
@@ -394,15 +398,91 @@ class TenantPortalSettingsService
     }
 
     /**
+     * @param  array{subject?: string|null, body?: string|null, headline?: string|null}  $payload
+     * @return array<string, mixed>
+     */
+    public function updateEmailTemplate(Tenant $tenant, Request $request, string $template, ?User $user): array
+    {
+        $this->ensureManageable($tenant);
+        abort_unless($this->resolvedBranchId($request, $tenant) === null, 422, 'Switch to all branches to edit email templates.');
+
+        $validated = $request->validate([
+            'subject' => ['required', 'string', 'max:200'],
+            'body' => ['required', 'string', 'max:10000'],
+            'headline' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $result = $this->connections->runOnTenant($tenant, function () use ($template, $validated) {
+            $settings = $this->emailTemplates->save($template, $validated);
+            $list = $this->emailTemplates->listForSettings($settings);
+
+            return [
+                'message' => 'Email template saved.',
+                'template' => collect($list)->firstWhere('key', $template),
+                'templates' => $list,
+            ];
+        });
+
+        app(ActivityLogger::class)->record(
+            $user,
+            'portal.email_template_updated',
+            "Updated email template {$template} for {$tenant->client_name}.",
+            $tenant,
+            null,
+            ['tenant_id' => $tenant->id, 'template' => $template],
+            $request,
+        );
+
+        return $result;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function resetEmailTemplate(Tenant $tenant, Request $request, string $template, ?User $user): array
+    {
+        $this->ensureManageable($tenant);
+        abort_unless($this->resolvedBranchId($request, $tenant) === null, 422, 'Switch to all branches to edit email templates.');
+
+        $result = $this->connections->runOnTenant($tenant, function () use ($template) {
+            $settings = $this->emailTemplates->reset($template);
+            $list = $this->emailTemplates->listForSettings($settings);
+
+            return [
+                'message' => 'Email template reset to default.',
+                'template' => collect($list)->firstWhere('key', $template),
+                'templates' => $list,
+            ];
+        });
+
+        app(ActivityLogger::class)->record(
+            $user,
+            'portal.email_template_reset',
+            "Reset email template {$template} for {$tenant->client_name}.",
+            $tenant,
+            null,
+            ['tenant_id' => $tenant->id, 'template' => $template],
+            $request,
+        );
+
+        return $result;
+    }
+
+    /**
      * @return array<string, string>
      */
     public function routeMap(Tenant $tenant): array
     {
+        $base = url('/developer/portals/'.$tenant->id.'/settings/email-templates/__KEY__');
+
         return [
             'update' => route('developer.portals.settings.branch.update', $tenant),
             'platform' => route('developer.portals.settings.platform.update', $tenant),
             'website' => route('developer.portals.settings.website.update', $tenant),
             'email_notifications' => route('developer.portals.settings.email-notifications.update', $tenant),
+            'email_templates_update' => $base,
+            'email_templates_reset' => $base.'/reset',
+            'email_templates_test' => '',
             'global' => route('developer.portals.settings.global.update', $tenant),
             'switch_branch' => route('developer.portals.switch-branch', $tenant),
             'settings' => route('developer.portals.settings', $tenant),

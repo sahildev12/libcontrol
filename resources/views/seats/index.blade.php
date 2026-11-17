@@ -381,7 +381,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Fee Amount</label>
-                                <input type="number" min="0" step="0.01" x-model.number="assignForm.fee_amount" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                <input type="number" min="0.01" step="0.01" x-model.number="assignForm.fee_amount" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm" placeholder="e.g. 1500">
                             </div>
                         </div>
                         <div>
@@ -413,7 +413,7 @@
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <p class="text-sm font-semibold text-indigo-700">Receive Payment</p>
-                                    <p class="text-xs text-gray-500">Optional — leave off to create an unpaid fee.</p>
+                                    <p class="text-xs text-gray-500">Optional — leave off to save the plan as unpaid. Fee amount above must still be greater than ₹0.</p>
                                 </div>
                                 <button
                                     type="button"

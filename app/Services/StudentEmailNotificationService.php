@@ -5,18 +5,23 @@ namespace App\Services;
 use App\Mail\StudentNotificationMail;
 use App\Models\PlatformSetting;
 use App\Models\Student;
+use App\Services\EmailAutomation\EmailTemplateService;
 use Illuminate\Support\Facades\Mail;
 
 class StudentEmailNotificationService
 {
-    public function sendWelcome(Student $student): void
+    public function __construct(
+        private EmailTemplateService $templates,
+    ) {}
+
+    public function sendWelcome(Student $student): bool
     {
-        $this->sendIfEnabled($student, 'welcome', 'Welcome to {library}');
+        return $this->sendIfEnabled($student, 'welcome');
     }
 
-    public function sendBirthday(Student $student): void
+    public function sendBirthday(Student $student): bool
     {
-        $this->sendIfEnabled($student, 'birthday', 'Happy birthday from {library}');
+        return $this->sendIfEnabled($student, 'birthday');
     }
 
     public function sendOffer(Student $student, string $subject, string $body): bool
@@ -30,20 +35,23 @@ class StudentEmailNotificationService
 
     public function sendRecovery(Student $student): bool
     {
-        return $this->sendIfEnabled($student, 'recovery', 'We miss you at {library}');
+        return $this->sendIfEnabled($student, 'recovery');
     }
 
-    private function sendIfEnabled(Student $student, string $type, string $subjectTemplate): bool
+    private function sendIfEnabled(Student $student, string $type): bool
     {
         if (! $this->canSend($student, $type)) {
             return false;
         }
 
         $library = PlatformSetting::current()->displayName();
-        $subject = str_replace('{library}', $library, $subjectTemplate);
-        $body = $this->defaultBody($type, $student, $library);
+        $resolved = $this->templates->resolve($type, [
+            'name' => $student->name ?: 'Student',
+            'library' => $library,
+            'student_code' => (string) ($student->student_code ?: ''),
+        ]);
 
-        return $this->deliver($student, $subject, $body, $type);
+        return $this->deliver($student, $resolved['subject'], $resolved['body'], $type);
     }
 
     private function canSend(Student $student, string $type): bool
@@ -88,17 +96,5 @@ class StudentEmailNotificationService
         }
 
         return true;
-    }
-
-    private function defaultBody(string $type, Student $student, string $library): string
-    {
-        $name = $student->name ?: 'Student';
-
-        return match ($type) {
-            'welcome' => "Hi {$name},\n\nWelcome to {$library}. Your student profile has been created successfully.",
-            'birthday' => "Hi {$name},\n\nHappy birthday from everyone at {$library}! Wishing you a wonderful year ahead.",
-            'recovery' => "Hi {$name},\n\nWe noticed you have been away from {$library} for a while. Visit us again when you are ready.",
-            default => "Hi {$name},\n\nThis is a message from {$library}.",
-        };
     }
 }

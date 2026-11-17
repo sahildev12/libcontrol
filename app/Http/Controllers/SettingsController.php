@@ -15,11 +15,15 @@ use App\Services\LibraryWebsiteService;
 use App\Services\MailDeliveryService;
 use App\Services\PlatformBrandService;
 use App\Services\PlanLimitService;
+use App\Mail\AutomationAlertMail;
+use App\Services\EmailAutomation\EmailTemplateService;
 use App\Services\Settings\SettingsPayloadService;
+use App\Support\EmailTemplateCatalog;
 use App\Support\InstallState;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
@@ -28,6 +32,7 @@ class SettingsController extends Controller
     public function __construct(
         private PlanLimitService $planLimitService,
         private SettingsPayloadService $settingsPayload,
+        private EmailTemplateService $emailTemplates,
     ) {}
 
     public function index(Request $request, BranchBrandService $branchBrandService, AddonRegistry $addonRegistry, DatabaseMaintenanceService $databaseMaintenance, LibraryWebsiteService $libraryWebsiteService, MailDeliveryService $mailDelivery): View
@@ -73,6 +78,7 @@ class SettingsController extends Controller
 
         $websiteSettings = $libraryWebsiteService->settingsPayload($platformSettings);
         $emailNotificationSettings = $this->settingsPayload->serializeEmailNotificationSettings($platformSettings);
+        $emailTemplates = $this->emailTemplates->listForSettings($platformSettings);
         $mailDeliveryStatus = $mailDelivery->status();
         $globalExpiryReminderDays = $viewingAll
             ? (int) (Branch::query()->value('expiry_reminder_days') ?: config('libcontrol.defaults.expiry_reminder_days', 10))
@@ -82,7 +88,7 @@ class SettingsController extends Controller
             ? app(LibraryBusinessPerformanceService::class)->scoreForLibrary($user, $branch?->id)
             : null;
 
-        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isClientAdmin', 'isDeveloperAdmin', 'isHub', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'mailDeliveryStatus', 'globalExpiryReminderDays', 'businessPerformance') + [
+        return view('settings.index', compact('branch', 'settings', 'platformSettings', 'isPlatformAdmin', 'isClientAdmin', 'isDeveloperAdmin', 'isHub', 'planSnapshot', 'viewingAll', 'licenseServerEnabled', 'deploymentsUrl', 'availableAddons', 'databaseMaintenance', 'deploymentInfo', 'websiteSettings', 'emailNotificationSettings', 'emailTemplates', 'mailDeliveryStatus', 'globalExpiryReminderDays', 'businessPerformance') + [
             'portalContext' => false,
             'managedTenant' => null,
             'portalBranches' => [],
@@ -132,6 +138,75 @@ class SettingsController extends Controller
         return response()->json([
             'message' => 'Email notification settings saved.',
             'email_notifications' => $this->settingsPayload->serializeEmailNotificationSettings($settings->fresh()),
+        ]);
+    }
+
+    public function updateEmailTemplate(Request $request, string $template): JsonResponse
+    {
+        $validated = $request->validate([
+            'subject' => ['required', 'string', 'max:200'],
+            'body' => ['required', 'string', 'max:10000'],
+            'headline' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $settings = $this->emailTemplates->save($template, $validated);
+        $list = $this->emailTemplates->listForSettings($settings);
+        $current = collect($list)->firstWhere('key', $template);
+
+        return response()->json([
+            'message' => 'Email template saved.',
+            'template' => $current,
+            'templates' => $list,
+        ]);
+    }
+
+    public function resetEmailTemplate(string $template): JsonResponse
+    {
+        $settings = $this->emailTemplates->reset($template);
+        $list = $this->emailTemplates->listForSettings($settings);
+        $current = collect($list)->firstWhere('key', $template);
+
+        return response()->json([
+            'message' => 'Email template reset to default.',
+            'template' => $current,
+            'templates' => $list,
+        ]);
+    }
+
+    public function sendTestEmailTemplate(Request $request, string $template): JsonResponse
+    {
+        abort_unless(EmailTemplateCatalog::get($template), 404);
+
+        $email = trim((string) ($request->user()?->email ?? ''));
+        abort_unless($email !== '', 422, 'Your account needs an email address to receive a test message.');
+
+        $library = PlatformSetting::current()->displayName();
+        $resolved = $this->emailTemplates->resolve($template, [
+            'name' => $request->user()?->name ?: 'Admin',
+            'library' => $library,
+            'student_code' => 'TEST001',
+            'amount' => '1,500.00',
+            'due_date' => now()->format('M d, Y'),
+            'payment_date' => now()->format('M d, Y'),
+            'reference' => 'TEST-REF',
+            'hall' => 'Main Hall',
+            'seat' => '12',
+            'plan_ends' => now()->addDays(7)->format('M d, Y'),
+        ]);
+
+        Mail::to($email)->send(new AutomationAlertMail(
+            subjectLine: '[Test] '.$resolved['subject'],
+            headline: $resolved['headline'] ?: 'Email template test',
+            bodyText: $resolved['body'],
+            libraryName: $library,
+            context: [
+                'Template' => $template,
+                'Note' => 'This is a test message from Settings → Emails.',
+            ],
+        ));
+
+        return response()->json([
+            'message' => 'Test email sent to '.$email.'.',
         ]);
     }
 

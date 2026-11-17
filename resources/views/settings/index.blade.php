@@ -4,6 +4,9 @@
     $settingsPlatformUpdateUrl = $portal['platform'] ?? route('settings.platform.update');
     $settingsWebsiteUpdateUrl = $portal['website'] ?? route('settings.website.update');
     $settingsEmailNotificationsUpdateUrl = $portal['email_notifications'] ?? route('settings.email-notifications.update');
+    $settingsEmailTemplateUpdateUrl = $portal['email_templates_update'] ?? url('/settings/email-templates/__KEY__');
+    $settingsEmailTemplateResetUrl = $portal['email_templates_reset'] ?? url('/settings/email-templates/__KEY__/reset');
+    $settingsEmailTemplateTestUrl = $portal['email_templates_test'] ?? url('/settings/email-templates/__KEY__/test');
     $settingsGlobalUpdateUrl = $portal['global'] ?? route('settings.global.update');
 @endphp
 
@@ -61,6 +64,10 @@
             websiteUpdateUrl: @js($settingsWebsiteUpdateUrl),
             emailNotificationSettings: @js($emailNotificationSettings ?? []),
             emailNotificationsUpdateUrl: @js($settingsEmailNotificationsUpdateUrl),
+            emailTemplates: @js($emailTemplates ?? []),
+            emailTemplateUpdateUrlTemplate: @js($settingsEmailTemplateUpdateUrl),
+            emailTemplateResetUrlTemplate: @js($settingsEmailTemplateResetUrl),
+            emailTemplateTestUrlTemplate: @js($settingsEmailTemplateTestUrl),
             globalUpdateUrl: @js($settingsGlobalUpdateUrl),
             portalContext: @js($portalContext ?? false),
             globalExpiryReminderDays: @js($globalExpiryReminderDays),
