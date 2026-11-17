@@ -33,6 +33,7 @@ for APP in '$hub' '$demo'; do
   composer install --no-dev --optimize-autoloader --no-interaction
   php artisan migrate --force
   bash scripts/ensure-marketing-public-assets-link.sh
+  bash scripts/ensure-public-storage-link.sh
   php artisan optimize
 done
 "@

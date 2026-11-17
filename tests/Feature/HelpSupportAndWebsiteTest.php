@@ -257,6 +257,27 @@ class HelpSupportAndWebsiteTest extends TestCase
             ->assertSee('Book a Seat', false);
     }
 
+    public function test_library_website_uses_saved_contact_details_not_demo_defaults(): void
+    {
+        config(['app.url' => 'https://kats1.libcontrol.in']);
+
+        PlatformSetting::query()->firstOrCreate([], [
+            'website_enabled' => true,
+            'display_name' => 'Kats Library',
+            'website_whatsapp' => '8076105181',
+            'website_contact_email' => 'owner@kats.in',
+            'website_address' => 'Gurgaon, Haryana',
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('8076 105 181', false)
+            ->assertSee('owner@kats.in', false)
+            ->assertSee('maps.google.com/maps?q=Gurgaon', false)
+            ->assertDontSee('thestudyhub.in', false)
+            ->assertDontSee('98765 43210', false);
+    }
+
     public function test_demo_library_website_uses_katsindia_contact_details(): void
     {
         config(['app.url' => 'https://demo.libcontrol.in']);

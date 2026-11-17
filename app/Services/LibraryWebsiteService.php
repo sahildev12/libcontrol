@@ -148,14 +148,7 @@ class LibraryWebsiteService
         $config = config('library-website', []);
         $settings = PlatformSetting::current();
 
-        $socialLinks = $this->normalizeSocialLinks($settings->website_social_links);
-        foreach ($socialLinks as $key => $value) {
-            if ($value !== '') {
-                $config['social_links'][$key] = $value;
-            }
-        }
-
-        $whatsapp = $settings->website_whatsapp ?: ($config['whatsapp'] ?? null);
+        $contact = $this->resolvePublicContact($settings, $config);
 
         $payload = [
             'enabled' => true,
@@ -164,16 +157,16 @@ class LibraryWebsiteService
             'tagline' => $settings->website_tagline ?: ($config['tagline'] ?? ''),
             'footer_tagline' => $config['footer_tagline'] ?? '',
             'logo_url' => $this->websiteLogoUrl($settings),
-            'phone' => $config['phone'] ?? '',
-            'phone_href' => $config['phone_href'] ?? '',
-            'email' => $config['email'] ?? '',
-            'whatsapp' => $whatsapp,
-            'whatsapp_url' => $this->whatsappUrl($whatsapp),
+            'phone' => $contact['phone'],
+            'phone_href' => $contact['phone_href'],
+            'email' => $contact['email'],
+            'whatsapp' => $contact['whatsapp'],
+            'whatsapp_url' => $contact['whatsapp_url'],
             'address' => $this->addressLines($settings, $this->isDemoLibraryWebsite() ? ($config['address'] ?? []) : []),
-            'opening_hours' => $config['opening_hours'] ?? '',
-            'map_embed_url' => $config['map_embed_url'] ?? '',
-            'map_directions_url' => $config['map_directions_url'] ?? '',
-            'social_links' => $config['social_links'] ?? [],
+            'opening_hours' => $contact['opening_hours'],
+            'map_embed_url' => $contact['map_embed_url'],
+            'map_directions_url' => $contact['map_directions_url'],
+            'social_links' => $this->publicSocialLinks($settings, $config),
             'seo' => [
                 'title' => ($settings->display_name ?: ($config['library_name'] ?? 'Library')).' | '.($config['subtitle'] ?? 'Library & Study Center'),
                 'description' => $config['seo']['description'] ?? '',
@@ -221,6 +214,7 @@ class LibraryWebsiteService
             'website_hero_title' => $settings->website_hero_title,
             'website_about' => $settings->website_about,
             'website_address' => $settings->website_address,
+            'website_contact_email' => $settings->website_contact_email,
             'website_amenities' => $this->normalizeAmenities($settings->website_amenities),
             'website_social_links' => $this->normalizeSocialLinks($settings->website_social_links),
             'website_whatsapp' => $settings->website_whatsapp,
@@ -537,6 +531,113 @@ class LibraryWebsiteService
         $demoHost = strtolower((string) config('library-website.demo_host', 'demo.libcontrol.in'));
 
         return $host !== '' && $host === $demoHost;
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array{phone: string, phone_href: string, email: string, whatsapp: ?string, whatsapp_url: ?string, opening_hours: string, map_embed_url: string, map_directions_url: string}
+     */
+    private function resolvePublicContact(PlatformSetting $settings, array $config): array
+    {
+        if ($this->isDemoLibraryWebsite()) {
+            return [
+                'phone' => (string) ($config['phone'] ?? ''),
+                'phone_href' => (string) ($config['phone_href'] ?? ''),
+                'email' => (string) ($config['email'] ?? ''),
+                'whatsapp' => $settings->website_whatsapp ?: ($config['whatsapp'] ?? null),
+                'whatsapp_url' => $this->whatsappUrl($settings->website_whatsapp ?: ($config['whatsapp'] ?? null)),
+                'opening_hours' => (string) ($config['opening_hours'] ?? ''),
+                'map_embed_url' => (string) ($config['map_embed_url'] ?? ''),
+                'map_directions_url' => (string) ($config['map_directions_url'] ?? ''),
+            ];
+        }
+
+        $branch = \App\Models\Branch::query()->orderBy('id')->first();
+        $whatsapp = $settings->website_whatsapp;
+        $phone = $this->formatIndianPhone($whatsapp);
+
+        if ($phone['display'] === '' && $branch !== null && filled($branch->phone)) {
+            $phone = $this->formatIndianPhone(preg_replace('/\D+/', '', (string) $branch->phone) ?: null);
+        }
+
+        $email = trim((string) ($settings->website_contact_email ?? ''));
+        if ($email === '' && $branch !== null) {
+            $email = trim((string) ($branch->email ?? ''));
+        }
+
+        $addressRaw = trim((string) ($settings->website_address ?? ''));
+        if ($addressRaw === '' && $branch !== null) {
+            $addressRaw = trim((string) ($branch->address ?? ''));
+        }
+
+        $maps = $this->mapUrlsForAddress($addressRaw);
+
+        return [
+            'phone' => $phone['display'],
+            'phone_href' => $phone['href'],
+            'email' => $email,
+            'whatsapp' => $whatsapp,
+            'whatsapp_url' => $this->whatsappUrl($whatsapp),
+            'opening_hours' => '',
+            'map_embed_url' => $maps['embed'],
+            'map_directions_url' => $maps['directions'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
+    private function publicSocialLinks(PlatformSetting $settings, array $config): array
+    {
+        $links = $this->normalizeSocialLinks($settings->website_social_links);
+
+        if ($this->isDemoLibraryWebsite()) {
+            return array_merge($config['social_links'] ?? [], array_filter($links));
+        }
+
+        return array_filter($links);
+    }
+
+    /**
+     * @return array{display: string, href: string}
+     */
+    private function formatIndianPhone(?string $raw): array
+    {
+        $digits = preg_replace('/\D+/', '', (string) $raw) ?? '';
+
+        if (strlen($digits) === 12 && str_starts_with($digits, '91')) {
+            $digits = substr($digits, 2);
+        } elseif (strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            $digits = substr($digits, 1);
+        }
+
+        if (strlen($digits) !== 10) {
+            return ['display' => '', 'href' => ''];
+        }
+
+        return [
+            'display' => '+91 '.substr($digits, 0, 4).' '.substr($digits, 4, 3).' '.substr($digits, 7),
+            'href' => 'tel:+91'.$digits,
+        ];
+    }
+
+    /**
+     * @return array{embed: string, directions: string}
+     */
+    private function mapUrlsForAddress(string $address): array
+    {
+        $address = trim($address);
+        if ($address === '') {
+            return ['embed' => '', 'directions' => ''];
+        }
+
+        $query = rawurlencode($address);
+
+        return [
+            'embed' => 'https://maps.google.com/maps?q='.$query.'&output=embed',
+            'directions' => 'https://maps.google.com/?q='.$query,
+        ];
     }
 
     /**
