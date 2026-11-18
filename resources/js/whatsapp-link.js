@@ -38,7 +38,6 @@ function tryDesktopApp(appUrl) {
             settled = true;
             window.removeEventListener('blur', onBlur);
             document.removeEventListener('visibilitychange', onVis);
-            iframe.remove();
             resolve(opened);
         };
 
@@ -52,13 +51,16 @@ function tryDesktopApp(appUrl) {
         window.addEventListener('blur', onBlur);
         document.addEventListener('visibilitychange', onVis);
 
-        const iframe = document.createElement('iframe');
-        iframe.setAttribute('aria-hidden', 'true');
-        iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
-        iframe.src = appUrl;
-        document.body.appendChild(iframe);
+        // Prefer a real <a> click — Chrome/Brave often ignore whatsapp:// in iframes.
+        const anchor = document.createElement('a');
+        anchor.href = appUrl;
+        anchor.rel = 'noopener';
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
 
-        window.setTimeout(() => finish(false), 1000);
+        window.setTimeout(() => finish(false), 1200);
     });
 }
 

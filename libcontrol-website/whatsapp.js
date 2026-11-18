@@ -83,9 +83,6 @@
                 settled = true;
                 window.removeEventListener('blur', onBlur);
                 document.removeEventListener('visibilitychange', onVis);
-                if (iframe.parentNode) {
-                    iframe.parentNode.removeChild(iframe);
-                }
                 resolve(opened);
             }
 
@@ -102,14 +99,18 @@
             window.addEventListener('blur', onBlur);
             document.addEventListener('visibilitychange', onVis);
 
-            var iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
-            iframe.src = appUrl;
-            document.body.appendChild(iframe);
+            /* Prefer a real <a> click — Chrome/Brave often ignore whatsapp:// in iframes. */
+            var anchor = document.createElement('a');
+            anchor.href = appUrl;
+            anchor.rel = 'noopener';
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
 
             window.setTimeout(function () {
                 finish(false);
-            }, 1000);
+            }, 1200);
         });
     }
 
