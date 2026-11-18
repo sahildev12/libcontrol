@@ -8,13 +8,6 @@
             || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform || ''));
     }
 
-    /**
-     * Universal click-to-chat URL.
-     * - Mobile: opens WhatsApp app
-     * - Desktop with WhatsApp installed: OS/browser can hand off to the app
-     * - Otherwise: WhatsApp Web chat
-     * Avoid web.whatsapp.com/send — that always forces the browser site.
-     */
     function buildWhatsAppUrl(phone, text) {
         var number = digits(phone);
         if (number === '') {
@@ -25,14 +18,18 @@
         return 'https://wa.me/' + number + (encodedText ? '?text=' + encodedText : '');
     }
 
-    function buildWhatsAppAppUrl(phone, text) {
+    function buildWhatsAppWebUrl(phone, text) {
         var number = digits(phone);
         if (number === '') {
             return '';
         }
 
-        var encodedText = text ? encodeURIComponent(text) : '';
-        return 'whatsapp://send?phone=' + number + (encodedText ? '&text=' + encodedText : '');
+        var params = 'phone=' + number;
+        if (text) {
+            params += '&text=' + encodeURIComponent(text);
+        }
+
+        return 'https://web.whatsapp.com/send?' + params;
     }
 
     function parseWaMeHref(href) {
@@ -63,35 +60,20 @@
     }
 
     function openWhatsAppChat(phone, text, fallbackUrl) {
-        var appUrl = buildWhatsAppAppUrl(phone, text);
-        var webUrl = fallbackUrl || buildWhatsAppUrl(phone, text);
+        var waUrl = fallbackUrl || buildWhatsAppUrl(phone, text);
+        var webUrl = buildWhatsAppWebUrl(phone, text);
 
-        if (isMobileDevice() || !appUrl) {
-            window.location.href = webUrl;
+        if (isMobileDevice()) {
+            window.location.href = waUrl;
             return;
         }
 
-        /* Desktop: try native app protocol first, then fall back to wa.me */
-        var blurred = false;
-        function onBlur() {
-            blurred = true;
+        var opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
+        if (opened) {
+            opened.opener = null;
+        } else {
+            window.location.href = webUrl;
         }
-        window.addEventListener('blur', onBlur);
-
-        var iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
-        iframe.src = appUrl;
-        document.body.appendChild(iframe);
-
-        window.setTimeout(function () {
-            window.removeEventListener('blur', onBlur);
-            if (iframe.parentNode) {
-                iframe.parentNode.removeChild(iframe);
-            }
-            if (!blurred) {
-                window.open(webUrl, '_blank', 'noopener,noreferrer');
-            }
-        }, 900);
     }
 
     function applyWhatsAppLinks() {
@@ -110,7 +92,6 @@
             link.setAttribute('rel', 'noopener noreferrer');
 
             if (isMobileDevice()) {
-                /* Same-tab handoff opens the WhatsApp app more reliably */
                 link.removeAttribute('target');
             } else {
                 link.setAttribute('target', '_blank');

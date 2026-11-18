@@ -1,3 +1,5 @@
+import './whatsapp-link';
+
 function initLibraryWebsite() {
     const header = document.querySelector('[data-lw-header]');
     const menuToggle = document.querySelector('[data-lw-menu-toggle]');
