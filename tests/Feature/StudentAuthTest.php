@@ -262,4 +262,33 @@ class StudentAuthTest extends TestCase
 
         $this->assertFalse($student->fresh()->hasAppPin());
     }
+
+    public function test_admin_can_update_student_without_phone_or_email_when_contact_not_required(): void
+    {
+        $branch = Branch::factory()->create(['require_student_contact' => false]);
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $student = Student::factory()->create([
+            'branch_id' => $branch->id,
+            'name' => 'Old Name',
+            'phone' => null,
+            'email' => null,
+            'date_of_birth' => '2001-05-20',
+        ]);
+
+        $this->actingAs($user)->patchJson(route('students.update', $student), [
+            'name' => 'Updated Name',
+            'gender' => 'female',
+            'date_of_birth' => '2001-05-20',
+            'student_type' => 'regular',
+            'status' => 'active',
+            'address' => 'Hisar, Haryana',
+        ])->assertOk()
+            ->assertJsonPath('student.name', 'Updated Name');
+
+        $this->assertDatabaseHas('students', [
+            'id' => $student->id,
+            'name' => 'Updated Name',
+            'address' => 'Hisar, Haryana',
+        ]);
+    }
 }

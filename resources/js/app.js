@@ -515,6 +515,10 @@ function createStudentFormMixin({
         },
 
         contactRequiredForCreate() {
+            if (! this.requireStudentContact) {
+                return false;
+            }
+
             if (this.studentFamilyMode === 'linked' && this.linkedFamilyStudent) {
                 const phone = String(this.linkedFamilyStudent.phone || '').trim();
                 const email = String(this.linkedFamilyStudent.email || '').trim();
@@ -1061,12 +1065,12 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             }
 
             this.editForm.phone = sanitizeDigits(this.editForm.phone);
-            const contactRequired = ! this.editForm.is_in_family || this.editForm.is_family_primary;
+            const canEditContact = ! this.editForm.is_in_family || this.editForm.is_family_primary;
 
             Object.assign(
                 errors,
                 validateStudentContactFields(this.editForm.phone, this.editForm.email, {
-                    requireBoth: contactRequired,
+                    requireBoth: Boolean(this.requireStudentContact) && canEditContact,
                 }),
             );
 
@@ -1185,9 +1189,9 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
 
             if (field === 'phone' || field === 'email') {
                 this.editForm.phone = sanitizeDigits(this.editForm.phone);
-                const contactRequired = ! this.editForm.is_in_family || this.editForm.is_family_primary;
+                const canEditContact = ! this.editForm.is_in_family || this.editForm.is_family_primary;
                 const contactErrors = validateStudentContactFields(this.editForm.phone, this.editForm.email, {
-                    requireBoth: contactRequired,
+                    requireBoth: Boolean(this.requireStudentContact) && canEditContact,
                 });
                 this.setEditFormError(field, contactErrors[field] || null);
             }
