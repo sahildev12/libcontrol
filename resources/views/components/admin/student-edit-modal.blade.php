@@ -152,7 +152,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Student Photo (optional)</label>
                         <input type="file" @change="onEditPhotoSelected($event)" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-sm text-gray-600" :class="editFormErrors.photo ? 'text-red-600' : 'text-gray-600'">
-                        <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 500&nbsp;KB.</p>
+                        <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 500&nbsp;KB (large photos are compressed automatically).</p>
                         <p x-show="editForm.has_photo && ! editForm.photo" class="mt-1 text-xs text-gray-500">A photo is already on file. Upload to replace it.</p>
                         <p x-show="editFormErrors.photo" x-cloak x-text="editFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
                     </div>
@@ -188,7 +188,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">ID Document File</label>
                     <input type="file" @change="onEditIdProofSelected($event)" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-sm text-gray-600" :class="editFormErrors.id_proof ? 'text-red-600' : 'text-gray-600'">
-                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 500&nbsp;KB.</p>
+                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 500&nbsp;KB (images are compressed automatically).</p>
                     <p x-show="editForm.has_id_proof && ! editForm.id_proof" class="mt-1 text-xs text-gray-500">An ID document is already on file. Upload to replace it.</p>
                     <p x-show="editFormErrors.id_proof" x-cloak x-text="editFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
                 </div>

@@ -86,7 +86,7 @@
             <div class="lc-reg-field">
                 <label class="lc-reg-label" for="reg-id-file">ID Document File</label>
                 <input id="reg-id-file" type="file" name="id_proof" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="lc-reg-file" data-validate="id_proof">
-                <p class="mt-1 text-xs text-slate-500">JPG, PNG or PDF, max 500&nbsp;KB.</p>
+                <p class="mt-1 text-xs text-slate-500">JPG, PNG or PDF, max 500&nbsp;KB (images are compressed automatically).</p>
                 <p class="lc-reg-error hidden" data-client-error="id_proof"></p>
                 @error('id_proof') <p class="lc-reg-error">{{ $message }}</p> @enderror
             </div>
@@ -95,7 +95,7 @@
         <div class="lc-reg-field">
             <label class="lc-reg-label" for="reg-photo">Student Photo (optional)</label>
             <input id="reg-photo" type="file" name="photo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="lc-reg-file" data-validate="photo">
-            <p class="mt-1 text-xs text-slate-500">JPG or PNG, max 500&nbsp;KB.</p>
+            <p class="mt-1 text-xs text-slate-500">JPG or PNG, max 500&nbsp;KB (large photos are compressed automatically).</p>
             <p class="lc-reg-error hidden" data-client-error="photo"></p>
             @error('photo') <p class="lc-reg-error">{{ $message }}</p> @enderror
         </div>
@@ -191,6 +191,76 @@
                 }
 
                 return null;
+            };
+
+            const canvasToBlob = (canvas, type, quality) => new Promise((resolve) => {
+                canvas.toBlob((blob) => resolve(blob), type, quality);
+            });
+
+            const compressImageFile = async (file) => {
+                if (!file || file.size <= maxFileBytes) {
+                    return file;
+                }
+
+                const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+                if (!['jpg', 'jpeg', 'png'].includes(extension)) {
+                    return null;
+                }
+
+                const objectUrl = URL.createObjectURL(file);
+                try {
+                    const image = await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = () => reject(new Error('Could not read image.'));
+                        img.src = objectUrl;
+                    });
+
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    if (!context) {
+                        return null;
+                    }
+
+                    let width = image.naturalWidth || image.width;
+                    let height = image.naturalHeight || image.height;
+                    if (!width || !height) {
+                        return null;
+                    }
+
+                    for (const maxEdge of [1600, 1280, 1024, 800, 640]) {
+                        const scale = Math.min(1, maxEdge / Math.max(width, height));
+                        canvas.width = Math.max(1, Math.round(width * scale));
+                        canvas.height = Math.max(1, Math.round(height * scale));
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                        for (const quality of [0.82, 0.7, 0.58, 0.45, 0.35]) {
+                            const blob = await canvasToBlob(canvas, 'image/jpeg', quality);
+                            if (blob && blob.size <= maxFileBytes) {
+                                const baseName = String(file.name || 'upload').replace(/\.[^.]+$/, '');
+                                return new File([blob], `${baseName}.jpg`, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now(),
+                                });
+                            }
+                        }
+                    }
+
+                    return null;
+                } catch (e) {
+                    return null;
+                } finally {
+                    URL.revokeObjectURL(objectUrl);
+                }
+            };
+
+            const assignFileInput = (input, file) => {
+                const transfer = new DataTransfer();
+                if (file) {
+                    transfer.items.add(file);
+                }
+                input.files = transfer.files;
             };
 
             const validateForm = () => {
@@ -320,11 +390,27 @@
                 const eventName = input.type === 'file' || input.tagName === 'SELECT' || input.type === 'date'
                     ? 'change'
                     : 'blur';
-                input.addEventListener(eventName, () => {
+                input.addEventListener(eventName, async () => {
                     if (input.type === 'file' && input.files?.[0]) {
                         const allowed = field === 'photo' ? ['jpg', 'jpeg', 'png'] : ['jpg', 'jpeg', 'png', 'pdf'];
-                        const fileError = validateFile(input.files[0], allowed);
-                        if (fileError) {
+                        let file = input.files[0];
+                        const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+                        if (!allowed.includes(extension)) {
+                            input.value = '';
+                            validateSingleField(field);
+                            return;
+                        }
+
+                        if (file.size > maxFileBytes && ['jpg', 'jpeg', 'png'].includes(extension)) {
+                            const compressed = await compressImageFile(file);
+                            if (compressed) {
+                                assignFileInput(input, compressed);
+                                file = compressed;
+                            } else {
+                                input.value = '';
+                            }
+                        } else if (file.size > maxFileBytes) {
                             input.value = '';
                         }
                     }

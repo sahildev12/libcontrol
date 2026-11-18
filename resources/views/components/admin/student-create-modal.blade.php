@@ -196,7 +196,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Photo</label>
                     <input type="file" @change="onStudentPhotoSelected($event)" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-xs text-gray-600" :class="studentFormErrors.photo ? 'text-red-600' : 'text-gray-600'">
-                    <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 500&nbsp;KB.</p>
+                    <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 500&nbsp;KB (large photos are compressed automatically).</p>
                     <p x-show="studentFormErrors.photo" x-cloak x-text="studentFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
@@ -215,7 +215,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-700">ID File</label>
                     <input type="file" @change="onStudentIdProofSelected($event)" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-xs" :class="studentFormErrors.id_proof ? 'text-red-600' : 'text-gray-600'">
-                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 500&nbsp;KB.</p>
+                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 500&nbsp;KB (images are compressed automatically).</p>
                     <p x-show="studentFormErrors.id_proof" x-cloak x-text="studentFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
                 </div>
             </form>

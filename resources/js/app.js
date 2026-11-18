@@ -310,12 +310,16 @@ function validateStudentDateOfBirth(value) {
     return null;
 }
 
+function studentUploadExtension(file) {
+    return String(file?.name || '').split('.').pop()?.toLowerCase() || '';
+}
+
 function validateStudentUpload(file, { extensions, label }) {
     if (! file) {
         return null;
     }
 
-    const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+    const extension = studentUploadExtension(file);
     if (! extensions.includes(extension)) {
         return `${label} must be ${extensions.map((ext) => ext.toUpperCase()).join(', ')}.`;
     }
@@ -325,6 +329,120 @@ function validateStudentUpload(file, { extensions, label }) {
     }
 
     return null;
+}
+
+function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), type, quality);
+    });
+}
+
+async function compressStudentImageFile(file, maxBytes = STUDENT_UPLOAD_MAX_BYTES) {
+    if (! file || file.size <= maxBytes) {
+        return file;
+    }
+
+    const extension = studentUploadExtension(file);
+    if (! ['jpg', 'jpeg', 'png'].includes(extension)) {
+        return null;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+        const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Could not read image.'));
+            img.src = objectUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (! context) {
+            return null;
+        }
+
+        let width = image.naturalWidth || image.width;
+        let height = image.naturalHeight || image.height;
+        if (! width || ! height) {
+            return null;
+        }
+
+        const maxEdgeSteps = [1600, 1280, 1024, 800, 640];
+        const qualitySteps = [0.82, 0.7, 0.58, 0.45, 0.35];
+        let bestBlob = null;
+
+        for (const maxEdge of maxEdgeSteps) {
+            const scale = Math.min(1, maxEdge / Math.max(width, height));
+            const targetWidth = Math.max(1, Math.round(width * scale));
+            const targetHeight = Math.max(1, Math.round(height * scale));
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            context.clearRect(0, 0, targetWidth, targetHeight);
+            context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+            for (const quality of qualitySteps) {
+                const blob = await canvasToBlob(canvas, 'image/jpeg', quality);
+                if (! blob) {
+                    continue;
+                }
+                if (! bestBlob || blob.size < bestBlob.size) {
+                    bestBlob = blob;
+                }
+                if (blob.size <= maxBytes) {
+                    const baseName = String(file.name || 'upload').replace(/\.[^.]+$/, '');
+                    return new File([blob], `${baseName}.jpg`, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    });
+                }
+            }
+        }
+
+        return null;
+    } catch (e) {
+        return null;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
+async function prepareStudentUpload(file, { extensions, label }) {
+    if (! file) {
+        return { file: null, error: null, compressed: false };
+    }
+
+    const extension = studentUploadExtension(file);
+    if (! extensions.includes(extension)) {
+        return {
+            file: null,
+            error: `${label} must be ${extensions.map((ext) => ext.toUpperCase()).join(', ')}.`,
+            compressed: false,
+        };
+    }
+
+    if (file.size <= STUDENT_UPLOAD_MAX_BYTES) {
+        return { file, error: null, compressed: false };
+    }
+
+    if (extension === 'pdf') {
+        return {
+            file: null,
+            error: `${label} must be ${STUDENT_UPLOAD_MAX_KB} KB or smaller.`,
+            compressed: false,
+        };
+    }
+
+    const compressed = await compressStudentImageFile(file);
+    if (compressed && compressed.size <= STUDENT_UPLOAD_MAX_BYTES) {
+        return { file: compressed, error: null, compressed: true };
+    }
+
+    return {
+        file: null,
+        error: `${label} must be ${STUDENT_UPLOAD_MAX_KB} KB or smaller. Try a clearer, smaller photo.`,
+        compressed: false,
+    };
 }
 
 function createStudentFormMixin({
@@ -610,9 +728,9 @@ function createStudentFormMixin({
             }
         },
 
-        onStudentPhotoSelected(event) {
-            const file = event.target.files?.[0] || null;
-            const error = validateStudentUpload(file, {
+        async onStudentPhotoSelected(event) {
+            const selected = event.target.files?.[0] || null;
+            const { file, error, compressed } = await prepareStudentUpload(selected, {
                 extensions: ['jpg', 'jpeg', 'png'],
                 label: 'Photo',
             });
@@ -624,11 +742,14 @@ function createStudentFormMixin({
             }
             this.studentForm.photo = file;
             this.setStudentFormError('photo', null);
+            if (compressed) {
+                showToast(`Photo compressed under ${STUDENT_UPLOAD_MAX_KB} KB.`);
+            }
         },
 
-        onStudentIdProofSelected(event) {
-            const file = event.target.files?.[0] || null;
-            const error = validateStudentUpload(file, {
+        async onStudentIdProofSelected(event) {
+            const selected = event.target.files?.[0] || null;
+            const { file, error, compressed } = await prepareStudentUpload(selected, {
                 extensions: ['jpg', 'jpeg', 'png', 'pdf'],
                 label: 'ID document',
             });
@@ -641,6 +762,9 @@ function createStudentFormMixin({
             this.studentForm.id_proof = file;
             this.setStudentFormError('id_proof', null);
             this.validateStudentField('id_proof_type');
+            if (compressed) {
+                showToast(`ID document compressed under ${STUDENT_UPLOAD_MAX_KB} KB.`);
+            }
         },
 
         validateStudentForm() {
@@ -998,9 +1122,9 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             this.validateEditField('date_of_birth');
         },
 
-        onEditPhotoSelected(event) {
-            const file = event.target.files?.[0] || null;
-            const error = validateStudentUpload(file, {
+        async onEditPhotoSelected(event) {
+            const selected = event.target.files?.[0] || null;
+            const { file, error, compressed } = await prepareStudentUpload(selected, {
                 extensions: ['jpg', 'jpeg', 'png'],
                 label: 'Photo',
             });
@@ -1012,11 +1136,14 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             }
             this.editForm.photo = file;
             this.setEditFormError('photo', null);
+            if (compressed) {
+                showToast(`Photo compressed under ${STUDENT_UPLOAD_MAX_KB} KB.`);
+            }
         },
 
-        onEditIdProofSelected(event) {
-            const file = event.target.files?.[0] || null;
-            const error = validateStudentUpload(file, {
+        async onEditIdProofSelected(event) {
+            const selected = event.target.files?.[0] || null;
+            const { file, error, compressed } = await prepareStudentUpload(selected, {
                 extensions: ['jpg', 'jpeg', 'png', 'pdf'],
                 label: 'ID document',
             });
@@ -1030,6 +1157,9 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             this.setEditFormError('id_proof', null);
             if (this.editForm.id_proof && ! this.editForm.id_proof_type) {
                 this.setEditFormError('id_proof_type', 'Select the ID document type when uploading a file.');
+            }
+            if (compressed) {
+                showToast(`ID document compressed under ${STUDENT_UPLOAD_MAX_KB} KB.`);
             }
         },
 
