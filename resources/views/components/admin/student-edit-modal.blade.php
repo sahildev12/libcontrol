@@ -79,14 +79,15 @@
                         <input
                             type="date"
                             x-model="editForm.date_of_birth"
-                            @change="validateEditField('date_of_birth')"
-                            @blur="validateEditField('date_of_birth')"
+                            @input="onEditDobInput($event)"
+                            @change="onEditDobInput($event)"
+                            @blur="onEditDobInput($event)"
                             :max="studentMaxDob()"
                             class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm"
                             :class="editFormErrors.date_of_birth ? 'border-red-400' : 'border-gray-300'"
                         >
                         <p class="mt-1 text-[11px] text-gray-500">Must be at least 5 years old to join.</p>
-                        <p x-show="editFormErrors.date_of_birth" x-text="editFormErrors.date_of_birth" class="mt-1 text-xs text-red-600"></p>
+                        <p x-show="editFormErrors.date_of_birth" x-cloak x-text="editFormErrors.date_of_birth" class="mt-1 text-xs text-red-600"></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">
@@ -150,9 +151,10 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Student Photo (optional)</label>
-                        <input type="file" @change="editForm.photo = $event.target.files[0]" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-sm text-gray-600">
+                        <input type="file" @change="onEditPhotoSelected($event)" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-sm text-gray-600" :class="editFormErrors.photo ? 'text-red-600' : 'text-gray-600'">
+                        <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 500&nbsp;KB.</p>
                         <p x-show="editForm.has_photo && ! editForm.photo" class="mt-1 text-xs text-gray-500">A photo is already on file. Upload to replace it.</p>
-                        <p x-show="editFormErrors.photo" x-text="editFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
+                        <p x-show="editFormErrors.photo" x-cloak x-text="editFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Address</label>
@@ -185,9 +187,10 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">ID Document File</label>
-                    <input type="file" @change="editForm.id_proof = $event.target.files[0]" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-sm text-gray-600">
+                    <input type="file" @change="onEditIdProofSelected($event)" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-sm text-gray-600" :class="editFormErrors.id_proof ? 'text-red-600' : 'text-gray-600'">
+                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 500&nbsp;KB.</p>
                     <p x-show="editForm.has_id_proof && ! editForm.id_proof" class="mt-1 text-xs text-gray-500">An ID document is already on file. Upload to replace it.</p>
-                    <p x-show="editFormErrors.id_proof" x-text="editFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
+                    <p x-show="editFormErrors.id_proof" x-cloak x-text="editFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
                 </div>
             </form>
         </div>

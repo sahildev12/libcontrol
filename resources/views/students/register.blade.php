@@ -86,6 +86,7 @@
             <div class="lc-reg-field">
                 <label class="lc-reg-label" for="reg-id-file">ID Document File</label>
                 <input id="reg-id-file" type="file" name="id_proof" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="lc-reg-file" data-validate="id_proof">
+                <p class="mt-1 text-xs text-slate-500">JPG, PNG or PDF, max 500&nbsp;KB.</p>
                 <p class="lc-reg-error hidden" data-client-error="id_proof"></p>
                 @error('id_proof') <p class="lc-reg-error">{{ $message }}</p> @enderror
             </div>
@@ -94,6 +95,7 @@
         <div class="lc-reg-field">
             <label class="lc-reg-label" for="reg-photo">Student Photo (optional)</label>
             <input id="reg-photo" type="file" name="photo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="lc-reg-file" data-validate="photo">
+            <p class="mt-1 text-xs text-slate-500">JPG or PNG, max 500&nbsp;KB.</p>
             <p class="lc-reg-error hidden" data-client-error="photo"></p>
             @error('photo') <p class="lc-reg-error">{{ $message }}</p> @enderror
         </div>
@@ -121,7 +123,7 @@
             const form = document.getElementById('student-registration-form');
             const button = document.getElementById('student-reg-submit');
             const phoneInput = document.getElementById('reg-phone');
-            const maxFileBytes = 4 * 1024 * 1024;
+            const maxFileBytes = 500 * 1024;
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             const phonePattern = /^[6-9]\d{9}$/;
 
@@ -185,7 +187,7 @@
                 }
 
                 if (file.size > maxFileBytes) {
-                    return 'File must be 4 MB or smaller.';
+                    return 'File must be 500 KB or smaller.';
                 }
 
                 return null;
@@ -318,10 +320,19 @@
                 const eventName = input.type === 'file' || input.tagName === 'SELECT' || input.type === 'date'
                     ? 'change'
                     : 'blur';
-                input.addEventListener(eventName, () => validateSingleField(field));
-                if (eventName === 'blur') {
+                input.addEventListener(eventName, () => {
+                    if (input.type === 'file' && input.files?.[0]) {
+                        const allowed = field === 'photo' ? ['jpg', 'jpeg', 'png'] : ['jpg', 'jpeg', 'png', 'pdf'];
+                        const fileError = validateFile(input.files[0], allowed);
+                        if (fileError) {
+                            input.value = '';
+                        }
+                    }
+                    validateSingleField(field);
+                });
+                if (eventName === 'blur' || input.type === 'date') {
                     input.addEventListener('input', () => {
-                        if (form.querySelector(`[data-client-error="${field}"]:not(.hidden)`)) {
+                        if (input.type === 'date' || form.querySelector(`[data-client-error="${field}"]:not(.hidden)`)) {
                             validateSingleField(field);
                         }
                     });

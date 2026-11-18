@@ -94,14 +94,15 @@
                     <input
                         type="date"
                         x-model="studentForm.date_of_birth"
-                        @change="validateStudentField('date_of_birth')"
-                        @blur="validateStudentField('date_of_birth')"
+                        @input="onStudentDobInput($event)"
+                        @change="onStudentDobInput($event)"
+                        @blur="onStudentDobInput($event)"
                         :max="studentMaxDob()"
                         class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm"
                         :class="studentFormErrors.date_of_birth ? 'border-red-400' : 'border-gray-300'"
                     >
                     <p class="mt-1 text-[11px] text-gray-500">Must be at least 5 years old to join.</p>
-                    <p x-show="studentFormErrors.date_of_birth" x-text="studentFormErrors.date_of_birth" class="mt-1 text-xs text-red-600"></p>
+                    <p x-show="studentFormErrors.date_of_birth" x-cloak x-text="studentFormErrors.date_of_birth" class="mt-1 text-xs text-red-600"></p>
                 </div>
 
                 <div class="sm:col-span-2 lg:col-span-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -180,13 +181,23 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Referred by <span class="text-gray-400">(Student ID, optional)</span></label>
-                    <input type="text" x-model="studentForm.referred_by" @input="studentForm.referred_by = $event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')" maxlength="40" placeholder="e.g. SUN-001" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm uppercase placeholder:normal-case">
+                    <input
+                        type="text"
+                        x-model="studentForm.referred_by"
+                        @input="studentForm.referred_by = $event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); setStudentFormError('referred_by', null)"
+                        @blur="validateReferredByField()"
+                        maxlength="40"
+                        placeholder="e.g. SUN-001"
+                        class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm uppercase placeholder:normal-case"
+                        :class="studentFormErrors.referred_by ? 'border-red-400' : 'border-gray-300'"
+                    >
+                    <p x-show="studentFormErrors.referred_by" x-cloak x-text="studentFormErrors.referred_by" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Photo</label>
                     <input type="file" @change="onStudentPhotoSelected($event)" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-xs text-gray-600" :class="studentFormErrors.photo ? 'text-red-600' : 'text-gray-600'">
-                    <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 4&nbsp;MB.</p>
-                    <p x-show="studentFormErrors.photo" x-text="studentFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
+                    <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 500&nbsp;KB.</p>
+                    <p x-show="studentFormErrors.photo" x-cloak x-text="studentFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">ID Type</label>
@@ -199,13 +210,13 @@
                         <option value="Passport">Passport</option>
                         <option value="Other">Other</option>
                     </select>
-                    <p x-show="studentFormErrors.id_proof_type" x-text="studentFormErrors.id_proof_type" class="mt-1 text-xs text-red-600"></p>
+                    <p x-show="studentFormErrors.id_proof_type" x-cloak x-text="studentFormErrors.id_proof_type" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">ID File</label>
                     <input type="file" @change="onStudentIdProofSelected($event)" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-xs" :class="studentFormErrors.id_proof ? 'text-red-600' : 'text-gray-600'">
-                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 4&nbsp;MB.</p>
-                    <p x-show="studentFormErrors.id_proof" x-text="studentFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
+                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 500&nbsp;KB.</p>
+                    <p x-show="studentFormErrors.id_proof" x-cloak x-text="studentFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
                 </div>
             </form>
         </div>

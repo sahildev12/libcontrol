@@ -30,8 +30,8 @@ class StoreStudentRequest extends FormRequest
             'father_name' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
             'id_proof_type' => ['nullable', 'string', 'max:100'],
-            'id_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:4096'],
+            'id_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:512'],
+            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:512'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'student_type' => ['nullable', Rule::in(['regular', 'trial'])],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
@@ -48,8 +48,8 @@ class StoreStudentRequest extends FormRequest
     {
         return [
             'date_of_birth.before_or_equal' => 'Student must be at least 5 years old to join the library.',
-            'photo.max' => 'Photo must be 4 MB or smaller.',
-            'id_proof.max' => 'ID document must be 4 MB or smaller.',
+            'photo.max' => 'Photo must be 500 KB or smaller.',
+            'id_proof.max' => 'ID document must be 500 KB or smaller.',
         ];
     }
 

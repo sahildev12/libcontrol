@@ -30,8 +30,8 @@ class StorePublicStudentRegistrationRequest extends FormRequest
             'father_name' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
             'id_proof_type' => ['nullable', 'string', 'max:100', 'required_with:id_proof'],
-            'id_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096', 'required_with:id_proof_type'],
-            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:4096'],
+            'id_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:512', 'required_with:id_proof_type'],
+            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:512'],
         ];
     }
 
@@ -53,9 +53,9 @@ class StorePublicStudentRegistrationRequest extends FormRequest
             'id_proof_type.required_with' => 'Select an ID document type when uploading a file.',
             'id_proof.required_with' => 'Upload an ID document file for the selected type.',
             'id_proof.mimes' => 'ID document must be JPG, PNG, or PDF.',
-            'id_proof.max' => 'ID document must be 4 MB or smaller.',
+            'id_proof.max' => 'ID document must be 500 KB or smaller.',
             'photo.mimes' => 'Photo must be JPG or PNG.',
-            'photo.max' => 'Photo must be 4 MB or smaller.',
+            'photo.max' => 'Photo must be 500 KB or smaller.',
         ];
     }
 

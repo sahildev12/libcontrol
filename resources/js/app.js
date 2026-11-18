@@ -267,13 +267,30 @@ function validateStudentContactFields(phone, email, { required = false, requireB
 }
 
 const STUDENT_MIN_AGE_YEARS = 5;
-const STUDENT_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+const STUDENT_UPLOAD_MAX_KB = 500;
+const STUDENT_UPLOAD_MAX_BYTES = STUDENT_UPLOAD_MAX_KB * 1024;
+
+function formatLocalDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
 
 function studentMaxDateOfBirth() {
     const max = new Date();
+    max.setHours(0, 0, 0, 0);
     max.setFullYear(max.getFullYear() - STUDENT_MIN_AGE_YEARS);
 
-    return max.toISOString().slice(0, 10);
+    return formatLocalDate(max);
+}
+
+function studentTodayDate() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return formatLocalDate(today);
 }
 
 function validateStudentDateOfBirth(value) {
@@ -282,8 +299,7 @@ function validateStudentDateOfBirth(value) {
         return 'Date of birth is required.';
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    if (dob >= today) {
+    if (dob >= studentTodayDate()) {
         return 'Date of birth must be in the past.';
     }
 
@@ -305,7 +321,7 @@ function validateStudentUpload(file, { extensions, label }) {
     }
 
     if (file.size > STUDENT_UPLOAD_MAX_BYTES) {
-        return `${label} must be 4 MB or smaller.`;
+        return `${label} must be ${STUDENT_UPLOAD_MAX_KB} KB or smaller.`;
     }
 
     return null;
@@ -461,6 +477,10 @@ function createStudentFormMixin({
             return studentMaxDateOfBirth();
         },
 
+        studentUploadMaxLabel() {
+            return `${STUDENT_UPLOAD_MAX_KB} KB`;
+        },
+
         setStudentFormError(field, message) {
             const next = { ...this.studentFormErrors };
             if (message) {
@@ -469,6 +489,22 @@ function createStudentFormMixin({
                 delete next[field];
             }
             this.studentFormErrors = next;
+        },
+
+        applyStudentServerErrors(errors) {
+            const next = { ...this.studentFormErrors };
+            Object.entries(errors || {}).forEach(([field, messages]) => {
+                const message = Array.isArray(messages) ? messages[0] : messages;
+                if (message) {
+                    next[field] = message;
+                }
+            });
+            this.studentFormErrors = next;
+        },
+
+        onStudentDobInput(event) {
+            this.studentForm.date_of_birth = event?.target?.value || '';
+            this.validateStudentField('date_of_birth');
         },
 
         studentFieldError(field) {
@@ -510,6 +546,16 @@ function createStudentFormMixin({
                         return 'Select an existing student to link this family contact.';
                     }
                     return null;
+                case 'referred_by': {
+                    const code = String(this.studentForm.referred_by || '').trim();
+                    if (! code) {
+                        return null;
+                    }
+                    if (code.length < 3) {
+                        return 'Enter a full Student ID, or leave blank.';
+                    }
+                    return this.studentFormErrors.referred_by || null;
+                }
                 case 'id_proof_type':
                     if (this.studentForm.id_proof && ! this.studentForm.id_proof_type) {
                         return 'Select the ID document type when uploading a file.';
@@ -535,6 +581,33 @@ function createStudentFormMixin({
 
         validateStudentField(field) {
             this.setStudentFormError(field, this.studentFieldError(field));
+        },
+
+        async validateReferredByField() {
+            const code = String(this.studentForm.referred_by || '').trim().toUpperCase();
+            this.studentForm.referred_by = code;
+
+            if (! code) {
+                this.setStudentFormError('referred_by', null);
+                return;
+            }
+
+            if (code.length < 3) {
+                this.setStudentFormError('referred_by', 'Enter a full Student ID, or leave blank.');
+                return;
+            }
+
+            try {
+                const response = await window.axios.get(this.studentSearchUrl, { params: { q: code } });
+                const results = response.data.results || [];
+                const match = results.find((row) => String(row.student_code || '').toUpperCase() === code);
+                this.setStudentFormError(
+                    'referred_by',
+                    match ? null : 'No student found with this Student ID. Check the ID or leave it blank.',
+                );
+            } catch (e) {
+                // Leave final check to the server if search fails.
+            }
         },
 
         onStudentPhotoSelected(event) {
@@ -580,6 +653,7 @@ function createStudentFormMixin({
                 'phone',
                 'email',
                 'family',
+                'referred_by',
                 'id_proof_type',
                 'id_proof',
                 'photo',
@@ -711,6 +785,8 @@ function createStudentFormMixin({
         },
 
         async submitNewStudent() {
+            await this.validateReferredByField();
+
             if (! this.validateStudentForm()) {
                 showToast(Object.values(this.studentFormErrors)[0], 'error');
                 return;
@@ -731,9 +807,12 @@ function createStudentFormMixin({
                 showToast(response.data.message);
                 this.closeStudentCreate();
             } catch (e) {
+                const serverErrors = e.response?.data?.errors || {};
+                this.applyStudentServerErrors(serverErrors);
                 showToast(
-                    e.response?.data?.message
-                    || Object.values(e.response?.data?.errors || {})[0]?.[0]
+                    Object.values(this.studentFormErrors)[0]
+                    || e.response?.data?.message
+                    || Object.values(serverErrors)[0]?.[0]
                     || 'Could not add student.',
                     'error',
                 );
@@ -906,6 +985,54 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
             this.editFormErrors = next;
         },
 
+        studentMaxDob() {
+            return studentMaxDateOfBirth();
+        },
+
+        studentUploadMaxLabel() {
+            return `${STUDENT_UPLOAD_MAX_KB} KB`;
+        },
+
+        onEditDobInput(event) {
+            this.editForm.date_of_birth = event?.target?.value || '';
+            this.validateEditField('date_of_birth');
+        },
+
+        onEditPhotoSelected(event) {
+            const file = event.target.files?.[0] || null;
+            const error = validateStudentUpload(file, {
+                extensions: ['jpg', 'jpeg', 'png'],
+                label: 'Photo',
+            });
+            if (error) {
+                this.editForm.photo = null;
+                event.target.value = '';
+                this.setEditFormError('photo', error);
+                return;
+            }
+            this.editForm.photo = file;
+            this.setEditFormError('photo', null);
+        },
+
+        onEditIdProofSelected(event) {
+            const file = event.target.files?.[0] || null;
+            const error = validateStudentUpload(file, {
+                extensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                label: 'ID document',
+            });
+            if (error) {
+                this.editForm.id_proof = null;
+                event.target.value = '';
+                this.setEditFormError('id_proof', error);
+                return;
+            }
+            this.editForm.id_proof = file;
+            this.setEditFormError('id_proof', null);
+            if (this.editForm.id_proof && ! this.editForm.id_proof_type) {
+                this.setEditFormError('id_proof_type', 'Select the ID document type when uploading a file.');
+            }
+        },
+
         validateEditField(field) {
             if (field === 'date_of_birth') {
                 this.setEditFormError(field, validateStudentDateOfBirth(this.editForm.date_of_birth));
@@ -989,7 +1116,17 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
                 showToast(response.data.message);
                 this.closeEdit();
             } catch (e) {
-                showToast(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Could not save student.', 'error');
+                const serverErrors = e.response?.data?.errors || {};
+                Object.entries(serverErrors).forEach(([field, messages]) => {
+                    this.setEditFormError(field, Array.isArray(messages) ? messages[0] : messages);
+                });
+                showToast(
+                    Object.values(this.editFormErrors)[0]
+                    || e.response?.data?.message
+                    || Object.values(serverErrors)[0]?.[0]
+                    || 'Could not save student.',
+                    'error',
+                );
             } finally {
                 this.editSaving = false;
             }
