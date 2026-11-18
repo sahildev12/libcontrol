@@ -24,7 +24,7 @@ class StorePublicStudentRegistrationRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'gender' => ['required', Rule::in(['male', 'female'])],
-            'date_of_birth' => ['required', 'date', 'before:today'],
+            'date_of_birth' => ValidationRules::dateOfBirthRequired(),
             'phone' => ValidationRules::phoneRequired(),
             'email' => ValidationRules::emailRequired(),
             'father_name' => ['nullable', 'string', 'max:255'],
@@ -45,6 +45,7 @@ class StorePublicStudentRegistrationRequest extends FormRequest
             'name.min' => 'Full name must be at least 2 characters.',
             'date_of_birth.required' => 'Select date of birth.',
             'date_of_birth.before' => 'Date of birth must be before today.',
+            'date_of_birth.before_or_equal' => 'Student must be at least 5 years old to join the library.',
             'phone.required' => 'Enter a 10-digit mobile number.',
             'phone.regex' => 'Enter a valid 10-digit Indian mobile number (starts with 6–9).',
             'email.required' => 'Enter an email address.',

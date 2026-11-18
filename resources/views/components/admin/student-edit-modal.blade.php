@@ -79,10 +79,13 @@
                         <input
                             type="date"
                             x-model="editForm.date_of_birth"
-                            :max="new Date().toISOString().slice(0, 10)"
+                            @change="validateEditField('date_of_birth')"
+                            @blur="validateEditField('date_of_birth')"
+                            :max="studentMaxDob()"
                             class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm"
                             :class="editFormErrors.date_of_birth ? 'border-red-400' : 'border-gray-300'"
                         >
+                        <p class="mt-1 text-[11px] text-gray-500">Must be at least 5 years old to join.</p>
                         <p x-show="editFormErrors.date_of_birth" x-text="editFormErrors.date_of_birth" class="mt-1 text-xs text-red-600"></p>
                     </div>
                     <div>

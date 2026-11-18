@@ -35,4 +35,19 @@ class ValidationRules
     {
         return ['nullable', 'string', 'email', 'max:255'];
     }
+
+    /**
+     * Required DOB: past date and at least 5 years old (library membership floor).
+     *
+     * @return list<string|\Illuminate\Contracts\Validation\ValidationRule>
+     */
+    public static function dateOfBirthRequired(): array
+    {
+        return [
+            'required',
+            'date',
+            'before:today',
+            'before_or_equal:'.now()->subYears(5)->toDateString(),
+        ];
+    }
 }

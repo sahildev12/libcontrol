@@ -266,6 +266,51 @@ function validateStudentContactFields(phone, email, { required = false, requireB
     return errors;
 }
 
+const STUDENT_MIN_AGE_YEARS = 5;
+const STUDENT_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+
+function studentMaxDateOfBirth() {
+    const max = new Date();
+    max.setFullYear(max.getFullYear() - STUDENT_MIN_AGE_YEARS);
+
+    return max.toISOString().slice(0, 10);
+}
+
+function validateStudentDateOfBirth(value) {
+    const dob = String(value || '').trim();
+    if (! dob) {
+        return 'Date of birth is required.';
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (dob >= today) {
+        return 'Date of birth must be in the past.';
+    }
+
+    if (dob > studentMaxDateOfBirth()) {
+        return 'Student must be at least 5 years old to join the library.';
+    }
+
+    return null;
+}
+
+function validateStudentUpload(file, { extensions, label }) {
+    if (! file) {
+        return null;
+    }
+
+    const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+    if (! extensions.includes(extension)) {
+        return `${label} must be ${extensions.map((ext) => ext.toUpperCase()).join(', ')}.`;
+    }
+
+    if (file.size > STUDENT_UPLOAD_MAX_BYTES) {
+        return `${label} must be 4 MB or smaller.`;
+    }
+
+    return null;
+}
+
 function createStudentFormMixin({
     storeStudentUrl,
     inviteStoreUrl,
@@ -412,55 +457,141 @@ function createStudentFormMixin({
             this.familySearchResults = [];
         },
 
-        validateStudentForm() {
-            const errors = {};
+        studentMaxDob() {
+            return studentMaxDateOfBirth();
+        },
+
+        setStudentFormError(field, message) {
+            const next = { ...this.studentFormErrors };
+            if (message) {
+                next[field] = message;
+            } else {
+                delete next[field];
+            }
+            this.studentFormErrors = next;
+        },
+
+        studentFieldError(field) {
             const name = String(this.studentForm.name || '').trim();
 
-            if (! name) {
-                errors.name = 'Full name is required.';
-            } else if (name.length < 2) {
-                errors.name = 'Name must be at least 2 characters.';
-            } else if (/^\d+$/.test(name)) {
-                errors.name = 'Name cannot contain only numbers.';
+            switch (field) {
+                case 'name':
+                    if (! name) {
+                        return 'Full name is required.';
+                    }
+                    if (name.length < 2) {
+                        return 'Name must be at least 2 characters.';
+                    }
+                    if (/^\d+$/.test(name)) {
+                        return 'Name cannot contain only numbers.';
+                    }
+                    return null;
+                case 'gender':
+                    return ['male', 'female'].includes(this.studentForm.gender) ? null : 'Select Male or Female.';
+                case 'student_type':
+                    return ['regular', 'trial'].includes(this.studentForm.student_type) ? null : 'Select Regular or Trial student.';
+                case 'branch_id':
+                    if (this.shouldShowStudentBranchField() && ! this.studentForm.branch_id) {
+                        return 'Select a branch.';
+                    }
+                    return null;
+                case 'date_of_birth':
+                    return validateStudentDateOfBirth(this.studentForm.date_of_birth);
+                case 'phone':
+                case 'email': {
+                    this.studentForm.phone = sanitizeDigits(this.studentForm.phone);
+                    const contactErrors = validateStudentContactFields(this.studentForm.phone, this.studentForm.email, {
+                        requireBoth: this.contactRequiredForCreate(),
+                    });
+                    return contactErrors[field] || null;
+                }
+                case 'family':
+                    if (this.studentFamilyMode === 'linked' && ! this.linkedFamilyStudent) {
+                        return 'Select an existing student to link this family contact.';
+                    }
+                    return null;
+                case 'id_proof_type':
+                    if (this.studentForm.id_proof && ! this.studentForm.id_proof_type) {
+                        return 'Select the ID document type when uploading a file.';
+                    }
+                    return null;
+                case 'id_proof':
+                    if (this.studentForm.id_proof_type && ! this.studentForm.id_proof) {
+                        return 'Upload the ID document file for the selected type.';
+                    }
+                    return validateStudentUpload(this.studentForm.id_proof, {
+                        extensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                        label: 'ID document',
+                    });
+                case 'photo':
+                    return validateStudentUpload(this.studentForm.photo, {
+                        extensions: ['jpg', 'jpeg', 'png'],
+                        label: 'Photo',
+                    });
+                default:
+                    return null;
             }
+        },
 
-            if (! ['male', 'female'].includes(this.studentForm.gender)) {
-                errors.gender = 'Select Male or Female.';
+        validateStudentField(field) {
+            this.setStudentFormError(field, this.studentFieldError(field));
+        },
+
+        onStudentPhotoSelected(event) {
+            const file = event.target.files?.[0] || null;
+            const error = validateStudentUpload(file, {
+                extensions: ['jpg', 'jpeg', 'png'],
+                label: 'Photo',
+            });
+            if (error) {
+                this.studentForm.photo = null;
+                event.target.value = '';
+                this.setStudentFormError('photo', error);
+                return;
             }
+            this.studentForm.photo = file;
+            this.setStudentFormError('photo', null);
+        },
 
-            if (! ['regular', 'trial'].includes(this.studentForm.student_type)) {
-                errors.student_type = 'Select Regular or Trial student.';
+        onStudentIdProofSelected(event) {
+            const file = event.target.files?.[0] || null;
+            const error = validateStudentUpload(file, {
+                extensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                label: 'ID document',
+            });
+            if (error) {
+                this.studentForm.id_proof = null;
+                event.target.value = '';
+                this.setStudentFormError('id_proof', error);
+                return;
             }
+            this.studentForm.id_proof = file;
+            this.setStudentFormError('id_proof', null);
+            this.validateStudentField('id_proof_type');
+        },
 
-            if (this.shouldShowStudentBranchField() && ! this.studentForm.branch_id) {
-                errors.branch_id = 'Select a branch.';
-            }
+        validateStudentForm() {
+            const fields = [
+                'name',
+                'gender',
+                'student_type',
+                'branch_id',
+                'date_of_birth',
+                'phone',
+                'email',
+                'family',
+                'id_proof_type',
+                'id_proof',
+                'photo',
+            ];
+            const errors = {};
 
-            if (! this.studentForm.date_of_birth) {
-                errors.date_of_birth = 'Date of birth is required.';
-            } else if (this.studentForm.date_of_birth >= new Date().toISOString().slice(0, 10)) {
-                errors.date_of_birth = 'Date of birth must be in the past.';
-            }
-
-            this.studentForm.phone = sanitizeDigits(this.studentForm.phone);
-            Object.assign(
-                errors,
-                validateStudentContactFields(this.studentForm.phone, this.studentForm.email, {
-                    requireBoth: this.contactRequiredForCreate(),
-                }),
-            );
-
-            if (this.studentFamilyMode === 'linked' && ! this.linkedFamilyStudent) {
-                errors.family = 'Select an existing student to link this family contact.';
-            }
-
-            if (this.studentForm.id_proof && ! this.studentForm.id_proof_type) {
-                errors.id_proof_type = 'Select the ID document type when uploading a file.';
-            }
-
-            if (this.studentForm.id_proof_type && ! this.studentForm.id_proof) {
-                errors.id_proof = 'Upload the ID document file for the selected type.';
-            }
+            fields.forEach((field) => {
+                const message = this.studentFieldError(field);
+                if (message) {
+                    errors[field] = message;
+                }
+            });
 
             this.studentFormErrors = errors;
 
@@ -721,10 +852,9 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
                 errors.student_type = 'Select Regular or Trial student.';
             }
 
-            if (! this.editForm.date_of_birth) {
-                errors.date_of_birth = 'Date of birth is required.';
-            } else if (this.editForm.date_of_birth >= new Date().toISOString().slice(0, 10)) {
-                errors.date_of_birth = 'Date of birth must be in the past.';
+            const dobError = validateStudentDateOfBirth(this.editForm.date_of_birth);
+            if (dobError) {
+                errors.date_of_birth = dobError;
             }
 
             this.editForm.phone = sanitizeDigits(this.editForm.phone);
@@ -745,9 +875,65 @@ function createStudentEditMixin({ requireStudentContact = false, onStudentUpdate
                 errors.id_proof = 'Upload the ID document file for the selected type.';
             }
 
+            const photoError = validateStudentUpload(this.editForm.photo, {
+                extensions: ['jpg', 'jpeg', 'png'],
+                label: 'Photo',
+            });
+            if (photoError) {
+                errors.photo = photoError;
+            }
+
+            const idProofError = validateStudentUpload(this.editForm.id_proof, {
+                extensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                label: 'ID document',
+            });
+            if (idProofError) {
+                errors.id_proof = idProofError;
+            }
+
             this.editFormErrors = errors;
 
             return Object.keys(errors).length === 0;
+        },
+
+        setEditFormError(field, message) {
+            const next = { ...this.editFormErrors };
+            if (message) {
+                next[field] = message;
+            } else {
+                delete next[field];
+            }
+            this.editFormErrors = next;
+        },
+
+        validateEditField(field) {
+            if (field === 'date_of_birth') {
+                this.setEditFormError(field, validateStudentDateOfBirth(this.editForm.date_of_birth));
+                return;
+            }
+
+            if (field === 'name') {
+                const name = String(this.editForm.name || '').trim();
+                let message = null;
+                if (! name) {
+                    message = 'Full name is required.';
+                } else if (name.length < 2) {
+                    message = 'Name must be at least 2 characters.';
+                } else if (/^\d+$/.test(name)) {
+                    message = 'Name cannot contain only numbers.';
+                }
+                this.setEditFormError(field, message);
+                return;
+            }
+
+            if (field === 'phone' || field === 'email') {
+                this.editForm.phone = sanitizeDigits(this.editForm.phone);
+                const contactRequired = ! this.editForm.is_in_family || this.editForm.is_family_primary;
+                const contactErrors = validateStudentContactFields(this.editForm.phone, this.editForm.email, {
+                    requireBoth: contactRequired,
+                });
+                this.setEditFormError(field, contactErrors[field] || null);
+            }
         },
 
         buildEditFormData() {

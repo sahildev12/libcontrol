@@ -33,7 +33,8 @@
             </div>
             <div class="lc-reg-field">
                 <label class="lc-reg-label" for="reg-dob">Date of Birth <span class="text-red-500">*</span></label>
-                <input id="reg-dob" type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" required max="{{ now()->subDay()->format('Y-m-d') }}" class="lc-reg-input" data-validate="date_of_birth">
+                <input id="reg-dob" type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" required max="{{ now()->subYears(5)->format('Y-m-d') }}" class="lc-reg-input" data-validate="date_of_birth">
+                <p class="mt-1 text-xs text-slate-500">Must be at least 5 years old to join.</p>
                 <p class="lc-reg-error hidden" data-client-error="date_of_birth"></p>
                 @error('date_of_birth') <p class="lc-reg-error">{{ $message }}</p> @enderror
             </div>
@@ -217,8 +218,13 @@
                     const selected = new Date(`${dob}T00:00:00`);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
+                    const minAgeDate = new Date();
+                    minAgeDate.setHours(0, 0, 0, 0);
+                    minAgeDate.setFullYear(minAgeDate.getFullYear() - 5);
                     if (Number.isNaN(selected.getTime()) || selected >= today) {
                         errors.date_of_birth = 'Date of birth must be before today.';
+                    } else if (selected > minAgeDate) {
+                        errors.date_of_birth = 'Student must be at least 5 years old to join the library.';
                     }
                 }
 
@@ -279,14 +285,56 @@
                 phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
             });
 
-            form.addEventListener('submit', (event) => {
+            const showFieldErrors = (errors) => {
                 clearClientErrors();
+                Object.entries(errors).forEach(([field, message]) => setFieldError(field, message));
+            };
+
+            const validateSingleField = (field) => {
+                const errors = validateForm();
+                const message = errors[field];
+                const errorNode = form.querySelector(`[data-client-error="${field}"]`);
+                const input = fieldConfig[field]?.input();
+
+                if (input) {
+                    input.classList.remove('lc-reg-input--error', 'lc-reg-select--error', 'lc-reg-file--error');
+                }
+                if (errorNode) {
+                    errorNode.textContent = '';
+                    errorNode.classList.add('hidden');
+                }
+
+                if (message) {
+                    setFieldError(field, message);
+                }
+            };
+
+            Object.keys(fieldConfig).forEach((field) => {
+                const input = fieldConfig[field].input();
+                if (! input) {
+                    return;
+                }
+
+                const eventName = input.type === 'file' || input.tagName === 'SELECT' || input.type === 'date'
+                    ? 'change'
+                    : 'blur';
+                input.addEventListener(eventName, () => validateSingleField(field));
+                if (eventName === 'blur') {
+                    input.addEventListener('input', () => {
+                        if (form.querySelector(`[data-client-error="${field}"]:not(.hidden)`)) {
+                            validateSingleField(field);
+                        }
+                    });
+                }
+            });
+
+            form.addEventListener('submit', (event) => {
                 const errors = validateForm();
 
                 if (Object.keys(errors).length > 0) {
                     event.preventDefault();
                     resetSubmitButton();
-                    Object.entries(errors).forEach(([field, message]) => setFieldError(field, message));
+                    showFieldErrors(errors);
                     const firstInvalid = form.querySelector('.lc-reg-input--error, .lc-reg-select--error, .lc-reg-file--error');
                     firstInvalid?.focus();
                     return;

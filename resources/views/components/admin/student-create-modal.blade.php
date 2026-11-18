@@ -46,20 +46,22 @@
             <form id="seat-student-create-form" @submit.prevent="submitNewStudent()" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="lg:col-span-2">
                     <label class="block text-xs font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-                    <input type="text" x-model="studentForm.name" placeholder="" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.name ? 'border-red-400' : 'border-gray-300'">
+                    <input type="text" x-model="studentForm.name" @blur="validateStudentField('name')" @input="studentFormErrors.name && validateStudentField('name')" placeholder="" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.name ? 'border-red-400' : 'border-gray-300'">
                     <p x-show="studentFormErrors.name" x-text="studentFormErrors.name" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Gender <span class="text-red-500">*</span></label>
-                    <select x-model="studentForm.gender" class="admin-select mt-1 block w-full px-3 py-1.5 text-sm" :class="studentFormErrors.gender ? 'border-red-400' : ''">
+                    <select x-model="studentForm.gender" @change="validateStudentField('gender')" class="admin-select mt-1 block w-full px-3 py-1.5 text-sm" :class="studentFormErrors.gender ? 'border-red-400' : ''">
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                     </select>
+                    <p x-show="studentFormErrors.gender" x-text="studentFormErrors.gender" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Type <span class="text-red-500">*</span></label>
                     <select
                         x-model="studentForm.student_type"
+                        @change="validateStudentField('student_type')"
                         class="admin-select mt-1 block w-full px-3 py-1.5 text-sm font-semibold"
                         :class="studentForm.student_type === 'trial'
                             ? 'border-sky-400 bg-sky-50 text-sky-800'
@@ -68,12 +70,13 @@
                         <option value="trial">Trial</option>
                         <option value="regular">Regular</option>
                     </select>
+                    <p x-show="studentFormErrors.student_type" x-text="studentFormErrors.student_type" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div x-show="shouldShowStudentBranchField()" x-cloak>
                     <label class="block text-xs font-medium text-gray-700">Branch <span class="text-red-500">*</span></label>
                     <select
                         x-model="studentForm.branch_id"
-                        @change="createRegistrationInvite()"
+                        @change="createRegistrationInvite(); validateStudentField('branch_id')"
                         :disabled="isStudentBranchLocked()"
                         class="admin-select mt-1 block w-full px-3 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-600"
                         :class="studentFormErrors.branch_id ? 'border-red-400' : ''"
@@ -88,7 +91,16 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Date of Birth <span class="text-red-500">*</span></label>
-                    <input type="date" x-model="studentForm.date_of_birth" :max="new Date().toISOString().slice(0, 10)" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.date_of_birth ? 'border-red-400' : 'border-gray-300'">
+                    <input
+                        type="date"
+                        x-model="studentForm.date_of_birth"
+                        @change="validateStudentField('date_of_birth')"
+                        @blur="validateStudentField('date_of_birth')"
+                        :max="studentMaxDob()"
+                        class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm"
+                        :class="studentFormErrors.date_of_birth ? 'border-red-400' : 'border-gray-300'"
+                    >
+                    <p class="mt-1 text-[11px] text-gray-500">Must be at least 5 years old to join.</p>
                     <p x-show="studentFormErrors.date_of_birth" x-text="studentFormErrors.date_of_birth" class="mt-1 text-xs text-red-600"></p>
                 </div>
 
@@ -144,7 +156,7 @@
                                 <span x-show="contactRequiredForCreate()" class="text-gray-500">(phone or email required)</span>
                                 <span x-show="! contactRequiredForCreate()" class="text-gray-400">(optional)</span>
                             </label>
-                            <input type="tel" x-model="studentForm.phone" @input="studentForm.phone = sanitizeDigits($event.target.value)" maxlength="10" inputmode="numeric" placeholder="10-digit mobile" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.phone ? 'border-red-400' : 'border-gray-300'">
+                            <input type="tel" x-model="studentForm.phone" @input="studentForm.phone = sanitizeDigits($event.target.value); studentFormErrors.phone && validateStudentField('phone')" @blur="validateStudentField('phone')" maxlength="10" inputmode="numeric" placeholder="10-digit mobile" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.phone ? 'border-red-400' : 'border-gray-300'">
                             <p x-show="studentFormErrors.phone" x-text="studentFormErrors.phone" class="mt-1 text-xs text-red-600"></p>
                         </div>
                         <div>
@@ -152,7 +164,7 @@
                                 Email
                                 <span x-show="! contactRequiredForCreate()" class="text-gray-400">(optional)</span>
                             </label>
-                            <input type="email" x-model="studentForm.email" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.email ? 'border-red-400' : 'border-gray-300'">
+                            <input type="email" x-model="studentForm.email" @blur="validateStudentField('email')" @input="studentFormErrors.email && validateStudentField('email')" class="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" :class="studentFormErrors.email ? 'border-red-400' : 'border-gray-300'">
                             <p x-show="studentFormErrors.email" x-text="studentFormErrors.email" class="mt-1 text-xs text-red-600"></p>
                         </div>
                     </div>
@@ -172,11 +184,13 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Photo</label>
-                    <input type="file" @change="studentForm.photo = $event.target.files[0]" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-xs text-gray-600">
+                    <input type="file" @change="onStudentPhotoSelected($event)" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-xs text-gray-600" :class="studentFormErrors.photo ? 'text-red-600' : 'text-gray-600'">
+                    <p class="mt-1 text-[11px] text-gray-500">JPG or PNG, max 4&nbsp;MB.</p>
+                    <p x-show="studentFormErrors.photo" x-text="studentFormErrors.photo" class="mt-1 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">ID Type</label>
-                    <select x-model="studentForm.id_proof_type" class="admin-select mt-1 block w-full px-3 py-1.5 text-sm">
+                    <select x-model="studentForm.id_proof_type" @change="validateStudentField('id_proof_type'); validateStudentField('id_proof')" class="admin-select mt-1 block w-full px-3 py-1.5 text-sm" :class="studentFormErrors.id_proof_type ? 'border-red-400' : ''">
                         <option value="">Select type</option>
                         <option value="Aadhaar">Aadhaar</option>
                         <option value="PAN">PAN</option>
@@ -189,7 +203,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700">ID File</label>
-                    <input type="file" @change="studentForm.id_proof = $event.target.files[0]" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-xs text-gray-600">
+                    <input type="file" @change="onStudentIdProofSelected($event)" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full text-xs" :class="studentFormErrors.id_proof ? 'text-red-600' : 'text-gray-600'">
+                    <p class="mt-1 text-[11px] text-gray-500">JPG, PNG or PDF, max 4&nbsp;MB.</p>
                     <p x-show="studentFormErrors.id_proof" x-text="studentFormErrors.id_proof" class="mt-1 text-xs text-red-600"></p>
                 </div>
             </form>

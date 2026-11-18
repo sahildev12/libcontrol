@@ -23,7 +23,7 @@ class UpdateStudentRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'gender' => ['required', Rule::in(['male', 'female'])],
-            'date_of_birth' => ['required', 'date', 'before:today'],
+            'date_of_birth' => ValidationRules::dateOfBirthRequired(),
             'phone' => ValidationRules::phoneOptional(),
             'email' => ValidationRules::emailOptional(),
             'father_name' => ['nullable', 'string', 'max:255'],
@@ -34,6 +34,18 @@ class UpdateStudentRequest extends FormRequest
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'student_type' => ['required', Rule::in(['regular', 'trial'])],
             'reset_app_login' => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'date_of_birth.before_or_equal' => 'Student must be at least 5 years old to join the library.',
+            'photo.max' => 'Photo must be 4 MB or smaller.',
+            'id_proof.max' => 'ID document must be 4 MB or smaller.',
         ];
     }
 
