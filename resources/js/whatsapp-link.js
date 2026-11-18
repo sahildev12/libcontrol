@@ -1,9 +1,11 @@
 /**
- * Mobile: wa.me → phone app.
- * Desktop priority: WhatsApp Desktop (whatsapp://), else WhatsApp Web.
- * Opens a blank tab during the click so web fallback is never popup-blocked.
+ * Mobile: same-tab wa.me → phone app (target=_blank breaks app handoff).
+ * Desktop: whatsapp:// (EXE) first; if that fails, open WhatsApp Web.
+ * Never open about:blank — that caused the empty tab next to "Open WhatsApp?".
  */
-const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isMobile = () =>
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform || ''));
 
 function chatParams(href) {
     const url = new URL(href, window.location.origin);
@@ -22,6 +24,16 @@ function chatParams(href) {
     }
 
     return params.toString().replace(/\+/g, '%20');
+}
+
+function waMeUrl(params) {
+    const phone = new URLSearchParams(params).get('phone') || '';
+    const text = new URLSearchParams(params).get('text');
+    let url = `https://wa.me/${phone}`;
+    if (text) {
+        url += `?text=${encodeURIComponent(text)}`;
+    }
+    return url;
 }
 
 function webChatUrl(params) {
@@ -51,7 +63,6 @@ function tryDesktopApp(appUrl) {
         window.addEventListener('blur', onBlur);
         document.addEventListener('visibilitychange', onVis);
 
-        // Prefer a real <a> click — Chrome/Brave often ignore whatsapp:// in iframes.
         const anchor = document.createElement('a');
         anchor.href = appUrl;
         anchor.rel = 'noopener';
@@ -60,36 +71,34 @@ function tryDesktopApp(appUrl) {
         anchor.click();
         anchor.remove();
 
-        window.setTimeout(() => finish(false), 1200);
+        // Long enough for the OS "Open WhatsApp?" prompt + app focus.
+        window.setTimeout(() => finish(false), 2500);
     });
 }
 
 /**
  * @param {string} href
- * @param {Window|null} tab blank tab opened in the same click gesture (required for web fallback)
+ * @param {Window|null} tab unused legacy arg (old Growth blank-tab); closed if passed
  */
 export async function openWhatsApp(href, tab = null) {
-    if (! href) {
+    try {
         tab?.close();
+    } catch {
+        // ignore
+    }
+
+    if (! href) {
         return;
     }
 
     const params = chatParams(href);
     if (! params) {
-        if (tab) {
-            tab.location.href = href;
-        } else {
-            window.location.assign(href);
-        }
+        window.location.assign(href);
         return;
     }
 
     if (isMobile()) {
-        if (tab) {
-            tab.location.href = href;
-        } else {
-            window.location.assign(href);
-        }
+        window.location.assign(href.includes('wa.me/') ? href : waMeUrl(params));
         return;
     }
 
@@ -98,25 +107,14 @@ export async function openWhatsApp(href, tab = null) {
 
     const appOpened = await tryDesktopApp(appUrl);
     if (appOpened) {
-        tab?.close();
-        return;
-    }
-
-    if (tab) {
-        try {
-            tab.location.href = webUrl;
-            tab.opener = null;
-        } catch {
-            window.location.assign(webUrl);
-        }
         return;
     }
 
     const opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
-    if (opened) {
-        opened.opener = null;
-    } else {
+    if (! opened) {
         window.location.assign(webUrl);
+    } else {
+        opened.opener = null;
     }
 }
 
@@ -124,7 +122,7 @@ window.openWhatsApp = openWhatsApp;
 
 document.addEventListener('click', (event) => {
     const link = event.target.closest('a[data-whatsapp], a[href*="wa.me/"]');
-    if (! link || isMobile() || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) {
+    if (! link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) {
         return;
     }
 
@@ -142,6 +140,11 @@ document.addEventListener('click', (event) => {
     }
 
     event.preventDefault();
-    const tab = window.open('about:blank', '_blank');
-    openWhatsApp(href, tab);
+
+    if (isMobile()) {
+        window.location.assign(href);
+        return;
+    }
+
+    openWhatsApp(href);
 });

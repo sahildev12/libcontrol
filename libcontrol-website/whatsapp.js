@@ -99,7 +99,6 @@
             window.addEventListener('blur', onBlur);
             document.addEventListener('visibilitychange', onVis);
 
-            /* Prefer a real <a> click — Chrome/Brave often ignore whatsapp:// in iframes. */
             var anchor = document.createElement('a');
             anchor.href = appUrl;
             anchor.rel = 'noopener';
@@ -110,7 +109,7 @@
 
             window.setTimeout(function () {
                 finish(false);
-            }, 1200);
+            }, 2500);
         });
     }
 
@@ -124,22 +123,15 @@
             return;
         }
 
-        // Keep a blank tab from this click so web fallback cannot be popup-blocked.
-        var tab = window.open('about:blank', '_blank');
-
         tryDesktopApp(appUrl).then(function (appOpened) {
             if (appOpened) {
-                if (tab) {
-                    tab.close();
-                }
                 return;
             }
-
-            if (tab) {
-                tab.location.href = webUrl;
-                tab.opener = null;
-            } else {
+            var opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
+            if (!opened) {
                 window.location.href = webUrl;
+            } else {
+                opened.opener = null;
             }
         });
     }
@@ -158,12 +150,8 @@
 
             link.setAttribute('href', url);
             link.setAttribute('rel', 'noopener noreferrer');
-
-            if (isMobileDevice()) {
-                link.removeAttribute('target');
-            } else {
-                link.setAttribute('target', '_blank');
-            }
+            // Mobile must stay same-tab so the WhatsApp app can open.
+            link.removeAttribute('target');
 
             if (link.dataset.waBound === '1') {
                 return;

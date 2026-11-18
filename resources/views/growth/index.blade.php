@@ -687,8 +687,6 @@
                 async submit(url, body) {
                     if (this.busy) return;
                     this.busy = true;
-                    // Opened during the click so the browser doesn't block it as a popup.
-                    const tab = body.with_checkout ? null : window.open('about:blank', '_blank');
                     try {
                         const res = await fetch(url, {
                             method: 'POST',
@@ -714,19 +712,14 @@
 
                         const target = data.whatsapp_url;
                         if (target && typeof window.openWhatsApp === 'function') {
-                            window.openWhatsApp(target, tab);
-                        } else if (target && tab) {
-                            tab.location.href = target;
+                            window.openWhatsApp(target);
                         } else if (target) {
                             window.location.assign(target);
-                        } else {
-                            tab?.close();
                         }
 
                         sessionStorage.setItem('growthToast', data.message || 'Request sent');
                         window.location.reload();
                     } catch (e) {
-                        tab?.close();
                         window.showToast(e.message || 'Could not send request', 'error');
                         this.busy = false;
                     }
