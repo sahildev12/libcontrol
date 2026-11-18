@@ -387,8 +387,8 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Payment plan</label>
                             <select x-model="assignForm.payment_plan" class="admin-select mt-1 block w-full px-3 py-2">
-                                <option value="full">Full payment</option>
-                                <option value="installments" :disabled="assignForm.fee_type === 'one_time'">Installments</option>
+                                <option value="full" x-text="paymentPlanOptionLabel('full', assignForm.fee_type)"></option>
+                                <option value="installments" :disabled="assignForm.fee_type === 'one_time'" x-text="paymentPlanOptionLabel('installments', assignForm.fee_type)"></option>
                             </select>
                             <p x-show="assignForm.fee_type === 'one_time'" class="mt-1 text-xs text-gray-500">One-time fees use full payment only.</p>
                             <!-- <p x-show="assignForm.payment_plan === 'installments'" class="mt-1 text-xs text-gray-500">No need to set installment count. Add payments as you receive them.</p> -->

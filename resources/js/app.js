@@ -5046,6 +5046,10 @@ Alpine.data('assignmentPage', (config) => ({
     storeUrl: config.storeUrl,
     availableSeatsUrl: config.availableSeatsUrl,
     bulkCancelUrl: config.bulkCancelUrl,
+
+    paymentPlanOptionLabel(plan, feeType) {
+        return formatPaymentPlanOption(plan, feeType);
+    },
     viewOpen: false,
     viewLoading: false,
     viewAssignment: null,
@@ -5287,6 +5291,39 @@ function normalizeFeeTypeForRenew(feeType) {
     return 'monthly';
 }
 
+function feeTypeDisplayLabel(feeType) {
+    const labels = {
+        monthly: 'Monthly',
+        yearly: 'Yearly',
+        quarterly: 'Quarterly',
+        half_yearly: 'Half-yearly',
+        custom: 'Custom',
+        membership: 'Membership',
+        one_time: 'One-time',
+    };
+    const key = String(feeType || '').trim().toLowerCase();
+
+    if (labels[key]) {
+        return labels[key];
+    }
+
+    if (! key) {
+        return 'Fee';
+    }
+
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatPaymentPlanOption(plan, feeType) {
+    const feeLabel = feeTypeDisplayLabel(feeType);
+
+    if (plan === 'installments') {
+        return `Installments - ${feeLabel}`;
+    }
+
+    return `Full payment - ${feeLabel}`;
+}
+
 function planPeriodEndFromStart(feeType, startIso) {
     const start = String(startIso || '').slice(0, 10);
 
@@ -5396,6 +5433,10 @@ function createFeeRenewMixin(options = {}) {
     const { updateRows = false, reloadOnSuccess = false, onSuccess = null } = options;
 
     return {
+        paymentPlanOptionLabel(plan, feeType) {
+            return formatPaymentPlanOption(plan, feeType);
+        },
+
         renewOpen: false,
         renewRow: null,
         renewSaving: false,

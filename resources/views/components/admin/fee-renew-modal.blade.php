@@ -48,8 +48,8 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700">Payment plan</label>
                 <select x-model="renewForm.payment_plan" @change="onRenewOptionsChanged()" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                    <option value="full">Full payment</option>
-                    <option value="installments">Installments</option>
+                    <option value="full" x-text="paymentPlanOptionLabel('full', renewForm.fee_type)"></option>
+                    <option value="installments" x-text="paymentPlanOptionLabel('installments', renewForm.fee_type)"></option>
                 </select>
             </div>
             <div x-show="renewForm.payment_plan === 'installments'" class="space-y-4 rounded-lg border border-gray-100 p-3">
