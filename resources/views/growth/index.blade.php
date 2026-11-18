@@ -254,6 +254,30 @@
         /* .lc-growth redefines --lc-blue; table bars must keep the admin theme blue. */
         .lc-theme .lc-main .lc-growth .lc-table-toolbar,
         .lc-theme .lc-main .lc-growth .border-b:has(> h2, > h3) { background-color: #243a8b !important; }
+        .lc-growth-duration-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .lc-growth-duration-modal__close {
+            display: inline-flex;
+            height: 2rem;
+            width: 2rem;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .lc-growth-duration-modal__close:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
     </style>
 
     <div
@@ -652,7 +676,7 @@
             <div
                 x-show="durationOpen"
                 x-cloak
-                class="fixed inset-0 z-[120] flex items-center justify-center p-4"
+                class="lc-growth-duration-modal"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="growth-duration-title"
@@ -663,7 +687,7 @@
                         <h2 id="growth-duration-title" class="text-base font-semibold text-white">How many months?</h2>
                         <button
                             type="button"
-                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/15 hover:text-white"
+                            class="lc-growth-duration-modal__close"
                             @click="closeDurationPicker()"
                             aria-label="Close"
                         >
