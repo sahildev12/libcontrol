@@ -211,6 +211,7 @@ class GrowthRecommendationsTest extends TestCase
             ->postJson(route('growth.services.request'), [
                 'item_key' => 'gbp_boost',
                 'source' => 'recommendation',
+                'duration_months' => 2,
             ])
             ->assertCreated();
 
@@ -218,6 +219,7 @@ class GrowthRecommendationsTest extends TestCase
             'branch_id' => $branch->id,
             'item_key' => 'gbp_boost',
             'order_type' => 'service',
+            'duration_months' => 2,
         ]);
     }
 

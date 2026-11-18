@@ -76,6 +76,7 @@ class GrowthController extends Controller
             ->map(fn (GrowthOrder $order) => [
                 'id' => $order->id,
                 'item_name' => $order->item_name,
+                'duration_label' => $order->durationLabel(),
                 'type_label' => $order->order_type === 'package' ? 'Package' : 'Service',
                 'price_label' => ($order->order_type === 'service' && $order->amount_paise)
                     ? '₹'.number_format($order->amount_paise / 100)
@@ -381,6 +382,7 @@ class GrowthController extends Controller
     ): JsonResponse {
         $validated = $request->validate([
             'item_key' => ['required', 'string', 'max:64'],
+            'duration_months' => ['nullable', 'integer', 'min:1', 'max:12'],
             'message' => ['nullable', 'string', 'max:2000'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
@@ -388,10 +390,20 @@ class GrowthController extends Controller
             'with_checkout' => ['sometimes', 'boolean'],
         ]);
 
+        if ($type === 'service') {
+            $billing = (string) config("growth.services.{$validated['item_key']}.billing", '');
+            if ($billing === 'monthly' && empty($validated['duration_months'])) {
+                return response()->json([
+                    'message' => 'Choose how many months you want this service for.',
+                ], 422);
+            }
+        }
+
         $branch = $this->resolveGrowthBranch($request);
         $result = $orderService->request($request->user(), $branch, [
             'order_type' => $type,
             'item_key' => $validated['item_key'],
+            'duration_months' => $validated['duration_months'] ?? null,
             'message' => $validated['message'] ?? null,
             'contact_name' => $validated['contact_name'] ?? null,
             'contact_email' => $validated['contact_email'] ?? null,

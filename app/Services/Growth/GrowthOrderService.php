@@ -27,6 +27,7 @@ class GrowthOrderService
      * @param  array{
      *     order_type: string,
      *     item_key: string,
+     *     duration_months?: int|null,
      *     message?: string|null,
      *     contact_name?: string|null,
      *     contact_email?: string|null,
@@ -38,6 +39,10 @@ class GrowthOrderService
     {
         $catalog = $this->resolveCatalogItem($input['order_type'], $input['item_key']);
         $settings = PlatformSetting::current();
+        $durationMonths = isset($input['duration_months']) ? (int) $input['duration_months'] : null;
+        if ($durationMonths !== null && ($durationMonths < 1 || $durationMonths > 12)) {
+            $durationMonths = null;
+        }
 
         $order = GrowthOrder::query()->create([
             'branch_id' => $branch?->id,
@@ -45,6 +50,7 @@ class GrowthOrderService
             'order_type' => $input['order_type'],
             'item_key' => $input['item_key'],
             'item_name' => $catalog['name'],
+            'duration_months' => $durationMonths,
             'status' => GrowthOrder::STATUS_NEW,
             'priority' => 'normal',
             'message' => $input['message'] ?? null,
@@ -204,6 +210,9 @@ class GrowthOrderService
         }
 
         $text = 'Hi Katsindia, I want to request LibControl Growth: '.$itemName;
+        if ($order?->durationLabel()) {
+            $text .= ' for '.$order->durationLabel();
+        }
         if ($order) {
             $text .= ' (order '.$order->uuid.')';
         }
@@ -221,6 +230,7 @@ class GrowthOrderService
             'LibControl Growth order request',
             'Type: '.$order->order_type,
             'Item: '.$catalog['name'].' ('.$order->item_key.')',
+            'Duration: '.($order->durationLabel() ?: '—'),
             'Price: '.($catalog['price_label'] ?? '—'),
             'Library: '.$order->library_name,
             'Branch ID: '.($order->branch_id ?? '—'),

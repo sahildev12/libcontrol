@@ -170,8 +170,25 @@ class GrowthHubTest extends TestCase
 
         $this->actingAs($user)
             ->postJson(route('growth.services.request'), ['item_key' => 'gbp_boost'])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Choose how many months you want this service for.');
+
+        $response = $this->actingAs($user)
+            ->postJson(route('growth.services.request'), [
+                'item_key' => 'gbp_boost',
+                'duration_months' => 3,
+            ])
             ->assertCreated()
             ->assertJsonPath('message', 'Request sent to Katsindia. Our team will contact you shortly.');
+
+        $whatsappUrl = (string) $response->json('whatsapp_url');
+        $this->assertStringContainsString(rawurlencode('for 3 months'), $whatsappUrl);
+
+        $this->assertDatabaseHas('growth_orders', [
+            'item_key' => 'gbp_boost',
+            'duration_months' => 3,
+            'requested_by' => $user->id,
+        ]);
 
         \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\GrowthOrderRequestedMail::class, function ($mail) {
             $html = $mail->render();
@@ -179,10 +196,60 @@ class GrowthHubTest extends TestCase
             return $mail->hasTo('support@libcontrol.in')
                 && $mail->hasReplyTo('ravi@example.com')
                 && str_contains($html, 'Google Business Profile Boost')
+                && str_contains($html, '3 months')
                 && str_contains($html, 'Ravi Owner')
                 && str_contains($html, 'Sunrise Study Hall')
                 && str_contains($html, '9876500000');
         });
+    }
+
+    public function test_monthly_service_request_requires_duration_and_one_time_does_not(): void
+    {
+        Http::fake(['*' => Http::response(['id' => 99], 201)]);
+        Mail::fake();
+        config(['growth.notify_email' => 'support@libcontrol.in']);
+
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        Admin::query()->create(['user_id' => $user->id, 'admin_type' => Admin::TYPE_CLIENT]);
+
+        $this->actingAs($user)
+            ->get(route('growth.index'))
+            ->assertOk()
+            ->assertSee('How many months?', false)
+            ->assertSee('Continue to WhatsApp', false)
+            ->assertSee('monthlyServices', false);
+
+        $oneTime = $this->actingAs($user)
+            ->postJson(route('growth.services.request'), [
+                'item_key' => 'website_landing',
+            ])
+            ->assertCreated();
+
+        $oneTimeWhatsapp = (string) $oneTime->json('whatsapp_url');
+        $this->assertStringNotContainsString(rawurlencode('for '), $oneTimeWhatsapp);
+
+        $this->assertDatabaseHas('growth_orders', [
+            'item_key' => 'website_landing',
+            'duration_months' => null,
+            'requested_by' => $user->id,
+        ]);
+
+        $monthly = $this->actingAs($user)
+            ->postJson(route('growth.services.request'), [
+                'item_key' => 'whatsapp_marketing',
+                'duration_months' => 6,
+            ])
+            ->assertCreated();
+
+        $whatsappUrl = (string) $monthly->json('whatsapp_url');
+        $this->assertStringContainsString(rawurlencode('WhatsApp Marketing'), $whatsappUrl);
+        $this->assertStringContainsString(rawurlencode('for 6 months'), $whatsappUrl);
+
+        $order = GrowthOrder::query()->where('item_key', 'whatsapp_marketing')->latest('id')->first();
+        $this->assertNotNull($order);
+        $this->assertSame(6, $order->duration_months);
+        $this->assertSame('6 months', $order->durationLabel());
     }
 
     public function test_public_website_enquiry_creates_enquiry(): void

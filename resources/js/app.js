@@ -52,6 +52,24 @@ function planLimitUpgradeToastSuffix() {
     return ' View upgrade options in Grow My Library or WhatsApp Katsindia.';
 }
 
+function askGrowthDurationMonths() {
+    const raw = window.prompt('How many months do you want this service for? (1–12)', '1');
+    if (raw === null) {
+        return null;
+    }
+
+    const months = Number.parseInt(String(raw).trim(), 10);
+    if (! Number.isFinite(months) || months < 1 || months > 12) {
+        showToast('Enter a number from 1 to 12.', 'error');
+
+        return null;
+    }
+
+    return months;
+}
+
+window.askGrowthDurationMonths = askGrowthDurationMonths;
+
 function showToast(message, type = 'success', duration = 5000) {
     if (! message) {
         return;
@@ -9733,6 +9751,17 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
             return;
         }
 
+        const payload = { item_key: item.expert_service, source: 'recommendation' };
+        if (item.needs_duration) {
+            const months = askGrowthDurationMonths();
+            if (months === null) {
+                this.resume();
+
+                return;
+            }
+            payload.duration_months = months;
+        }
+
         this.busy = item.key;
         try {
             const res = await fetch(this.servicesRequestUrl, {
@@ -9742,7 +9771,7 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
                     Accept: 'application/json',
                     'X-CSRF-TOKEN': this.csrfToken,
                 },
-                body: JSON.stringify({ item_key: item.expert_service, source: 'recommendation' }),
+                body: JSON.stringify(payload),
             });
             const data = await res.json().catch(() => ({}));
             if (! res.ok) {
@@ -9752,6 +9781,11 @@ Alpine.data('aiRecommendationBanner', (config = {}) => ({
                     return;
                 }
                 throw new Error(data.message || 'Could not send request');
+            }
+            if (data.whatsapp_url && typeof window.openWhatsApp === 'function') {
+                window.openWhatsApp(data.whatsapp_url);
+            } else if (data.whatsapp_url) {
+                window.location.assign(data.whatsapp_url);
             }
             window.dispatchEvent(new CustomEvent('show-toast', {
                 detail: { message: data.message || 'Request sent to Katsindia.', type: 'success' },

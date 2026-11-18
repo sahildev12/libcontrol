@@ -262,6 +262,8 @@
             requestPackageUrl: @js(route('growth.packages.request')),
             requestServiceUrl: @js(route('growth.services.request')),
             csrf: @js(csrf_token()),
+            monthlyServices: @js(collect($services)->filter(fn ($s) => ($s['billing'] ?? null) === 'monthly')->keys()->values()->all()),
+            serviceNames: @js(collect($services)->mapWithKeys(fn ($s, $k) => [$k => $s['name'] ?? $k])->all()),
         })"
     >
 
@@ -612,6 +614,7 @@
                                 <tr class="hover:bg-indigo-50/40">
                                     <td class="px-4 py-3">
                                         <p class="font-semibold text-[#082D70]" x-text="row.item_name"></p>
+                                        <p x-show="row.duration_label" x-cloak class="text-xs font-medium text-indigo-700" x-text="row.duration_label"></p>
                                         <p class="text-xs text-gray-500" x-text="row.requested_by ? `by ${row.requested_by}` : ''"></p>
                                     </td>
                                     <td class="px-4 py-3">
@@ -645,12 +648,70 @@
             </section>
         @endif
 
+        <div
+            x-show="durationOpen"
+            x-cloak
+            class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="growth-duration-title"
+        >
+            <div class="absolute inset-0 bg-gray-900/60" @click="closeDurationPicker()"></div>
+            <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl" @click.stop>
+                <div class="border-b border-white/10 bg-gradient-to-r from-[#082D70] to-[#1D4ED8] px-5 py-4">
+                    <h2 id="growth-duration-title" class="text-base font-semibold text-white">How many months?</h2>
+                </div>
+                <div class="space-y-3 px-5 py-4">
+                    <p class="text-sm leading-relaxed text-gray-600">
+                        Choose the service length for
+                        <span class="font-semibold text-[#082D70]" x-text="durationServiceName"></span>.
+                        We’ll include it in your WhatsApp request to Katsindia.
+                    </p>
+                    <div class="grid grid-cols-4 gap-2">
+                        <template x-for="months in durationOptions" :key="months">
+                            <button
+                                type="button"
+                                class="rounded-lg border px-2 py-2.5 text-sm font-semibold transition"
+                                :class="durationMonths === months
+                                    ? 'border-[#082D70] bg-[#082D70] text-white'
+                                    : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50'"
+                                @click="durationMonths = months"
+                                x-text="months === 1 ? '1 mo' : (months + ' mo')"
+                            ></button>
+                        </template>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
+                    <button
+                        type="button"
+                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        @click="closeDurationPicker()"
+                    >Cancel</button>
+                    <button
+                        type="button"
+                        class="rounded-lg bg-[#082D70] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0b3a8f] disabled:opacity-60"
+                        :disabled="!durationMonths || busy"
+                        @click="confirmDurationRequest()"
+                    >Continue to WhatsApp</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         function growthHub(config) {
             return {
                 busy: false,
+                durationOpen: false,
+                durationKey: null,
+                durationMonths: null,
+                durationOptions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                monthlyServices: config.monthlyServices || [],
+                serviceNames: config.serviceNames || {},
+                get durationServiceName() {
+                    return this.serviceNames[this.durationKey] || 'this service';
+                },
                 init() {
                     const flash = sessionStorage.getItem('growthToast');
                     if (flash) {
@@ -658,10 +719,37 @@
                         window.showToast(flash);
                     }
                 },
+                needsDuration(key) {
+                    return this.monthlyServices.includes(key);
+                },
+                openDurationPicker(key) {
+                    this.durationKey = key;
+                    this.durationMonths = 1;
+                    this.durationOpen = true;
+                },
+                closeDurationPicker() {
+                    this.durationOpen = false;
+                    this.durationKey = null;
+                    this.durationMonths = null;
+                },
+                async confirmDurationRequest() {
+                    if (!this.durationKey || !this.durationMonths) return;
+                    const key = this.durationKey;
+                    const months = this.durationMonths;
+                    this.closeDurationPicker();
+                    await this.submit(config.requestServiceUrl, {
+                        item_key: key,
+                        duration_months: months,
+                    });
+                },
                 async requestPackage(key, withCheckout) {
                     await this.submit(config.requestPackageUrl, { item_key: key, with_checkout: withCheckout ? 1 : 0 });
                 },
                 async requestService(key) {
+                    if (this.needsDuration(key)) {
+                        this.openDurationPicker(key);
+                        return;
+                    }
                     await this.submit(config.requestServiceUrl, { item_key: key });
                 },
                 async payOrder(url) {

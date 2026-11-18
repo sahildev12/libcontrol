@@ -20,6 +20,7 @@
             <div class="p-5">
                 <dl class="grid gap-4 text-sm sm:grid-cols-2">
                     <div><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Type</dt><dd class="mt-1 font-medium text-gray-900">{{ $order->order_type === 'package' ? 'Package' : 'Service' }} <span class="text-gray-400">({{ $order->item_key }})</span></dd></div>
+                    <div><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Duration</dt><dd class="mt-1 font-medium text-gray-900">{{ $order->durationLabel() ?: '—' }}</dd></div>
                     <div><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Amount</dt><dd class="mt-1 font-medium text-gray-900">{{ $order->amount_paise ? '₹'.number_format($order->amount_paise / 100) : '—' }}</dd></div>
                     <div><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Received</dt><dd class="mt-1 font-medium text-gray-900">{{ $order->created_at?->format('d M Y, h:i A') }}</dd></div>
                     <div><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Request ID</dt><dd class="mt-1 break-all font-mono text-xs text-gray-600">{{ $order->uuid }}</dd></div>

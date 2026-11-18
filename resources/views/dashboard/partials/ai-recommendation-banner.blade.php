@@ -45,6 +45,9 @@
                 'show_hire' => $expertAvailable,
                 'hire_mode' => $hasPackage && filled($expertService) ? 'request' : 'packages',
                 'expert_service' => $hasPackage ? $expertService : null,
+                'needs_duration' => $hasPackage
+                    && filled($expertService)
+                    && config("growth.services.{$expertService}.billing") === 'monthly',
                 'hire_url' => $packagesUrl,
                 'is_premium' => false,
                 'is_locked' => false,

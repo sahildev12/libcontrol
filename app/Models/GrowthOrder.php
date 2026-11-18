@@ -30,6 +30,7 @@ class GrowthOrder extends Model
         'order_type',
         'item_key',
         'item_name',
+        'duration_months',
         'status',
         'priority',
         'message',
@@ -63,7 +64,19 @@ class GrowthOrder extends Model
             'activated_at' => 'datetime',
             'completed_at' => 'datetime',
             'amount_paise' => 'integer',
+            'duration_months' => 'integer',
         ];
+    }
+
+    public function durationLabel(): ?string
+    {
+        if (! $this->duration_months) {
+            return null;
+        }
+
+        return $this->duration_months === 1
+            ? '1 month'
+            : $this->duration_months.' months';
     }
 
     protected static function booted(): void

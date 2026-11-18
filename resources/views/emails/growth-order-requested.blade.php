@@ -7,6 +7,9 @@
 | Request | |
 |:--|:--|
 | {{ $typeLabel }} | {{ $order->item_name }} |
+@if ($order->durationLabel())
+| Duration | {{ $order->durationLabel() }} |
+@endif
 | Price | {{ $catalog['price_label'] ?? '—' }} |
 | Requested on | {{ $order->created_at?->format('d M Y, h:i A') }} |
 | Order ID | {{ $order->uuid }} |

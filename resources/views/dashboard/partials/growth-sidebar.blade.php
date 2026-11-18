@@ -13,6 +13,11 @@
     $recLocked = $recommendations['locked'] ?? [];
     $recCompleted = $recommendations['completed'] ?? [];
     $servicesRequestUrl = \Illuminate\Support\Facades\Route::has('growth.services.request') ? route('growth.services.request') : '';
+    $monthlyServices = collect(config('growth.services', []))
+        ->filter(fn ($service) => ($service['billing'] ?? null) === 'monthly')
+        ->keys()
+        ->values()
+        ->all();
 
     $growthHubUrl = \Illuminate\Support\Facades\Route::has('growth.index') ? route('growth.index') : '#';
     $illustrationUrl = asset('logo/growth/grow-banner-illustration.jpg');
@@ -151,7 +156,16 @@
         x-data="{
             showCompleted: false,
             busy: null,
+            monthlyServices: @js($monthlyServices),
             async hireExpert(service, key) {
+                const payload = { item_key: service, source: 'recommendation' };
+                if (this.monthlyServices.includes(service)) {
+                    const months = typeof window.askGrowthDurationMonths === 'function'
+                        ? window.askGrowthDurationMonths()
+                        : Number.parseInt(window.prompt('How many months? (1–12)', '1') || '', 10);
+                    if (! months) return;
+                    payload.duration_months = months;
+                }
                 this.busy = key;
                 try {
                     const res = await fetch(@js($servicesRequestUrl), {
@@ -161,12 +175,17 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': @js(csrf_token()),
                         },
-                        body: JSON.stringify({ item_key: service, source: 'recommendation' }),
+                        body: JSON.stringify(payload),
                     });
                     const data = await res.json().catch(() => ({}));
                     if (! res.ok) {
                         if (data.packages_url) { window.location.href = data.packages_url; return; }
                         throw new Error(data.message || 'Could not send request');
+                    }
+                    if (data.whatsapp_url && typeof window.openWhatsApp === 'function') {
+                        window.openWhatsApp(data.whatsapp_url);
+                    } else if (data.whatsapp_url) {
+                        window.location.assign(data.whatsapp_url);
                     }
                     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: data.message || 'Request sent to Katsindia.', type: 'success' } }));
                 } catch (e) {
