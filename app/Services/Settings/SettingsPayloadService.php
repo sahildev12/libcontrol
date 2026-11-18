@@ -49,6 +49,7 @@ class SettingsPayloadService
             'email_seat_alerts_enabled' => (bool) ($settings->email_seat_alerts_enabled ?? true),
             'email_subscription_alerts_enabled' => (bool) ($settings->email_subscription_alerts_enabled ?? true),
             'email_growth_enabled' => (bool) ($settings->email_growth_enabled ?? false),
+            'email_finance_digest_enabled' => (bool) ($settings->email_finance_digest_enabled ?? true),
             'seat_vacant_alert_threshold' => (int) ($settings->seat_vacant_alert_threshold ?? 5),
             'seat_high_occupancy_pct' => (int) ($settings->seat_high_occupancy_pct ?? 90),
         ];

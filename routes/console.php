@@ -4,6 +4,7 @@ use App\Console\Commands\ReconcilePayments;
 use App\Console\Commands\ResumePendingTrials;
 use App\Console\Commands\RunTrialLifecycle;
 use App\Console\Commands\SendFeeAlerts;
+use App\Console\Commands\SendFinanceDigestEmails;
 use App\Console\Commands\SendGrowthCampaignEmails;
 use App\Console\Commands\SendMarketingCampaignEmails;
 use App\Console\Commands\SendPlanExpiryReminders;
@@ -64,6 +65,12 @@ Schedule::command(ReconcilePayments::class)
     ->everyTenMinutes()
     ->withoutOverlapping()
     ->description('Confirm pending PhonePe payments');
+
+Schedule::command(SendFinanceDigestEmails::class)
+    ->weeklyOn(1, '08:00')
+    ->timezone(config('libcontrol.timezone', 'Asia/Kolkata'))
+    ->withoutOverlapping(120)
+    ->description('Send weekly finance digest to client admins (IST)');
 
 Schedule::command(SendStudentRecoveryEmails::class)
     ->weeklyOn(1, '10:00')

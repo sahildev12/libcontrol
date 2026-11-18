@@ -7320,6 +7320,7 @@ Alpine.data('settingsPage', (config) => ({
         email_seat_alerts_enabled: Boolean(config.emailNotificationSettings?.email_seat_alerts_enabled ?? true),
         email_subscription_alerts_enabled: Boolean(config.emailNotificationSettings?.email_subscription_alerts_enabled ?? true),
         email_growth_enabled: Boolean(config.emailNotificationSettings?.email_growth_enabled ?? false),
+        email_finance_digest_enabled: Boolean(config.emailNotificationSettings?.email_finance_digest_enabled ?? true),
         seat_vacant_alert_threshold: Number(config.emailNotificationSettings?.seat_vacant_alert_threshold ?? 5),
         seat_high_occupancy_pct: Number(config.emailNotificationSettings?.seat_high_occupancy_pct ?? 90),
     },

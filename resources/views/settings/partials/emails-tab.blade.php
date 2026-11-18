@@ -86,6 +86,13 @@
                 </span>
             </label>
             <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+                <input type="checkbox" x-model="emailForm.email_finance_digest_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">Weekly finance digest</span>
+                    <span class="mt-0.5 block text-xs text-gray-500">Monday 8:00 AM IST summary for admins only — overdue, collections, and expenses (rate-limited).</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
                 <input type="checkbox" x-model="emailForm.email_marketing_enabled" class="mt-1 rounded border-gray-300 text-indigo-600">
                 <span>
                     <span class="block text-sm font-semibold text-gray-900">Marketing emails</span>

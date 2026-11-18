@@ -331,6 +331,7 @@ class TenantPortalSettingsService
             'email_marketing_enabled' => ['nullable', 'boolean'],
             'email_recovery_enabled' => ['nullable', 'boolean'],
             'email_fee_alerts_enabled' => ['nullable', 'boolean'],
+            'email_finance_digest_enabled' => ['nullable', 'boolean'],
             'email_seat_alerts_enabled' => ['nullable', 'boolean'],
             'email_subscription_alerts_enabled' => ['nullable', 'boolean'],
             'email_growth_enabled' => ['nullable', 'boolean'],

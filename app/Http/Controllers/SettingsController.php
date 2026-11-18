@@ -128,6 +128,7 @@ class SettingsController extends Controller
             'email_seat_alerts_enabled' => ['nullable', 'boolean'],
             'email_subscription_alerts_enabled' => ['nullable', 'boolean'],
             'email_growth_enabled' => ['nullable', 'boolean'],
+            'email_finance_digest_enabled' => ['nullable', 'boolean'],
             'seat_vacant_alert_threshold' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'seat_high_occupancy_pct' => ['nullable', 'integer', 'min:50', 'max:100'],
         ]);

@@ -270,6 +270,14 @@ return [
         'other' => 'Other',
     ],
 
+    /*
+    | Weekly finance digest for client admins (IST). Delay + max_per_run keep SMTP under Hostinger limits.
+    */
+    'finance_digest' => [
+        'delay_ms' => (int) env('LIBCONTROL_FINANCE_DIGEST_DELAY_MS', 2500),
+        'max_per_run' => (int) env('LIBCONTROL_FINANCE_DIGEST_MAX_PER_RUN', 25),
+    ],
+
     'install' => [
         'token' => env('LIBCONTROL_SETUP_TOKEN'),
         'product_name' => env('LIBCONTROL_PRODUCT_NAME'),
