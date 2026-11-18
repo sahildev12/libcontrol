@@ -79,7 +79,7 @@ class SeatStatusService
             'occupied_custom' => 'Occupied (Custom Hours)',
             'expiring_soon' => 'Expiring Soon',
             'expired' => 'Expired',
-            'on_trial' => 'Occupied (Custom Hours)',
+            'on_trial' => 'Trial',
             default => ucwords(str_replace('_', ' ', $status)),
         };
     }
@@ -135,10 +135,7 @@ class SeatStatusService
 
     public function visibleOnRegularMap(array $seat): bool
     {
-        if (($seat['status'] ?? '') === 'expired' && ! empty($seat['expired_from_trial'])) {
-            return false;
-        }
-
+        // Keep every physical seat on the regular map, including expired trials.
         return true;
     }
 

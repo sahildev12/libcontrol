@@ -421,7 +421,9 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         $regularSeats = collect($regularMap->json('seats'));
         $this->assertNotNull($regularSeats->firstWhere('id', $regularSeat->id));
         $this->assertSame('expired', $regularSeats->firstWhere('id', $regularSeat->id)['status']);
-        $this->assertNull($regularSeats->firstWhere('id', $trialSeat->id));
+        $this->assertNotNull($regularSeats->firstWhere('id', $trialSeat->id));
+        $this->assertSame('expired', $regularSeats->firstWhere('id', $trialSeat->id)['status']);
+        $this->assertTrue($regularSeats->firstWhere('id', $trialSeat->id)['expired_from_trial']);
 
         Carbon::setTestNow();
     }

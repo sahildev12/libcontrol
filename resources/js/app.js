@@ -2393,20 +2393,11 @@ function matchesStatusFilter(seat, statusFilter) {
         return true;
     }
 
-    const status = displaySeatStatus(seat);
-
-    if (statusFilter === 'occupied_custom') {
-        return status === 'occupied_custom' || status === 'on_trial';
-    }
-
-    return status === statusFilter;
+    return displaySeatStatus(seat) === statusFilter;
 }
 
 function visibleOnRegularMap(seat) {
-    if (displaySeatStatus(seat) === 'expired' && seat.expired_from_trial) {
-        return false;
-    }
-
+    // Keep every physical seat on the regular map, including expired trials.
     return true;
 }
 
@@ -2432,7 +2423,7 @@ function seatTileClasses(seat) {
         occupied_custom: `${base} lc-seat-tile--custom`,
         expiring_soon: `${base} lc-seat-tile--expiring`,
         expired: `${base} lc-seat-tile--expired`,
-        on_trial: `${base} lc-seat-tile--custom`,
+        on_trial: `${base} lc-seat-tile--trial`,
         cancelled: `${base} lc-seat-tile--available opacity-70`,
     }[status] || `${base} lc-seat-tile--available`;
 }
@@ -2444,7 +2435,7 @@ function seatStatusLabel(status) {
         occupied_custom: 'Occupied (Custom Hours)',
         expiring_soon: 'Expiring Soon',
         expired: 'Expired',
-        on_trial: 'Occupied (Custom Hours)',
+        on_trial: 'Trial',
         cancelled: 'Cancelled',
     }[status] || status;
 }

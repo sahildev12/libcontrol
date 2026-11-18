@@ -78,6 +78,9 @@
                 <button type="button" @click="toggleStatusFilter('occupied_custom')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'occupied_custom' ? 'border-indigo-500 bg-indigo-50 text-indigo-900' : 'border-transparent hover:bg-gray-100'">
                     <span class="size-3 rounded bg-[#6366F1]"></span> Occupied (Custom Hours)
                 </button>
+                <button type="button" @click="toggleStatusFilter('on_trial')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'on_trial' ? 'border-sky-500 bg-sky-50 text-sky-900' : 'border-transparent hover:bg-gray-100'">
+                    <span class="size-3 rounded bg-[#0ea5e9]"></span> Trial
+                </button>
                 <button type="button" @click="toggleStatusFilter('expiring_soon')" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors" :class="statusFilter === 'expiring_soon' ? 'border-amber-500 bg-amber-50 text-amber-950' : 'border-transparent hover:bg-gray-100'">
                     <span class="size-3 rounded bg-[#ebb862]"></span> Expiring Soon
                 </button>

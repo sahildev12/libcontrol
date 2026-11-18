@@ -622,6 +622,13 @@
 .lc-seat-tile--custom:hover {
     background: linear-gradient(#6aafff, #3b82f6);
 }
+.lc-seat-tile--trial {
+    background: linear-gradient(#38bdf8, #0284c7);
+    color: #fff;
+}
+.lc-seat-tile--trial:hover {
+    background: linear-gradient(#7dd3fc, #0ea5e9);
+}
 .lc-seat-tile--expiring {
     background: linear-gradient(#f0c878, #d9a13a);
     color: #451a03;
