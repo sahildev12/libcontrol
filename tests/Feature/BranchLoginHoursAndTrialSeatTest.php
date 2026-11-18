@@ -45,6 +45,35 @@ class BranchLoginHoursAndTrialSeatTest extends TestCase
         $this->assertSame((int) $response->json('branch.id'), $user->branch_id);
     }
 
+    public function test_platform_admin_can_reuse_admin_email_on_first_branch(): void
+    {
+        $admin = $this->platformAdmin();
+        $admin->forceFill(['email' => 'owner@libcontrol.test'])->save();
+
+        $response = $this->actingAs($admin->fresh())->postJson(route('branch.store'), [
+            'name' => 'Main Branch',
+            'contact_person' => 'Owner',
+            'phone' => '9876543210',
+            'email' => 'owner@libcontrol.test',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('branch.email', 'owner@libcontrol.test');
+
+        $this->assertDatabaseHas('branches', [
+            'name' => 'Main Branch',
+            'email' => 'owner@libcontrol.test',
+        ]);
+
+        $this->assertSame(
+            1,
+            User::query()->whereRaw('LOWER(email) = ?', ['owner@libcontrol.test'])->count(),
+            'Admin email must stay unique — no second branch login user.',
+        );
+
+        $this->assertSame(0, User::query()->where('branch_id', $response->json('branch.id'))->count());
+    }
+
     public function test_platform_admin_can_reset_branch_password_once(): void
     {
         $admin = $this->platformAdmin();

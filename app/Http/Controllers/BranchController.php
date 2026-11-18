@@ -283,6 +283,12 @@ class BranchController extends Controller
             return;
         }
 
+        // Library admin email can be reused on the branch contact record without creating
+        // a second users row (emails stay unique). Admin keeps using Admin login.
+        if ($loginEmail && $this->emailMatchesLibraryAdmin((string) $loginEmail)) {
+            return;
+        }
+
         $user = $branch->users()->orderBy('id')->first();
         $payload = [
             'branch_id' => $branch->id,
@@ -309,5 +315,15 @@ class BranchController extends Controller
             'password' => $validated['password'],
             'email_verified_at' => now(),
         ]);
+    }
+
+    private function emailMatchesLibraryAdmin(string $email): bool
+    {
+        $admin = request()->user();
+        if (! $admin || ! $admin->isClientAdmin()) {
+            return false;
+        }
+
+        return strcasecmp(trim($email), trim((string) $admin->email)) === 0;
     }
 }

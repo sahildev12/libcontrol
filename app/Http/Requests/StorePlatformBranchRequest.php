@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Support\ValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePlatformBranchRequest extends FormRequest
 {
@@ -27,12 +28,18 @@ class StorePlatformBranchRequest extends FormRequest
      */
     public function rules(): array
     {
+        $usesAdminEmail = $this->emailMatchesCurrentAdmin();
+
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'phone' => ValidationRules::phoneOptional(),
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'email' => $usesAdminEmail
+                ? ['required', 'email', 'max:255']
+                : ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => $usesAdminEmail
+                ? ['nullable', 'string', 'min:8']
+                : ['required', 'string', 'min:8'],
             'address' => ['nullable', 'string', 'max:1000'],
         ];
     }
@@ -51,5 +58,13 @@ class StorePlatformBranchRequest extends FormRequest
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
         ];
+    }
+
+    public function emailMatchesCurrentAdmin(): bool
+    {
+        $email = strtolower(trim((string) $this->input('email', '')));
+        $adminEmail = strtolower(trim((string) $this->user()?->email));
+
+        return $email !== '' && $adminEmail !== '' && $email === $adminEmail;
     }
 }

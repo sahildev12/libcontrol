@@ -4296,6 +4296,7 @@ Alpine.data('platformBranchesPage', (config) => ({
     planSnapshot: config.planSnapshot || null,
     storeUrl: config.storeUrl,
     libraryCode: config.libraryCode || '',
+    adminEmail: String(config.adminEmail || '').trim(),
     hallsUrl: config.hallsUrl || '/halls',
     seatsUrl: config.seatsUrl || '/seats',
     studentsUrl: config.studentsUrl || '/students',
@@ -4344,6 +4345,13 @@ Alpine.data('platformBranchesPage', (config) => ({
 
     init() {},
 
+    usesAdminEmail(email) {
+        const adminEmail = String(this.adminEmail || '').trim().toLowerCase();
+        const value = String(email || '').trim().toLowerCase();
+
+        return adminEmail !== '' && value !== '' && adminEmail === value;
+    },
+
     canAddBranch() {
         const remaining = this.planSnapshot?.remaining?.branches;
         return remaining === null || remaining === undefined || remaining > 0;
@@ -4369,7 +4377,7 @@ Alpine.data('platformBranchesPage', (config) => ({
             name: '',
             contact_person: '',
             phone: '',
-            email: '',
+            email: this.adminEmail || '',
             password: '',
             address: '',
         };
@@ -4391,11 +4399,12 @@ Alpine.data('platformBranchesPage', (config) => ({
         const emailError = validateEmail(form.email, { required: true });
         if (emailError) errors.email = emailError;
 
-        if (requirePassword && String(form.password || '').length < 8) {
+        const needsPassword = requirePassword && ! this.usesAdminEmail(form.email);
+        if (needsPassword && String(form.password || '').length < 8) {
             errors.password = 'Password must be at least 8 characters.';
         }
 
-        if (! requirePassword && form.password && String(form.password).length < 8) {
+        if (! needsPassword && form.password && String(form.password).length < 8) {
             errors.password = 'Password must be at least 8 characters.';
         }
 

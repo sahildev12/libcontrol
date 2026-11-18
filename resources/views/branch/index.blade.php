@@ -5,6 +5,7 @@
             planSnapshot: @js($planSnapshot),
             storeUrl: @js(route('branch.store')),
             libraryCode: @js($libraryCode),
+            adminEmail: @js(auth()->user()?->email),
             hallsUrl: @js(route('halls.index')),
             seatsUrl: @js(route('seats.index')),
             studentsUrl: @js(route('students.index')),

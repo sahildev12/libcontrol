@@ -30,15 +30,26 @@ class UpdateBranchRequest extends FormRequest
     {
         $branch = $this->route('branch') ?? $this->user()?->branch;
         $loginUserId = $branch?->users()->orderBy('id')->value('id') ?? $this->user()?->id;
+        $usesAdminEmail = $this->emailMatchesCurrentAdmin();
 
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'phone' => ValidationRules::phoneOptional(),
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($loginUserId)],
+            'email' => $usesAdminEmail
+                ? ['required', 'email', 'max:255']
+                : ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($loginUserId)],
             'password' => ['nullable', 'string', 'min:8'],
             'address' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    public function emailMatchesCurrentAdmin(): bool
+    {
+        $email = strtolower(trim((string) $this->input('email', '')));
+        $adminEmail = strtolower(trim((string) $this->user()?->email));
+
+        return $email !== '' && $adminEmail !== '' && $email === $adminEmail;
     }
 
     /**
