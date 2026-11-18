@@ -1,5 +1,4 @@
-// Desktop: open WhatsApp Web directly (avoids broken whatsapp:// handlers after uninstalling the desktop app).
-// Mobile: wa.me hands off to the phone app reliably.
+// Mobile: wa.me opens the phone app. Desktop: try WhatsApp Desktop (whatsapp://), then WhatsApp Web.
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function chatParams(href) {
@@ -21,11 +20,63 @@ function chatParams(href) {
     return params.toString().replace(/\+/g, '%20');
 }
 
+function tryDesktopApp(appUrl) {
+    return new Promise((resolve) => {
+        let handedOff = false;
+        const done = (value) => {
+            if (handedOff) {
+                return;
+            }
+            handedOff = true;
+            cleanup();
+            resolve(value);
+        };
+
+        const mark = () => done(true);
+        window.addEventListener('blur', mark, { once: true });
+        const onVis = () => {
+            if (document.hidden) {
+                mark();
+            }
+        };
+        document.addEventListener('visibilitychange', onVis, { once: true });
+
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+        iframe.src = appUrl;
+        document.body.appendChild(iframe);
+
+        const cleanup = () => {
+            window.removeEventListener('blur', mark);
+            document.removeEventListener('visibilitychange', onVis);
+            iframe.remove();
+        };
+
+        window.setTimeout(() => done(false), 1200);
+    });
+}
+
+function openWebChat(webUrl, tab = null) {
+    if (tab) {
+        tab.location.href = webUrl;
+        tab.opener = null;
+        return;
+    }
+
+    const opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
+    if (opened) {
+        opened.opener = null;
+    } else {
+        window.location.assign(webUrl);
+    }
+}
+
 /**
  * @param {string} href wa.me or web.whatsapp.com URL
- * @param {Window|null} tab optional tab opened synchronously on click (popup-safe)
+ * @param {Window|null} tab optional tab from a sync click (e.g. Growth checkout)
  */
-export function openWhatsApp(href, tab = null) {
+export async function openWhatsApp(href, tab = null) {
     if (! href) {
         tab?.close();
         return;
@@ -42,6 +93,7 @@ export function openWhatsApp(href, tab = null) {
     }
 
     const webUrl = `https://web.whatsapp.com/send?${params}`;
+    const appUrl = `whatsapp://send?${params}`;
 
     if (isMobile()) {
         if (tab) {
@@ -52,18 +104,13 @@ export function openWhatsApp(href, tab = null) {
         return;
     }
 
-    if (tab) {
-        tab.location.href = webUrl;
-        tab.opener = null;
+    const appOpened = await tryDesktopApp(appUrl);
+    if (appOpened) {
+        tab?.close();
         return;
     }
 
-    const opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
-    if (opened) {
-        opened.opener = null;
-    } else {
-        window.location.assign(webUrl);
-    }
+    openWebChat(webUrl, tab);
 }
 
 window.openWhatsApp = openWhatsApp;
@@ -74,7 +121,7 @@ document.addEventListener('click', (event) => {
         return;
     }
 
-  if (link.hasAttribute('data-wa-skip')) {
+    if (link.hasAttribute('data-wa-skip')) {
         return;
     }
 
@@ -83,12 +130,10 @@ document.addEventListener('click', (event) => {
         return;
     }
 
-    const params = chatParams(href);
-    if (! params) {
+    if (! chatParams(href)) {
         return;
     }
 
     event.preventDefault();
-    const tab = window.open('about:blank', '_blank');
-    openWhatsApp(href, tab);
+    openWhatsApp(href);
 });

@@ -32,6 +32,20 @@
         return 'https://web.whatsapp.com/send?' + params;
     }
 
+    function buildWhatsAppAppUrl(phone, text) {
+        var number = digits(phone);
+        if (number === '') {
+            return '';
+        }
+
+        var params = 'phone=' + number;
+        if (text) {
+            params += '&text=' + encodeURIComponent(text);
+        }
+
+        return 'whatsapp://send?' + params;
+    }
+
     function parseWaMeHref(href) {
         if (!href) {
             return null;
@@ -59,21 +73,66 @@
         return parseWaMeHref(link.getAttribute('href') || '');
     }
 
+    function tryDesktopApp(appUrl) {
+        return new Promise(function (resolve) {
+            var handedOff = false;
+            function done(value) {
+                if (handedOff) {
+                    return;
+                }
+                handedOff = true;
+                cleanup();
+                resolve(value);
+            }
+
+            function mark() {
+                done(true);
+            }
+
+            window.addEventListener('blur', mark, { once: true });
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    mark();
+                }
+            }, { once: true });
+
+            var iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+            iframe.src = appUrl;
+            document.body.appendChild(iframe);
+
+            function cleanup() {
+                window.removeEventListener('blur', mark);
+                iframe.parentNode && iframe.parentNode.removeChild(iframe);
+            }
+
+            window.setTimeout(function () {
+                done(false);
+            }, 1200);
+        });
+    }
+
     function openWhatsAppChat(phone, text, fallbackUrl) {
         var waUrl = fallbackUrl || buildWhatsAppUrl(phone, text);
         var webUrl = buildWhatsAppWebUrl(phone, text);
+        var appUrl = buildWhatsAppAppUrl(phone, text);
 
         if (isMobileDevice()) {
             window.location.href = waUrl;
             return;
         }
 
-        var opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
-        if (opened) {
-            opened.opener = null;
-        } else {
-            window.location.href = webUrl;
-        }
+        tryDesktopApp(appUrl).then(function (appOpened) {
+            if (appOpened) {
+                return;
+            }
+            var opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
+            if (opened) {
+                opened.opener = null;
+            } else {
+                window.location.href = webUrl;
+            }
+        });
     }
 
     function applyWhatsAppLinks() {
