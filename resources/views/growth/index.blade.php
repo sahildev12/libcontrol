@@ -265,8 +265,8 @@
         }
         .lc-growth-duration-modal__close {
             display: inline-flex;
-            height: 2rem;
-            width: 2rem;
+            height: 2.25rem;
+            width: 2.25rem;
             flex-shrink: 0;
             align-items: center;
             justify-content: center;
@@ -682,8 +682,8 @@
                 aria-labelledby="growth-duration-title"
             >
                 <div class="absolute inset-0 bg-gray-900/60" @click="closeDurationPicker()"></div>
-                <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl" @click.stop>
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-[#082D70] to-[#1D4ED8] px-5 py-4">
+                <div class="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10" @click.stop>
+                    <div class="flex items-center justify-between gap-3 bg-gradient-to-r from-[#082D70] to-[#1D4ED8] px-5 py-4">
                         <h2 id="growth-duration-title" class="text-base font-semibold text-white">How many months?</h2>
                         <button
                             type="button"
