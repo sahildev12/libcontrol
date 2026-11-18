@@ -56,6 +56,28 @@ class LibraryProfileCompletionTest extends TestCase
             ->assertSee('Your public website is still off', false);
     }
 
+    public function test_topbar_hides_profile_completion_nudge_when_complete(): void
+    {
+        PlatformSetting::current()->update([
+            'display_name' => 'Sunrise Study Hall',
+            'logo_path' => 'logos/demo.png',
+            'website_address' => '12 MG Road, Hisar',
+            'website_whatsapp' => '919876543210',
+            'website_amenities' => ['Wi-Fi', 'CCTV'],
+            'website_gallery' => ['gallery/one.jpg'],
+            'website_social_links' => ['instagram' => 'https://instagram.com/sunrise'],
+        ]);
+
+        $score = app(LibraryProfileCompletionService::class)->scoreForLibrary(null);
+        $this->assertTrue($score['complete']);
+        $this->assertSame(100, $score['pct']);
+
+        $this->actingAs($this->platformAdmin())
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('data-profile-completion-banner', false);
+    }
+
     private function platformAdmin(): User
     {
         Branch::factory()->create();

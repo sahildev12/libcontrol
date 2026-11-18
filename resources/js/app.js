@@ -8231,6 +8231,8 @@ Alpine.data('settingsPage', (config) => ({
 
     applyProfileCompletion(completion) {
         const pct = Math.max(0, Math.min(100, Number(completion?.pct ?? 0)));
+        const complete = Boolean(completion?.complete) || pct >= 100;
+
         document.querySelectorAll('[data-profile-completion-pct]').forEach((el) => {
             el.textContent = `${pct}%`;
         });
@@ -8241,6 +8243,18 @@ Alpine.data('settingsPage', (config) => ({
             el.setAttribute('aria-valuenow', String(pct));
             el.setAttribute('aria-label', `Profile completion ${pct} percent`);
         });
+
+        document.querySelectorAll('[data-profile-completion-banner]').forEach((el) => {
+            el.classList.toggle('hidden', complete);
+        });
+        document.querySelectorAll('[data-topbar-impact-carousel]').forEach((el) => {
+            el.dataset.profileComplete = complete ? '1' : '0';
+        });
+        if (complete) {
+            document.querySelectorAll('[data-topbar-impact-stage]').forEach((el) => {
+                el.style.transform = 'rotateX(0deg)';
+            });
+        }
     },
 
     async saveWebsiteSettings() {

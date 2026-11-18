@@ -107,7 +107,11 @@ class AppServiceProvider extends ServiceProvider
                 try {
                     $completion = app(\App\Services\Profile\LibraryProfileCompletionService::class)
                         ->scoreForLibrary($user);
-                    $topbarProfileCompletionPct = max(0, min(100, (int) ($completion['pct'] ?? 0)));
+                    $pct = max(0, min(100, (int) ($completion['pct'] ?? 0)));
+                    // Hide the topbar nudge once the library profile is fully complete.
+                    $topbarProfileCompletionPct = ($completion['complete'] ?? false) || $pct >= 100
+                        ? null
+                        : $pct;
                 } catch (\Throwable) {
                     $topbarProfileCompletionPct = null;
                 }

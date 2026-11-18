@@ -56,10 +56,11 @@
         @php
             $impactText = config('libcontrol.defaults.admin_impact_text', 'Total 124+ Libraries Registered');
             $profilePct = isset($topbarProfileCompletionPct) ? (int) $topbarProfileCompletionPct : null;
+            $showProfileCompletion = $profilePct !== null && $profilePct < 100;
             $profileHref = \Illuminate\Support\Facades\Route::has('profile-completion.index')
                 ? route('profile-completion.index')
                 : (\Illuminate\Support\Facades\Route::has('settings.index') ? route('settings.index') : null);
-            $navyFill = $profilePct !== null ? max(0, min(100, $profilePct)) : 0;
+            $navyFill = $showProfileCompletion ? max(0, min(100, $profilePct)) : 0;
         @endphp
         {{-- Inset left/right so the carousel never sits under Branch / account controls.
              Use lg:flex (present in built CSS). Avoid xl:/2xl: utilities that are not in the current asset build. --}}
@@ -70,12 +71,18 @@
             <div
                 class="pointer-events-auto w-full max-w-xl overflow-hidden"
                 style="perspective:900px;height:52px;"
-                @if ($profilePct !== null)
+                data-topbar-impact-carousel
+                data-profile-complete="{{ $showProfileCompletion ? '0' : '1' }}"
+                @if ($showProfileCompletion)
                     x-data="{
                         face: 0,
                         timer: null,
                         start() {
                             this.stop();
+                            if (this.$el?.dataset?.profileComplete === '1') {
+                                this.face = 0;
+                                return;
+                            }
                             this.timer = setInterval(() => { this.face = this.face === 0 ? 1 : 0 }, 5000);
                         },
                         stop() {
@@ -91,7 +98,8 @@
                 <div
                     class="relative h-full w-full"
                     style="transform-style:preserve-3d;transition:transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);"
-                    @if ($profilePct !== null)
+                    data-topbar-impact-stage
+                    @if ($showProfileCompletion)
                         :style="`transform: rotateX(${face * 180}deg); transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);`"
                     @endif
                 >
@@ -106,11 +114,12 @@
                         </div>
                     </div>
 
-                    @if ($profilePct !== null)
+                    @if ($showProfileCompletion)
                         {{-- Face 1: Profile completion (compact copy so it fits the inset slot) --}}
                         <div
                             class="absolute inset-0 flex items-center justify-center"
                             style="backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateX(180deg);"
+                            data-profile-completion-banner
                         >
                             <div
                                 class="flex w-full min-w-0 items-center gap-2 rounded-xl border px-2.5 shadow-sm"
