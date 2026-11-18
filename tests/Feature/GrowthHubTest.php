@@ -218,6 +218,8 @@ class GrowthHubTest extends TestCase
             ->assertOk()
             ->assertSee('How many months?', false)
             ->assertSee('Continue to WhatsApp', false)
+            ->assertSee('1 Month', false)
+            ->assertSee('aria-label="Close"', false)
             ->assertSee('monthlyServices', false);
 
         $oneTime = $this->actingAs($user)

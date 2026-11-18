@@ -648,54 +648,66 @@
             </section>
         @endif
 
-        <div
-            x-show="durationOpen"
-            x-cloak
-            class="fixed inset-0 z-[110] flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="growth-duration-title"
-        >
-            <div class="absolute inset-0 bg-gray-900/60" @click="closeDurationPicker()"></div>
-            <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl" @click.stop>
-                <div class="border-b border-white/10 bg-gradient-to-r from-[#082D70] to-[#1D4ED8] px-5 py-4">
-                    <h2 id="growth-duration-title" class="text-base font-semibold text-white">How many months?</h2>
-                </div>
-                <div class="space-y-3 px-5 py-4">
-                    <p class="text-sm leading-relaxed text-gray-600">
-                        Choose the service length for
-                        <span class="font-semibold text-[#082D70]" x-text="durationServiceName"></span>.
-                        We’ll include it in your WhatsApp request to Katsindia.
-                    </p>
-                    <div class="grid grid-cols-4 gap-2">
-                        <template x-for="months in durationOptions" :key="months">
-                            <button
-                                type="button"
-                                class="rounded-lg border px-2 py-2.5 text-sm font-semibold transition"
-                                :class="durationMonths === months
-                                    ? 'border-[#082D70] bg-[#082D70] text-white'
-                                    : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50'"
-                                @click="durationMonths = months"
-                                x-text="months === 1 ? '1 mo' : (months + ' mo')"
-                            ></button>
-                        </template>
+        <template x-teleport="body">
+            <div
+                x-show="durationOpen"
+                x-cloak
+                class="fixed inset-0 z-[120] flex items-center justify-center p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="growth-duration-title"
+            >
+                <div class="absolute inset-0 bg-gray-900/60" @click="closeDurationPicker()"></div>
+                <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl" @click.stop>
+                    <div class="flex items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-[#082D70] to-[#1D4ED8] px-5 py-4">
+                        <h2 id="growth-duration-title" class="text-base font-semibold text-white">How many months?</h2>
+                        <button
+                            type="button"
+                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/15 hover:text-white"
+                            @click="closeDurationPicker()"
+                            aria-label="Close"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="space-y-3 px-5 py-4">
+                        <p class="text-sm leading-relaxed text-gray-600">
+                            Choose the service length for
+                            <span class="font-semibold text-[#082D70]" x-text="durationServiceName"></span>.
+                            We’ll include it in your WhatsApp request to Katsindia.
+                        </p>
+                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                            <template x-for="months in durationOptions" :key="months">
+                                <button
+                                    type="button"
+                                    class="rounded-lg border px-2 py-2.5 text-xs font-semibold transition sm:text-sm"
+                                    :class="durationMonths === months
+                                        ? 'border-[#082D70] bg-[#082D70] text-white'
+                                        : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50'"
+                                    @click="durationMonths = months"
+                                    x-text="months === 1 ? '1 Month' : (months + ' Months')"
+                                ></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
+                        <button
+                            type="button"
+                            class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            @click="closeDurationPicker()"
+                        >Cancel</button>
+                        <button
+                            type="button"
+                            class="rounded-lg bg-[#082D70] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0b3a8f] disabled:opacity-60"
+                            :disabled="!durationMonths || busy"
+                            @click="confirmDurationRequest()"
+                        >Continue to WhatsApp</button>
                     </div>
                 </div>
-                <div class="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
-                    <button
-                        type="button"
-                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                        @click="closeDurationPicker()"
-                    >Cancel</button>
-                    <button
-                        type="button"
-                        class="rounded-lg bg-[#082D70] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0b3a8f] disabled:opacity-60"
-                        :disabled="!durationMonths || busy"
-                        @click="confirmDurationRequest()"
-                    >Continue to WhatsApp</button>
-                </div>
             </div>
-        </div>
+        </template>
 
     </div>
 
