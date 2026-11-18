@@ -1,11 +1,7 @@
 /**
- * Desktop: always open WhatsApp Web (sync, popup-safe).
- * Browsers cannot detect if WhatsApp Desktop is installed; whatsapp:// fails
- * after uninstall while a stale Windows protocol handler remains, and async
- * window.open() is blocked — so we never use whatsapp:// on desktop.
- * Mobile: wa.me hands off to the phone app.
- *
- * Refs: SuperUser / StackOverflow — use web.whatsapp.com or api + app_absent=1.
+ * Mobile: wa.me → phone app.
+ * Desktop priority: WhatsApp Desktop (whatsapp://), else WhatsApp Web.
+ * Opens a blank tab during the click so web fallback is never popup-blocked.
  */
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -24,22 +20,53 @@ function chatParams(href) {
     if (text) {
         params.set('text', text);
     }
-    // Prefer chat UI in the browser; avoid desktop-app handoff prompts.
-    params.set('type', 'phone_number');
-    params.set('app_absent', '1');
 
     return params.toString().replace(/\+/g, '%20');
 }
 
 function webChatUrl(params) {
-    return `https://web.whatsapp.com/send?${params}`;
+    return `https://web.whatsapp.com/send?${params}&type=phone_number&app_absent=1`;
+}
+
+function tryDesktopApp(appUrl) {
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (opened) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            window.removeEventListener('blur', onBlur);
+            document.removeEventListener('visibilitychange', onVis);
+            iframe.remove();
+            resolve(opened);
+        };
+
+        const onBlur = () => finish(true);
+        const onVis = () => {
+            if (document.hidden) {
+                finish(true);
+            }
+        };
+
+        window.addEventListener('blur', onBlur);
+        document.addEventListener('visibilitychange', onVis);
+
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+        iframe.src = appUrl;
+        document.body.appendChild(iframe);
+
+        window.setTimeout(() => finish(false), 1000);
+    });
 }
 
 /**
- * @param {string} href wa.me or web.whatsapp.com URL
- * @param {Window|null} tab optional tab opened during the click gesture
+ * @param {string} href
+ * @param {Window|null} tab blank tab opened in the same click gesture (required for web fallback)
  */
-export function openWhatsApp(href, tab = null) {
+export async function openWhatsApp(href, tab = null) {
     if (! href) {
         tab?.close();
         return;
@@ -64,11 +91,22 @@ export function openWhatsApp(href, tab = null) {
         return;
     }
 
+    const appUrl = `whatsapp://send?${params}`;
     const webUrl = webChatUrl(params);
 
+    const appOpened = await tryDesktopApp(appUrl);
+    if (appOpened) {
+        tab?.close();
+        return;
+    }
+
     if (tab) {
-        tab.location.href = webUrl;
-        tab.opener = null;
+        try {
+            tab.location.href = webUrl;
+            tab.opener = null;
+        } catch {
+            window.location.assign(webUrl);
+        }
         return;
     }
 
@@ -102,7 +140,6 @@ document.addEventListener('click', (event) => {
     }
 
     event.preventDefault();
-    // Open during the user gesture so popup blockers cannot cancel WhatsApp Web.
     const tab = window.open('about:blank', '_blank');
     openWhatsApp(href, tab);
 });
